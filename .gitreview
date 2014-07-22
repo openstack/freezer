@@ -1,0 +1,4 @@
+[gerrit]
+host=gerrit.hpcloud.net
+port=29418
+project=automation/automation-backup.git

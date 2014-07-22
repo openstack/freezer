@@ -1,0 +1,7 @@
+python-swiftclient>=2.0.3
+python-keystoneclient>=0.8.0
+argparse>=1.2.1
+docutils>=0.8.1
+
+[testing]
+pytest
