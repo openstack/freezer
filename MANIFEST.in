@@ -1,5 +1,12 @@
+include AUTHORS
+include ChangeLog
 include *.rst
 include *.txt
+include tox.ini
 include bin/freezerc
 recursive-include docs *.rst
 recursive-include freezer *.py
+exclude .gitignore
+exclude .gitreview
+
+global-exclude *.pyc

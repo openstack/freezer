@@ -146,7 +146,7 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
 
     tar_backup_stream.join()
     tar_backup_queue.put(
-        ({False : False}))
+        ({False: False}))
     tar_backup_queue.close()
     add_object_stream.join()
 

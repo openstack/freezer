@@ -1,4 +1,4 @@
 [gerrit]
-host=gerrit.hpcloud.net
+host=review.openstack.org
 port=29418
-project=automation/automation-backup.git
+project=stackforge/freezer.git

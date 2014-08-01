@@ -32,7 +32,7 @@ def read(*filenames, **kwargs):
 
 setup(
     name='freezer',
-    version='1.0.8',
+    version='1.0.9',
     url='http://sourceforge.net/projects/openstack-freezer/',
     license='Apache Software License',
     author='Fausto Marzi, Ryszard Chojnacki, Emil Dimitrov',
@@ -74,6 +74,6 @@ setup(
         'python-keystoneclient>=0.8.0',
         'argparse>=1.2.1'],
     extras_require={
-        'testing': ['pytest'],
+        'testing': ['pytest', 'flake8'],
     }
 )

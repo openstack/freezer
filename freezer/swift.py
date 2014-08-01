@@ -289,7 +289,7 @@ def add_object(
     while True:
         package_name = absolute_file_path.split('/')[-1]
         file_chunk_index, file_chunk = backup_queue.get().popitem()
-        if file_chunk_index == False and file_chunk == False:
+        if not file_chunk_index and not file_chunk:
             break
         package_name = u'{0}/{1}/{2}/{3}'.format(
             package_name, time_stamp, max_segment_size, file_chunk_index)
@@ -390,7 +390,6 @@ def object_to_stream(backup_opt_dict, write_pipe, obj_name):
     # As the file is download by chunks and each chunk will be appened
     # to file_name_abs_path, we make sure file_name_abs_path does not
     # exists by removing it before
-    #stream_write_pipe = os.fdopen(stream_write_pipe, 'w', 0)
     for obj_chunk in sw_connector.get_object(
             backup_opt_dict.container, obj_name,
             resp_chunk_size=backup_opt_dict.max_seg_size)[1]:

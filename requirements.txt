@@ -5,3 +5,4 @@ docutils>=0.8.1
 
 [testing]
 pytest
+flake8

@@ -50,7 +50,7 @@ def tar_restore(backup_opt_dict, read_pipe):
     tar_cmd = ' {0} -z --incremental --extract  \
         --unlink-first --ignore-zeros --warning=none --overwrite \
         --directory {1} '.format(
-            backup_opt_dict.tar_path, backup_opt_dict.restore_abs_path)
+        backup_opt_dict.tar_path, backup_opt_dict.restore_abs_path)
 
     # Check if encryption file is provided and set the openssl decrypt
     # command accordingly
@@ -132,11 +132,11 @@ def tar_incremental(
 
 
 def gen_tar_command(
-    opt_dict, meta_data_backup_file=False, time_stamp=int(time.time()),
-    remote_manifest_meta=False):
-    '''
+        opt_dict, meta_data_backup_file=False, time_stamp=int(time.time()),
+        remote_manifest_meta=False):
+    """
     Generate tar command options.
-    '''
+    """
 
     required_list = [
         opt_dict.backup_name,
@@ -214,12 +214,12 @@ def tar_backup(opt_dict, tar_command, backup_queue):
         file_read_limit += len(file_block)
         if file_read_limit >= opt_dict.max_seg_size:
             backup_queue.put(
-                ({file_chunk_index : tar_chunk}))
+                ({file_chunk_index: tar_chunk}))
             file_chunk_index += 1
             tar_chunk = b''
             file_read_limit = 0
     # Upload segments smaller then opt_dict.max_seg_size
     if len(tar_chunk) < opt_dict.max_seg_size:
         backup_queue.put(
-            ({file_chunk_index : tar_chunk}))
+            ({file_chunk_index: tar_chunk}))
         file_chunk_index += 1

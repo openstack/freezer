@@ -239,6 +239,6 @@ def backup_arguments():
     backup_args.__dict__['mysql_db_inst'] = ''
 
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.0.8'
+    backup_args.__dict__['__version__'] = '1.0.9'
 
     return backup_args, arg_parser

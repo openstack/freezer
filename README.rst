@@ -5,7 +5,7 @@ Freezer
 Freezer is a Python tool that helps you to automate the data backup and
 restore process.
 
-The following features are avaialble:
+The following features are available:
 
 -  Backup your filesystem using snapshot to swift
 -  Strong encryption supported: AES-256-CFB
@@ -59,7 +59,7 @@ Freezer installation from Python package repo::
 
 OR::
 
-    $ sudo easy\_install freezer
+    $ sudo easy_install freezer
 
 The basic Swift account configuration is needed to use freezer. Make
 sure python-swiftclient is installed.
@@ -73,9 +73,9 @@ Also the following ENV var are needed you can put them in ~/.bashrc::
     export OS_USERNAME=automationbackup
     export OS_TENANT_NAME=automationbackup
 
-    $ source ~/.barshrc
+    $ source ~/.bashrc
 
-Let's say you have a container called foobar-contaienr, by executing
+Let's say you have a container called foobar-container, by executing
 "swift list" you should see something like::
 
     $ swift list
@@ -115,7 +115,7 @@ mongo data is. These information can be obtained as per following::
     $ mount
     [...]
 
-Once we know the volume where our mongo data is mounted on, we can get
+Once we know the volume where our Mongo data is mounted on, we can get
 the volume group and logical volume info::
 
     $ sudo vgdisplay
