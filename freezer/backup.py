@@ -1,4 +1,4 @@
-'''
+"""
 Copyright 2014 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,9 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 
 Freezer Backup modes related functions
-'''
+"""
 
-from freezer.lvm import lvm_snap, lvm_snap_remove
+from freezer.lvm import lvm_snap, lvm_snap_remove, get_lvm_info
 from freezer.tar import tar_backup, gen_tar_command
 from freezer.swift import add_object, manifest_upload
 from freezer.utils import gen_manifest_meta, add_host_name_ts_level
@@ -32,7 +32,7 @@ import os
 
 
 def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
-    '''
+    """
     Execute a MySQL DB backup. currently only backup with lvm snapshots
     are supported. This mean, just before the lvm snap vol is created,
     the db tables will be flushed and locked for read, then the lvm create
@@ -40,7 +40,8 @@ def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
     the backup will be executed. It is important to have the available in
     backup_args.mysql_conf_file the file where the database host, name, user,
     and password are set.
-    '''
+    """
+
     try:
         import MySQLdb
     except ImportError as error:
@@ -73,16 +74,17 @@ def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
             host=db_host, user=db_user, passwd=db_pass)
     except Exception as error:
         logging.critical('[*] MySQL Error: {0}'.format(error))
-        raise Exception
+        raise Exception('[*] MySQL Error: {0}'.format(error))
 
     # Execute LVM backup
     backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict)
 
 
 def backup_mode_mongo(backup_opt_dict, time_stamp, manifest_meta_dict):
-    '''
+    """
     Execute the necessary tasks for file system backup mode
-    '''
+    """
+
     try:
         from pymongo import MongoClient
     except ImportError:
@@ -108,25 +110,32 @@ def backup_mode_mongo(backup_opt_dict, time_stamp, manifest_meta_dict):
 
 
 def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
-    '''
+    """
     Execute the necessary tasks for file system backup mode
-    '''
+    """
 
     logging.info('[*] File System backup is being executed...')
+
+    # If lvm_auto_snap is true, the volume group and volume name will be
+    # extracted automatically
+    if backup_opt_dict.lvm_auto_snap:
+        backup_opt_dict = get_lvm_info(backup_opt_dict)
+
+    # Generate the lvm_snap if lvm arguments are available
     lvm_snap(backup_opt_dict)
+
     # Extract some values from arguments that will be used later on
     # Initialize swift client object, generate container segments name
     # and extract backup name
     sw_connector = backup_opt_dict.sw_connector
 
-    # Execute a tar gzip of the specified directory and return
-    # small chunks (default 128MB), timestamp, backup, filename,
-    # file chunk index and the tar meta-data file
-
     # Generate a string hostname, backup name, timestamp and backup level
     file_name = add_host_name_ts_level(backup_opt_dict, time_stamp)
     meta_data_backup_file = u'tar_metadata_{0}'.format(file_name)
 
+    # Execute a tar gzip of the specified directory and return
+    # small chunks (default 128MB), timestamp, backup, filename,
+    # file chunk index and the tar meta-data file
     (backup_opt_dict, tar_command, manifest_meta_dict) = gen_tar_command(
         opt_dict=backup_opt_dict, time_stamp=time_stamp,
         remote_manifest_meta=manifest_meta_dict)
@@ -145,8 +154,7 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
     add_object_stream.start()
 
     tar_backup_stream.join()
-    tar_backup_queue.put(
-        ({False: False}))
+    tar_backup_queue.put(({False: False}))
     tar_backup_queue.close()
     add_object_stream.join()
 

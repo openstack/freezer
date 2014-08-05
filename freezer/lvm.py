@@ -1,4 +1,4 @@
-'''
+"""
 Copyright 2014 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,10 +19,10 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 
 Freezer LVM related functions
-'''
+"""
 
 from freezer.utils import (
-    create_dir, get_vol_fs_type, validate_all_args)
+    create_dir, get_vol_fs_type, validate_all_args, get_mount_from_path)
 
 import re
 import os
@@ -31,14 +31,14 @@ import logging
 
 
 def lvm_eval(backup_opt_dict):
-    '''
+    """
     Evaluate if the backup must be executed using lvm snapshot
     or just directly on the plain filesystem. If no lvm options are specified
     the backup will be executed directly on the file system and without
     use lvm snapshot. If one of the lvm options are set, then the lvm snap
     will be used to execute backup. This mean all the required options
     must be set accordingly
-    '''
+    """
 
     required_list = [
         backup_opt_dict.lvm_volgroup,
@@ -57,10 +57,10 @@ def lvm_eval(backup_opt_dict):
 
 
 def lvm_snap_remove(backup_opt_dict):
-    '''
+    """
     Remove the specified lvm_snapshot. If the volume is mounted
     it will unmount it and then removed
-    '''
+    """
 
     if not lvm_eval(backup_opt_dict):
         return True
@@ -108,10 +108,10 @@ def lvm_snap_remove(backup_opt_dict):
 
 
 def lvm_snap(backup_opt_dict):
-    '''
+    """
     Implement checks on lvm volumes availability. According to these checks
     we might create an lvm snapshot and mount it or use an existing one
-    '''
+    """
 
     if lvm_eval(backup_opt_dict) is not True:
         return True
@@ -204,3 +204,35 @@ def lvm_snap(backup_opt_dict):
         logging.warning('[*] Volume {0} succesfully mounted on {1}\
             '.format(abs_snap_name, backup_opt_dict.lvm_dirmount))
     return True
+
+
+def get_lvm_info(backup_opt_dict):
+    """
+    Take a file system path as argument as backup_opt_dict.src_file
+    and return a dictionary containing dictionary['lvm_srcvol']
+    and dictionary['lvm_volgroup'] where the path is mounted on.
+
+    :param backup_opt_dict: backup_opt_dict.src_file, the file system path
+    :returns: the dictionary backup_opt_dict containing keys lvm_srcvol
+              and lvm_volgroup with respective values
+    """
+
+    mount_point_path = get_mount_from_path(backup_opt_dict.src_file)
+    with open('/proc/mounts', 'r') as mount_fd:
+        mount_points = mount_fd.readlines()
+
+    for mount_line in mount_points:
+        device, mount_path = mount_line.split(' ')[0:2]
+        if mount_point_path.strip() == mount_path.strip():
+            mount_match = re.search(
+                r'/dev/mapper/(\w.+?\w)-(\w.+?\w)$', device)
+            if mount_match:
+                backup_opt_dict.__dict__['lvm_volgroup'] = \
+                    mount_match.group(1).replace('--', '-')
+                lvm_srcvol = mount_match.group(2).replace('--', '-')
+                backup_opt_dict.__dict__['lvm_srcvol'] = \
+                    u'/dev/{0}/{1}'.format(
+                    backup_opt_dict.lvm_volgroup, lvm_srcvol)
+                break
+
+    return backup_opt_dict

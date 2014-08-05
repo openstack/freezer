@@ -1,4 +1,4 @@
-'''
+"""
 Copyright 2014 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,20 +19,21 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 
 Arguments and general parameters definitions
-'''
+"""
 
 import sys
 import argparse
 import distutils.spawn as distspawn
 import os
 import logging
+import pkg_resources
 
 
 def backup_arguments():
-    '''
+    """
     Default arguments and command line options interface. The function return
     a name space called backup_args.
-    '''
+    """
     arg_parser = argparse.ArgumentParser(prog='freezerc')
     arg_parser.add_argument(
         '-F', '--file-to-backup', action='store',
@@ -61,12 +62,18 @@ def backup_arguments():
         Storage Server.''', dest='list_objects', default=False)
     arg_parser.add_argument(
         '-o', '--get-object', action='store',
-        help="The Object Name you want to download. This options is mandatory \
+        help="The Object Name you want to download. This options is mandatory\
         when --restore is used", dest='object', default=False)
     arg_parser.add_argument(
         '-d', '--dst-file', action='store',
         help="The file name used to save the object on your local disk and\
         upload file in swift", dest='dst_file', default=False)
+    arg_parser.add_argument(
+        '--lvm-auto-snap', action='store_true',
+        help=("Automatically guess the volume group and volume name. "
+              "Option --file-to-backup is mandatory"),
+        dest='lvm_auto_snap',
+        default=False)
     arg_parser.add_argument(
         '--lvm-srcvol', action='store',
         help="Set the lvm volume you want to take a snaphost from. Default\
@@ -239,6 +246,7 @@ def backup_arguments():
     backup_args.__dict__['mysql_db_inst'] = ''
 
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.0.9'
+    backup_args.__dict__['__version__'] = pkg_resources.require(
+        'freezer')[0].version
 
     return backup_args, arg_parser

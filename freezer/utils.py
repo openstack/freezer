@@ -522,3 +522,23 @@ def add_host_name_ts_level(backup_opt_dict, time_stamp=int(time.time())):
         time_stamp, backup_opt_dict.curr_backup_level)
 
     return backup_name
+
+
+def get_mount_from_path(path):
+    """
+    Take a file system path as argument and return the mount point
+    for that file system path.
+
+    :param path: file system path
+    :returns: mount point of path
+    """
+
+    if not os.path.exists(path):
+        logging.critical('[*] Error: provided path does not exist')
+        raise IOError
+
+    mount_point_path = os.path.abspath(path)
+    while not os.path.ismount(mount_point_path):
+        mount_point_path = os.path.dirname(mount_point_path)
+
+    return mount_point_path

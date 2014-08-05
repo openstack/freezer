@@ -1,4 +1,4 @@
-'''
+"""
 Copyright 2014 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 
 Freezer functions to interact with OpenStack Swift client and server
-'''
+"""
 
 from freezer.utils import (
     validate_all_args, get_match_backup,
@@ -35,9 +35,9 @@ import logging
 
 
 def show_containers(backup_opt_dict):
-    '''
+    """
     Print remote containers in sorted order
-    '''
+    """
 
     if not backup_opt_dict.list_container:
         return False
@@ -57,10 +57,10 @@ def show_containers(backup_opt_dict):
 
 
 def show_objects(backup_opt_dict):
-    '''
+    """
     Retreive the list of backups from backup_opt_dict for the specified \
     container and print them nicely to std out.
-    '''
+    """
 
     if not backup_opt_dict.list_objects:
         return False
@@ -86,9 +86,9 @@ def show_objects(backup_opt_dict):
 
 
 def remove_obj_older_than(backup_opt_dict):
-    '''
+    """
     Remove object in remote swift server older more tqhen days
-    '''
+    """
 
     if not backup_opt_dict.remote_obj_list \
             or backup_opt_dict.remove_older_than is False:
@@ -134,10 +134,10 @@ def remove_obj_older_than(backup_opt_dict):
 
 
 def get_container_content(backup_opt_dict):
-    '''
+    """
     Download the list of object of the provided container
     and print them out as container meta-data and container object list
-    '''
+    """
 
     if not backup_opt_dict.container:
         print '[*] Error: please provide a valid container name'
@@ -156,13 +156,13 @@ def get_container_content(backup_opt_dict):
 
 
 def check_container_existance(backup_opt_dict):
-    '''
+    """
     Check if the provided container is already available on Swift.
     The verification is done by exact matching between the provided container
     name and the whole list of container available for the swift account.
     If the container is not found, it will be automatically create and used
     to execute the backup
-    '''
+    """
 
     required_list = [
         backup_opt_dict.container_segments,
@@ -210,9 +210,9 @@ def check_container_existance(backup_opt_dict):
 
 # This function is useless? Remove is and use the single env accordingly
 def get_swift_os_env():
-    '''
+    """
     Get the swift related environment variable
-    '''
+    """
 
     environ_dict = os.environ
     return environ_dict['OS_REGION_NAME'], environ_dict['OS_TENANT_ID'], \
@@ -221,10 +221,10 @@ def get_swift_os_env():
 
 
 def get_client(backup_opt_dict):
-    '''
+    """
     Initialize a swift client object and return it in
     backup_opt_dict
-    '''
+    """
 
     sw_client = swiftclient.client
     options = {}
@@ -241,9 +241,9 @@ def get_client(backup_opt_dict):
 
 def manifest_upload(
         manifest_file, backup_opt_dict, file_prefix, manifest_meta_dict):
-    '''
+    """
     Upload Manifest to manage segments in Swift
-    '''
+    """
 
     if not manifest_meta_dict:
         logging.critical('[*] Error Manifest Meta dictionary not available')
@@ -267,9 +267,9 @@ def manifest_upload(
 def add_object(
     backup_opt_dict, backup_queue, absolute_file_path=None,
         time_stamp=None):
-    '''
+    """
     Upload object on the remote swift server
-    '''
+    """
 
     if not backup_opt_dict.container:
         logging.critical('[*] Error: Please specify the container \
@@ -305,7 +305,9 @@ def add_object(
                         package_name))
                 sw_connector.put_object(
                     backup_opt_dict.container_segments,
-                    package_name, file_chunk)
+                    package_name, file_chunk,
+                    content_type='application/octet-stream',
+                    content_length=len(file_chunk))
                 logging.info('[*] Data successfully uploaded!')
                 break
             except Exception as error:
@@ -316,15 +318,15 @@ def add_object(
                 backup_opt_dict = get_client(backup_opt_dict)
                 count += 1
                 if count == 10:
-                    logging.info(
-                        '[*] Error: add_object: {0}'.format(error))
-                    raise Exception
+                    critical_msg = '[*] Error: add_object: {0}'.format(error)
+                    logging.critical(critical_msg)
+                    raise Exception(critical_msg)
 
 
 def get_containers_list(backup_opt_dict):
-    '''
+    """
     Get a list and information of all the available containers
-    '''
+    """
 
     try:
         sw_connector = backup_opt_dict.sw_connector
@@ -336,10 +338,10 @@ def get_containers_list(backup_opt_dict):
 
 
 def object_to_file(backup_opt_dict, file_name_abs_path):
-    '''
+    """
     Take a payload downloaded from Swift
     and save it to the disk as file_name
-    '''
+    """
 
     required_list = [
         backup_opt_dict.container,
@@ -371,10 +373,10 @@ def object_to_file(backup_opt_dict, file_name_abs_path):
 
 
 def object_to_stream(backup_opt_dict, write_pipe, obj_name):
-    '''
+    """
     Take a payload downloaded from Swift
     and generate a stream to be consumed from other processes
-    '''
+    """
 
     required_list = [
         backup_opt_dict.container]

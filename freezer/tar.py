@@ -1,4 +1,4 @@
-'''
+"""
 Copyright 2014 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 
 Freezer Tar related functions
-'''
+"""
 
 from freezer.utils import (
     validate_all_args, add_host_name_ts_level, create_dir)
@@ -32,10 +32,10 @@ import time
 
 
 def tar_restore(backup_opt_dict, read_pipe):
-    '''
+    """
     Restore the provided file into backup_opt_dict.restore_abs_path
     Descrypt the file if backup_opt_dict.encrypt_pass_file key is provided
-    '''
+    """
 
     # Validate mandatory arguments
     required_list = [
@@ -81,14 +81,14 @@ def tar_restore(backup_opt_dict, read_pipe):
 
 def tar_incremental(
         tar_cmd, backup_opt_dict, curr_tar_meta, remote_manifest_meta=None):
-    '''
+    """
     Check if the backup already exist in swift. If the backup already
     exists, the related meta data and the tar incremental meta file will be
     downloaded. According to the meta data content, new options will be
     provided for the next meta data upload to swift and the existing tar meta
     file will be used in the current incremental backup. Also the level
     options will be checked and updated respectively
-    '''
+    """
 
     if not tar_cmd or not backup_opt_dict:
         logging.error('[*] Error: tar_incremental, please provide tar_cmd \
@@ -189,16 +189,15 @@ def gen_tar_command(
 
 
 def tar_backup(opt_dict, tar_command, backup_queue):
-    '''
+    """
     Execute an incremental backup using tar options, specified as
     function arguments
-    '''
+    """
 
     # Set counters, index, limits and bufsize for subprocess
-    buf_size = 65535
+    buf_size = 1048576
     file_read_limit = 0
     file_chunk_index = 00000000
-    file_block = b''
     tar_chunk = b''
     logging.info(
         '[*] Archiving and compressing files from {0}'.format(
@@ -206,7 +205,8 @@ def tar_backup(opt_dict, tar_command, backup_queue):
 
     tar_process = subprocess.Popen(
         tar_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        bufsize=buf_size, shell=True, executable=opt_dict.bash_path)
+        bufsize=buf_size, shell=True,
+        executable=opt_dict.bash_path, env=os.environ.copy())
 
     # Iterate over tar process stdout
     for file_block in tar_process.stdout:
@@ -218,8 +218,8 @@ def tar_backup(opt_dict, tar_command, backup_queue):
             file_chunk_index += 1
             tar_chunk = b''
             file_read_limit = 0
+
     # Upload segments smaller then opt_dict.max_seg_size
     if len(tar_chunk) < opt_dict.max_seg_size:
         backup_queue.put(
             ({file_chunk_index: tar_chunk}))
-        file_chunk_index += 1
