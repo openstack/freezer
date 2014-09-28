@@ -34,7 +34,7 @@ import time
 def tar_restore(backup_opt_dict, read_pipe):
     """
     Restore the provided file into backup_opt_dict.restore_abs_path
-    Descrypt the file if backup_opt_dict.encrypt_pass_file key is provided
+    Decrypt the file if backup_opt_dict.encrypt_pass_file key is provided
     """
 
     # Validate mandatory arguments
@@ -157,12 +157,25 @@ def gen_tar_command(
     logging.info('[*] Backup started for: {0} \
     '.format(opt_dict.src_file))
 
-    # Tar option for default behavoir. Please refer to man tar to have
+    # Tar option for default behavior. Please refer to man tar to have
     # a better options explanation
     tar_command = ' {0} --create -z --warning=none \
-        --dereference --hard-dereference --no-check-device --one-file-system \
+        --no-check-device --one-file-system \
         --preserve-permissions --same-owner --seek \
         --ignore-failed-read '.format(opt_dict.tar_path)
+
+    # Dereference hard and soft links according option choices.
+    # 'soft' dereference soft links, 'hard' dereference hardlinks,
+    # 'all' dereference both. Defaul 'none'.
+    if opt_dict.dereference_symlink == 'soft':
+        tar_command = ' {0} --dereference '.format(
+            tar_command)
+    if opt_dict.dereference_symlink == 'hard':
+        tar_command = ' {0} --hard-dereference '.format(
+            tar_command)
+    if opt_dict.dereference_symlink == 'all':
+        tar_command = ' {0} --hard-dereference --dereference '.format(
+            tar_command)
 
     file_name = add_host_name_ts_level(opt_dict, time_stamp)
     meta_data_backup_file = u'tar_metadata_{0}'.format(file_name)

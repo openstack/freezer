@@ -181,7 +181,7 @@ adminui.git::
     --backup-name adminui.git
     --restore-from-host git-HP-DL380-host-001 --restore-abs-path
     /home/git/repositories/adminui.git/
-    --restore-from-date "23-05-2014T23:23:23"
+    --restore-from-date "2014-05-23T23:23:23"
 
 MySQL restore:
 
@@ -194,7 +194,7 @@ Execute Restore::
 
     $ sudo freezerc --container foobar-container-2
     --backup-name mysq-prod --restore-from-host db-HP-DL380-host-001
-    --restore-abs-path /var/lib/mysql --restore-from-date "23-05-2014T23:23:23"
+    --restore-abs-path /var/lib/mysql --restore-from-date "2014-05-23T23:23:23"
 
 And finally restart mysql::
 
@@ -204,7 +204,7 @@ Execute a MongoDB restore of the backup name mongobigdata::
 
     $ sudo freezerc --container foobar-container-2 --backup-name mongobigdata
      --restore-from-host db-HP-DL380-host-001 --restore-abs-path
-    /var/lib/mongo --restore-from-date "23-05-2014T23:23:23"
+    /var/lib/mongo --restore-from-date "2014-05-23T23:23:23"
 
 Architecture
 ============

@@ -217,7 +217,7 @@ def get_lvm_info(backup_opt_dict):
               and lvm_volgroup with respective values
     """
 
-    mount_point_path = get_mount_from_path(backup_opt_dict.src_file)
+    mount_point_path = get_mount_from_path(backup_opt_dict.lvm_auto_snap)
     with open('/proc/mounts', 'r') as mount_fd:
         mount_points = mount_fd.readlines()
 

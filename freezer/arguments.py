@@ -26,7 +26,6 @@ import argparse
 import distutils.spawn as distspawn
 import os
 import logging
-import pkg_resources
 
 
 def backup_arguments():
@@ -69,9 +68,9 @@ def backup_arguments():
         help="The file name used to save the object on your local disk and\
         upload file in swift", dest='dst_file', default=False)
     arg_parser.add_argument(
-        '--lvm-auto-snap', action='store_true',
-        help=("Automatically guess the volume group and volume name. "
-              "Option --file-to-backup is mandatory"),
+        '--lvm-auto-snap', action='store',
+        help=("Automatically guess the volume group and volume name for "
+              "given PATH."),
         dest='lvm_auto_snap',
         default=False)
     arg_parser.add_argument(
@@ -158,6 +157,12 @@ def backup_arguments():
         name ending with .log. Default no exclude", dest='exclude',
         default=False)
     arg_parser.add_argument(
+        '--dereference-symlink', choices=['none', 'soft', 'hard', 'all'],
+        help=(
+            "Follow hard and soft links and archive and dump the files they "
+            " refer to. Default False."),
+        dest='dereference_symlink', default='none')
+    arg_parser.add_argument(
         '-U', '--upload', action='store_true',
         help="Upload to Swift the destination file passed to the -d option.\
             Default upload the data", dest='upload', default=True)
@@ -173,9 +178,8 @@ def backup_arguments():
         dest='max_seg_size', type=int, default=134217728)
     arg_parser.add_argument(
         '--restore-abs-path', action='store',
-        help='Set the absolute path where you want your data restored. \
-        option --restore need to be set along with --get-object in order \
-        to execute data restore. Default False.',
+        help=('Set the absolute path where you want your data restored. '
+              'Default False.'),
         dest='restore_abs_path', default=False)
     arg_parser.add_argument(
         '--restore-from-host', action='store',
@@ -246,7 +250,6 @@ def backup_arguments():
     backup_args.__dict__['mysql_db_inst'] = ''
 
     # Freezer version
-    backup_args.__dict__['__version__'] = pkg_resources.require(
-        'freezer')[0].version
+    backup_args.__dict__['__version__'] = '1.0.9-2'
 
     return backup_args, arg_parser

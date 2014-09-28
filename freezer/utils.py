@@ -82,7 +82,7 @@ def gen_manifest_meta(
         manifest_meta_dict['x-object-meta-remove-backup-older-than-days'] = ''
         if backup_opt_dict.remove_older_than is not False:
             manifest_meta_dict['x-object-meta-remove-backup-older-than-days']\
-                = backup_opt_dict.remove_older_than
+                = '{0}'.format(backup_opt_dict.remove_older_than)
         manifest_meta_dict['x-object-meta-hostname'] = backup_opt_dict.hostname
         manifest_meta_dict['x-object-meta-segments-size-bytes'] = \
             str(backup_opt_dict.max_seg_size)

@@ -1,7 +1,8 @@
-python-swiftclient>=2.0.3
+python-swiftclient>=1.6.0
 python-keystoneclient>=0.8.0
-argparse>=1.2.1
 docutils>=0.8.1
+mysql-python
+pymongo
 
 [testing]
 pytest
