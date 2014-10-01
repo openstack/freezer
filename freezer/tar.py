@@ -214,7 +214,7 @@ def tar_backup(opt_dict, tar_command, backup_queue):
         file_read_limit += len(file_block)
         if file_read_limit >= opt_dict.max_seg_size:
             backup_queue.put(
-                ({file_chunk_index: tar_chunk}))
+                ({("%08d" % file_chunk_index): tar_chunk}))
             file_chunk_index += 1
             tar_chunk = b''
             file_read_limit = 0
@@ -222,4 +222,4 @@ def tar_backup(opt_dict, tar_command, backup_queue):
     # Upload segments smaller then opt_dict.max_seg_size
     if len(tar_chunk) < opt_dict.max_seg_size:
         backup_queue.put(
-            ({file_chunk_index: tar_chunk}))
+            ({("%08d" % file_chunk_index): tar_chunk}))
