@@ -23,7 +23,7 @@ Freezer Backup modes related functions
 
 from freezer.lvm import lvm_snap, lvm_snap_remove, get_lvm_info
 from freezer.tar import tar_backup, gen_tar_command
-from freezer.swift import add_object, manifest_upload
+from freezer.swift import add_object, manifest_upload, get_client
 from freezer.utils import gen_manifest_meta, add_host_name_ts_level
 
 from multiprocessing import Process, Queue
@@ -124,11 +124,6 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
     # Generate the lvm_snap if lvm arguments are available
     lvm_snap(backup_opt_dict)
 
-    # Extract some values from arguments that will be used later on
-    # Initialize swift client object, generate container segments name
-    # and extract backup name
-    sw_connector = backup_opt_dict.sw_connector
-
     # Generate a string hostname, backup name, timestamp and backup level
     file_name = add_host_name_ts_level(backup_opt_dict, time_stamp)
     meta_data_backup_file = u'tar_metadata_{0}'.format(file_name)
@@ -165,14 +160,19 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
     manifest_file = u''
     meta_data_abs_path = '{0}/{1}'.format(
         backup_opt_dict.workdir, tar_meta_prev)
+
     # Upload swift manifest for segments
     if backup_opt_dict.upload:
+        # Request a new auth client in case the current token
+        # is expired before uploading tar meta data or the swift manifest
+        backup_opt_dict = get_client(backup_opt_dict)
+
         if not backup_opt_dict.no_incremental:
             # Upload tar incremental meta data file and remove it
             logging.info('[*] Uploading tar meta data file: {0}'.format(
                 tar_meta_to_upload))
             with open(meta_data_abs_path, 'r') as meta_fd:
-                sw_connector.put_object(
+                backup_opt_dict.sw_connector.put_object(
                     backup_opt_dict.container, tar_meta_to_upload, meta_fd)
             # Removing tar meta data file, so we have only one authoritative
             # version on swift
