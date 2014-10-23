@@ -139,26 +139,16 @@ def restore_fs_sort_obj(backup_opt_dict):
     for backup in closest_backup_list[::-1]:
         process_stream = Process(
             target=object_to_stream, args=(
-                backup_opt_dict, write_pipe, backup,))
+                backup_opt_dict, write_pipe, read_pipe, backup,))
         process_stream.daemon = True
         process_stream.start()
+        write_pipe.close()
 
+        # Start the tar pipe consumer process
         tar_stream = Process(
-            target=tar_restore, args=(backup_opt_dict, read_pipe,))
+            target=tar_restore, args=(backup_opt_dict, read_pipe))
         tar_stream.daemon = True
         tar_stream.start()
-
+        read_pipe.close()
         process_stream.join()
         tar_stream.join()
-
-    logging.info(
-        '[*] Restore execution successfully finished for backup name {0}, \
-            from container {1}, into directory {2}'.format(
-            backup_opt_dict.backup_name, backup_opt_dict.container,
-            backup_opt_dict.restore_abs_path))
-
-    logging.info(
-        '[*] Restore execution successfully executed for backup name {0}, \
-            from container {1}, into directory {2}'.format(
-            backup_opt_dict.backup_name, backup_opt_dict.container,
-            backup_opt_dict.restore_abs_path))

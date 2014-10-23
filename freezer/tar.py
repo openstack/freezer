@@ -65,18 +65,27 @@ def tar_restore(backup_opt_dict, read_pipe):
         stderr=subprocess.PIPE, shell=True,
         executable=backup_opt_dict.bash_path)
 
-    # Start loop reading the pipe and pass the data to the tar std input
-    while True:
-        data_stream = read_pipe.recv()
-        tar_cmd_proc.stdin.write(data_stream)
-        if len(data_stream) < int(backup_opt_dict.max_seg_size):
-            break
+    # Start loop reading the pipe and pass the data to the tar std input.
+    # If EOFError exception is raised, the loop end the std err will be
+    # checked for errors.
+    try:
+        while True:
+            tar_cmd_proc.stdin.write(read_pipe.recv_bytes())
+    except EOFError:
+        logging.info(
+            '[*] Pipe closed as EOF reached. Data transmission terminated.')
 
     tar_err = tar_cmd_proc.communicate()[1]
 
     if 'error' in tar_err.lower():
-        logging.critical('[*] Restore error: {0}'.format(tar_err))
-        raise Exception
+        logging.exception('[*] Restore error: {0}'.format(tar_err))
+        raise Exception(tar_err)
+    else:
+        logging.info(
+            '[*] Restore execution successfully executed for backup name {0},\
+                from container {1}, into directory {2}'.format(
+                backup_opt_dict.backup_name, backup_opt_dict.container,
+                backup_opt_dict.restore_abs_path))
 
 
 def tar_incremental(

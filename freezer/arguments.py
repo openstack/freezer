@@ -61,8 +61,8 @@ def backup_arguments():
         Storage Server.''', dest='list_objects', default=False)
     arg_parser.add_argument(
         '-o', '--get-object', action='store',
-        help="The Object Name you want to download. This options is mandatory\
-        when --restore is used", dest='object', default=False)
+        help="The Object name you want to download on the local file system.",
+        dest='object', default=False)
     arg_parser.add_argument(
         '-d', '--dst-file', action='store',
         help="The file name used to save the object on your local disk and\
@@ -174,8 +174,8 @@ def backup_arguments():
     arg_parser.add_argument(
         '-M', '--max-segment-size', action='store',
         help="Set the maximum file chunk size in bytes to upload to swift\
-        Default 134217728 bytes (128MB)",
-        dest='max_seg_size', type=int, default=134217728)
+        Default 67108864 bytes (64MB)",
+        dest='max_seg_size', type=int, default=67108864)
     arg_parser.add_argument(
         '--restore-abs-path', action='store',
         help=('Set the absolute path where you want your data restored. '

@@ -34,6 +34,9 @@ import time
 import logging
 
 
+RESP_CHUNK_SIZE = 65536
+
+
 def show_containers(backup_opt_dict):
     """
     Print remote containers in sorted order
@@ -281,10 +284,6 @@ def add_object(
             upload on swift with -d option')
         raise Exception
 
-    max_segment_size = backup_opt_dict.max_seg_size
-    if not backup_opt_dict.max_seg_size:
-        max_segment_size = 134217728
-
     sw_connector = backup_opt_dict.sw_connector
     while True:
         package_name = absolute_file_path.split('/')[-1]
@@ -292,7 +291,8 @@ def add_object(
         if not file_chunk_index and not file_chunk:
             break
         package_name = u'{0}/{1}/{2}/{3}'.format(
-            package_name, time_stamp, max_segment_size, file_chunk_index)
+            package_name, time_stamp,
+            backup_opt_dict.max_seg_size, file_chunk_index)
         # If for some reason the swift client object is not available anymore
         # an exception is generated and a new client object is initialized/
         # If the exception happens for 10 consecutive times for a total of
@@ -372,7 +372,7 @@ def object_to_file(backup_opt_dict, file_name_abs_path):
     return True
 
 
-def object_to_stream(backup_opt_dict, write_pipe, obj_name):
+def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):
     """
     Take a payload downloaded from Swift
     and generate a stream to be consumed from other processes
@@ -389,11 +389,21 @@ def object_to_stream(backup_opt_dict, write_pipe, obj_name):
     sw_connector = backup_opt_dict.sw_connector
     logging.info('[*] Downloading data stream...')
 
-    # As the file is download by chunks and each chunk will be appened
-    # to file_name_abs_path, we make sure file_name_abs_path does not
-    # exists by removing it before
+    # Close the read pipe in this child as it is unneeded
+    # and download the objects from swift in chunks. The
+    # Chunk size is set by RESP_CHUNK_SIZE and sent to che write
+    # pipe
+    read_pipe.close()
     for obj_chunk in sw_connector.get_object(
             backup_opt_dict.container, obj_name,
-            resp_chunk_size=backup_opt_dict.max_seg_size)[1]:
+            resp_chunk_size=RESP_CHUNK_SIZE)[1]:
 
-        write_pipe.send(obj_chunk)
+        write_pipe.send_bytes(obj_chunk)
+
+    # Closing the pipe after checking no data
+    # is still vailable in the pipe.
+    while True:
+        if not write_pipe.poll():
+            write_pipe.close()
+            break
+        time.sleep(1)
