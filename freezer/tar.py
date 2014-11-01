@@ -73,19 +73,13 @@ def tar_restore(backup_opt_dict, read_pipe):
             tar_cmd_proc.stdin.write(read_pipe.recv_bytes())
     except EOFError:
         logging.info(
-            '[*] Pipe closed as EOF reached. Data transmission terminated.')
+            '[*] Pipe closed as EOF reached. Data transmitted succesfully.')
 
     tar_err = tar_cmd_proc.communicate()[1]
 
     if 'error' in tar_err.lower():
         logging.exception('[*] Restore error: {0}'.format(tar_err))
         raise Exception(tar_err)
-    else:
-        logging.info(
-            '[*] Restore execution successfully executed for backup name {0},\
-                from container {1}, into directory {2}'.format(
-                backup_opt_dict.backup_name, backup_opt_dict.container,
-                backup_opt_dict.restore_abs_path))
 
 
 def tar_incremental(

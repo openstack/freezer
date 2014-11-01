@@ -23,14 +23,15 @@ Requirements
 ============
 
 -  OpenStack Swift Account (Auth V2 used)
--  python >= 2.6 (2.7 advised)
+-  python
 -  GNU Tar >= 1.26
 -  gzip
 -  OpenSSL
--  python-swiftclient >= 2.0.3
--  python-keystoneclient >= 0.8.0
--  pymongo >= 2.6.2 (if MongoDB backups will be executed)
--  At least 128 MB of memory reserved for freezer
+-  python-swiftclient
+-  python-keystoneclient
+-  pymongo
+-  python-mysqldb
+-  At least 128 MB of memory reserved for Freezer
 
 Installation & Env Setup
 ========================
@@ -177,7 +178,7 @@ File System Restore:
 Execute a file system restore of the backup name
 adminui.git::
 
-    $ sudo freezerc --container foobar-container-2
+    $ sudo freezerc --action restore --container foobar-container-2
     --backup-name adminui.git
     --restore-from-host git-HP-DL380-host-001 --restore-abs-path
     /home/git/repositories/adminui.git/
@@ -192,7 +193,7 @@ Let's stop mysql service first::
 
 Execute Restore::
 
-    $ sudo freezerc --container foobar-container-2
+    $ sudo freezerc --action restore --container foobar-container-2
     --backup-name mysq-prod --restore-from-host db-HP-DL380-host-001
     --restore-abs-path /var/lib/mysql --restore-from-date "2014-05-23T23:23:23"
 
@@ -202,9 +203,23 @@ And finally restart mysql::
 
 Execute a MongoDB restore of the backup name mongobigdata::
 
-    $ sudo freezerc --container foobar-container-2 --backup-name mongobigdata
+    $ sudo freezerc --action restore --container foobar-container-2 --backup-name mongobigdata
      --restore-from-host db-HP-DL380-host-001 --restore-abs-path
     /var/lib/mongo --restore-from-date "2014-05-23T23:23:23"
+
+
+List remote containers::
+
+    $ sudo freezerc --action info  -L
+
+List remote objects in container::
+
+    $ sudo freezerc --action info --container testcontainer -l
+
+
+Remove backups older then 1 day::
+
+    $ freezerc --action admin --container freezer-dev-test --remove-older-then 1 --backup-name dev-test-01
 
 Architecture
 ============

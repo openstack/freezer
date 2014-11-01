@@ -135,15 +135,15 @@ def restore_fs_sort_obj(backup_opt_dict):
 
     # Backups are looped from the last element of the list going
     # backwards, as we want to restore starting from the oldest object
-    write_pipe, read_pipe = Pipe()
     for backup in closest_backup_list[::-1]:
+        write_pipe, read_pipe = Pipe()
         process_stream = Process(
             target=object_to_stream, args=(
                 backup_opt_dict, write_pipe, read_pipe, backup,))
         process_stream.daemon = True
         process_stream.start()
-        write_pipe.close()
 
+        write_pipe.close()
         # Start the tar pipe consumer process
         tar_stream = Process(
             target=tar_restore, args=(backup_opt_dict, read_pipe))
@@ -152,3 +152,9 @@ def restore_fs_sort_obj(backup_opt_dict):
         read_pipe.close()
         process_stream.join()
         tar_stream.join()
+
+    logging.info(
+        '[*] Restore execution successfully executed for backup name {0},\
+            from container {1}, into directory {2}'.format(
+            backup_opt_dict.backup_name, backup_opt_dict.container,
+            backup_opt_dict.restore_abs_path))
