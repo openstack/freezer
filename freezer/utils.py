@@ -480,9 +480,9 @@ def check_backup_existance(backup_opt_dict):
 
     if not backup_opt_dict.backup_name or not backup_opt_dict.container or \
             not backup_opt_dict.remote_obj_list:
-        logging.warning("[*] A valid Swift container,\
-             or backup name or container content not available. \
-             Level 0 backup is being executed ")
+        logging.warning(
+            ('[*] A valid Swift container, or backup name or container '
+                'content not available. Level 0 backup is being executed '))
         return dict()
 
     logging.info("[*] Retreiving backup name {0} on container \

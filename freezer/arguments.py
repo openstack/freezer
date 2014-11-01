@@ -35,6 +35,14 @@ def backup_arguments():
     """
     arg_parser = argparse.ArgumentParser(prog='freezerc')
     arg_parser.add_argument(
+        '--action', choices=['backup', 'restore', 'info', 'admin'],
+        help=(
+            "Set the action to be taken. backup and restore are"
+            " self explanatory, info is used to retrieve info from the"
+            " storage media, while maintenance is used to delete old backups"
+            " and other admin actions. Default backup."),
+        dest='action', default='backup')
+    arg_parser.add_argument(
         '-F', '--file-to-backup', action='store',
         help="The file or directory you want to back up to Swift",
         dest='src_file', default=False)

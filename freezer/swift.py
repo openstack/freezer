@@ -37,6 +37,29 @@ import logging
 RESP_CHUNK_SIZE = 65536
 
 
+def create_containers(backup_opt):
+    """Create backup containers
+    The function is used to create object and segments
+    containers
+
+    :param backup_opt:
+    :return: True if both containers are succesfully created
+    """
+
+    # Create backup container
+    logging.warning(
+        "[*] Creating container {0}".format(backup_opt.container))
+    backup_opt.sw_connector.put_container(backup_opt.container)
+
+    # Create segments container
+    logging.warning(
+        "[*] Creating container segments: {0}".format(
+            backup_opt.container_segments))
+    backup_opt.sw_connector.put_container(backup_opt.container_segments)
+
+    return True
+
+
 def show_containers(backup_opt_dict):
     """
     Print remote containers in sorted order
@@ -179,8 +202,6 @@ def check_container_existance(backup_opt_dict):
         "[*] Retrieving container {0}".format(backup_opt_dict.container))
     sw_connector = backup_opt_dict.sw_connector
     containers_list = sw_connector.get_account()[1]
-    match_container = None
-    match_container_seg = None
 
     match_container = [
         container_object['name'] for container_object in containers_list
@@ -189,29 +210,29 @@ def check_container_existance(backup_opt_dict):
         container_object['name'] for container_object in containers_list
         if container_object['name'] == backup_opt_dict.container_segments]
 
-    # If no container is available, create it and write to logs
+    # Initialize container dict
+    containers = {'main_container': False, 'container_segments': False}
+
     if not match_container:
         logging.warning("[*] No such container {0} available... ".format(
             backup_opt_dict.container))
-        logging.warning(
-            "[*] Creating container {0}".format(backup_opt_dict.container))
-        sw_connector.put_container(backup_opt_dict.container)
     else:
         logging.info(
             "[*] Container {0} found!".format(backup_opt_dict.container))
+        containers['main_container'] = True
 
     if not match_container_seg:
-        logging.warning("[*] Creating segments container {0}".format(
-            backup_opt_dict.container_segments))
-        sw_connector.put_container(backup_opt_dict.container_segments)
+        logging.warning(
+            "[*] No segments container {0} available...".format(
+                backup_opt_dict.container_segments))
     else:
         logging.info("[*] Container Segments {0} found!".format(
             backup_opt_dict.container_segments))
+        containers['container_segments'] = True
 
-    return backup_opt_dict
+    return containers
 
 
-# This function is useless? Remove is and use the single env accordingly
 def get_swift_os_env():
     """
     Get the swift related environment variable
@@ -386,7 +407,7 @@ def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):
             arguments: {0}'.format(','.join(required_list)))
         raise ValueError
 
-    sw_connector = backup_opt_dict.sw_connector
+    backup_opt_dict = get_client(backup_opt_dict)
     logging.info('[*] Downloading data stream...')
 
     # Close the read pipe in this child as it is unneeded
@@ -394,7 +415,7 @@ def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):
     # Chunk size is set by RESP_CHUNK_SIZE and sent to che write
     # pipe
     read_pipe.close()
-    for obj_chunk in sw_connector.get_object(
+    for obj_chunk in backup_opt_dict.sw_connector.get_object(
             backup_opt_dict.container, obj_name,
             resp_chunk_size=RESP_CHUNK_SIZE)[1]:
 

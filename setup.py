@@ -33,7 +33,7 @@ def read(*filenames, **kwargs):
 setup(
     name='freezer',
     version='1.0.9-2',
-    url='http://sourceforge.net/projects/openstack-freezer/',
+    url='https://github.com/stackforge/freezer',
     license='Apache Software License',
     author='Fausto Marzi, Ryszard Chojnacki, Emil Dimitrov',
     author_email='fausto.marzi@hp.com, ryszard@hp.com, edimitrov@hp.com',

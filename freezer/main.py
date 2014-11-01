@@ -1,4 +1,4 @@
-'''
+"""
 Copyright 2014 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,15 +19,15 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 
 Freezer main execution function
-'''
+"""
 
 from freezer.utils import (
-    start_time, elapsed_time, set_backup_level, validate_any_args,
+    start_time, elapsed_time, set_backup_level,
     check_backup_existance)
 from freezer.swift import (
     get_client, get_containers_list, show_containers,
     check_container_existance, get_container_content, remove_obj_older_than,
-    show_objects)
+    show_objects, create_containers)
 from freezer.backup import (
     backup_mode_fs, backup_mode_mongo, backup_mode_mysql)
 from freezer.restore import restore_fs
@@ -36,12 +36,12 @@ import logging
 
 
 def freezer_main(backup_args):
-    '''
-    Program Main Execution. This main function is a wrapper for most
+    """Freezer Main execution function.
+    This main function is a wrapper for most
     of the other functions. By calling main() the program execution start
     and the respective actions are taken. If you want only use the single
     function is probably better to not import main()
-    '''
+    """
 
     # Computing execution start datetime and Timestamp
     (time_stamp, today_start) = start_time()
@@ -56,52 +56,79 @@ def freezer_main(backup_args):
     # Get the list of the containers
     backup_args = get_containers_list(backup_args)
 
-    if show_containers(backup_args):
-        elapsed_time(today_start)
-        return True
-
-    # Check if the provided container already exists in swift.
-    # If it doesn't exist a new one will be created along with the segments
-    # container as container_segments
-    backup_args = check_container_existance(backup_args)
-
-    # Get the object list of the remote containers and store id in the
-    # same dict passes as argument under the dict.remote_obj_list namespace
-    backup_args = get_container_content(backup_args)
-
-    if show_objects(backup_args):
-        elapsed_time(today_start)
-        return True
-
-    # Check if a backup exist in swift with same name. If not, set
-    # backup level to 0
-    manifest_meta_dict = check_backup_existance(backup_args)
-
-    # Set the right backup level for incremental backup
-    (backup_args, manifest_meta_dict) = set_backup_level(
-        backup_args, manifest_meta_dict)
-
-    backup_args.manifest_meta_dict = manifest_meta_dict
-    # File system backup mode selected
-    if backup_args.mode == 'fs':
-        # If any of the restore options was specified, then a data restore
-        # will be executed
-        if validate_any_args([
-            backup_args.restore_from_date, backup_args.restore_from_host,
-                backup_args.restore_abs_path]):
-            logging.info('[*] Executing FS restore...')
-            restore_fs(backup_args)
+    if backup_args.action == 'info' or backup_args.list_container or \
+            backup_args.list_objects:
+        if backup_args.list_container:
+            show_containers(backup_args)
+        elif backup_args.list_objects:
+            containers = check_container_existance(backup_args)
+            if containers['main_container'] is not True:
+                logging.critical(
+                    '[*] Container {0} not available'.format(
+                        backup_args.container))
+                return False
+            backup_args = get_container_content(backup_args)
+            show_objects(backup_args)
         else:
+            logging.warning(
+                '[*] No retrieving info options were set. Exiting.')
+            elapsed_time(today_start)
+            return False
+
+        elapsed_time(today_start)
+        return True
+
+    if backup_args.action == 'restore':
+        logging.info('[*] Executing FS restore...')
+
+        # Check if the provided container already exists in swift.
+        containers = check_container_existance(backup_args)
+        if containers['main_container'] is not True:
+            exc_msg = ('[*] Container: {0} not found. Please provide an '
+                       'existing container.'.format(backup_args.container))
+            logging.critical(exc_msg)
+            raise ValueError(exc_msg)
+
+        # Get the object list of the remote containers and store it in the
+        # same dict passes as argument under the dict.remote_obj_list namespace
+        backup_args = get_container_content(backup_args)
+        restore_fs(backup_args)
+
+    if backup_args.action == 'backup':
+        # Check if the provided container already exists in swift.
+        containers = check_container_existance(backup_args)
+
+        if containers['main_container'] is not True:
+            create_containers(backup_args)
+
+        # Get the object list of the remote containers and store it in the
+        # same dict passes as argument under the dict.remote_obj_list namespace
+        backup_args = get_container_content(backup_args)
+
+        # Check if a backup exist in swift with same name. If not, set
+        # backup level to 0
+        manifest_meta_dict = check_backup_existance(backup_args)
+
+        # Set the right backup level for incremental backup
+        (backup_args, manifest_meta_dict) = set_backup_level(
+            backup_args, manifest_meta_dict)
+
+        backup_args.manifest_meta_dict = manifest_meta_dict
+        # File system backup mode selected
+        if backup_args.mode == 'fs':
             backup_mode_fs(backup_args, time_stamp, manifest_meta_dict)
-    elif backup_args.mode == 'mongo':
-        backup_mode_mongo(backup_args, time_stamp, manifest_meta_dict)
-    elif backup_args.mode == 'mysql':
-        backup_mode_mysql(backup_args, time_stamp, manifest_meta_dict)
-    else:
-        logging.critical('[*] Error: Please provide a valid backup mode')
-        raise ValueError
+        elif backup_args.mode == 'mongo':
+            backup_mode_mongo(backup_args, time_stamp, manifest_meta_dict)
+        elif backup_args.mode == 'mysql':
+            backup_mode_mysql(backup_args, time_stamp, manifest_meta_dict)
+        else:
+            logging.critical('[*] Error: Please provide a valid backup mode')
+            raise ValueError
 
-    remove_obj_older_than(backup_args)
+    # Admin tasks code should go here, before moving it on a dedicated module
+    if backup_args.action == 'admin' or backup_args.remove_older_than:
+        # Remove backups older if set.
+        remove_obj_older_than(backup_args)
 
-    # Elapsed time:
+    # Compute elapsed time
     elapsed_time(today_start)
