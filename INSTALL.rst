@@ -1,6 +1,8 @@
 Install instructions
 ====================
 
+Please check README.rst for further installation instructions.
+
 Install from sources::
 ----------------------
 

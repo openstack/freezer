@@ -43,7 +43,7 @@ def create_containers(backup_opt):
     containers
 
     :param backup_opt:
-    :return: True if both containers are succesfully created
+    :return: True if both containers are successfully created
     """
 
     # Create backup container

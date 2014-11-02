@@ -43,7 +43,7 @@ def backup_arguments():
             " and other admin actions. Default backup."),
         dest='action', default='backup')
     arg_parser.add_argument(
-        '-F', '--file-to-backup', action='store',
+        '-F', '--path-to-backup', '--file-to-backup', action='store',
         help="The file or directory you want to back up to Swift",
         dest='src_file', default=False)
     arg_parser.add_argument(
@@ -58,7 +58,7 @@ def backup_arguments():
     arg_parser.add_argument(
         '-C', '--container', action='store',
         help="The Swift container used to upload files to",
-        dest='container', default=False)
+        dest='container', default='freezer_backups')
     arg_parser.add_argument(
         '-L', '--list-containers', action='store_true',
         help='''List the Swift containers on remote Object Storage Server''',
@@ -224,6 +224,18 @@ def backup_arguments():
     # Create a new namespace attribute for container_segments
     backup_args.__dict__['container_segments'] = u'{0}_segments'.format(
         backup_args.container)
+
+    # The containers used by freezer to executed backups needs to have
+    # freezer_ prefix in the name. If the user provider container doesn't
+    # have the prefix, it is automatically added also to the container
+    # segments name. This is done to quickly identify the containers
+    # that contain freezer generated backups
+    if not backup_args.container.startswith('freezer_'):
+        backup_args.container = 'freezer_{0}'.format(
+            backup_args.container)
+        backup_args.container_segments = 'freezer_{0}'.format(
+            backup_args.container_segments)
+
     # If hostname is not set, hostname of the current node will be used
     if not backup_args.hostname:
         backup_args.__dict__['hostname'] = os.uname()[1]
@@ -258,6 +270,6 @@ def backup_arguments():
     backup_args.__dict__['mysql_db_inst'] = ''
 
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.0.9-2'
+    backup_args.__dict__['__version__'] = '1.1.0'
 
     return backup_args, arg_parser
