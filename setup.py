@@ -9,16 +9,22 @@ import os
 here = os.path.abspath(os.path.dirname(__file__))
 
 class PyTest(TestCommand):
+    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.pytest_args = []
+
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = []
         self.test_suite = True
 
     def run_tests(self):
+        #import here, cause outside the eggs aren't loaded
         import pytest
-        errcode = pytest.main(self.test_args)
-        sys.exit(errcode)
-
+        errno = pytest.main(self.pytest_args)
+        sys.exit(errno)
 
 def read(*filenames, **kwargs):
     encoding = kwargs.get('encoding', 'utf-8')
@@ -40,12 +46,14 @@ setup(
     maintainer='Fausto Marzi, Ryszard Chojnacki, Emil Dimitrov',
     maintainer_email='fausto.marzi@hp.com, ryszard@hp.com, edimitrov@hp.com',
     tests_require=['pytest'],
-    description='''OpenStack incremental backup and restore automation tool for file system, MongoDB, MySQL. LVM snapshot and encryption support''',
+    description=('OpenStack incremental backup and restore automation tool '
+                 'for file system, MongoDB, MySQL. LVM snapshot and '
+                 'encryption support'),
     long_description=open('README.rst').read(),
     keywords="OpenStack Swift backup restore mongodb mysql lvm snapshot",
     packages=find_packages(),
     platforms='Linux, *BSD, OSX',
-    test_suite='freezer.test.test_freezer',
+    #test_suite='freezer.test.test_freezer',
     cmdclass={'test': PyTest},
     scripts=['bin/freezerc'],
     classifiers=[

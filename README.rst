@@ -31,6 +31,7 @@ Requirements
 -  python-keystoneclient
 -  pymongo
 -  python-mysqldb
+-  libmysqlclient-dev
 -  At least 128 MB of memory reserved for Freezer
 
 Installation & Env Setup
@@ -52,7 +53,7 @@ MongoDB backup::
 
 MySQL backup::
 
-    $ sudo apt-get install -y python-mysqldb
+    $ sudo apt-get install -y python-mysqldb libmysqlclient-dev
 
 Freezer installation from Python package repo::
 
