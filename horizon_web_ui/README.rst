@@ -13,9 +13,9 @@ To install the horizon web ui you need to do the following::
 
     # cd freezer/horizon_web_ui
 
-    # cp -r devfreezer /opt/stack/horizon/openstack_dashboard/dashboards/
+    # cp -r freezer /opt/stack/horizon/openstack_dashboard/dashboards/
 
-    # cp _50_devfreezer.py  /opt/stack/horizon/openstack_dashboard/enabled/
+    # cp _50_freezer.py  /opt/stack/horizon/openstack_dashboard/enabled/
     # cd /opt/stack/horizon/
 
     # ./run_tests.sh --runserver 0.0.0.0:8878
