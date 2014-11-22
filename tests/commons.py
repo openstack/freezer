@@ -20,6 +20,34 @@ os.environ['OS_AUTH_URL'] = 'testauthurl'
 os.environ['OS_USERNAME'] = 'testusername'
 os.environ['OS_TENANT_NAME'] = 'testtenantename'
 
+
+class FakeArgparse:
+
+    def __init__(self):
+        return None
+
+    def __call__(self, prog='freezerc'):
+        return self.ArgumentParser
+
+    class ArgumentParser:
+
+        def __init__(self, prog='freezerc'):
+            return None
+
+        def __call__(self, *args, **kwargs):
+            return self
+
+        @classmethod
+        def add_argument(self, *args, **kwargs):
+            self.container = 'testcontainer'
+            self.hostname = 'testhostname'
+            return True
+
+        @classmethod
+        def parse_args(self):
+            return self
+
+
 class FakeOpen:
     def __init__(self):
         return None
@@ -266,4 +294,3 @@ class Os:
 
     def exists(self, directory=True):
         return True
-
