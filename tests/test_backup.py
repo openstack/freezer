@@ -10,6 +10,7 @@ import os
 import MySQLdb
 import pymongo
 import re
+import pytest
 from commons import *
 
 import __builtin__
@@ -28,7 +29,6 @@ class TestBackUP:
         fakelvm = Lvm()
         fakesubprocess = FakeSubProcess()
         fakesubprocesspopen = fakesubprocess.Popen()
-        fakeopen = FakeOpen()
         fakemultiprocessing = FakeMultiProcessing()
         fakemultiprocessingqueue = fakemultiprocessing.Queue()
         fakemultiprocessingpipe = fakemultiprocessing.Pipe()
@@ -42,7 +42,7 @@ class TestBackUP:
             multiprocessing, 'Process', fakemultiprocessing.Process)
         monkeypatch.setattr(
             multiprocessing, '__init__', fakemultiprocessinginit)
-        monkeypatch.setattr(__builtin__, 'open', fakeopen.open)
+        #monkeypatch.setattr(__builtin__, 'open', fakeopen.open)
         monkeypatch.setattr(
             subprocess.Popen, 'communicate', fakesubprocesspopen.communicate)
         monkeypatch.setattr(
@@ -56,9 +56,21 @@ class TestBackUP:
         monkeypatch.setattr(os.path, 'exists', expanduser.exists)
         monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
 
-        assert backup_mode_mysql(
-            backup_opt, int(time.time()), test_meta) is None
+        mysql_conf_file = backup_opt.mysql_conf_file
+        backup_opt.__dict__['mysql_conf_file'] = None
+        pytest.raises(Exception, backup_mode_mysql, backup_opt, 123456789, test_meta)
 
+        # Generate mysql conf test file
+        backup_opt.__dict__['mysql_conf_file'] = mysql_conf_file
+        with open(backup_opt.mysql_conf_file, 'w') as mysql_conf_fd:
+            mysql_conf_fd.write('host=abcd\nuser=abcd\npassword=abcd\n')
+        assert backup_mode_mysql(
+            backup_opt, 123456789, test_meta) is None
+        #os.unlink(backup_opt.mysql_conf_file)
+
+        fakemysql2 = FakeMySQLdb2()
+        monkeypatch.setattr(MySQLdb, 'connect', fakemysql2.connect)
+        pytest.raises(Exception, backup_mode_mysql, backup_opt, 123456789, test_meta)
 
     def test_backup_mode_fs(self, monkeypatch):
 
@@ -89,7 +101,14 @@ class TestBackUP:
         monkeypatch.setattr(os.path, 'exists', expanduser.exists)
 
         assert backup_mode_fs(
-            backup_opt, int(time.time()), test_meta) is None
+            backup_opt, 123456789, test_meta) is None
+
+        backup_opt.__dict__['no_incremental'] = False
+        with open(
+                '/tmp/tar_metadata_test-hostname_test-backup-name_123456789_0', 'w') as fd:
+            fd.write('testcontent\n')
+        assert backup_mode_fs(
+            backup_opt, 123456789, test_meta) is None
 
 
     def test_backup_mode_mongo(self, monkeypatch):
@@ -102,7 +121,7 @@ class TestBackUP:
         fakeos = Os()
         fakere = FakeRe()
         fakeswiftclient = FakeSwiftClient()
-        fakeopen = FakeOpen()
+        #fakeopen = FakeOpen()
         fakelvm = Lvm()
         fakemultiprocessing = FakeMultiProcessing()
         fakemultiprocessingqueue = fakemultiprocessing.Queue()
@@ -122,7 +141,12 @@ class TestBackUP:
         monkeypatch.setattr(os.path, 'exists', fakeos.exists)
         monkeypatch.setattr(re, 'search', fakere.search)
         monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
-        monkeypatch.setattr(__builtin__, 'open', fakeopen.open)
+        #monkeypatch.setattr(__builtin__, 'open', fakeopen.open)
 
         assert backup_mode_mongo(
-            backup_opt, int(time.time()), test_meta) is None
+            backup_opt, 123456789, test_meta) is None
+
+        fakemongo2 = FakeMongoDB2()
+        monkeypatch.setattr(pymongo, 'MongoClient', fakemongo2)
+        assert backup_mode_mongo(
+            backup_opt, 123456789, test_meta) is True

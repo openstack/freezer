@@ -21,6 +21,72 @@ os.environ['OS_USERNAME'] = 'testusername'
 os.environ['OS_TENANT_NAME'] = 'testtenantename'
 
 
+class FakeLogging:
+
+    def __init__(self):
+        return None
+
+    def __call__(self, *args, **kwargs):
+        return True
+
+    @classmethod
+    def logging(cls):
+        return True
+
+    @classmethod
+    def info(cls):
+        return True
+
+
+class Fakeget_newest_backup:
+
+    def __init__(self, opt1=True):
+        return None
+
+    def __call__(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        backup_opt.__dict__['remote_newest_backup'] = False
+        return backup_opt
+
+
+class Fakeget_rel_oldest_backup:
+
+    def __init__(self, opt1=True):
+        return None
+
+    def __call__(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        backup_opt.__dict__['remote_rel_oldest'] = False
+        return backup_opt
+
+
+class Fakeget_rel_oldest_backup2:
+
+    def __init__(self, opt1=True):
+        return None
+
+    def __call__(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        backup_opt.__dict__['remote_rel_oldest'] = True
+        return backup_opt
+
+
+class FakeDistutils:
+
+    def __init__(self):
+        return None
+
+    class spawn:
+        def __init__(self, *args, **kwargs):
+            return None
+
+        def __call__(self, *args, **kwargs):
+            return self
+
+        def find_executable(self, *args, **kwargs):
+            return True
+
+
 class FakeArgparse:
 
     def __init__(self):
@@ -45,6 +111,7 @@ class FakeArgparse:
 
         @classmethod
         def parse_args(self):
+            self.hostname = None
             return self
 
 
@@ -171,23 +238,42 @@ class FakeSwiftClient:
             def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
                 return True
 
+            def head_object(self, opt1=True, opt2=True):
+                return True
+
 
 class FakeRe:
 
     def __init__(self):
         return None
 
-    class search:
-        def __init__(self, opt1=True, opt2=True, opt3=True):
-            self.opt1 = opt1
-            self.opt2 = opt2
-            self.opt3 = opt3
-            return None
+    @classmethod
+    def search(self, opt1=True, opt2=True, opt3=True):
+            return self
 
-        def group(self, opt1=True, opt2=True):
-            self.opt1 = opt1
-            self.opt2 = opt2
+    @classmethod
+    def group(self, opt1=True, opt2=True):
+        if opt1 == 1:
             return 'testgroup'
+        else:
+            return '10'
+
+
+class FakeRe2:
+
+    def __init__(self):
+        return None
+
+    def __call__(self, *args, **kwargs):
+        return None
+
+    @classmethod
+    def search(cls, opt1=True, opt2=True, opt3=True):
+        return None
+
+    @classmethod
+    def group(cls, opt1=True, opt2=True):
+        return None
 
 
 class BackupOpt1:
@@ -196,7 +282,7 @@ class BackupOpt1:
         fakeclient = FakeSwiftClient()
         fakeconnector = fakeclient.client()
         fakeswclient = fakeconnector.Connection()
-        self.mysql_conf_file = '/dev/null'
+        self.mysql_conf_file = '/tmp/freezer-test-conf-file'
         self.lvm_auto_snap = '/dev/null'
         self.lvm_volgroup = 'testgroup'
         self.lvm_srcvol = 'testvol'
@@ -212,7 +298,7 @@ class BackupOpt1:
         self.umount_path = 'true'
         self.backup_name = 'test-backup-name'
         self.hostname = 'test-hostname'
-        self.curr_backup_level = '0'
+        self.curr_backup_level = 0
         self.src_file = '/tmp'
         self.tar_path= 'true'
         self.dereference_symlink = 'true'
@@ -224,13 +310,29 @@ class BackupOpt1:
         self.max_backup_level = '0'
         self.remove_older_than = '0'
         self.max_seg_size = '0'
-        self.time_stamp = '0'
+        self.time_stamp = 123456789
         self.container_segments = 'test-container-segements'
         self.container = 'test-container'
-        self.restart_always_backup = '0'
         self.workdir = '/tmp'
         self.upload = 'true'
         self.sw_connector = fakeswclient
+        self.max_backup_level = '20'
+        self.encrypt_pass_file = '/dev/random'
+        self.always_backup_level = '20'
+        self.remove_older_than = '20'
+        self.restart_always_backup = 100000
+        self.container_segments = 'testcontainerseg'
+        self.remote_match_backup = [
+            'test-hostname_test-backup-name_1234567_0',
+            'test-hostname_test-backup-name_1234567_1',
+            'test-hostname_test-backup-name_1234567_2']
+        self.remote_obj_list = [
+            {'name' : 'test-hostname_test-backup-name_1234567_0'},
+            {'name' : 'test-hostname_test-backup-name_1234567_1'},
+            {'name' : 'test-hostname_test-backup-name_1234567_2'},
+            {'fakename' : 'test-hostname_test-backup-name_1234567_2'},
+            {'name' : 'test-hostname-test-backup-name-asdfa-asdfasdf'}]
+        self.remote_objects = []
 
 
 class FakeMySQLdb:
@@ -262,6 +364,16 @@ class FakeMySQLdb:
             return True
 
 
+class FakeMySQLdb2:
+
+    def __init__(self):
+        return None
+
+    @classmethod
+    def connect(self, host=True, user=True, passwd=True):
+        raise Exception
+
+
 class FakeMongoDB:
 
     def __init__(self, opt1=True):
@@ -279,18 +391,38 @@ class FakeMongoDB:
             return {'me': 'testnode', 'primary': 'testnode'}
 
 
-class Os:
-    def __init__(self):
+class FakeMongoDB2:
+
+    def __init__(self, opt1=True):
         return None
 
-    def expanduser(self, directory=True):
-        return True
+    def __call__(self, opt1=True):
+        return self
+
+    class admin:
+        def __init__(self):
+            return None
+
+        @classmethod
+        def command(cls, opt1=True):
+            return {'me': 'testnode', 'primary': 'testanothernode'}
+
+
+class Os:
+    def __init__(self, directory=True):
+        return None
+
+    def expanduser(self, directory=True, opt2=True):
+        return 'testdir'
 
     def makedirs(self, directory=True):
-        return True
+        return 'testdir'
 
     def isdir(self, directory=True):
-        return True
+        return 'testdir'
 
     def exists(self, directory=True):
-        return True
+        return 'testdir'
+
+    def makedirs2(self, directory=True):
+        raise Exception

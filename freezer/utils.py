@@ -123,19 +123,20 @@ def validate_all_args(required_list):
 
     try:
         for element in required_list:
-            if element is False or not element:
+            if not element:
                 return False
     except Exception as error:
-        logging.critical("[*] Error: {0} please provide ALL of the following \
-            arguments: {1}".format(error, ' '.join(required_list)))
-        raise Exception
+        err = "[*] Error: validate_all_args: {0} {1}".format(
+            required_list, error)
+        logging.exception(err)
+        raise Exception(err)
 
     return True
 
 
 def validate_any_args(required_list):
     '''
-    Ensure ANY of the elements of required_list are True. raise ValueError
+    Ensure ANY of the elements of required_list are True. raise Exception
     Exception otherwise
     '''
 
@@ -143,10 +144,11 @@ def validate_any_args(required_list):
         for element in required_list:
             if element:
                 return True
-    except Exception:
-        logging.critical("[*] Error: please provide ANY of the following \
-            arguments: {0}".format(' '.join(required_list)))
-        raise Exception
+    except Exception as error:
+        err = "[*] Error: validate_any_args: {0} {1}".format(
+            required_list, error)
+        logging.exception(err)
+        raise Exception(err)
 
     return False
 
@@ -178,9 +180,10 @@ def create_dir(directory):
             logging.warning('[*] Directory {0} found!'.format(
                 os.path.expanduser(directory)))
     except Exception as error:
-        logging.warning('[*] Error while creating directory {0}: {1}\
-            '.format(os.path.expanduser(directory, error)))
-        raise Exception
+        err = '[*] Error while creating directory {0}: {1}\
+            '.format(os.path.expanduser(directory), error)
+        logging.exception(err)
+        raise Exception(err)
 
 
 def get_match_backup(backup_opt_dict):
@@ -194,9 +197,10 @@ def get_match_backup(backup_opt_dict):
 
     if not backup_opt_dict.backup_name or not backup_opt_dict.container \
             or not backup_opt_dict.remote_obj_list:
-        logging.critical("[*] Error: please provide a valid Swift container,\
-            backup name and the container contents")
-        raise Exception
+        err = "[*] Error: please provide a valid Swift container,\
+            backup name and the container contents"
+        logging.exception(err)
+        raise Exception(err)
 
     backup_name = backup_opt_dict.backup_name.lower()
     if backup_opt_dict.remote_obj_list:
@@ -252,9 +256,10 @@ def get_rel_oldest_backup(backup_opt_dict):
     '''
 
     if not backup_opt_dict.backup_name:
-        logging.critical("[*] Error: please provide a valid backup name in \
-            backup_opt_dict.backup_name")
-        raise Exception
+        err = "[*] Error: please provide a valid backup name in \
+            backup_opt_dict.backup_name"
+        logging.exception(err)
+        raise Exception(err)
 
     backup_opt_dict.remote_rel_oldest = u''
     backup_name = backup_opt_dict.backup_name
@@ -286,10 +291,10 @@ def get_abs_oldest_backup(backup_opt_dict):
     The absolute oldest backup correspond the oldest available level 0 backup.
     '''
     if not backup_opt_dict.backup_name:
-
-        logging.critical("[*] Error: please provide a valid backup name in \
-            backup_opt_dict.backup_name")
-        raise Exception
+        err = "[*] Error: please provide a valid backup name in \
+            backup_opt_dict.backup_name"
+        logging.exception(err)
+        raise Exception(err)
 
     backup_opt_dict.remote_abs_oldest = u''
     if len(backup_opt_dict.remote_match_backup) == 0:
@@ -298,9 +303,9 @@ def get_abs_oldest_backup(backup_opt_dict):
     backup_timestamp = 0
     hostname = backup_opt_dict.hostname
     for remote_obj in backup_opt_dict.remote_match_backup:
-        object_name = remote_obj.get('name', None)
+        object_name = remote_obj.get('name', '')
         obj_name_match = re.search(r'{0}_({1})_(\d+)_(\d+?)$'.format(
-            hostname, backup_opt_dict.backup_name), remote_obj, re.I)
+            hostname, backup_opt_dict.backup_name), object_name.lower(), re.I)
         if not obj_name_match:
             continue
         remote_obj_timestamp = int(obj_name_match.group(2))
@@ -332,7 +337,6 @@ def eval_restart_backup(backup_opt_dict):
     current_timestamp = backup_opt_dict.time_stamp
     backup_name = backup_opt_dict.backup_name
     hostname = backup_opt_dict.hostname
-    first_backup_ts = 0
     # Get relative oldest backup by calling get_rel_oldes_backup()
     backup_opt_dict = get_rel_oldest_backup(backup_opt_dict)
     if not backup_opt_dict.remote_rel_oldest:
@@ -344,9 +348,10 @@ def eval_restart_backup(backup_opt_dict):
     obj_name_match = re.search(r'{0}_({1})_(\d+)_(\d+?)$'.format(
         hostname, backup_name), backup_opt_dict.remote_rel_oldest, re.I)
     if not obj_name_match:
-        logging.info('[*] No backup match available for backup {0} \
-            and host {1}'.format(backup_name, hostname))
-        return Exception
+        err = ('[*] No backup match available for backup {0} '
+               'and host {1}'.format(backup_name, hostname))
+        logging.info(err)
+        return Exception(err)
 
     first_backup_ts = int(obj_name_match.group(2))
     if (current_timestamp - first_backup_ts) > max_time:
@@ -445,9 +450,9 @@ def get_vol_fs_type(backup_opt_dict):
 
     vol_name = backup_opt_dict.lvm_srcvol
     if os.path.exists(vol_name) is False:
-        logging.critical('[*] Provided volume name not found: {0} \
-        '.format(vol_name))
-        raise Exception
+        err = '[*] Provided volume name not found: {0} '.format(vol_name)
+        logging.exception(err)
+        raise Exception(err)
 
     file_cmd = '{0} -0 -bLs --no-pad --no-buffer --preserve-date \
     {1}'.format(backup_opt_dict.file_path, vol_name)
@@ -458,16 +463,14 @@ def get_vol_fs_type(backup_opt_dict):
     (file_out, file_err) = file_process.communicate()
     file_match = re.search(r'(\S+?) filesystem data', file_out, re.I)
     if file_match is None:
-        logging.critical('[*] File system type not guessable: {0}\
-            '.format(file_err))
-        raise Exception
+        err = '[*] File system type not guessable: {0}'.format(file_err)
+        logging.exception(err)
+        raise (err)
     else:
         filesys_type = file_match.group(1)
         logging.info('[*] File system {0} found for volume {1}'.format(
             filesys_type, vol_name))
         return filesys_type.lower().strip()
-
-    raise Exception
 
 
 def check_backup_existance(backup_opt_dict):
@@ -512,9 +515,10 @@ def add_host_name_ts_level(backup_opt_dict, time_stamp=int(time.time())):
     '''
 
     if backup_opt_dict.backup_name is False:
-        logging.critical('[*] Error: Please specify the backup name with\
-        --backup-name option')
-        raise Exception
+        err = ('[*] Error: Please specify the backup name with '
+               '--backup-name option')
+        logging.exception(err)
+        raise Exception(err)
 
     backup_name = u'{0}_{1}_{2}_{3}'.format(
         backup_opt_dict.hostname,
