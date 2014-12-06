@@ -30,11 +30,27 @@ class FakeLogging:
         return True
 
     @classmethod
-    def logging(cls):
+    def logging(cls, opt1=True):
         return True
 
     @classmethod
-    def info(cls):
+    def info(cls, opt1=True):
+        return True
+
+    @classmethod
+    def warning(cls, opt1=True):
+        return True
+
+    @classmethod
+    def critical(cls, opt1=True):
+        return True
+
+    @classmethod
+    def exception(cls, opt1=True):
+        return True
+
+    @classmethod
+    def error(cls, opt1=True):
         return True
 
 
@@ -119,12 +135,31 @@ class FakeOpen:
     def __init__(self):
         return None
 
-    def open(self, opt1=True, op2=True):
+    @classmethod
+    def fopen(self, opt1=True, op2=True):
 
-        fd_open = os.open('/tmp/pytest-testopen', os.O_RDWR|os.O_CREAT|os.O_TRUNC)
-        os.write(fd_open, '/dev/mapper/testgroup-testsnapname\n')
-        py_fd = os.fdopen(fd_open)
-        return py_fd
+        #fd_open = __builtin__.open('/tmp/pytest-testopen', 'w')
+        #fd_open.write('/dev/mapper/testgroup-testsnapname\n')
+        #fd_open.close()
+        #with __builtin__.open('/tmp/pytest-testopen', 'r') as fd_open:
+        #    return fd_open
+        fake_fd = [
+            '/dev/mapper/testgroup-testsnapname test1 test2 test3',
+            '/dev/mapjkhkper/testsdkjs-testsnaalskdjalpnme test1 test2 test3']
+        return fake_fd
+
+    @classmethod
+    def close(self):
+        return self
+
+    @classmethod
+    def readlines(self):
+        fake_fd = []
+        fake_fd.append(
+            '/dev/mapper/testgroup-testsnapname test1 test2 test3')
+        fake_fd.append(
+            '/dev/mapjkhkper/testsdkjs-testsnaalskdjalpnme test1 test2 test3')
+        return fake_fd
 
 
 class FakeBackup:
@@ -199,16 +234,78 @@ class FakeMultiProcessing:
 
 
 class FakeSubProcess:
-    def __init__(self):
+    def __init__(self, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
         return None
 
-    class Popen:
-        def __init__(self, opt1=True, stdin=True, stdout=True,
+    @classmethod
+    def Popen(cls, opt1=True, stdin=True, stdout=True,
             stderr=True, shell=True, executable=True):
-            return None
+        return cls
 
-        def communicate(self):
-            return 'successfully removed', ''
+    @classmethod
+    def communicate(cls):
+        return 'successfully removed', ''
+
+
+class FakeSubProcess1:
+    def __init__(self, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
+        return None
+
+    @classmethod
+    def Popen(cls, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
+        return cls
+
+    @classmethod
+    def communicate(cls):
+        return '', 'asdfasdf'
+
+
+class FakeSubProcess2:
+    def __init__(self, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
+        return None
+
+    @classmethod
+    def Popen(cls, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
+        return cls
+
+    @classmethod
+    def communicate(cls):
+        return '', 'already mounted'
+
+
+class FakeSubProcess3:
+    def __init__(self, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
+        return None
+
+    @classmethod
+    def Popen(cls, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
+        return cls
+
+    @classmethod
+    def communicate(cls):
+        return False, False
+
+
+class FakeSubProcess4:
+    def __init__(self, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
+        return None
+
+    @classmethod
+    def Popen(cls, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
+        return cls
+
+    @classmethod
+    def communicate(cls):
+        return '', ''
 
 
 class Lvm:
@@ -283,10 +380,11 @@ class BackupOpt1:
         fakeconnector = fakeclient.client()
         fakeswclient = fakeconnector.Connection()
         self.mysql_conf_file = '/tmp/freezer-test-conf-file'
+        self.mysql_db_inst = FakeMySQLdb()
         self.lvm_auto_snap = '/dev/null'
         self.lvm_volgroup = 'testgroup'
         self.lvm_srcvol = 'testvol'
-        self.lvm_dirmount= 'testdir'
+        self.lvm_dirmount= '/tmp/testdir'
         self.lvm_snapsize = '1G'
         self.lvm_snapname = 'testsnapname'
         self.lvcreate_path = 'true'
@@ -340,28 +438,32 @@ class FakeMySQLdb:
     def __init__(self):
         return None
 
-    class connect:
-        def __init__(self, host=True, user=True, passwd=True):
-            self.host = host
-            self.user = user
-            self.passwd = passwd
-            return None
+    def __call__(self, *args, **kwargs):
+        return self
 
-        class cursor:
-            def __init__(self):
-                return None
+    @classmethod
+    def connect(cls, host=True, user=True, passwd=True):
+            return cls
 
-            def execute(self, string):
-                return True
+    @classmethod
+    def cursor(cls):
+        return cls
 
-            def close(self):
-                return True
+    @classmethod
+    def execute(cls, string=str):
+        return cls
 
-        def commit(self):
-            return True
+    @classmethod
+    def close(cls):
+        return cls
 
-        def close(self):
-            return True
+    @classmethod
+    def commit(cls):
+        return cls
+
+    @classmethod
+    def close(cls):
+        return True
 
 
 class FakeMySQLdb2:
@@ -412,17 +514,83 @@ class Os:
     def __init__(self, directory=True):
         return None
 
-    def expanduser(self, directory=True, opt2=True):
+    @classmethod
+    def __call__(cls, *args, **kwargs):
+        return cls
+
+    @classmethod
+    def makedirs(cls, directory=True):
         return 'testdir'
 
-    def makedirs(self, directory=True):
-        return 'testdir'
-
-    def isdir(self, directory=True):
-        return 'testdir'
-
-    def exists(self, directory=True):
-        return 'testdir'
-
-    def makedirs2(self, directory=True):
+    @classmethod
+    def makedirs2(cls, directory=True):
         raise Exception
+
+    @classmethod
+    def exists(cls, directory=True):
+        return 'testdir'
+
+    @classmethod
+    def expanduser(cls, directory=True, opt2=True):
+        return 'testdir'
+
+    @classmethod
+    def isdir(cls, directory=True):
+        return 'testdir'
+
+    @classmethod
+    def path(cls, directory=True):
+        return True
+
+
+    @classmethod
+    def exists(cls, directory=True):
+        return True
+
+    @classmethod
+    def isabs(cls, directory=True):
+        return True
+
+    @classmethod
+    def expandvars(cls, directory=True):
+        return True
+
+    @classmethod
+    def expanduser(cls, directory=True, opt2=True):
+        return 'testdir'
+
+    @classmethod
+    def normcase(cls, directory=True, opt2=True):
+        return 'testdir'
+
+    @classmethod
+    def abspath(cls, directory=True, opt2=True):
+        return 'testdir'
+
+    @classmethod
+    def realpath(cls, directory=True, opt2=True):
+        return 'testdir'
+
+    @classmethod
+    def isdir(cls, directory=True):
+        return 'testdir'
+
+    @classmethod
+    def split(cls, directory=True):
+        return ['/tmp', '']
+
+    @classmethod
+    def join(cls, directory1=True, directory2=True):
+        return '/tmp/testdir'
+
+
+class Fake_get_vol_fs_type:
+
+    def __init__(self):
+        return None
+
+
+    @classmethod
+    def get_vol_fs_type1(self, opt1=True):
+        return 'xfs'
+

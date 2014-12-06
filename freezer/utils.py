@@ -465,7 +465,7 @@ def get_vol_fs_type(backup_opt_dict):
     if file_match is None:
         err = '[*] File system type not guessable: {0}'.format(file_err)
         logging.exception(err)
-        raise (err)
+        raise Exception(err)
     else:
         filesys_type = file_match.group(1)
         logging.info('[*] File system {0} found for volume {1}'.format(

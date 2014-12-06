@@ -68,43 +68,43 @@ def lvm_snap_remove(backup_opt_dict):
     vol_group = backup_opt_dict.lvm_volgroup.replace('-', '--')
     snap_name = backup_opt_dict.lvm_snapname.replace('-', '--')
     mapper_snap_vol = '/dev/mapper/{0}-{1}'.format(vol_group, snap_name)
-    with open('/proc/mounts', 'r') as proc_mount_fd:
-        for mount_line in proc_mount_fd:
-            if mapper_snap_vol.lower() in mount_line.lower():
-                mount_list = mount_line.split(' ')
-                (dev_vol, mount_point) = mount_list[0], mount_list[1]
-                logging.warning('[*] Found lvm snapshot {0} mounted on {1}\
-                '.format(dev_vol, mount_point))
-                umount_proc = subprocess.Popen('{0} -l -f {1}'.format(
-                    backup_opt_dict.umount_path, mount_point),
+    proc_mount_fd = open('/proc/mounts', 'r')
+    for mount_line in proc_mount_fd:
+        if mapper_snap_vol.lower() in mount_line.lower():
+            mount_list = mount_line.split(' ')
+            (dev_vol, mount_point) = mount_list[0], mount_list[1]
+            logging.warning('[*] Found lvm snapshot {0} mounted on {1}\
+            '.format(dev_vol, mount_point))
+            umount_proc = subprocess.Popen('{0} -l -f {1}'.format(
+                backup_opt_dict.umount_path, mount_point),
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                shell=True, executable=backup_opt_dict.bash_path)
+            (umount_out, mount_err) = umount_proc.communicate()
+            if re.search(r'\S+', umount_out):
+                err = '[*] Error: impossible to umount {0} {1}'.format(
+                    mount_point, mount_err)
+                logging.critical(err)
+                raise Exception(err)
+            else:
+                # Change working directory to be able to unmount
+                os.chdir(backup_opt_dict.workdir)
+                logging.info('[*] Volume {0} unmounted'.format(
+                    mapper_snap_vol))
+                snap_rm_proc = subprocess.Popen(
+                    '{0} -f {1}'.format(
+                        backup_opt_dict.lvremove_path, mapper_snap_vol),
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                     shell=True, executable=backup_opt_dict.bash_path)
-                (umount_out, mount_err) = umount_proc.communicate()
-                if re.search(r'\S+', umount_out):
-                    err = '[*] Error: impossible to umount {0} {1}'.format(
-                        mount_point, mount_err)
+                (lvm_rm_out, lvm_rm_err) = snap_rm_proc.communicate()
+                if 'successfully removed' in lvm_rm_out:
+                    logging.info('[*] {0}'.format(lvm_rm_out))
+                    return True
+                else:
+                    err = '[*] Error: lvm_snap_rm {0}'.format(lvm_rm_err)
                     logging.critical(err)
                     raise Exception(err)
-                else:
-                    # Change working directory to be able to unmount
-                    os.chdir(backup_opt_dict.workdir)
-                    logging.info('[*] Volume {0} unmounted'.format(
-                        mapper_snap_vol))
-                    snap_rm_proc = subprocess.Popen(
-                        '{0} -f {1}'.format(
-                            backup_opt_dict.lvremove_path, mapper_snap_vol),
-                        stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                        shell=True, executable=backup_opt_dict.bash_path)
-                    (lvm_rm_out, lvm_rm_err) = snap_rm_proc.communicate()
-                    if 'successfully removed' in lvm_rm_out:
-                        logging.info('[*] {0}'.format(lvm_rm_out))
-                        return True
-                    else:
-                        err = '[*] Error: lvm_snap_rm {0}'.format(lvm_rm_err)
-                        logging.critical(err)
-                        raise Exception(err)
     raise Exception('[*] Error: no lvm snap removed')
 
 
