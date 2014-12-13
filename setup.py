@@ -1,12 +1,11 @@
-'''
-Freezer Setup Python file.
-'''
+"""Freezer Setup Python file.
+"""
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
-import freezer
 import os
 
 here = os.path.abspath(os.path.dirname(__file__))
+
 
 class PyTest(TestCommand):
     user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
@@ -23,8 +22,10 @@ class PyTest(TestCommand):
     def run_tests(self):
         #import here, cause outside the eggs aren't loaded
         import pytest
+        import sys
         errno = pytest.main(self.pytest_args)
         sys.exit(errno)
+
 
 def read(*filenames, **kwargs):
     encoding = kwargs.get('encoding', 'utf-8')
@@ -53,7 +54,6 @@ setup(
     keywords="OpenStack Swift backup restore mongodb mysql lvm snapshot",
     packages=find_packages(),
     platforms='Linux, *BSD, OSX',
-    #test_suite='freezer.test.test_freezer',
     cmdclass={'test': PyTest},
     scripts=['bin/freezerc'],
     classifiers=[

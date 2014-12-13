@@ -66,11 +66,11 @@ class TestBackUP:
             mysql_conf_fd.write('host=abcd\nuser=abcd\npassword=abcd\n')
         assert backup_mode_mysql(
             backup_opt, 123456789, test_meta) is None
-        #os.unlink(backup_opt.mysql_conf_file)
 
         fakemysql2 = FakeMySQLdb2()
         monkeypatch.setattr(MySQLdb, 'connect', fakemysql2.connect)
         pytest.raises(Exception, backup_mode_mysql, backup_opt, 123456789, test_meta)
+        os.unlink(backup_opt.mysql_conf_file)
 
     def test_backup_mode_fs(self, monkeypatch):
 
