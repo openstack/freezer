@@ -42,8 +42,8 @@ def tar_restore(backup_opt_dict, read_pipe):
         os.path.exists(backup_opt_dict.restore_abs_path)]
 
     if not validate_all_args(required_list):
-        logging.critical("[*] Error: please provide ALL of the following \
-            arguments: {0}".format(' '.join(required_list)))
+        logging.critical(('[*] Error: please provide ALL of the following '
+                          'argument: --restore-abs-path'))
         raise ValueError
 
     # Set the default values for tar restore
@@ -94,8 +94,8 @@ def tar_incremental(
     """
 
     if not tar_cmd or not backup_opt_dict:
-        logging.error('[*] Error: tar_incremental, please provide tar_cmd \
-        and  backup options')
+        logging.error(('[*] Error: tar_incremental, please provide tar_cmd '
+                       'and backup options'))
         raise ValueError
 
     if not remote_manifest_meta:
@@ -148,8 +148,8 @@ def gen_tar_command(
 
     if not validate_all_args(required_list):
         logging.critical(
-            'Error: Please ALL the following options: {0}'.format(
-                ','.join(required_list)))
+            ('Error: Please ALL the following options: '
+                '--path-to-backup, --backup-name'))
         raise Exception
 
     # Change che current working directory to op_dict.src_file

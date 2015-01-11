@@ -21,6 +21,18 @@ os.environ['OS_USERNAME'] = 'testusername'
 os.environ['OS_TENANT_NAME'] = 'testtenantename'
 
 
+class FakeValidate:
+
+    def __init__(self):
+        return None
+
+    def validate_all_args_false(self, *args, **kwargs):
+        return False
+
+    def validate_any_args_false(self, *args, **kwargs):
+        return False
+
+
 class FakeLogging:
 
     def __init__(self):
@@ -188,20 +200,20 @@ class FakeMultiProcessing:
             return []
 
     class Pipe:
-        def __init__(self, duplex=True):
-            return None
+        #def __init__(self, duplex=True):
+        #    return None
 
         def send_bytes(self, opt1=True):
             return True
 
         def recv_bytes(self, opt1=True):
-            return True
+            raise EOFError
 
         def send(self, opt1=True):
             return True
 
         def recv(self, opt1=True):
-            return True
+            raise EOFError
 
         def poll(self):
             return True
@@ -235,17 +247,27 @@ class FakeMultiProcessing:
 
 class FakeSubProcess:
     def __init__(self, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
+            stderr=True, shell=True, executable=True, env={},
+            bufsize=4096):
         return None
 
+    stdout = ['abcd', 'ehfg']
+
     @classmethod
-    def Popen(cls, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
+    def Popen(cls):
         return cls
 
     @classmethod
     def communicate(cls):
         return 'successfully removed', ''
+
+    class stdin:
+        def __call__(self, *args, **kwargs):
+            return self
+
+        @classmethod
+        def write(cls, *args, **kwargs):
+            return True
 
 
 class FakeSubProcess1:
@@ -262,6 +284,14 @@ class FakeSubProcess1:
     def communicate(cls):
         return '', 'asdfasdf'
 
+    class stdin:
+        def __call__(self, *args, **kwargs):
+            return self
+
+        @classmethod
+        def write(cls, *args, **kwargs):
+            return True
+
 
 class FakeSubProcess2:
     def __init__(self, opt1=True, stdin=True, stdout=True,
@@ -276,6 +306,14 @@ class FakeSubProcess2:
     @classmethod
     def communicate(cls):
         return '', 'already mounted'
+
+    class stdin:
+        def __call__(self, *args, **kwargs):
+            return self
+
+        @classmethod
+        def write(cls, *args, **kwargs):
+            return True
 
 
 class FakeSubProcess3:
@@ -292,6 +330,14 @@ class FakeSubProcess3:
     def communicate(cls):
         return False, False
 
+    class stdin:
+        def __call__(self, *args, **kwargs):
+            return self
+
+        @classmethod
+        def write(cls, *args, **kwargs):
+            return True
+
 
 class FakeSubProcess4:
     def __init__(self, opt1=True, stdin=True, stdout=True,
@@ -306,6 +352,37 @@ class FakeSubProcess4:
     @classmethod
     def communicate(cls):
         return '', ''
+
+    class stdin:
+        def __call__(self, *args, **kwargs):
+            return self
+
+        @classmethod
+        def write(cls, *args, **kwargs):
+            return True
+
+
+class FakeSubProcess5:
+    def __init__(self, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
+        return None
+
+    @classmethod
+    def Popen(cls, opt1=True, stdin=True, stdout=True,
+            stderr=True, shell=True, executable=True):
+        return cls
+
+    @classmethod
+    def communicate(cls):
+        return 'error', 'error'
+
+    class stdin:
+        def __call__(self, *args, **kwargs):
+            return self
+
+        @classmethod
+        def write(cls, *args, **kwargs):
+            return True
 
 
 class Lvm:
@@ -431,6 +508,7 @@ class BackupOpt1:
             {'fakename' : 'test-hostname_test-backup-name_1234567_2'},
             {'name' : 'test-hostname-test-backup-name-asdfa-asdfasdf'}]
         self.remote_objects = []
+        self.restore_abs_path = '/tmp'
 
 
 class FakeMySQLdb:
@@ -519,6 +597,14 @@ class Os:
         return cls
 
     @classmethod
+    def basename(cls, directory=True):
+        return '/tmp'
+
+    @classmethod
+    def remove(cls, directory=True):
+        True
+
+    @classmethod
     def makedirs(cls, directory=True):
         return 'testdir'
 
@@ -535,13 +621,20 @@ class Os:
         return 'testdir'
 
     @classmethod
-    def isdir(cls, directory=True):
-        return 'testdir'
+    def islink(cls, file=True):
+        return True
 
     @classmethod
     def path(cls, directory=True):
         return True
 
+    @classmethod
+    def copy(cls):
+        return {}
+
+    @classmethod
+    def environ(cls, copy):
+        return cls
 
     @classmethod
     def exists(cls, directory=True):
