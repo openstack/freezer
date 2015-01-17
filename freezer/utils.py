@@ -161,7 +161,7 @@ def sort_backup_list(backup_opt_dict):
 
     # Remove duplicates objects
     sorted_backups_list = list(set(backup_opt_dict.remote_match_backup))
-    sorted_backups_list.sort(key=lambda x: x.split('_')[2], reverse=True)
+    sorted_backups_list.sort(key=lambda x: x.rsplit('_', 2)[1], reverse=True)
     return sorted_backups_list
 
 

@@ -95,8 +95,9 @@ def show_objects(backup_opt_dict):
         backup_opt_dict.remote_obj_list]
 
     if not validate_all_args(required_list):
-        logging.critical('[*] Error: Remote Object list not avaiblale')
-        raise Exception
+        err_msg = '[*] Error: Remote Object list not avaiblale'
+        logging.exception(err_msg)
+        raise Exception(err_msg)
 
     ordered_objects = {}
     remote_obj = backup_opt_dict.remote_obj_list
@@ -125,8 +126,8 @@ def remove_obj_older_than(backup_opt_dict):
         float(backup_opt_dict.remove_older_than))
     logging.info('[*] Removing object older {0} day(s)'.format(
         backup_opt_dict.remove_older_than))
-    # Compute the amount of seconds from days to compare with
-    # the remote backup timestamp
+    # Compute the amount of seconds from the number of days provided by
+    # remove_older_than and compare it with the remote backup timestamp
     max_time = backup_opt_dict.remove_older_than * 86400
     current_timestamp = backup_opt_dict.time_stamp
     backup_name = backup_opt_dict.backup_name
@@ -134,29 +135,73 @@ def remove_obj_older_than(backup_opt_dict):
     backup_opt_dict = get_match_backup(backup_opt_dict)
     sorted_remote_list = sort_backup_list(backup_opt_dict)
     sw_connector = backup_opt_dict.sw_connector
+
+    level_0_flag = None
+    tar_meta_0_flag = None
     for match_object in sorted_remote_list:
-        obj_name_match = re.search(r'{0}_({1})_(\d+)_\d+?$'.format(
+        obj_name_match = re.search(r'{0}_({1})_(\d+)_(\d+?)$'.format(
             hostname, backup_name), match_object, re.I)
-        if not obj_name_match:
-            continue
-        remote_obj_timestamp = int(obj_name_match.group(2))
-        time_delta = current_timestamp - remote_obj_timestamp
-        if time_delta > max_time:
-            logging.info('[*] Removing backup object: {0}'.format(
-                match_object))
-            sw_connector.delete_object(
-                backup_opt_dict.container, match_object)
-            # Try to remove also the corresponding tar_meta
-            # NEED TO BE IMPROVED!
-            try:
-                tar_match_object = 'tar_metadata_{0}'.format(match_object)
-                sw_connector.delete_object(
-                    backup_opt_dict.container, tar_match_object)
-                logging.info(
-                    '[*] Object tar meta data removed: {0}'.format(
-                        tar_match_object))
-            except Exception:
-                pass
+
+        if obj_name_match:
+            remote_obj_timestamp = int(obj_name_match.group(2))
+            time_delta = current_timestamp - remote_obj_timestamp
+
+            # If the difference between current_timestamp and the backup
+            # timestamp is smaller then max_time, then the backup is valid
+            if time_delta > max_time:
+
+                # If the time_delta is bigger then max_time, then we verify
+                # if the level of the backup is 0. In case is not 0,
+                # the backup is not removed as is part of a backup where the
+                # levels cross the max_time. In this case we don't remove the
+                # backup till its level 0.
+                # Both tar_meta data and backup objects names are handled
+                if match_object.startswith('tar_meta'):
+                    if tar_meta_0_flag is None:
+                        if obj_name_match.group(3) is '0':
+                            tar_meta_0_flag = True
+                        else:
+                            continue
+                elif level_0_flag is None:
+                    if obj_name_match.group(3) is '0':
+                        level_0_flag = True
+                    else:
+                        continue
+
+                logging.info('[*] Removing backup object: {0}'.format(
+                    match_object))
+                sleep_time = 120
+                retry_max_count = 60
+                curr_count = 0
+                while True:
+                    try:
+                        sw_connector.delete_object(
+                            backup_opt_dict.container, match_object)
+                        logging.info(
+                            '[*] Remote object {0} removed'.format(
+                                match_object))
+                        break
+                    except Exception as error:
+                        curr_count += 1
+                        time.sleep(sleep_time)
+                        if curr_count >= retry_max_count:
+                            err_msg = (
+                                '[*] Remote Object {0} failed to be removed.'
+                                ' Retrying intent '
+                                '{1} out of {2} totals'.format(
+                                    match_object, curr_count,
+                                    retry_max_count))
+                            error_message = '[*] Error: {0}: {1}'.format(
+                                err_msg, error)
+                            logging.exception(error_message)
+                            raise Exception(error_message)
+                        else:
+                            logging.warning(
+                                ('[*] Remote object {0} failed to be removed'
+                                    ' Retrying intent n. '
+                                    '{1} out of {2} totals'.format(
+                                        match_object, curr_count,
+                                        retry_max_count)))
 
 
 def get_container_content(backup_opt_dict):
@@ -166,10 +211,9 @@ def get_container_content(backup_opt_dict):
     """
 
     if not backup_opt_dict.container:
-        print '[*] Error: please provide a valid container name'
-        logging.critical(
-            '[*] Error: please provide a valid container name')
-        raise Exception
+        err_msg = '[*] Error: please provide a valid container name'
+        logging.exception(err_msg)
+        raise Exception(err_msg)
 
     sw_connector = backup_opt_dict.sw_connector
     try:
@@ -177,8 +221,9 @@ def get_container_content(backup_opt_dict):
             sw_connector.get_container(backup_opt_dict.container)[1]
         return backup_opt_dict
     except Exception as error:
-        logging.critical('[*] Error: get_object_list: {0}'.format(error))
-        raise Exception
+        err_msg = '[*] Error: get_object_list: {0}'.format(error)
+        logging.exception(err_msg)
+        raise Exception(err_msg)
 
 
 def check_container_existance(backup_opt_dict):
@@ -195,9 +240,11 @@ def check_container_existance(backup_opt_dict):
         backup_opt_dict.container]
 
     if not validate_all_args(required_list):
-        logging.critical("[*] Error: please provide ALL the following args \
-            {0}".format(','.join(required_list)))
-        raise Exception
+        err_msg = ('[*] Error: please provide the following arg: '
+                   '--container')
+        logging.exception(err_msg)
+        raise Exception(err_msg)
+
     logging.info(
         "[*] Retrieving container {0}".format(backup_opt_dict.container))
     sw_connector = backup_opt_dict.sw_connector
@@ -260,6 +307,7 @@ def get_client(backup_opt_dict):
         authurl=options['auth_url'],
         user=options['username'], key=options['password'], os_options=options,
         tenant_name=options['tenant_name'], auth_version='2', retries=6)
+
     return backup_opt_dict
 
 
@@ -270,8 +318,9 @@ def manifest_upload(
     """
 
     if not manifest_meta_dict:
-        logging.critical('[*] Error Manifest Meta dictionary not available')
-        raise Exception
+        err_msg = '[*] Error Manifest Meta dictionary not available'
+        logging.exception(err_msg)
+        raise Exception(err_msg)
 
     sw_connector = backup_opt_dict.sw_connector
     tmp_manifest_meta = dict()
@@ -296,14 +345,16 @@ def add_object(
     """
 
     if not backup_opt_dict.container:
-        logging.critical('[*] Error: Please specify the container \
-        name with -C option')
-        raise Exception
+        err_msg = ('[*] Error: Please specify the container '
+                   'name with -C or --container option')
+        logging.exception(err_msg)
+        raise Exception(err_msg)
 
     if absolute_file_path is None and backup_queue is None:
-        logging.critical('[*] Error: Please specify the file you want to \
-            upload on swift with -d option')
-        raise Exception
+        err_msg = ('[*] Error: Please specify the file or fs path '
+                   'you want to upload on swift with -d or --dst-file')
+        logging.exception(err_msg)
+        raise Exception(err_msg)
 
     sw_connector = backup_opt_dict.sw_connector
     while True:
@@ -354,8 +405,9 @@ def get_containers_list(backup_opt_dict):
         backup_opt_dict.containers_list = sw_connector.get_account()[1]
         return backup_opt_dict
     except Exception as error:
-        logging.error('[*] Get containers list error: {0}').format(error)
-        raise Exception
+        err_msg = '[*] Get containers list error: {0}'.format(error)
+        logging.exception(err_msg)
+        raise Exception(err_msg)
 
 
 def object_to_file(backup_opt_dict, file_name_abs_path):
@@ -369,9 +421,10 @@ def object_to_file(backup_opt_dict, file_name_abs_path):
         file_name_abs_path]
 
     if not validate_all_args(required_list):
-        logging.critical('[*] Error: Please provide ALL the following \
-            arguments: {0}'.format(','.join(required_list)))
-        raise ValueError
+        err_msg = ('[*] Error in object_to_file(): Please provide ALL the '
+                   'following arguments: --container file_name_abs_path')
+        logging.exception(err_msg)
+        raise ValueError(err_msg)
 
     sw_connector = backup_opt_dict.sw_connector
     file_name = file_name_abs_path.split('/')[-1]
@@ -403,9 +456,10 @@ def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):
         backup_opt_dict.container]
 
     if not validate_all_args(required_list):
-        logging.critical('[*] Error: Please provide ALL the following \
-            arguments: {0}'.format(','.join(required_list)))
-        raise ValueError
+        err_msg = ('[*] Error in object_to_stream(): Please provide ALL the '
+                   'following argument: --container')
+        logging.exception(err_msg)
+        raise ValueError(err_msg)
 
     backup_opt_dict = get_client(backup_opt_dict)
     logging.info('[*] Downloading data stream...')

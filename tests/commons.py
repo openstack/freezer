@@ -10,7 +10,7 @@ import os
 import MySQLdb
 import pymongo
 import re
-
+from collections import OrderedDict
 import __builtin__
 
 os.environ['OS_REGION_NAME'] = 'testregion'
@@ -19,6 +19,15 @@ os.environ['OS_PASSWORD'] = 'testpassword'
 os.environ['OS_AUTH_URL'] = 'testauthurl'
 os.environ['OS_USERNAME'] = 'testusername'
 os.environ['OS_TENANT_NAME'] = 'testtenantename'
+
+
+class FakeTime:
+
+    def __init__(self):
+        return None
+
+    def sleep(self, *args):
+        return True
 
 
 class FakeValidate:
@@ -194,14 +203,15 @@ class FakeMultiProcessing:
             return True
 
         def get(self, opt1=dict()):
-            return True
+
+            return {'item': 'test-item-value'}
 
         def __call__(self, duplex=True):
             return []
 
     class Pipe:
-        #def __init__(self, duplex=True):
-        #    return None
+        def __init__(self, duplex=True):
+            return None
 
         def send_bytes(self, opt1=True):
             return True
@@ -220,6 +230,70 @@ class FakeMultiProcessing:
 
         def close(self):
             return True
+
+        def __call__(self, duplex=True):
+            return [self, self]
+
+    class Process:
+        def __init__(self, target=True, args=True):
+            return None
+
+        def start(self):
+            return True
+
+        def stop(self):
+            return True
+
+        def daemon(self):
+            return True
+
+        def join(self):
+            return True
+
+    @classmethod
+    def util(cls):
+        return True
+
+
+class FakeMultiProcessing1:
+    def __init__(self, duplex=True, maxsize=True):
+        return None
+
+    class Queue:
+        def __init__(self, duplex=True):
+            return None
+
+        def put(self, opt1=dict()):
+            return False
+
+        def get(self, opt1=dict()):
+
+            return {'item': 'test-item-value'}
+
+        def __call__(self, duplex=True):
+            return []
+
+    class Pipe:
+        def __init__(self, duplex=True):
+            return None
+
+        def send_bytes(self, opt1=True):
+            return False
+
+        def recv_bytes(self, opt1=True):
+            raise EOFError
+
+        def send(self, opt1=True):
+            return False
+
+        def recv(self, opt1=True):
+            raise EOFError
+
+        def poll(self):
+            return False
+
+        def close(self):
+            return False
 
         def __call__(self, duplex=True):
             return [self, self]
@@ -415,6 +489,53 @@ class FakeSwiftClient:
             def head_object(self, opt1=True, opt2=True):
                 return True
 
+            def put_container(self, container=True):
+                return True
+
+            def delete_object(self, *args, **kwargs):
+                return True
+
+            def get_container(self, *args, **kwargs):
+                return [True, True]
+
+            def get_account(self, *args, **kwargs):
+                return True, [{'name': 'test-container'}, {'name': 'test-container-segments'}]
+
+            def get_object(self, *args, **kwargs):
+                return ['abcdef', 'hijlmno']
+
+
+class FakeSwiftClient1:
+
+    def __init__(self):
+        return None
+
+    class client:
+        def __init__(self):
+            return None
+
+        class Connection:
+            def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True):
+                return None
+
+            def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
+                raise Exception
+
+            def head_object(self, opt1=True, opt2=True):
+                raise Exception
+
+            def put_container(self, container=True):
+                raise Exception
+
+            def delete_object(self):
+                raise Exception
+
+            def get_container(self, *args, **kwargs):
+                raise Exception
+
+            def get_account(self, *args, **kwargs):
+                raise Exception
+
 
 class FakeRe:
 
@@ -486,7 +607,7 @@ class BackupOpt1:
         self.remove_older_than = '0'
         self.max_seg_size = '0'
         self.time_stamp = 123456789
-        self.container_segments = 'test-container-segements'
+        self.container_segments = 'test-container-segments'
         self.container = 'test-container'
         self.workdir = '/tmp'
         self.upload = 'true'
@@ -496,19 +617,33 @@ class BackupOpt1:
         self.always_backup_level = '20'
         self.remove_older_than = '20'
         self.restart_always_backup = 100000
-        self.container_segments = 'testcontainerseg'
         self.remote_match_backup = [
             'test-hostname_test-backup-name_1234567_0',
-            'test-hostname_test-backup-name_1234567_1',
-            'test-hostname_test-backup-name_1234567_2']
+            'test-hostname_test-backup-name_aaaaa__a',
+            'test-hostname_test-backup-name_9999999999999999999999999999999_0',
+            'test-hostname_test-backup-name_1234568_1',
+            'test-hostname_test-backup-name_1234569_2',
+            'tar_meta_test-hostname_test-backup-name_1234569_2',
+            'tar_meta_test-hostname_test-backup-name_1234568_1',
+            'tar_meta_test-hostname_test-backup-name_1234567_0']
         self.remote_obj_list = [
-            {'name' : 'test-hostname_test-backup-name_1234567_0'},
-            {'name' : 'test-hostname_test-backup-name_1234567_1'},
-            {'name' : 'test-hostname_test-backup-name_1234567_2'},
-            {'fakename' : 'test-hostname_test-backup-name_1234567_2'},
-            {'name' : 'test-hostname-test-backup-name-asdfa-asdfasdf'}]
+            {'name': 'test-hostname_test-backup-name_1234567_0',
+                'last_modified': 'testdate'},
+            {'name': 'test-hostname_test-backup-name_1234567_1',
+                'last_modified': 'testdate'},
+            {'name': 'test-hostname_test-backup-name_1234567_2',
+                'last_modified': 'testdate'},
+            #{'name': 'test-hostname_test-backup-name_1234567_2',
+            #    'last_modified': 'testdate'},
+            {'name': 'test-hostname-test-backup-name-asdfa-asdfasdf',
+                'last_modified': 'testdate'}]
         self.remote_objects = []
         self.restore_abs_path = '/tmp'
+        self.containers_list = [
+            {'name' : 'testcontainer1', 'bytes' : 123423, 'count' : 10}
+        ]
+        self.list_container = True
+        self.list_objects = True
 
 
 class FakeMySQLdb:
@@ -681,7 +816,6 @@ class Fake_get_vol_fs_type:
 
     def __init__(self):
         return None
-
 
     @classmethod
     def get_vol_fs_type1(self, opt1=True):

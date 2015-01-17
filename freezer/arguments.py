@@ -39,7 +39,7 @@ def backup_arguments():
         help=(
             "Set the action to be taken. backup and restore are"
             " self explanatory, info is used to retrieve info from the"
-            " storage media, while maintenance is used to delete old backups"
+            " storage media, while admin is used to delete old backups"
             " and other admin actions. Default backup."),
         dest='action', default='backup')
     arg_parser.add_argument(

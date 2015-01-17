@@ -128,6 +128,7 @@ def freezer_main(backup_args):
     # Admin tasks code should go here, before moving it on a dedicated module
     if backup_args.action == 'admin' or backup_args.remove_older_than:
         # Remove backups older if set.
+        backup_args = get_container_content(backup_args)
         remove_obj_older_than(backup_args)
 
     # Compute elapsed time
