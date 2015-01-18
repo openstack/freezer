@@ -623,9 +623,9 @@ class BackupOpt1:
             'test-hostname_test-backup-name_9999999999999999999999999999999_0',
             'test-hostname_test-backup-name_1234568_1',
             'test-hostname_test-backup-name_1234569_2',
-            'tar_meta_test-hostname_test-backup-name_1234569_2',
-            'tar_meta_test-hostname_test-backup-name_1234568_1',
-            'tar_meta_test-hostname_test-backup-name_1234567_0']
+            'tar_metadata_test-hostname_test-backup-name_1234569_2',
+            'tar_metadata_test-hostname_test-backup-name_1234568_1',
+            'tar_metadata_test-hostname_test-backup-name_1234567_0']
         self.remote_obj_list = [
             {'name': 'test-hostname_test-backup-name_1234567_0',
                 'last_modified': 'testdate'},
@@ -633,8 +633,8 @@ class BackupOpt1:
                 'last_modified': 'testdate'},
             {'name': 'test-hostname_test-backup-name_1234567_2',
                 'last_modified': 'testdate'},
-            #{'name': 'test-hostname_test-backup-name_1234567_2',
-            #    'last_modified': 'testdate'},
+            {'name': 'tar_metadata_test-hostname_test-backup-name_1234567_2',
+                'last_modified': 'testdate'},
             {'name': 'test-hostname-test-backup-name-asdfa-asdfasdf',
                 'last_modified': 'testdate'}]
         self.remote_objects = []
@@ -644,6 +644,8 @@ class BackupOpt1:
         ]
         self.list_container = True
         self.list_objects = True
+        self.restore_from_date = '2014-12-03T23:23:23'
+        self.restore_from_host = 'test-hostname'
 
 
 class FakeMySQLdb:
@@ -821,3 +823,12 @@ class Fake_get_vol_fs_type:
     def get_vol_fs_type1(self, opt1=True):
         return 'xfs'
 
+
+def fake_get_match_backup(self, *args, **kwargs):
+    backup_opt = BackupOpt1()
+    backup_opt.remote_match_backup = None
+    return backup_opt
+
+
+def fake_restore_fs_sort_obj(*args, **kwargs):
+    return True

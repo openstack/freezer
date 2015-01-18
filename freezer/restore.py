@@ -55,17 +55,19 @@ def restore_fs(backup_opt_dict):
         backup_opt_dict.remote_obj_list,
         backup_opt_dict.container,
         backup_opt_dict.backup_name
-        ]
+    ]
 
-    # Arugment validation. Raise ValueError is all the arguments are not True
+    # Arguments validation. Raise ValueError is all the arguments are not True
     if not validate_all_args(required_list):
-        logging.critical("[*] Error: please provide ALL the following \
-            arguments: {0}".format(' '.join(required_list)))
-        raise ValueError
+        err_msg = ('[*] Error: please provide ALL the following '
+                   'arguments: a valid --restore-abs-path '
+                   '--container --backup-name')
+        logging.exception(err_msg)
+        raise ValueError(err_msg)
 
     if not backup_opt_dict.restore_from_date:
-        logging.warning('[*] Restore date time not available. Setting to \
-            current datetime')
+        logging.warning(('[*] Restore date time not available. Setting to '
+                         'current datetime'))
         backup_opt_dict.restore_from_date = \
             re.sub(
                 r'^(\S+?) (.+?:\d{,2})\.\d+?$', r'\1T\2',
@@ -79,12 +81,13 @@ def restore_fs(backup_opt_dict):
     # Check if there's a backup matching. If not raise Exception
     backup_opt_dict = get_match_backup(backup_opt_dict)
     if not backup_opt_dict.remote_match_backup:
-        logging.critical(
-            '[*] Not backup found matching with name: {0},\
-                hostname: {1}'.format(
-                backup_opt_dict.backup_name, backup_opt_dict.hostname))
-        raise ValueError
-
+        err_msg = (
+            '[*] Not backup found matching for '
+            'backup name: {0}, hostname: {1}'.format(
+                backup_opt_dict.backup_name,
+                backup_opt_dict.hostname))
+        logging.exception(err_msg)
+        raise ValueError(err_msg)
     restore_fs_sort_obj(backup_opt_dict)
 
 
@@ -102,7 +105,7 @@ def restore_fs_sort_obj(backup_opt_dict):
     fmt = '%Y-%m-%dT%H:%M:%S'
     opt_backup_date = datetime.datetime.strptime(
         backup_opt_dict.restore_from_date, fmt)
-    opt_backup_timestamp = int(time.mktime(opt_backup_date .timetuple()))
+    opt_backup_timestamp = int(time.mktime(opt_backup_date.timetuple()))
 
     # Sort remote backup list using timestamp in reverse order,
     # that is from the newest to the oldest executed backup
@@ -127,11 +130,14 @@ def restore_fs_sort_obj(backup_opt_dict):
                 break
 
     if not closest_backup_list:
-        logging.info('[*] No matching backup name {0} found in \
-            container {1} for hostname {2}'.format(
-            backup_opt_dict.backup_name, backup_opt_dict.container,
-            backup_opt_dict.hostname))
-        raise ValueError
+        err_msg = (
+            '[*] No matching backup name {0} found in '
+            'container {1} for hostname {2}'.format(
+                backup_opt_dict.backup_name,
+                backup_opt_dict.container,
+                backup_opt_dict.hostname))
+        logging.exception(err_msg)
+        raise ValueError(err_msg)
 
     # Backups are looped from the last element of the list going
     # backwards, as we want to restore starting from the oldest object
