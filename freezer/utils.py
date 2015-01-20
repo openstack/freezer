@@ -126,10 +126,8 @@ def validate_all_args(required_list):
             if not element:
                 return False
     except Exception as error:
-        err = "[*] Error: validate_all_args: {0} {1}".format(
-            required_list, error)
-        logging.exception(err)
-        raise Exception(err)
+        raise Exception('validate_all_args: {0} {1}'
+                        .format(required_list, error))
 
     return True
 

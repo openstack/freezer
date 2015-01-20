@@ -26,7 +26,7 @@ from freezer.tar import tar_backup, gen_tar_command
 from freezer.swift import add_object, manifest_upload, get_client
 from freezer.utils import gen_manifest_meta, add_host_name_ts_level
 
-from multiprocessing import Process, Queue
+import multiprocessing
 import logging
 import os
 
@@ -44,14 +44,11 @@ def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
 
     try:
         import MySQLdb
-    except ImportError as error:
-        logging.critical('[*] Error: please install MySQLdb module')
-        raise ImportError('[*] Error: please install MySQLdb module')
+    except ImportError:
+        raise ImportError('please install MySQLdb module')
 
     if not backup_opt_dict.mysql_conf_file:
-        logging.critical(
-            '[*] MySQL Error: please provide a valid config file')
-        raise ValueError
+        raise ValueError('MySQL: please provide a valid config file')
     # Open the file provided in backup_args.mysql_conf_file and extract the
     # db host, name, user and password.
     db_user = db_host = db_pass = False
@@ -73,8 +70,7 @@ def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
         backup_opt_dict.mysql_db_inst = MySQLdb.connect(
             host=db_host, user=db_user, passwd=db_pass)
     except Exception as error:
-        logging.critical('[*] MySQL Error: {0}'.format(error))
-        raise Exception('[*] MySQL Error: {0}'.format(error))
+        raise Exception('[*] MySQL: {0}'.format(error))
 
     # Execute LVM backup
     backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict)
@@ -86,17 +82,16 @@ def backup_mode_mongo(backup_opt_dict, time_stamp, manifest_meta_dict):
     """
 
     try:
-        from pymongo import MongoClient
+        import pymongo
     except ImportError:
-        logging.critical('[*] Error: please install pymongo module')
-        raise ImportError('[*] Error: please install pymongo module')
+        raise ImportError('please install pymongo module')
 
     logging.info('[*] MongoDB backup is being executed...')
     logging.info('[*] Checking is the localhost is Master/Primary...')
     mongodb_port = '27017'
     local_hostname = backup_opt_dict.hostname
     db_host_port = '{0}:{1}'.format(local_hostname, mongodb_port)
-    mongo_client = MongoClient(db_host_port)
+    mongo_client = pymongo.MongoClient(db_host_port)
     master_dict = dict(mongo_client.admin.command("isMaster"))
     mongo_me = master_dict['me']
     mongo_primary = master_dict['primary']
@@ -135,14 +130,14 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
         opt_dict=backup_opt_dict, time_stamp=time_stamp,
         remote_manifest_meta=manifest_meta_dict)
     # Initialize a Queue for a maximum of 2 items
-    tar_backup_queue = Queue(maxsize=2)
-    tar_backup_stream = Process(
+    tar_backup_queue = multiprocessing.Queue(maxsize=2)
+    tar_backup_stream = multiprocessing.Process(
         target=tar_backup, args=(
             backup_opt_dict, tar_command, tar_backup_queue,))
     tar_backup_stream.daemon = True
     tar_backup_stream.start()
 
-    add_object_stream = Process(
+    add_object_stream = multiprocessing.Process(
         target=add_object, args=(
             backup_opt_dict, tar_backup_queue, file_name, time_stamp))
     add_object_stream.daemon = True
@@ -152,6 +147,9 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
     tar_backup_queue.put(({False: False}))
     tar_backup_queue.close()
     add_object_stream.join()
+
+    if add_object_stream.exitcode:
+        raise Exception('failed to upload object to swift server')
 
     (backup_opt_dict, manifest_meta_dict, tar_meta_to_upload,
         tar_meta_prev) = gen_manifest_meta(

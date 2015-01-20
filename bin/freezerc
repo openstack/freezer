@@ -72,11 +72,22 @@ if len(sys.argv) < 2:
     arg_parse.print_help()
     sys.exit(1)
 
+
+def fail(exit_code, e):
+    msg = '[*] Critical Error: {0}\n'.format(e)
+    if not backup_args.quiet:
+        sys.stderr.write(msg)
+    logging.critical(msg)
+    sys.exit(exit_code)
+
+
 if __name__ == '__main__':
 
     try:
         freezer_main(backup_args)
     except ValueError as err:
-        logging.critical('[*] ValueError: {0}'.format(err))
+        fail(1, err)
     except Exception as err:
-        logging.critical('[*] Error: {0}'.format(err))
+        fail(1, err)
+    except ImportError as err:
+        fail(1, err)

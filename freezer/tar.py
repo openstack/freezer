@@ -29,6 +29,21 @@ import os
 import logging
 import subprocess
 import time
+import sys
+
+
+def tar_restore_args_valid(backup_opt_dict):
+    required_list = [
+        os.path.exists(backup_opt_dict.restore_abs_path)]
+    try:
+        valid_args = validate_all_args(required_list)   # might raise
+        if not valid_args:
+            raise Exception(('please provide ALL of the following '
+                             'argument: --restore-abs-path'))
+    except Exception as err:
+        valid_args = False
+        logging.crititcal('[*] Critical Error: {0}'.format(err))
+    return valid_args
 
 
 def tar_restore(backup_opt_dict, read_pipe):
@@ -37,14 +52,8 @@ def tar_restore(backup_opt_dict, read_pipe):
     Decrypt the file if backup_opt_dict.encrypt_pass_file key is provided
     """
 
-    # Validate mandatory arguments
-    required_list = [
-        os.path.exists(backup_opt_dict.restore_abs_path)]
-
-    if not validate_all_args(required_list):
-        logging.critical(('[*] Error: please provide ALL of the following '
-                          'argument: --restore-abs-path'))
-        raise ValueError
+    if not tar_restore_args_valid(backup_opt_dict):
+        sys.exit(1)
 
     # Set the default values for tar restore
     tar_cmd = ' {0} -z --incremental --extract  \
@@ -79,7 +88,7 @@ def tar_restore(backup_opt_dict, read_pipe):
 
     if 'error' in tar_err.lower():
         logging.exception('[*] Restore error: {0}'.format(tar_err))
-        raise Exception(tar_err)
+        sys.exit(1)
 
 
 def tar_incremental(

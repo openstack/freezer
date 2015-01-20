@@ -32,7 +32,7 @@ import re
 from copy import deepcopy
 import time
 import logging
-
+import sys
 
 RESP_CHUNK_SIZE = 65536
 
@@ -95,9 +95,7 @@ def show_objects(backup_opt_dict):
         backup_opt_dict.remote_obj_list]
 
     if not validate_all_args(required_list):
-        err_msg = '[*] Error: Remote Object list not avaiblale'
-        logging.exception(err_msg)
-        raise Exception(err_msg)
+        raise Exception('Remote Object list not avaiblale')
 
     ordered_objects = {}
     remote_obj = backup_opt_dict.remote_obj_list
@@ -193,7 +191,6 @@ def remove_obj_older_than(backup_opt_dict):
                                     retry_max_count))
                             error_message = '[*] Error: {0}: {1}'.format(
                                 err_msg, error)
-                            logging.exception(error_message)
                             raise Exception(error_message)
                         else:
                             logging.warning(
@@ -211,9 +208,7 @@ def get_container_content(backup_opt_dict):
     """
 
     if not backup_opt_dict.container:
-        err_msg = '[*] Error: please provide a valid container name'
-        logging.exception(err_msg)
-        raise Exception(err_msg)
+        raise Exception('please provide a valid container name')
 
     sw_connector = backup_opt_dict.sw_connector
     try:
@@ -221,9 +216,7 @@ def get_container_content(backup_opt_dict):
             sw_connector.get_container(backup_opt_dict.container)[1]
         return backup_opt_dict
     except Exception as error:
-        err_msg = '[*] Error: get_object_list: {0}'.format(error)
-        logging.exception(err_msg)
-        raise Exception(err_msg)
+        raise Exception('[*] Error: get_object_list: {0}'.format(error))
 
 
 def check_container_existance(backup_opt_dict):
@@ -240,10 +233,7 @@ def check_container_existance(backup_opt_dict):
         backup_opt_dict.container]
 
     if not validate_all_args(required_list):
-        err_msg = ('[*] Error: please provide the following arg: '
-                   '--container')
-        logging.exception(err_msg)
-        raise Exception(err_msg)
+        raise Exception('please provide the following arg: --container')
 
     logging.info(
         "[*] Retrieving container {0}".format(backup_opt_dict.container))
@@ -286,9 +276,12 @@ def get_swift_os_env():
     """
 
     environ_dict = os.environ
-    return environ_dict['OS_REGION_NAME'], environ_dict['OS_TENANT_ID'], \
-        environ_dict['OS_PASSWORD'], environ_dict['OS_AUTH_URL'], \
-        environ_dict['OS_USERNAME'], environ_dict['OS_TENANT_NAME']
+    try:
+        return environ_dict['OS_REGION_NAME'], environ_dict['OS_TENANT_ID'],\
+            environ_dict['OS_PASSWORD'], environ_dict['OS_AUTH_URL'],\
+            environ_dict['OS_USERNAME'], environ_dict['OS_TENANT_NAME']
+    except Exception as e:
+        raise Exception('missing environment variable {0}'.format(e))
 
 
 def get_client(backup_opt_dict):
@@ -318,9 +311,7 @@ def manifest_upload(
     """
 
     if not manifest_meta_dict:
-        err_msg = '[*] Error Manifest Meta dictionary not available'
-        logging.exception(err_msg)
-        raise Exception(err_msg)
+        raise Exception('Manifest Meta dictionary not available')
 
     sw_connector = backup_opt_dict.sw_connector
     tmp_manifest_meta = dict()
@@ -348,13 +339,13 @@ def add_object(
         err_msg = ('[*] Error: Please specify the container '
                    'name with -C or --container option')
         logging.exception(err_msg)
-        raise Exception(err_msg)
+        sys.exit(1)
 
     if absolute_file_path is None and backup_queue is None:
         err_msg = ('[*] Error: Please specify the file or fs path '
                    'you want to upload on swift with -d or --dst-file')
         logging.exception(err_msg)
-        raise Exception(err_msg)
+        sys.exit(1)
 
     sw_connector = backup_opt_dict.sw_connector
     while True:
@@ -390,9 +381,9 @@ def add_object(
                 backup_opt_dict = get_client(backup_opt_dict)
                 count += 1
                 if count == 10:
-                    critical_msg = '[*] Error: add_object: {0}'.format(error)
-                    logging.critical(critical_msg)
-                    raise Exception(critical_msg)
+                    logging.critical('[*] Error: add_object: {0}'
+                                     .format(error))
+                    sys.exit(1)
 
 
 def get_containers_list(backup_opt_dict):
@@ -405,9 +396,7 @@ def get_containers_list(backup_opt_dict):
         backup_opt_dict.containers_list = sw_connector.get_account()[1]
         return backup_opt_dict
     except Exception as error:
-        err_msg = '[*] Get containers list error: {0}'.format(error)
-        logging.exception(err_msg)
-        raise Exception(err_msg)
+        raise Exception('Get containers list error: {0}'.format(error))
 
 
 def object_to_file(backup_opt_dict, file_name_abs_path):
@@ -421,10 +410,8 @@ def object_to_file(backup_opt_dict, file_name_abs_path):
         file_name_abs_path]
 
     if not validate_all_args(required_list):
-        err_msg = ('[*] Error in object_to_file(): Please provide ALL the '
-                   'following arguments: --container file_name_abs_path')
-        logging.exception(err_msg)
-        raise ValueError(err_msg)
+        raise ValueError('Error in object_to_file(): Please provide ALL the '
+                         'following arguments: --container file_name_abs_path')
 
     sw_connector = backup_opt_dict.sw_connector
     file_name = file_name_abs_path.split('/')[-1]
@@ -456,10 +443,8 @@ def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):
         backup_opt_dict.container]
 
     if not validate_all_args(required_list):
-        err_msg = ('[*] Error in object_to_stream(): Please provide ALL the '
-                   'following argument: --container')
-        logging.exception(err_msg)
-        raise ValueError(err_msg)
+        raise ValueError('Error in object_to_stream(): Please provide '
+                         'ALL the following argument: --container')
 
     backup_opt_dict = get_client(backup_opt_dict)
     logging.info('[*] Downloading data stream...')

@@ -26,7 +26,7 @@ from freezer.swift import object_to_stream
 from freezer.utils import (
     validate_all_args, get_match_backup, sort_backup_list)
 
-from multiprocessing import Process, Pipe
+import multiprocessing
 import os
 import logging
 import re
@@ -59,11 +59,9 @@ def restore_fs(backup_opt_dict):
 
     # Arguments validation. Raise ValueError is all the arguments are not True
     if not validate_all_args(required_list):
-        err_msg = ('[*] Error: please provide ALL the following '
-                   'arguments: a valid --restore-abs-path '
-                   '--container --backup-name')
-        logging.exception(err_msg)
-        raise ValueError(err_msg)
+        raise ValueError('[*] Error: please provide ALL the following '
+                         'arguments: a valid --restore-abs-path '
+                         '--container --backup-name')
 
     if not backup_opt_dict.restore_from_date:
         logging.warning(('[*] Restore date time not available. Setting to '
@@ -81,13 +79,10 @@ def restore_fs(backup_opt_dict):
     # Check if there's a backup matching. If not raise Exception
     backup_opt_dict = get_match_backup(backup_opt_dict)
     if not backup_opt_dict.remote_match_backup:
-        err_msg = (
-            '[*] Not backup found matching for '
-            'backup name: {0}, hostname: {1}'.format(
-                backup_opt_dict.backup_name,
-                backup_opt_dict.hostname))
-        logging.exception(err_msg)
-        raise ValueError(err_msg)
+        raise ValueError('No backup found matching for '
+                         'backup name: {0}, hostname: {1}'
+                         .format(backup_opt_dict.backup_name,
+                                 backup_opt_dict.hostname))
     restore_fs_sort_obj(backup_opt_dict)
 
 
@@ -130,20 +125,17 @@ def restore_fs_sort_obj(backup_opt_dict):
                 break
 
     if not closest_backup_list:
-        err_msg = (
-            '[*] No matching backup name {0} found in '
-            'container {1} for hostname {2}'.format(
-                backup_opt_dict.backup_name,
-                backup_opt_dict.container,
-                backup_opt_dict.hostname))
-        logging.exception(err_msg)
-        raise ValueError(err_msg)
+        raise ValueError('No matching backup name {0} found in '
+                         'container {1} for hostname {2}'
+                         .format(backup_opt_dict.backup_name,
+                                 backup_opt_dict.container,
+                                 backup_opt_dict.hostname))
 
     # Backups are looped from the last element of the list going
     # backwards, as we want to restore starting from the oldest object
     for backup in closest_backup_list[::-1]:
-        write_pipe, read_pipe = Pipe()
-        process_stream = Process(
+        write_pipe, read_pipe = multiprocessing.Pipe()
+        process_stream = multiprocessing.Process(
             target=object_to_stream, args=(
                 backup_opt_dict, write_pipe, read_pipe, backup,))
         process_stream.daemon = True
@@ -151,13 +143,16 @@ def restore_fs_sort_obj(backup_opt_dict):
 
         write_pipe.close()
         # Start the tar pipe consumer process
-        tar_stream = Process(
+        tar_stream = multiprocessing.Process(
             target=tar_restore, args=(backup_opt_dict, read_pipe))
         tar_stream.daemon = True
         tar_stream.start()
         read_pipe.close()
         process_stream.join()
         tar_stream.join()
+
+        if tar_stream.exitcode:
+            raise Exception('failed to restore file')
 
     logging.info(
         '[*] Restore execution successfully executed for backup name {0},\

@@ -84,10 +84,9 @@ def freezer_main(backup_args):
         # Check if the provided container already exists in swift.
         containers = check_container_existance(backup_args)
         if containers['main_container'] is not True:
-            exc_msg = ('[*] Container: {0} not found. Please provide an '
-                       'existing container.'.format(backup_args.container))
-            logging.critical(exc_msg)
-            raise ValueError(exc_msg)
+            raise ValueError('Container: {0} not found. Please provide an '
+                             'existing container.'
+                             .format(backup_args.container))
 
         # Get the object list of the remote containers and store it in the
         # same dict passes as argument under the dict.remote_obj_list namespace
@@ -122,8 +121,7 @@ def freezer_main(backup_args):
         elif backup_args.mode == 'mysql':
             backup_mode_mysql(backup_args, time_stamp, manifest_meta_dict)
         else:
-            logging.critical('[*] Error: Please provide a valid backup mode')
-            raise ValueError
+            raise ValueError('Please provide a valid backup mode')
 
     # Admin tasks code should go here, before moving it on a dedicated module
     if backup_args.action == 'admin' or backup_args.remove_older_than:

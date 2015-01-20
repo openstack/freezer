@@ -25,7 +25,6 @@ import sys
 import argparse
 import distutils.spawn as distspawn
 import os
-import logging
 
 
 def backup_arguments():
@@ -212,6 +211,10 @@ def backup_arguments():
         '-V', '--version', action='store_true',
         help='''Print the release version and exit''',
         dest='version', default=False)
+    arg_parser.add_argument(
+        '-q', '--quiet', action='store_true',
+        help='''Suppress error messages''',
+        dest='quiet', default=False)
 
     backup_args = arg_parser.parse_args()
     # Set additional namespace attributes
@@ -250,9 +253,8 @@ def backup_arguments():
             backup_args.__dict__['tar_path'] = \
                 distspawn.find_executable('gtar')
         else:
-            logging.critical('[*] Please install gnu tar (gtar) as it is a \
-                mandatory requirement to use freezer.')
-            raise Exception
+            raise Exception('Please install gnu tar (gtar) as it is a '
+                            'mandatory requirement to use freezer.')
 
     # Get absolute path of other commands used by freezer
     backup_args.__dict__['lvcreate_path'] = distspawn.find_executable(

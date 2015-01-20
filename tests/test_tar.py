@@ -55,7 +55,7 @@ class TestTar:
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
-        pytest.raises(Exception, tar_restore, backup_opt, fakepipe)
+        pytest.raises(SystemExit, tar_restore, backup_opt, fakepipe)
 
         fakesubprocess = FakeSubProcess()
         fakesubprocesspopen = fakesubprocess.Popen()

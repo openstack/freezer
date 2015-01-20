@@ -192,11 +192,11 @@ class FakeBackup:
 
 
 class FakeMultiProcessing:
-    def __init__(self, duplex=True, maxsize=True):
+    def __init__(self, *args, **kwargs):
         return None
 
     class Queue:
-        def __init__(self, duplex=True):
+        def __init__(self):
             return None
 
         def put(self, opt1=dict()):
@@ -206,8 +206,11 @@ class FakeMultiProcessing:
 
             return {'item': 'test-item-value'}
 
-        def __call__(self, duplex=True):
-            return []
+        def close(self):
+            return True
+
+        def __call__(self, *args, **kwargs):
+            return self
 
     class Pipe:
         def __init__(self, duplex=True):
@@ -236,6 +239,7 @@ class FakeMultiProcessing:
 
     class Process:
         def __init__(self, target=True, args=True):
+            self.exitcode = 0
             return None
 
         def start(self):
@@ -260,7 +264,7 @@ class FakeMultiProcessing1:
         return None
 
     class Queue:
-        def __init__(self, duplex=True):
+        def __init__(self, duplex=True, maxsize=2):
             return None
 
         def put(self, opt1=dict()):
@@ -300,6 +304,7 @@ class FakeMultiProcessing1:
 
     class Process:
         def __init__(self, target=True, args=True):
+            self.exitcode = 1
             return None
 
         def start(self):
@@ -414,6 +419,7 @@ class FakeSubProcess3:
 
 
 class FakeSubProcess4:
+
     def __init__(self, opt1=True, stdin=True, stdout=True,
             stderr=True, shell=True, executable=True):
         return None

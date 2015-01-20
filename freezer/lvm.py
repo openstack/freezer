@@ -82,10 +82,8 @@ def lvm_snap_remove(backup_opt_dict):
                 shell=True, executable=backup_opt_dict.bash_path)
             (umount_out, mount_err) = umount_proc.communicate()
             if re.search(r'\S+', umount_out):
-                err = '[*] Error: impossible to umount {0} {1}'.format(
-                    mount_point, mount_err)
-                logging.critical(err)
-                raise Exception(err)
+                raise Exception('impossible to umount {0} {1}'
+                                .format(mount_point, mount_err))
             else:
                 # Change working directory to be able to unmount
                 os.chdir(backup_opt_dict.workdir)
@@ -102,10 +100,8 @@ def lvm_snap_remove(backup_opt_dict):
                     logging.info('[*] {0}'.format(lvm_rm_out))
                     return True
                 else:
-                    err = '[*] Error: lvm_snap_rm {0}'.format(lvm_rm_err)
-                    logging.critical(err)
-                    raise Exception(err)
-    raise Exception('[*] Error: no lvm snap removed')
+                    raise Exception('lvm_snap_rm {0}'.format(lvm_rm_err))
+    raise Exception('no lvm snap removed')
 
 
 def lvm_snap(backup_opt_dict):
@@ -160,9 +156,7 @@ def lvm_snap(backup_opt_dict):
         executable=backup_opt_dict.bash_path)
     (lvm_out, lvm_err) = lvm_process.communicate()
     if lvm_err is False:
-        err = '[*] lvm snapshot creation error: {0}'.format(lvm_err)
-        logging.critical(err)
-        raise Exception(err)
+        raise Exception('lvm snapshot creation error: {0}'.format(lvm_err))
     else:
         logging.warning('[*] {0}'.format(lvm_out))
 
@@ -198,9 +192,7 @@ def lvm_snap(backup_opt_dict):
         '.format(abs_snap_name, backup_opt_dict.lvm_dirmount))
         return True
     if mount_err:
-        err = '[*] lvm snapshot mounting error: {0}'.format(mount_err)
-        logging.critical(err)
-        raise Exception(err)
+        raise Exception('lvm snapshot mounting error: {0}'.format(mount_err))
     else:
         logging.warning(
             '[*] Volume {0} succesfully mounted on {1}'.format(

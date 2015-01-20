@@ -205,7 +205,7 @@ class TestSwift:
         backup_opt = BackupOpt1()
         backup_opt.container = None
 
-        pytest.raises(Exception, add_object, backup_opt, backup_queue,
+        pytest.raises(SystemExit, add_object, backup_opt, backup_queue,
                       absolute_file_path, time_stamp)
 
         fakeclient = FakeSwiftClient1()
@@ -213,13 +213,13 @@ class TestSwift:
         fakeswclient = fakeconnector.Connection()
         backup_opt = BackupOpt1()
         backup_opt.sw_connector = fakeswclient
-        pytest.raises(Exception, add_object, backup_opt, backup_queue,
+        pytest.raises(SystemExit, add_object, backup_opt, backup_queue,
                       absolute_file_path, time_stamp)
 
         backup_opt = BackupOpt1()
         absolute_file_path = None
         backup_queue = None
-        pytest.raises(Exception, add_object, backup_opt, backup_queue,
+        pytest.raises(SystemExit, add_object, backup_opt, backup_queue,
                       absolute_file_path, time_stamp)
 
     def test_get_containers_list(self, monkeypatch):
