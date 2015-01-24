@@ -187,7 +187,13 @@ class FakeBackup:
     def __init__(self):
         return None
 
-    def backup_mode_fs(opt1=True, opt2=True, opt3=True, opt4=True):
+    def fake_backup_mode_fs(self, *args, **kwargs):
+        return True
+
+    def fake_backup_mode_mongo(self, *args, **kwargs):
+        return True
+
+    def fake_backup_mode_mysql(self, *args, **kwargs):
         return True
 
 
@@ -652,6 +658,7 @@ class BackupOpt1:
         self.list_objects = True
         self.restore_from_date = '2014-12-03T23:23:23'
         self.restore_from_host = 'test-hostname'
+        self.action = 'info'
 
 
 class FakeMySQLdb:
@@ -838,3 +845,98 @@ def fake_get_match_backup(self, *args, **kwargs):
 
 def fake_restore_fs_sort_obj(*args, **kwargs):
     return True
+
+
+class FakeSwift:
+
+    def __init__(self):
+        return None
+
+    def fake_get_containers_list(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        return backup_opt
+
+    def fake_get_containers_list1(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        backup_opt.list_container = None
+        return backup_opt
+
+    def fake_get_containers_list2(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        backup_opt.list_container = None
+        backup_opt.list_objects = None
+        return backup_opt
+
+    def fake_get_client(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        return backup_opt
+
+    def fake_show_containers(self, *args, **kwargs):
+        return True
+
+    def fake_show_objects(self, *args, **kwargs):
+        return True
+
+    def fake_check_container_existance(self, *args, **kwargs):
+        return {'main_container': True}
+
+    def fake_check_container_existance1(self, *args, **kwargs):
+        return {'main_container': False}
+
+    def fake_get_containers_list3(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        backup_opt.action = 'restore'
+        backup_opt.list_container = None
+        backup_opt.list_objects = None
+        return backup_opt
+
+    def fake_get_containers_list4(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        backup_opt.action = 'backup'
+        backup_opt.list_container = None
+        backup_opt.list_objects = None
+        return backup_opt
+
+
+    def fake_get_container_content(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        return backup_opt
+
+
+class FakeRestore:
+
+    def __init__(self):
+        return None
+
+    def fake_restore_fs(self, *args, **kwargs):
+        return True
+
+
+class FakeUtils:
+
+    def __init__(self):
+        return None
+
+    def fake_set_backup_level_fs(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        manifest_meta = {}
+        backup_opt.mode = 'fs'
+        return backup_opt, manifest_meta
+
+    def fake_set_backup_level_mongo(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        manifest_meta = {}
+        backup_opt.mode = 'mongo'
+        return backup_opt, manifest_meta
+
+    def fake_set_backup_level_mysql(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        manifest_meta = {}
+        backup_opt.mode = 'mysql'
+        return backup_opt, manifest_meta
+
+    def fake_set_backup_level_none(self, *args, **kwargs):
+        backup_opt = BackupOpt1()
+        manifest_meta = {}
+        backup_opt.mode = None
+        return backup_opt, manifest_meta
