@@ -63,7 +63,7 @@ class TestBackUP:
         # Generate mysql conf test file
         backup_opt.__dict__['mysql_conf_file'] = mysql_conf_file
         with open(backup_opt.mysql_conf_file, 'w') as mysql_conf_fd:
-            mysql_conf_fd.write('host=abcd\nuser=abcd\npassword=abcd\n')
+            mysql_conf_fd.write('host=abcd\nport=1234\nuser=abcd\npassword=abcd\n')
         assert backup_mode_mysql(
             backup_opt, 123456789, test_meta) is None
 

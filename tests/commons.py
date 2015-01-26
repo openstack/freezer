@@ -670,7 +670,7 @@ class FakeMySQLdb:
         return self
 
     @classmethod
-    def connect(cls, host=True, user=True, passwd=True):
+    def connect(cls, host=True, user=True, passwd=True, port=True):
             return cls
 
     @classmethod
@@ -700,7 +700,7 @@ class FakeMySQLdb2:
         return None
 
     @classmethod
-    def connect(self, host=True, user=True, passwd=True):
+    def connect(self, host=True, user=True, passwd=True, port=True):
         raise Exception
 
 

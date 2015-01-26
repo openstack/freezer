@@ -39,7 +39,7 @@ def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
     command will be executed and after that, the table will be unlocked and
     the backup will be executed. It is important to have the available in
     backup_args.mysql_conf_file the file where the database host, name, user,
-    and password are set.
+    password and port are set.
     """
 
     try:
@@ -50,8 +50,10 @@ def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
     if not backup_opt_dict.mysql_conf_file:
         raise ValueError('MySQL: please provide a valid config file')
     # Open the file provided in backup_args.mysql_conf_file and extract the
-    # db host, name, user and password.
+    # db host, name, user, password and port.
     db_user = db_host = db_pass = False
+    # Use the default mysql port if not provided
+    db_port = 3306
     with open(backup_opt_dict.mysql_conf_file, 'r') as mysql_file_fd:
         for line in mysql_file_fd:
             if 'host' in line:
@@ -63,12 +65,15 @@ def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
             elif 'password' in line:
                 db_pass = line.split('=')[1].strip()
                 continue
+            elif 'port' in line:
+                db_port = line.split('=')[1].strip()
+                continue
 
     # Initialize the DB object and connect to the db according to
     # the db mysql backup file config
     try:
         backup_opt_dict.mysql_db_inst = MySQLdb.connect(
-            host=db_host, user=db_user, passwd=db_pass)
+            host=db_host, port=db_port, user=db_user, passwd=db_pass)
     except Exception as error:
         raise Exception('[*] MySQL: {0}'.format(error))
 

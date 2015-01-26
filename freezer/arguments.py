@@ -147,12 +147,13 @@ def backup_arguments():
     arg_parser.add_argument(
         '--mysql-conf', action='store',
         help='''Set the MySQL configuration file where freezer retrieve
-        important information as db_name, user, password, host.
+        important information as db_name, user, password, host, port.
         Following is an example of config file:
         # cat ~/.freezer/backup_mysql_conf
         host     = <db-host>
         user     = <mysqluser>
-        password = <mysqlpass>''',
+        password = <mysqlpass>
+        port     = <db-port>''',
         dest='mysql_conf_file', default=False)
     arg_parser.add_argument(
         '--log-file', action='store',
