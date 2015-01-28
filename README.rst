@@ -30,7 +30,7 @@ Requirements
 -  python-swiftclient
 -  python-keystoneclient
 -  pymongo
--  python-mysqldb
+-  PyMySQL
 -  libmysqlclient-dev
 -  At least 128 MB of memory reserved for Freezer
 
@@ -53,7 +53,7 @@ MongoDB backup::
 
 MySQL backup::
 
-    $ sudo apt-get install -y python-mysqldb libmysqlclient-dev
+    $ sudo pip install pymysql
 
 Freezer installation from Python package repo::
 

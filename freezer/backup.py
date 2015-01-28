@@ -43,9 +43,9 @@ def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
     """
 
     try:
-        import MySQLdb
+        import pymysql as MySQLdb
     except ImportError:
-        raise ImportError('please install MySQLdb module')
+        raise ImportError('Please install PyMySQL module')
 
     if not backup_opt_dict.mysql_conf_file:
         raise ValueError('MySQL: please provide a valid config file')

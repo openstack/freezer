@@ -7,7 +7,7 @@ import multiprocessing
 import subprocess
 import time
 import os
-import MySQLdb
+import pymysql as MySQLdb
 import pymongo
 import re
 from collections import OrderedDict
