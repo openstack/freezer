@@ -42,7 +42,7 @@ def tar_restore_args_valid(backup_opt_dict):
                              'argument: --restore-abs-path'))
     except Exception as err:
         valid_args = False
-        logging.crititcal('[*] Critical Error: {0}'.format(err))
+        logging.critical('[*] Critical Error: {0}'.format(err))
     return valid_args
 
 
@@ -156,10 +156,8 @@ def gen_tar_command(
         os.path.exists(opt_dict.src_file)]
 
     if not validate_all_args(required_list):
-        logging.critical(
-            ('Error: Please ALL the following options: '
-                '--path-to-backup, --backup-name'))
-        raise Exception
+        raise Exception('Error: Please ALL the following options: '
+                        '--path-to-backup, --backup-name')
 
     # Change che current working directory to op_dict.src_file
     os.chdir(os.path.normpath(opt_dict.src_file.strip()))

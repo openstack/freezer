@@ -39,7 +39,7 @@ def read(*filenames, **kwargs):
 
 setup(
     name='freezer',
-    version='1.1.1',
+    version='1.1.2',
     url='https://github.com/stackforge/freezer',
     license='Apache Software License',
     author='Fausto Marzi, Ryszard Chojnacki, Emil Dimitrov',

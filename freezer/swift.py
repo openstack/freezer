@@ -23,8 +23,9 @@ Freezer functions to interact with OpenStack Swift client and server
 
 from freezer.utils import (
     validate_all_args, get_match_backup,
-    sort_backup_list)
+    sort_backup_list, date_string_to_timestamp)
 
+import datetime
 import os
 import swiftclient
 import json
@@ -110,95 +111,102 @@ def show_objects(backup_opt_dict):
     return True
 
 
+def remove_object(backup_opt_dict, obj):
+    sw_connector = backup_opt_dict.sw_connector
+    logging.info('[*] Removing backup object: {0}'.format(obj))
+    sleep_time = 120
+    retry_max_count = 60
+    curr_count = 0
+    while True:
+        try:
+            sw_connector.delete_object(
+                backup_opt_dict.container, obj)
+            logging.info(
+                '[*] Remote object {0} removed'.format(obj))
+            break
+        except Exception as error:
+            curr_count += 1
+            time.sleep(sleep_time)
+            if curr_count >= retry_max_count:
+                err_msg = (
+                    '[*] Remote Object {0} failed to be removed.'
+                    ' Retrying intent '
+                    '{1} out of {2} totals'.format(
+                        obj, curr_count,
+                        retry_max_count))
+                error_message = \
+                    '[*] Error: {0}: {1}'.format(err_msg, error)
+                raise Exception(error_message)
+            else:
+                logging.warning(
+                    ('[*] Remote object {0} failed to be removed'
+                     ' Retrying intent n. {1} out of {2} totals'.format(
+                         obj, curr_count, retry_max_count)))
+
+
 def remove_obj_older_than(backup_opt_dict):
     """
-    Remove object in remote swift server older more tqhen days
+    Remove object in remote swift server which are
+    older than the specified days or timestamp
     """
 
-    if not backup_opt_dict.remote_obj_list \
-            or backup_opt_dict.remove_older_than is False:
+    if not backup_opt_dict.remote_obj_list:
         logging.warning('[*] No remote objects will be removed')
-        return False
+        return
 
-    backup_opt_dict.remove_older_than = int(
-        float(backup_opt_dict.remove_older_than))
-    logging.info('[*] Removing object older {0} day(s)'.format(
-        backup_opt_dict.remove_older_than))
-    # Compute the amount of seconds from the number of days provided by
-    # remove_older_than and compare it with the remote backup timestamp
-    max_time = backup_opt_dict.remove_older_than * 86400
-    current_timestamp = backup_opt_dict.time_stamp
+    remove_from_timestamp = False
+    if backup_opt_dict.remove_older_than is not None:
+        if backup_opt_dict.remove_from_date:
+            raise Exception("Please specify remove date unambiguously")
+        current_timestamp = backup_opt_dict.time_stamp
+        max_time = backup_opt_dict.remove_older_than * 86400
+        remove_from_timestamp = current_timestamp - max_time
+    else:
+        if not backup_opt_dict.remove_from_date:
+            raise Exception("Remove date/age not specified")
+        remove_from_timestamp = date_string_to_timestamp(
+            backup_opt_dict.remove_from_date)
+
+    logging.info('[*] Removing objects older than {0} ({1})'.format(
+        datetime.datetime.fromtimestamp(remove_from_timestamp),
+        remove_from_timestamp))
+
     backup_name = backup_opt_dict.backup_name
     hostname = backup_opt_dict.hostname
     backup_opt_dict = get_match_backup(backup_opt_dict)
     sorted_remote_list = sort_backup_list(backup_opt_dict)
-    sw_connector = backup_opt_dict.sw_connector
 
-    level_0_flag = None
-    tar_meta_0_flag = None
+    tar_meta_incremental_dep_flag = False
+    incremental_dep_flag = False
+
     for match_object in sorted_remote_list:
         obj_name_match = re.search(r'{0}_({1})_(\d+)_(\d+?)$'.format(
             hostname, backup_name), match_object, re.I)
 
         if obj_name_match:
             remote_obj_timestamp = int(obj_name_match.group(2))
-            time_delta = current_timestamp - remote_obj_timestamp
 
-            # If the difference between current_timestamp and the backup
-            # timestamp is smaller then max_time, then the backup is valid
-            if time_delta > max_time:
-
-                # If the time_delta is bigger then max_time, then we verify
-                # if the level of the backup is 0. In case is not 0,
-                # the backup is not removed as is part of a backup where the
-                # levels cross the max_time. In this case we don't remove the
-                # backup till its level 0.
-                # Both tar_meta data and backup objects names are handled
+            if remote_obj_timestamp >= remove_from_timestamp:
                 if match_object.startswith('tar_meta'):
-                    if tar_meta_0_flag is None:
-                        if obj_name_match.group(3) is '0':
-                            tar_meta_0_flag = True
-                        else:
-                            continue
-                elif level_0_flag is None:
-                    if obj_name_match.group(3) is '0':
-                        level_0_flag = True
-                    else:
-                        continue
+                    tar_meta_incremental_dep_flag = \
+                        (obj_name_match.group(3) is not '0')
+                else:
+                    incremental_dep_flag = \
+                        (obj_name_match.group(3) is not '0')
 
-                logging.info('[*] Removing backup object: {0}'.format(
-                    match_object))
-                sleep_time = 120
-                retry_max_count = 60
-                curr_count = 0
-                while True:
-                    try:
-                        sw_connector.delete_object(
-                            backup_opt_dict.container, match_object)
-                        logging.info(
-                            '[*] Remote object {0} removed'.format(
-                                match_object))
-                        break
-                    except Exception as error:
-                        curr_count += 1
-                        time.sleep(sleep_time)
-                        if curr_count >= retry_max_count:
-                            err_msg = (
-                                '[*] Remote Object {0} failed to be removed.'
-                                ' Retrying intent '
-                                '{1} out of {2} totals'.format(
-                                    match_object, curr_count,
-                                    retry_max_count))
-                            error_message = '[*] Error: {0}: {1}'.format(
-                                err_msg, error)
-                            raise Exception(error_message)
-                        else:
-                            logging.warning(
-                                ('[*] Remote object {0} failed to be removed'
-                                    ' Retrying intent n. '
-                                    '{1} out of {2} totals'.format(
-                                        match_object, curr_count,
-                                        retry_max_count)))
+            else:
+                if match_object.startswith('tar_meta'):
+                    if not tar_meta_incremental_dep_flag:
+                        remove_object(backup_opt_dict, match_object)
+                    else:
+                        if obj_name_match.group(3) is '0':
+                            tar_meta_incremental_dep_flag = False
+                else:
+                    if not incremental_dep_flag:
+                        remove_object(backup_opt_dict, match_object)
+                    else:
+                        if obj_name_match.group(3) is '0':
+                            incremental_dep_flag = False
 
 
 def get_container_content(backup_opt_dict):
@@ -224,8 +232,6 @@ def check_container_existance(backup_opt_dict):
     Check if the provided container is already available on Swift.
     The verification is done by exact matching between the provided container
     name and the whole list of container available for the swift account.
-    If the container is not found, it will be automatically create and used
-    to execute the backup
     """
 
     required_list = [

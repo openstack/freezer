@@ -126,11 +126,21 @@ def backup_arguments():
         Default False (Disabled)",
         dest='restart_always_backup', type=float, default=False)
     arg_parser.add_argument(
-        '-R', '--remove-older-then', action='store',
-        help="Checks in the specified container for object older then the \
-        specified days. If i.e. 30 is specified, it will remove the remote \
-        object older than 30 days. Default False (Disabled)",
-        dest='remove_older_than', type=float, default=False)
+        '-R', '--remove-older-then', '--remove-older-than', action='store',
+        help=('Checks in the specified container for object older than the '
+              'specified days.'
+              'If i.e. 30 is specified, it will remove the remote object '
+              'older than 30 days. Default False (Disabled) '
+              'The option --remove-older-then is deprecated '
+              'and will be removed soon'),
+        dest='remove_older_than', type=float, default=None)
+    arg_parser.add_argument(
+        '--remove-from-date', action='store',
+        help=('Checks the specified container and removes objects older than '
+              'the provided datetime in the form "YYYY-MM-DDThh:mm:ss '
+              'i.e. "1974-03-25T23:23:23". '
+              'Make sure the "T" is between date and time '),
+        dest='remove_from_date', default=False)
     arg_parser.add_argument(
         '--no-incremental', action='store_true',
         help='''Disable incremantal feature. By default freezer build the
@@ -284,6 +294,6 @@ def backup_arguments():
     backup_args.__dict__['mysql_db_inst'] = ''
 
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.1.1'
+    backup_args.__dict__['__version__'] = '1.1.2'
 
     return backup_args, arg_parser

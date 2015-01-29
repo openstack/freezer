@@ -23,8 +23,8 @@ Hudson (tjh@cryptsoft.com).
 
 from commons import *
 from freezer.tar import (tar_restore, tar_incremental, tar_backup,
-    gen_tar_command)
-from freezer import utils
+    gen_tar_command, tar_restore_args_valid)
+
 import os
 import logging
 import subprocess
@@ -146,3 +146,20 @@ class TestTar:
 
         backup_opt.__dict__['max_seg_size'] = 1
         assert tar_backup(backup_opt, 'tar_command', fakebackup_queue) is not False
+
+    def test_tar_restore_args_valid(self, monkeypatch):
+
+        backup_opt = BackupOpt1()
+        fakelogging = FakeLogging()
+        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
+        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
+        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
+        monkeypatch.setattr(logging, 'error', fakelogging.error)
+
+        fakeos = Os()
+        monkeypatch.setattr(os.path, 'exists', fakeos.exists)
+        assert tar_restore_args_valid(backup_opt) is True
+
+        fakeos1 = Os1()
+        monkeypatch.setattr(os.path, 'exists', fakeos1.exists)
+        assert tar_restore_args_valid(backup_opt) is False

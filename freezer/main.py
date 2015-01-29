@@ -30,6 +30,7 @@ import logging
 
 
 def freezer_main(backup_args):
+
     """Freezer Main execution function.
     This main function is a wrapper for most
     of the other functions. By calling main() the program execution start
@@ -49,7 +50,6 @@ def freezer_main(backup_args):
 
     # Get the list of the containers
     backup_args = swift.get_containers_list(backup_args)
-
     if backup_args.action == 'info' or backup_args.list_container or \
             backup_args.list_objects:
         if backup_args.list_container:
@@ -89,24 +89,31 @@ def freezer_main(backup_args):
     if backup_args.action == 'backup':
         # Check if the provided container already exists in swift.
         containers = swift.check_container_existance(backup_args)
-
         if containers['main_container'] is not True:
             swift.create_containers(backup_args)
 
-        # Get the object list of the remote containers and store it in the
-        # same dict passes as argument under the dict.remote_obj_list namespace
-        backup_args = swift.get_container_content(backup_args)
+        if backup_args.no_incremental:
+            if backup_args.max_backup_level or \
+               backup_args.always_backup_level:
+                raise Exception(
+                    'no-incremental option not compatible '
+                    'with backup level options')
+            manifest_meta_dict = {}
+        else:
+            # Get the object list of the remote containers and store it in
+            # backup_args.remote_obj_list
+            backup_args = swift.get_container_content(backup_args)
 
-        # Check if a backup exist in swift with same name. If not, set
-        # backup level to 0
-        manifest_meta_dict = utils.check_backup_existance(backup_args)
+            # Check if a backup exist in swift with same name. If not, set
+            # backup level to 0
+            manifest_meta_dict =\
+                utils.check_backup_and_tar_meta_existence(backup_args)
 
-        # Set the right backup level for incremental backup
         (backup_args, manifest_meta_dict) = utils.set_backup_level(
             backup_args, manifest_meta_dict)
 
         backup_args.manifest_meta_dict = manifest_meta_dict
-        # File system backup mode selected
+
         if backup_args.mode == 'fs':
             backup.backup_mode_fs(
                 backup_args, time_stamp, manifest_meta_dict)
@@ -120,7 +127,7 @@ def freezer_main(backup_args):
             raise ValueError('Please provide a valid backup mode')
 
     # Admin tasks code should go here, before moving it on a dedicated module
-    if backup_args.action == 'admin' or backup_args.remove_older_than:
+    if backup_args.action == 'admin':
         # Remove backups older if set.
         backup_args = swift.get_container_content(backup_args)
         swift.remove_obj_older_than(backup_args)

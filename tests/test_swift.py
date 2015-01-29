@@ -26,7 +26,7 @@ from freezer.swift import (create_containers, show_containers,
     show_objects, remove_obj_older_than, get_container_content,
     check_container_existance, SwiftOptions,
     get_client, manifest_upload, add_object, get_containers_list,
-    object_to_file, object_to_stream)
+    object_to_file, object_to_stream, remove_object)
 import os
 import logging
 import subprocess
@@ -58,6 +58,7 @@ class TestSwift:
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
+        backup_opt.__dict__['list_container'] = True
         assert show_containers(backup_opt) is True
 
         backup_opt.__dict__['list_container'] = False
@@ -73,6 +74,7 @@ class TestSwift:
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
+        backup_opt.__dict__['list_objects'] = True
         assert show_objects(backup_opt) is True
 
         backup_opt.__dict__['remote_obj_list'] = None
@@ -80,6 +82,31 @@ class TestSwift:
 
         backup_opt.__dict__['list_objects'] = False
         assert show_objects(backup_opt) is False
+
+
+    def test_remove_object(self, monkeypatch):
+        backup_opt = BackupOpt1()
+        fakelogging = FakeLogging()
+        fakeclient = FakeSwiftClient()
+        fakeconnector = fakeclient.client()
+        fakeswclient = fakeconnector.Connection()
+        backup_opt.sw_connector = fakeswclient
+        faketime = FakeTime()
+
+        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
+        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
+        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
+        monkeypatch.setattr(logging, 'error', fakelogging.error)
+        monkeypatch.setattr(time, 'sleep', faketime.sleep)
+
+        assert remove_object(backup_opt, 'obj_name') is None
+
+        fakeswclient.num_try = 59
+        assert remove_object(backup_opt, 'obj_name') is None
+
+        fakeswclient.num_try = 60
+        pytest.raises(Exception, remove_object, backup_opt, 'obj_name')
+
 
     def test_remove_obj_older_than(self, monkeypatch):
 
@@ -97,12 +124,27 @@ class TestSwift:
         monkeypatch.setattr(logging, 'error', fakelogging.error)
         monkeypatch.setattr(time, 'sleep', faketime.sleep)
 
+        backup_opt.__dict__['remove_older_than'] = None
+        backup_opt.__dict__['remove_from_date'] = None
         pytest.raises(Exception, remove_obj_older_than, backup_opt)
 
-        backup_opt.__dict__['remove_older_than'] = False
-        assert remove_obj_older_than(backup_opt) is False
+        backup_opt = BackupOpt1()
+        backup_opt.__dict__['remove_older_than'] = 0
+        backup_opt.__dict__['remove_from_date'] = '2014-12-03T23:23:23'
+        pytest.raises(Exception, remove_obj_older_than, backup_opt)
 
         backup_opt = BackupOpt1()
+        backup_opt.__dict__['remove_older_than'] = None
+        backup_opt.__dict__['remove_from_date'] = '2014-12-03T23:23:23'
+        assert remove_obj_older_than(backup_opt) is None
+
+        backup_opt = BackupOpt1()
+        backup_opt.__dict__['remove_older_than'] = 0
+        backup_opt.__dict__['remove_from_date'] = None
+        assert remove_obj_older_than(backup_opt) is None
+
+        backup_opt = BackupOpt1()
+        backup_opt.__dict__['remote_obj_list'] = []
         assert remove_obj_older_than(backup_opt) is None
 
     def test_get_container_content(self, monkeypatch):

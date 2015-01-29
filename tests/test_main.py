@@ -34,7 +34,6 @@ class TestMain:
 
     def test_freezer_main(self, monkeypatch):
 
-        backup_opt = BackupOpt1()
         fakelogging = FakeLogging()
         fakeswift = FakeSwift()
 
@@ -46,26 +45,19 @@ class TestMain:
         monkeypatch.setattr(swift, 'get_client', fakeswift.fake_get_client)
         monkeypatch.setattr(swift, 'show_containers', fakeswift.fake_show_containers)
         monkeypatch.setattr(swift, 'show_objects', fakeswift.fake_show_objects)
-
-        monkeypatch.setattr(swift, 'get_containers_list', fakeswift.fake_get_containers_list1)
-        assert freezer_main(backup_opt) is True
-
-        fakeswift = FakeSwift()
-        monkeypatch.setattr(swift, 'check_container_existance', fakeswift.fake_check_container_existance)
-        monkeypatch.setattr(swift, 'get_containers_list', fakeswift.fake_get_containers_list)
-        backup_opt = BackupOpt1()
-        assert freezer_main(backup_opt) is True
-
-        fakeswift = FakeSwift()
-        monkeypatch.setattr(swift, 'check_container_existance', fakeswift.fake_check_container_existance1)
         monkeypatch.setattr(swift, 'get_containers_list', fakeswift.fake_get_containers_list1)
         backup_opt = BackupOpt1()
+        backup_opt.action = 'info'
         assert freezer_main(backup_opt) is False
 
-        fakeswift = FakeSwift()
+        backup_opt.list_container = True
+        assert freezer_main(backup_opt) is True
+
+        backup_opt.list_container = False
+        backup_opt.list_objects = True
+        assert freezer_main(backup_opt) is True
+
         monkeypatch.setattr(swift, 'check_container_existance', fakeswift.fake_check_container_existance1)
-        monkeypatch.setattr(swift, 'get_containers_list', fakeswift.fake_get_containers_list2)
-        backup_opt = BackupOpt1()
         assert freezer_main(backup_opt) is False
 
         fakeswift = FakeSwift()
@@ -94,6 +86,8 @@ class TestMain:
         monkeypatch.setattr(backup, 'backup_mode_fs', fakebackup.fake_backup_mode_fs)
 
         backup_opt = BackupOpt1()
+        backup_opt.action = 'backup'
+        backup_opt.no_incremental = False
         assert freezer_main(backup_opt) is None
 
         fakeswift = FakeSwift()
@@ -105,6 +99,8 @@ class TestMain:
         monkeypatch.setattr(backup, 'backup_mode_mongo', fakebackup.fake_backup_mode_mongo)
 
         backup_opt = BackupOpt1()
+        backup_opt.action = 'backup'
+        backup_opt.no_incremental = False
         assert freezer_main(backup_opt) is None
 
         fakeswift = FakeSwift()
@@ -116,6 +112,8 @@ class TestMain:
         monkeypatch.setattr(backup, 'backup_mode_mysql', fakebackup.fake_backup_mode_mysql)
 
         backup_opt = BackupOpt1()
+        backup_opt.action = 'backup'
+        backup_opt.no_incremental = False
         assert freezer_main(backup_opt) is None
 
         fakeswift = FakeSwift()
@@ -125,4 +123,26 @@ class TestMain:
         monkeypatch.setattr(utils, 'set_backup_level', fakeutils.fake_set_backup_level_none)
 
         backup_opt = BackupOpt1()
+        backup_opt.action = 'backup'
+        backup_opt.no_incremental = False
         pytest.raises(ValueError, freezer_main, backup_opt)
+
+        fakeswift = FakeSwift()
+        fakeutils = FakeUtils()
+        fakebackup = FakeBackup()
+        monkeypatch.setattr(swift, 'check_container_existance', fakeswift.fake_check_container_existance)
+        monkeypatch.setattr(swift, 'get_containers_list', fakeswift.fake_get_containers_list4)
+        monkeypatch.setattr(utils, 'set_backup_level', fakeutils.fake_set_backup_level_fs)
+        monkeypatch.setattr(backup, 'backup_mode_fs', fakebackup.fake_backup_mode_fs)
+
+        backup_opt = BackupOpt1()
+        backup_opt.action = 'backup'
+        backup_opt.no_incremental = True
+        backup_opt.max_backup_level = True
+
+        pytest.raises(Exception, freezer_main, backup_opt)
+
+        backup_opt.max_backup_level = False
+        backup_opt.always_backup_level = False
+        assert freezer_main(backup_opt) is None
+

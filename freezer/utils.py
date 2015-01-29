@@ -196,10 +196,8 @@ def get_match_backup(backup_opt_dict):
 
     if not backup_opt_dict.backup_name or not backup_opt_dict.container \
             or not backup_opt_dict.remote_obj_list:
-        err = "[*] Error: please provide a valid Swift container,\
-            backup name and the container contents"
-        logging.exception(err)
-        raise Exception(err)
+        raise Exception("[*] Error: please provide a valid Swift container,\
+            backup name and the container contents")
 
     backup_name = backup_opt_dict.backup_name.lower()
     if backup_opt_dict.remote_obj_list:
@@ -222,6 +220,7 @@ def get_newest_backup(backup_opt_dict):
     Return from backup_opt_dict.remote_match_backup, the newest backup
     matching the provided backup name and hostname of the node where
     freezer is executed. It correspond to the previous backup executed.
+    NOTE: If backup has no tar_metadata, no newest backup is returned.
     '''
 
     if not backup_opt_dict.remote_match_backup:
@@ -240,8 +239,11 @@ def get_newest_backup(backup_opt_dict):
         remote_obj_timestamp = int(obj_name_match.group(2))
         if remote_obj_timestamp > backup_timestamp:
             backup_timestamp = remote_obj_timestamp
-            backup_opt_dict.remote_newest_backup = remote_obj
             break
+
+    tar_metadata_obj = 'tar_metadata_{0}'.format(remote_obj)
+    if tar_metadata_obj in sorted_backups_list:
+        backup_opt_dict.remote_newest_backup = remote_obj
 
     return backup_opt_dict
 
@@ -472,7 +474,7 @@ def get_vol_fs_type(backup_opt_dict):
         return filesys_type.lower().strip()
 
 
-def check_backup_existance(backup_opt_dict):
+def check_backup_and_tar_meta_existence(backup_opt_dict):
     '''
     Check if any backup is already available on Swift.
     The verification is done by backup_name, which needs to be unique
@@ -545,3 +547,9 @@ def get_mount_from_path(path):
         mount_point_path = os.path.dirname(mount_point_path)
 
     return mount_point_path
+
+
+def date_string_to_timestamp(date_string):
+    fmt = '%Y-%m-%dT%H:%M:%S'
+    opt_backup_date = datetime.datetime.strptime(date_string, fmt)
+    return int(time.mktime(opt_backup_date.timetuple()))

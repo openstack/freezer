@@ -5,7 +5,7 @@ from freezer.utils import (
     sort_backup_list, create_dir, get_match_backup,
     get_newest_backup, get_rel_oldest_backup, get_abs_oldest_backup,
     eval_restart_backup, start_time, elapsed_time, set_backup_level,
-    get_vol_fs_type, check_backup_existance, add_host_name_ts_level,
+    get_vol_fs_type, check_backup_and_tar_meta_existence, add_host_name_ts_level,
     get_mount_from_path)
 
 from freezer import utils
@@ -170,6 +170,7 @@ class TestUtils:
 
         manifest_meta = dict()
         backup_opt = BackupOpt1()
+        backup_opt.__dict__['no_incremental'] = False
         manifest_meta['x-object-meta-backup-name'] = True
         manifest_meta['x-object-meta-backup-current-level'] = 1
         manifest_meta['x-object-meta-always-backup-level'] = 3
@@ -180,12 +181,14 @@ class TestUtils:
         assert manifest_meta['x-object-meta-backup-current-level'] is not False
 
         backup_opt = BackupOpt1()
+        backup_opt.__dict__['no_incremental'] = False
         manifest_meta['x-object-meta-maximum-backup-level'] = 2
         (backup_opt, manifest_meta_dict) = set_backup_level(
             backup_opt, manifest_meta)
         assert manifest_meta['x-object-meta-backup-current-level'] is not False
 
         backup_opt = BackupOpt1()
+        backup_opt.__dict__['no_incremental'] = False
         backup_opt.__dict__['curr_backup_level'] = 1
         (backup_opt, manifest_meta_dict) = set_backup_level(
             backup_opt, manifest_meta)
@@ -193,9 +196,18 @@ class TestUtils:
 
         manifest_meta = dict()
         backup_opt = BackupOpt1()
+        backup_opt.__dict__['no_incremental'] = False
         manifest_meta['x-object-meta-backup-name'] = False
         manifest_meta['x-object-meta-maximum-backup-level'] = 0
         manifest_meta['x-object-meta-backup-current-level'] = 1
+        (backup_opt, manifest_meta) = set_backup_level(
+            backup_opt, manifest_meta)
+        assert manifest_meta['x-object-meta-backup-current-level'] == '0'
+
+        manifest_meta = dict()
+        backup_opt = BackupOpt1()
+        backup_opt.__dict__['max_backup_level'] = False
+        backup_opt.__dict__['always_backup_level'] = False
         (backup_opt, manifest_meta) = set_backup_level(
             backup_opt, manifest_meta)
         assert manifest_meta['x-object-meta-backup-current-level'] == '0'
@@ -218,15 +230,15 @@ class TestUtils:
 
         backup_opt = BackupOpt1()
         backup_opt.__dict__['backup_name'] = None
-        assert type(check_backup_existance(backup_opt)) is dict
+        assert type(check_backup_and_tar_meta_existence(backup_opt)) is dict
 
         fakeswiftclient = FakeSwiftClient()
         backup_opt = BackupOpt1()
-        assert check_backup_existance(backup_opt) is True
+        assert check_backup_and_tar_meta_existence(backup_opt) is True
 
         fake_get_newest_backup = Fakeget_newest_backup()
         monkeypatch.setattr(utils, 'get_newest_backup', fake_get_newest_backup)
-        assert type(check_backup_existance(backup_opt)) is dict
+        assert type(check_backup_and_tar_meta_existence(backup_opt)) is dict
 
     def test_add_host_name_ts_level(self):
 
