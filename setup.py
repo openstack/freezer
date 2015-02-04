@@ -20,7 +20,7 @@ class PyTest(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
-        #import here, cause outside the eggs aren't loaded
+        # import here, cause outside the eggs aren't loaded
         import pytest
         import sys
         errno = pytest.main(self.pytest_args)
@@ -82,7 +82,10 @@ setup(
         'python-keystoneclient>=0.7.0',
         'pymysql',
         'pymongo',
-        'docutils>=0.8.1'],
+        'docutils>=0.8.1',
+        'pyrsync'],
+    dependency_links=[
+        "git+https://github.com/isislovecruft/pyrsync.git#egg=pyrsync"],
     extras_require={
         'testing': ['pytest', 'flake8'],
     }
