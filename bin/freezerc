@@ -32,6 +32,7 @@ Freezer offer the following features:
 
 from freezer.main import freezer_main
 from freezer.arguments import backup_arguments
+from freezer.utils import create_dir
 
 import os
 import subprocess
@@ -41,16 +42,41 @@ import sys
 # Initialize backup options
 (backup_args, arg_parse) = backup_arguments()
 
-# Configure logging
-logging.basicConfig(
-    filename=backup_args.log_file,
-    level=logging.INFO,
-    format='%(asctime)s %(name)s %(levelname)s %(message)s')
+if backup_args.version:
+    print "freezer version {0}".format(backup_args.__version__)
+    sys.exit(1)
 
-# Try to execute freezer with highest priority execution if
-# backup_args.max_priority is True. New priority will be set for child
-# processes too, as niceness is inherited from father
-if backup_args.max_priority:
+if len(sys.argv) < 2:
+    arg_parse.print_help()
+    sys.exit(1)
+
+
+def configure_log_file_using_defaults():
+
+    def configure_logging(file_name):
+        expanded_file_name = os.path.expanduser(file_name)
+        expanded_dir_name = os.path.dirname(expanded_file_name)
+        create_dir(expanded_dir_name, do_log=False)
+        logging.basicConfig(
+            filename=expanded_file_name,
+            level=logging.INFO,
+            format='%(asctime)s %(name)s %(levelname)s %(message)s')
+        return expanded_file_name
+
+    if backup_args.log_file:
+        return configure_logging(backup_args.log_file)
+
+    for file_name in ['/var/log/freezer.log', '~/.freezer/freezer.log']:
+        try:
+            return configure_logging(file_name)
+        except IOError:
+            pass
+
+    raise Exception("Unable to write to log file")
+
+
+def set_max_process_priority():
+    # children processes inherit niceness from father
     try:
         logging.warning(
             '[*] Setting freezer execution with high CPU and I/O priority')
@@ -64,24 +90,27 @@ if backup_args.max_priority:
     except Exception as priority_error:
         logging.warning('[*] Priority: {0}'.format(priority_error))
 
-if backup_args.version:
-    print "freezer version {0}".format(backup_args.__version__)
-    sys.exit(1)
 
-if len(sys.argv) < 2:
-    arg_parse.print_help()
-    sys.exit(1)
-
-
-def fail(exit_code, e):
+def fail(exit_code, e, do_log=True):
     msg = '[*] Critical Error: {0}\n'.format(e)
     if not backup_args.quiet:
         sys.stderr.write(msg)
-    logging.critical(msg)
+    if do_log:
+        logging.critical(msg)
     sys.exit(exit_code)
 
 
 if __name__ == '__main__':
+    try:
+        log_file_name = configure_log_file_using_defaults()
+    except Exception as err:
+        fail(1, err, do_log=False)
+
+    if not backup_args.quiet:
+        print 'log file at {0}'.format(log_file_name)
+
+    if backup_args.max_priority:
+        set_max_process_priority()
 
     try:
         freezer_main(backup_args)

@@ -157,8 +157,10 @@ def backup_arguments():
         dest='mysql_conf_file', default=False)
     arg_parser.add_argument(
         '--log-file', action='store',
-        help='Set log file. By default logs to /var/log/freezer.log',
-        dest='log_file', default='/var/log/freezer.log')
+        help='Set log file. By default logs to /var/log/freezer.log'
+             'If that file is not writable, freezer tries to log'
+             'to ~/.freezer/freezer.log',
+        dest='log_file', default=None)
     arg_parser.add_argument(
         '--exclude', action='store', help="Exclude files,\
         given as a PATTERN.Ex: --exclude '*.log' will exclude any file with \

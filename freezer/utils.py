@@ -163,24 +163,25 @@ def sort_backup_list(backup_opt_dict):
     return sorted_backups_list
 
 
-def create_dir(directory):
+def create_dir(directory, do_log=True):
     '''
     Creates a directory if it doesn't exists and write the execution
     in the logs
     '''
-
+    expanded_dir_name = os.path.expanduser(directory)
     try:
-        if not os.path.isdir(os.path.expanduser(directory)):
-            logging.warning('[*] Directory {0} does not exists,\
-                creating...'.format(os.path.expanduser(directory)))
-            os.makedirs(os.path.expanduser(directory))
+        if not os.path.isdir(expanded_dir_name):
+            if do_log:
+                logging.warning('[*] Directory {0} does not exists,\
+                creating...'.format(expanded_dir_name))
+            os.makedirs(expanded_dir_name)
         else:
-            logging.warning('[*] Directory {0} found!'.format(
-                os.path.expanduser(directory)))
+            if do_log:
+                logging.warning('[*] Directory {0} found!'.format(
+                    expanded_dir_name))
     except Exception as error:
         err = '[*] Error while creating directory {0}: {1}\
-            '.format(os.path.expanduser(directory), error)
-        logging.exception(err)
+            '.format(expanded_dir_name, error)
         raise Exception(err)
 
 
