@@ -87,7 +87,7 @@ if __name__ == '__main__':
         freezer_main(backup_args)
     except ValueError as err:
         fail(1, err)
-    except Exception as err:
-        fail(1, err)
     except ImportError as err:
+        fail(1, err)
+    except Exception as err:
         fail(1, err)
