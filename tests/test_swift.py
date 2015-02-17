@@ -24,7 +24,7 @@ Hudson (tjh@cryptsoft.com).
 from commons import *
 from freezer.swift import (create_containers, show_containers,
     show_objects, remove_obj_older_than, get_container_content,
-    check_container_existance, get_swift_os_env,
+    check_container_existance, SwiftOptions,
     get_client, manifest_upload, add_object, get_containers_list,
     object_to_file, object_to_stream)
 import os
@@ -285,3 +285,37 @@ class TestSwift:
         backup_opt = BackupOpt1()
         assert object_to_stream(
             backup_opt, backup_pipe_write, backup_pipe_read, obj_name) is None
+
+    def test_SwiftOptions_creation_success(self, monkeypatch):
+        env_dict = dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl',
+                        OS_PASSWORD='testpassword', OS_REGION_NAME='testregion', OS_TENANT_ID='0123456789')
+        options = SwiftOptions.create_from_dict(env_dict)
+        assert options.user_name == env_dict['OS_USERNAME']
+        assert options.tenant_name == env_dict['OS_TENANT_NAME']
+        assert options.auth_url == env_dict['OS_AUTH_URL']
+        assert options.password == env_dict['OS_PASSWORD']
+        assert options.region_name == env_dict['OS_REGION_NAME']
+        assert options.tenant_id == env_dict['OS_TENANT_ID']
+
+        env_dict= dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl',
+                       OS_PASSWORD='testpassword')
+        options = SwiftOptions.create_from_dict(env_dict)
+        assert options.user_name == env_dict['OS_USERNAME']
+        assert options.tenant_name == env_dict['OS_TENANT_NAME']
+        assert options.auth_url == env_dict['OS_AUTH_URL']
+        assert options.password == env_dict['OS_PASSWORD']
+        assert options.region_name is None
+        assert options.tenant_id is None
+
+    def test_SwiftOption_creation_error_for_missing_parameter(self, monkeypatch):
+        env_dict = dict(OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl', OS_PASSWORD='testpassword')
+        pytest.raises(Exception, SwiftOptions.create_from_dict, env_dict)
+
+        env_dict = dict(OS_USERNAME='testusername', OS_AUTH_URL='testauthurl', OS_PASSWORD='testpassword')
+        pytest.raises(Exception, SwiftOptions.create_from_dict, env_dict)
+
+        env_dict = dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_PASSWORD='testpassword')
+        pytest.raises(Exception, SwiftOptions.create_from_dict, env_dict)
+
+        env_dict = dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl')
+        pytest.raises(Exception, SwiftOptions.create_from_dict, env_dict)
