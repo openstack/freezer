@@ -299,7 +299,8 @@ def get_client(backup_opt_dict):
     backup_opt_dict.sw_connector = swiftclient.client.Connection(
         authurl=options.auth_url,
         user=options.user_name, key=options.password,
-        tenant_name=options.tenant_name, auth_version='2', retries=6)
+        tenant_name=options.tenant_name, auth_version='2',
+        insecure=backup_opt_dict.insecure, retries=6)
 
     return backup_opt_dict
 

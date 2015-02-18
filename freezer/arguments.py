@@ -216,6 +216,10 @@ def backup_arguments():
         '-q', '--quiet', action='store_true',
         help='''Suppress error messages''',
         dest='quiet', default=False)
+    arg_parser.add_argument(
+        '--insecure', action='store_true',
+        help=('Allow to access swift servers without checking SSL certs.'),
+        dest='insecure', default=False)
 
     backup_args = arg_parser.parse_args()
     # Set additional namespace attributes

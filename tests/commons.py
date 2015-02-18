@@ -492,7 +492,7 @@ class FakeSwiftClient:
             return None
 
         class Connection:
-            def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True):
+            def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
                 return None
 
             def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
@@ -527,7 +527,7 @@ class FakeSwiftClient1:
             return None
 
         class Connection:
-            def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True):
+            def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
                 return None
 
             def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
@@ -659,6 +659,7 @@ class BackupOpt1:
         self.restore_from_date = '2014-12-03T23:23:23'
         self.restore_from_host = 'test-hostname'
         self.action = 'info'
+        self.insecure = True
 
 
 class FakeMySQLdb:
