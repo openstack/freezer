@@ -270,18 +270,22 @@ def check_container_existance(backup_opt_dict):
     return containers
 
 
-def get_swift_os_env():
-    """
-    Get the swift related environment variable
-    """
+class SwiftOptions:
 
-    environ_dict = os.environ
-    try:
-        return environ_dict['OS_REGION_NAME'], environ_dict['OS_TENANT_ID'],\
-            environ_dict['OS_PASSWORD'], environ_dict['OS_AUTH_URL'],\
-            environ_dict['OS_USERNAME'], environ_dict['OS_TENANT_NAME']
-    except Exception as e:
-        raise Exception('missing environment variable {0}'.format(e))
+    @staticmethod
+    def create_from_dict(src_dict):
+        options = SwiftOptions()
+        try:
+            options.user_name = src_dict['OS_USERNAME']
+            options.tenant_name = src_dict['OS_TENANT_NAME']
+            options.auth_url = src_dict['OS_AUTH_URL']
+            options.password = src_dict['OS_PASSWORD']
+            options.tenant_id = src_dict.get('OS_TENANT_ID', None)
+            options.region_name = src_dict.get('OS_REGION_NAME', None)
+        except Exception as e:
+            raise Exception('missing swift connection parameter: {0}'
+                            .format(e))
+        return options
 
 
 def get_client(backup_opt_dict):
@@ -290,16 +294,12 @@ def get_client(backup_opt_dict):
     backup_opt_dict
     """
 
-    sw_client = swiftclient.client
-    options = {}
-    (options['region_name'], options['tenant_id'], options['password'],
-        options['auth_url'], options['username'],
-        options['tenant_name']) = get_swift_os_env()
+    options = SwiftOptions.create_from_dict(os.environ)
 
-    backup_opt_dict.sw_connector = sw_client.Connection(
-        authurl=options['auth_url'],
-        user=options['username'], key=options['password'], os_options=options,
-        tenant_name=options['tenant_name'], auth_version='2', retries=6)
+    backup_opt_dict.sw_connector = swiftclient.client.Connection(
+        authurl=options.auth_url,
+        user=options.user_name, key=options.password,
+        tenant_name=options.tenant_name, auth_version='2', retries=6)
 
     return backup_opt_dict
 
