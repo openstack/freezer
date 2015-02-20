@@ -660,6 +660,7 @@ class BackupOpt1:
         self.restore_from_host = 'test-hostname'
         self.action = 'info'
         self.insecure = True
+        self.auth_version = 2
 
 
 class FakeMySQLdb:

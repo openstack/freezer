@@ -222,6 +222,11 @@ def backup_arguments():
         '--insecure', action='store_true',
         help=('Allow to access swift servers without checking SSL certs.'),
         dest='insecure', default=False)
+    arg_parser.add_argument(
+        '--os-auth-ver', choices=['1', '2', '3'],
+        action='store',
+        help=('Swift auth version, could be 1, 2 or 3'),
+        dest='auth_version', default=2)
 
     backup_args = arg_parser.parse_args()
     # Set additional namespace attributes
