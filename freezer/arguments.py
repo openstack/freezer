@@ -269,6 +269,10 @@ def backup_arguments():
         help='''Enforce proxy that alters system HTTP_PROXY and HTTPS_PROXY,
         use \'\' to eliminate all system proxies''',
         dest='proxy', default=False)
+    arg_parser.add_argument(
+        '--dry-run', action='store_true',
+        help=('Do everything except writing or removing objects'),
+        dest='dry_run', default=False)
 
     backup_args = arg_parser.parse_args()
     # Set additional namespace attributes

@@ -110,6 +110,45 @@ class TestBackUP:
         assert backup_mode_fs(
             backup_opt, 123456789, test_meta) is None
 
+    def test_backup_mode_fs_dry_run(self, monkeypatch):
+
+        # Class and other settings initialization
+        test_meta = dict()
+        backup_opt = BackupOpt1()
+        backup_opt.mode = 'fs'
+        backup_opt.dry_run = True
+
+        expanduser = Os()
+        fakere = FakeRe()
+        fakeswiftclient = FakeSwiftClient()
+        fakelvm = Lvm()
+        fakemultiprocessing = FakeMultiProcessing()
+        fakemultiprocessingqueue = fakemultiprocessing.Queue()
+        fakemultiprocessingpipe = fakemultiprocessing.Pipe()
+        fakemultiprocessinginit = fakemultiprocessing.__init__()
+
+        # Monkey patch
+        monkeypatch.setattr(
+            multiprocessing, 'Queue', fakemultiprocessingqueue)
+        monkeypatch.setattr(multiprocessing, 'Pipe', fakemultiprocessingpipe)
+        monkeypatch.setattr(
+            multiprocessing, 'Process', fakemultiprocessing.Process)
+        monkeypatch.setattr(
+            multiprocessing, '__init__', fakemultiprocessinginit)
+        monkeypatch.setattr(freezer.lvm, 'lvm_eval', fakelvm.lvm_eval)
+        monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
+        monkeypatch.setattr(re, 'search', fakere.search)
+        monkeypatch.setattr(os.path, 'exists', expanduser.exists)
+
+        assert backup_mode_fs(
+            backup_opt, 123456789, test_meta) is None
+
+        backup_opt.__dict__['no_incremental'] = False
+        with open(
+                '/tmp/tar_metadata_test-hostname_test-backup-name_123456789_0', 'w') as fd:
+            fd.write('testcontent\n')
+        assert backup_mode_fs(
+            backup_opt, 123456789, test_meta) is None
 
     def test_backup_mode_mongo(self, monkeypatch):
 

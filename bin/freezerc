@@ -53,6 +53,10 @@ if len(sys.argv) < 2:
 
 def configure_log_file_using_defaults():
 
+    dry_run_message = ''
+    if backup_args.dry_run:
+        dry_run_message = '[DRY_RUN] '
+
     def configure_logging(file_name):
         expanded_file_name = os.path.expanduser(file_name)
         expanded_dir_name = os.path.dirname(expanded_file_name)
@@ -60,7 +64,8 @@ def configure_log_file_using_defaults():
         logging.basicConfig(
             filename=expanded_file_name,
             level=logging.INFO,
-            format='%(asctime)s %(name)s %(levelname)s %(message)s')
+            format=('%(asctime)s %(name)s %(levelname)s {0}%(message)s'.
+                    format(dry_run_message)))
         return expanded_file_name
 
     if backup_args.log_file:

@@ -55,11 +55,15 @@ def tar_restore(backup_opt_dict, read_pipe):
     if not tar_restore_args_valid(backup_opt_dict):
         sys.exit(1)
 
-    # Set the default values for tar restore
-    tar_cmd = ' {0} -z --incremental --extract  \
-        --unlink-first --ignore-zeros --warning=none --overwrite \
-        --directory {1} '.format(
-        backup_opt_dict.tar_path, backup_opt_dict.restore_abs_path)
+    if backup_opt_dict.dry_run:
+        tar_cmd = ' {0} -z --incremental --list  \
+            --ignore-zeros --warning=none'.format(
+            backup_opt_dict.tar_path)
+    else:
+        tar_cmd = ' {0} -z --incremental --extract  \
+            --unlink-first --ignore-zeros --warning=none --overwrite \
+            --directory {1} '.format(
+            backup_opt_dict.tar_path, backup_opt_dict.restore_abs_path)
 
     # Check if encryption file is provided and set the openssl decrypt
     # command accordingly

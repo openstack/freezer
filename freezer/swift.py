@@ -291,6 +291,21 @@ def check_container_existance(backup_opt_dict):
     return containers
 
 
+class DryRunSwiftclientConnectionWrapper:
+    def __init__(self, sw_connector):
+        self.sw_connector = sw_connector
+        self.get_object = sw_connector.get_object
+        self.get_account = sw_connector.get_account
+        self.get_container = sw_connector.get_container
+        self.head_object = sw_connector.head_object
+        self.put_object = self.dummy
+        self.put_container = self.dummy
+        self.delete_object = self.dummy
+
+    def dummy(self, *args, **kwargs):
+        pass
+
+
 class SwiftOptions:
 
     @property
@@ -335,6 +350,11 @@ def get_client(backup_opt_dict):
         os_options=options.os_options,
         auth_version=backup_opt_dict.auth_version,
         insecure=backup_opt_dict.insecure, retries=6)
+
+    if backup_opt_dict.dry_run:
+        backup_opt_dict.sw_connector =\
+            DryRunSwiftclientConnectionWrapper(backup_opt_dict.sw_connector)
+
     return backup_opt_dict
 
 

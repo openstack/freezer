@@ -160,6 +160,10 @@ class TestTar:
         monkeypatch.setattr(os.path, 'exists', fakeos.exists)
         assert tar_restore_args_valid(backup_opt) is True
 
+        backup_opt.dry_run = True
+        assert tar_restore_args_valid(backup_opt) is True
+
         fakeos1 = Os1()
         monkeypatch.setattr(os.path, 'exists', fakeos1.exists)
+        backup_opt.dry_run = False
         assert tar_restore_args_valid(backup_opt) is False

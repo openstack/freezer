@@ -676,6 +676,7 @@ class BackupOpt1:
         self.action = 'info'
         self.insecure = True
         self.auth_version = 2
+        self.dry_run = False
 
 class FakeMySQLdb:
 
