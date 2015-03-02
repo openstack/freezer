@@ -278,6 +278,17 @@ def check_container_existance(backup_opt_dict):
 
 class SwiftOptions:
 
+    @property
+    def os_options(self):
+        """
+        :return: The OpenStack options which can have tenant_id,
+                 auth_token, service_type, endpoint_type, tenant_name,
+                 object_storage_url, region_name
+        """
+        return {'tenant_id': self.tenant_id,
+                'tenant_name': self.tenant_name,
+                'region_name': self.region_name}
+
     @staticmethod
     def create_from_dict(src_dict):
         options = SwiftOptions()
@@ -306,9 +317,9 @@ def get_client(backup_opt_dict):
         authurl=options.auth_url,
         user=options.user_name, key=options.password,
         tenant_name=options.tenant_name,
+        os_options=options.os_options,
         auth_version=backup_opt_dict.auth_version,
         insecure=backup_opt_dict.insecure, retries=6)
-
     return backup_opt_dict
 
 
