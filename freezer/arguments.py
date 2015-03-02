@@ -22,9 +22,36 @@ Arguments and general parameters definitions
 """
 
 import sys
-import argparse
-import distutils.spawn as distspawn
 import os
+import argparse
+import logging
+import distutils.spawn as distspawn
+
+
+def alter_proxy(args_dict):
+    """
+    Read proxy option from dictionary and alter the HTTP_PROXY and/or
+    HTTPS_PROXY system variables
+    """
+    # Default case where 'proxy' key is not set -- do nothing
+    if args_dict['proxy'] is False:
+        return
+    proxy_value = args_dict['proxy'].lower()
+    # python-swift client takes into account both
+    # upper and lower case proxies so clear them all
+    os.environ.pop("http_proxy", None)
+    os.environ.pop("https_proxy", None)
+    os.environ.pop("HTTP_PROXY", None)
+    os.environ.pop("HTTPS_PROXY", None)
+    if proxy_value == '':
+        pass
+    elif proxy_value.startswith('http://') or \
+            proxy_value.startswith('https://'):
+        logging.info('[*] Using proxy {0}'.format(proxy_value))
+        os.environ['HTTP_PROXY'] = str(proxy_value)
+        os.environ['HTTPS_PROXY'] = str(proxy_value)
+    else:
+        raise Exception('Proxy has unknown scheme')
 
 
 def backup_arguments():
@@ -237,6 +264,11 @@ def backup_arguments():
         action='store',
         help=('Swift auth version, could be 1, 2 or 3'),
         dest='auth_version', default=2)
+    arg_parser.add_argument(
+        '--proxy', action='store',
+        help='''Enforce proxy that alters system HTTP_PROXY and HTTPS_PROXY,
+        use \'\' to eliminate all system proxies''',
+        dest='proxy', default=False)
 
     backup_args = arg_parser.parse_args()
     # Set additional namespace attributes
@@ -277,6 +309,10 @@ def backup_arguments():
         else:
             raise Exception('Please install gnu tar (gtar) as it is a '
                             'mandatory requirement to use freezer.')
+
+    # If we have provided --proxy then overwrite the system HTTP_PROXY and
+    # HTTPS_PROXY
+    alter_proxy(backup_args.__dict__)
 
     # Get absolute path of other commands used by freezer
     backup_args.__dict__['lvcreate_path'] = distspawn.find_executable(

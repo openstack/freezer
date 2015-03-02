@@ -144,6 +144,7 @@ class FakeArgparse:
         def add_argument(self, *args, **kwargs):
             self.container = 'testcontainer'
             self.hostname = 'testhostname'
+            self.proxy = False
             return True
 
         @classmethod
