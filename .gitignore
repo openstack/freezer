@@ -17,3 +17,10 @@ coverage.xml
 *.log
 .testrepository
 subunit.log
+
+# Django files that get created during the test runs
+.secret_key_store
+*.lock
+
+# Coverage data
+.coverage.*

@@ -32,6 +32,7 @@ if os.path.exists(os.path.join(possible_topdir, 'freezer', '__init__.py')):
 from freezer.apiclient.backups import BackupsManager
 from freezer.apiclient.registration import RegistrationManager
 from freezer.apiclient.actions import ActionManager
+from freezer.apiclient.configs import ConfigsManager
 import exceptions
 
 
@@ -57,6 +58,7 @@ class Client(object):
         self.backups = BackupsManager(self)
         self.registration = RegistrationManager(self)
         self.actions = ActionManager(self)
+        self.configs = ConfigsManager(self)
 
     def _update_api_endpoint(self):
         services = self.auth.services.list()

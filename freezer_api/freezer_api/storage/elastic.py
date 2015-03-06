@@ -22,6 +22,7 @@ Hudson (tjh@cryptsoft.com).
 import elasticsearch
 import logging
 from freezer_api.common.utils import BackupMetadataDoc
+from freezer_api.common.utils import ConfigDoc
 from freezer_api.common import exceptions
 
 
@@ -168,6 +169,39 @@ class ActionTypeManager(TypeManager):
         return version
 
 
+class ConfigTypeManager(TypeManager):
+    def __init__(self, es, doc_type, index='freezer'):
+        TypeManager.__init__(self, es, doc_type, index=index)
+
+    @staticmethod
+    def get_search_query(user_id, doc_id, search={}):
+        base_filter = TypeManager.get_base_search_filter(user_id, search)
+        if doc_id is not None:
+            base_filter.append({"term": {"config_id": doc_id}})
+        query_filter = {"filter": {"bool": {"must": base_filter}}}
+        return {'query': {'filtered': query_filter}}
+
+    def update(self, config_id, config_update_doc):
+        update_doc = {'doc': config_update_doc}
+        try:
+            print config_update_doc
+            res = self.es.update(index=self.index,
+                                 doc_type=self.doc_type,
+                                 id=config_id,
+                                 body=update_doc)
+            print 'here?'
+            version = res['_version']
+        except elasticsearch.TransportError as error:
+            raise exceptions.DocumentNotFound(
+                message='Unable to find configuration file to update '
+                        'with ID {0}'.format(config_id))
+        except Exception as error:
+            raise exceptions.StorageEngineError(
+                message='Unable to update configuration file, '
+                        'config ID {0}'.format(config_id))
+        return version
+
+
 class ElasticSearchEngine(object):
 
     def __init__(self, hosts, index='freezer'):
@@ -177,6 +211,7 @@ class ElasticSearchEngine(object):
         self.backup_manager = BackupTypeManager(self.es, 'backups')
         self.client_manager = ClientTypeManager(self.es, 'clients')
         self.action_manager = ActionTypeManager(self.es, 'actions')
+        self.config_manager = ConfigTypeManager(self.es, 'configs')
 
     def get_backup(self, user_id, backup_id=None, offset=0, limit=10, search={}):
         return self.backup_manager.search(user_id,
@@ -271,4 +306,48 @@ class ElasticSearchEngine(object):
                      format(action_id, version))
         return version
 
+    def add_config(self, user_id, user_name, doc):
+        config_doc = ConfigDoc(user_id, user_name, doc)
+        config_doc = config_doc.serialize()
+        config_id = config_doc['config_id']
 
+        if config_id is None:
+            raise exceptions.BadDataFormat(message='Missing config ID')
+
+        if not self.config_manager.insert(config_doc,
+                                          doc_id=config_id):
+            raise exceptions.StorageEngineError(
+                message='Index operation failed, '
+                        ' config ID: {0}'.format(config_id))
+        logging.info('Config registered, config ID: {0}'.
+                     format(config_id))
+        return config_id
+
+    def delete_config(self, user_id, config_id):
+        return self.config_manager.delete(user_id, config_id)
+
+    def get_config(self, user_id, config_id=None,
+                   offset=0, limit=10, search={}):
+        return self.config_manager.search(user_id,
+                                          config_id,
+                                          search=search,
+                                          offset=offset,
+                                          limit=limit)
+
+    def update_config(self, user_id, config_id, patch,
+                      offset=0, limit=10, search={}):
+
+        if 'config_id' in patch:
+            raise exceptions.BadDataFormat(
+                message='Config ID modification is not allowed, '
+                        ' config ID: {0}'.format(config_id))
+        config_doc = self.config_manager.search(user_id,
+                                                config_id,
+                                                search=search,
+                                                offset=offset,
+                                                limit=limit)[0]
+        config_doc['config_file'].update(patch)
+        version = self.config_manager.update(config_id, config_doc)
+        logging.info('Configuration file {0} updated to version {1}'.
+                     format(config_id, version))
+        return version

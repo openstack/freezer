@@ -1,0 +1,8 @@
+-e git+https://github.com/openstack/horizon.git#egg=horizon
+django-nose
+nose-exclude
+mock
+python-openstackclient
+mox
+parsedatetime
+coverage>=3.6

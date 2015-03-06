@@ -60,3 +60,23 @@ class AuthFailure(ApiClientException):
 class MetadataUpdateFailure(ApiClientException):
     def __init__(self, r=''):
         super(self.__class__, self).__init__(r)
+
+
+class ConfigCreationFailure(ApiClientException):
+    def __init__(self, r=''):
+        super(self.__class__, self).__init__(r)
+
+
+class ConfigGetFailure(ApiClientException):
+    def __init__(self, r=''):
+        super(self.__class__, self).__init__(r)
+
+
+class ConfigDeleteFailure(ApiClientException):
+    def __init__(self, r=''):
+        super(self.__class__, self).__init__(r)
+
+
+class ConfigUpdateFailure(ApiClientException):
+    def __init__(self, r=''):
+        super(self.__class__, self).__init__(r)

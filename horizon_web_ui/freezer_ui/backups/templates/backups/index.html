@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block css %}
+  {% include "_stylesheets.html" %}
+  <link href='{{ STATIC_URL }}freezer/css/freezer.css' type='text/css' media='screen' rel='stylesheet' />
+{% endblock %}
+
+{% load i18n %}
+{% block title %}{% trans "VMs" %}{% endblock %}
+
+{% block page_header %}
+  {% include "horizon/common/_page_header.html" with title=_("Backups") %}
+{% endblock page_header %}
+
+{% block main %}
+  {{ table.render }}
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Backup Restore DR Overview" %}{% endblock %}
+
+{% block css %}
+  {% include "_stylesheets.html" %}
+  <link href='{{ STATIC_URL }}freezer/css/freezer.css' type='text/css' media='screen' rel='stylesheet' />
+{% endblock %}
+
+<noscript>
+  {% trans "This pane needs javascript support." %}
+</noscript>
+
+{% block main %}
+
+<div class="quota-dynamic">
+  <h3 class="quota-heading">{% trans "Overview" %}</h3>
+
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="30"></div>
+      <strong>{% trans "Nodes without backup in the last week" %}<br />
+      18 of 50
+      </strong>
+    </div>
+    
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="70"></div>
+      <strong>{% trans "Total space used for backups" %}<br />
+      150gb of 200gb
+      </strong>
+    </div>
+    
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="0"></div>
+      <strong>{% trans "Storage price per month" %}<br />
+      60 dls
+      </strong>
+    </div>
+</div>
+
+
+<div class="quota-dynamic">
+  <h3 class="quota-heading">{% trans "Backup Summary" %}</h3>
+
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="50"></div>
+      <strong>{% trans "Backups older than 1 week" %}<br />
+      60 of 120
+      </strong>
+    </div>
+    
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="7"></div>
+      <strong>{% trans "Average backup size" %}<br />
+      7gb for 18 backups
+      </strong>
+    </div>
+    
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="18"></div>
+      <strong>{% trans "Average backup time" %}<br />
+      18 min
+      </strong>
+    </div>
+
+</div>
+
+<div class="quota-dynamic">
+  <h3 class="quota-heading">{% trans "Restore Summary" %}</h3>
+    
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="7"></div>
+      <strong>{% trans "Average restore time" %}<br />
+      15 min
+      </strong>
+    </div>
+    
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="0"></div>
+      <strong>{% trans "Restore ratio success to failure" %}<br />
+      100% success
+      </strong>
+    </div>
+</div>
+
+
+<div class="quota-dynamic">
+  <h3 class="quota-heading">{% trans "OS Summary" %}</h3>
+    
+</div>
+
+<div id='dashboard'>
+    </div>
+
+
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script type='text/javascript' src='{{ STATIC_URL }}freezer/js/dashboard.js'></script>
+
+<script type="text/javascript">
+    
+    var freqData=[
+        {State:'Linux',freq:{binary:6902, text:12085, media:500}}
+        ,{State:'Windows',freq:{binary:6500, text:5200, media:100}}
+        ,{State:'Mac OS',freq:{binary:200, text:1000, media:1500}}
+        ];
+
+    dashboard('#dashboard',freqData);
+  
+</script>
+{% endblock %}

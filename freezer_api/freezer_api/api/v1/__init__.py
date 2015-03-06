@@ -22,6 +22,7 @@ Hudson (tjh@cryptsoft.com).
 from freezer_api.api.v1 import backups
 from freezer_api.api.v1 import clients
 from freezer_api.api.v1 import actions
+from freezer_api.api.v1 import configs
 from freezer_api.api.v1 import homedoc
 
 VERSION = {
@@ -60,4 +61,9 @@ def public_endpoints(storage_driver):
         ('/actions/{action_id}',
          actions.ActionsResource(storage_driver)),
 
+        ('/configs',
+         configs.ConfigsCollectionResource(storage_driver)),
+
+        ('/configs/{config_id}',
+         configs.ConfigsResource(storage_driver))
     ]

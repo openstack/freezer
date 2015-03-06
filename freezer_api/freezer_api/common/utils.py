@@ -19,6 +19,8 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
+import uuid
+
 
 class BackupMetadataDoc:
     """
@@ -66,3 +68,44 @@ class BackupMetadataDoc:
             self.data['timestamp'],
             self.data['level']
         )
+
+
+class ConfigDoc:
+    """
+    Wraps a config_file dict and adds some utility methods,
+    and fields
+    """
+    def __init__(self, user_id='', user_name='', data={}):
+        self.user_id = user_id
+        self.user_name = user_name
+        self.data = data
+        # self.id = str(uuid.uuid4().hex)
+
+    def is_valid(self):
+        try:
+            assert (self.config_id is not '')
+            assert (self.user_id is not '')
+        except Exception:
+            return False
+        return True
+
+    def serialize(self):
+        return {'config_id': self.config_id,
+                'user_id': self.user_id,
+                'user_name': self.user_name,
+                'config_file': self.data}
+
+    @staticmethod
+    def un_serialize(d):
+        return ConfigDoc(
+            user_id=d['user_id'],
+            user_name=d['user_name'],
+            data=d['config_file'])
+
+    @property
+    def config_set_id(self):
+        return {'config_id': str(uuid.uuid4().hex)}
+
+    @property
+    def config_id(self):
+        return str(uuid.uuid4().hex)

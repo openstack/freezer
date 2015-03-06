@@ -1,0 +1,46 @@
+<noscript><h3>{{ step }}</h3></noscript>
+<div class="row" ng-controller="DestinationCtrl">
+    <div class="col-sm-12">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr class="table_caption">
+                    <th class="table_header" colspan="3" data-column="0">
+                        <div class="table_actions clearfix">
+                            <div class="table_search">
+                                <input class="form-control" ng-model="query">
+                            </div>
+                        </div>
+                    </th>
+                </tr>
+                <tr ng-hide="filtered.length <= 0">
+                    <th class="multi_select_column"></th>
+                    <th>Hostname</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="client in filtered = (clients | filter: { client : { $ : query } } | limitTo:10)">
+                    <td class="multi_select_column">
+                        <input type="radio" name="client" value="{$ client['client']['client_id'] $}">
+                    </td>
+                    <td>{$ client['client']['client_id'] $}</td>
+                    <td>{$ client['client']['description'] $}</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" data-column="0">
+                        {$ filtered.length ? filtered.length : 0 $} out of {$ clients.length $} displayed. Use the filter field to limit the number of results.
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <div class="col-sm-6">
+        {% include "horizon/common/_form_fields.html" %}
+        {{ table.render }}
+    </div>
+    <div class="col-sm-12">
+        {{ step.get_help_text }}
+    </div>
+</div>
