@@ -901,6 +901,8 @@ class FakeSwift:
     def fake_get_container_content(self, backup_opt):
         return backup_opt
 
+    def remove_obj_older_than(self, backup_opt):
+        return backup_opt
 
 class FakeRestore:
 
@@ -915,6 +917,9 @@ class FakeUtils:
 
     def __init__(self):
         return None
+
+    def fake_set_backup_level(self,backup_opt, manifest_meta):
+        return backup_opt, manifest_meta
 
     def fake_set_backup_level_fs(self, backup_opt, manifest_meta):
         #backup_opt = BackupOpt1()
@@ -939,3 +944,14 @@ class FakeUtils:
         manifest_meta = {}
         backup_opt.mode = None
         return backup_opt, manifest_meta
+
+
+class FakeJob:
+    def __init__(self, conf_dict):
+        self.conf = conf_dict
+
+    def execute(self):
+        return
+
+def fake_create_job(conf):
+    return FakeJob(conf)

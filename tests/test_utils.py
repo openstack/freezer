@@ -4,9 +4,9 @@ from freezer.utils import (
     gen_manifest_meta, validate_all_args, validate_any_args,
     sort_backup_list, create_dir, get_match_backup,
     get_newest_backup, get_rel_oldest_backup, get_abs_oldest_backup,
-    eval_restart_backup, start_time, elapsed_time, set_backup_level,
+    eval_restart_backup, set_backup_level,
     get_vol_fs_type, check_backup_and_tar_meta_existence, add_host_name_ts_level,
-    get_mount_from_path)
+    get_mount_from_path, TimeStamp)
 
 from freezer import utils
 import pytest
@@ -155,17 +155,6 @@ class TestUtils:
         #pytest.raises(Exception, eval_restart_backup, backup_opt)
 
 
-    def test_start_time(self):
-
-        (time_stamp, day_time) = start_time()
-        assert type(day_time) is datetime.datetime
-        assert type(time_stamp) is int
-
-    def test_elapsed_time(self):
-
-        (time_stamp, day_time) = start_time()
-        assert elapsed_time(day_time) is None
-
     def test_set_backup_level(self):
 
         manifest_meta = dict()
@@ -255,3 +244,24 @@ class TestUtils:
         dir2 = '/tmp/nonexistentpathasdf'
         assert type(get_mount_from_path(dir1)) is str
         pytest.raises(Exception, get_mount_from_path, dir2)
+
+
+class TestTimeStamp:
+    def setup(self):
+        d = datetime.datetime(2015, 3, 7, 17, 47, 44, 716799)
+        self.timestamp = TimeStamp(d)
+
+    def test_factory(self):
+        new_timestamp = TimeStamp.now()
+        assert isinstance(new_timestamp, TimeStamp)
+
+    def test_strtime(self):
+        assert '2015-03-07 17:47:44' == self.timestamp.strtime()
+
+    def test_repr(self):
+        assert '1425750464' == '{}'.format(self.timestamp)
+
+    def test_sub(self):
+        d2 = datetime.datetime(2015, 3, 7, 18, 18, 38, 508411)
+        ts2 = TimeStamp(d2)
+        assert '0:30:53.791612' == '{}'.format(ts2 - self.timestamp)
