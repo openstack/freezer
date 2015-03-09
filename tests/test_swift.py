@@ -26,7 +26,7 @@ from freezer.swift import (create_containers, show_containers,
     show_objects, remove_obj_older_than, get_container_content,
     check_container_existance, SwiftOptions,
     get_client, manifest_upload, add_object, get_containers_list,
-    object_to_file, object_to_stream, remove_object)
+    object_to_file, object_to_stream, _remove_object, remove_object)
 import os
 import logging
 import subprocess
@@ -84,6 +84,30 @@ class TestSwift:
         assert show_objects(backup_opt) is False
 
 
+    def test__remove_object(self, monkeypatch):
+        backup_opt = BackupOpt1()
+        fakelogging = FakeLogging()
+        fakeclient = FakeSwiftClient()
+        fakeconnector = fakeclient.client()
+        fakeswclient = fakeconnector.Connection()
+        backup_opt.sw_connector = fakeswclient
+        faketime = FakeTime()
+
+        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
+        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
+        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
+        monkeypatch.setattr(logging, 'error', fakelogging.error)
+        monkeypatch.setattr(time, 'sleep', faketime.sleep)
+
+        assert _remove_object(fakeswclient, 'container', 'obj_name') is None
+
+        fakeswclient.num_try = 59
+        assert _remove_object(fakeswclient, 'container', 'obj_name') is None
+
+        fakeswclient.num_try = 60
+        pytest.raises(Exception, _remove_object, fakeclient, 'container', 'obj_name')
+
+
     def test_remove_object(self, monkeypatch):
         backup_opt = BackupOpt1()
         fakelogging = FakeLogging()
@@ -99,13 +123,7 @@ class TestSwift:
         monkeypatch.setattr(logging, 'error', fakelogging.error)
         monkeypatch.setattr(time, 'sleep', faketime.sleep)
 
-        assert remove_object(backup_opt, 'obj_name') is None
-
-        fakeswclient.num_try = 59
-        assert remove_object(backup_opt, 'obj_name') is None
-
-        fakeswclient.num_try = 60
-        pytest.raises(Exception, remove_object, backup_opt, 'obj_name')
+        assert remove_object(fakeswclient, 'freezer_segments', 'has_segments') is None
 
 
     def test_remove_obj_older_than(self, monkeypatch):

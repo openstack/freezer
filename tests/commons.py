@@ -500,8 +500,11 @@ class FakeSwiftClient:
             def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
                 return True
 
-            def head_object(self, opt1=True, opt2=True):
-                return True
+            def head_object(self, container_name='', object_name=''):
+                if object_name == 'has_segments':
+                    return {'x-object-manifest': 'freezer_segments/hostname_backup_name_1234567890_0'}
+                else:
+                    return {}
 
             def put_container(self, container=True):
                 return True
@@ -513,8 +516,14 @@ class FakeSwiftClient:
                 else:
                     return True
 
-            def get_container(self, *args, **kwargs):
-                return [True, True]
+            def get_container(self, container, *args, **kwargs):
+                if container == 'freezer_segments':
+                    return ({'container_metadata': True}, [
+                        {'bytes': 251, 'last_modified': '2015-03-09T10:37:01.701170', 'hash': '9a8cbdb30c226d11bf7849f3d48831b9', 'name': 'hostname_backup_name_1234567890_0/1234567890/67108864/00000000', 'content_type': 'application/octet-stream'},
+                        {'bytes': 632, 'last_modified': '2015-03-09T11:54:27.860730', 'hash': 'd657a4035d0dcc18deaf9bfd2a3d0ebf', 'name': 'hostname_backup_name_1234567891_1/1234567891/67108864/00000000', 'content_type': 'application/octet-stream'}
+                    ])
+                else:
+                    return [{}, []]
 
             def get_account(self, *args, **kwargs):
                 return True, [{'name': 'test-container'}, {'name': 'test-container-segments'}]

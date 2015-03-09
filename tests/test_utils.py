@@ -234,7 +234,7 @@ class TestUtils:
 
         fakeswiftclient = FakeSwiftClient()
         backup_opt = BackupOpt1()
-        assert check_backup_and_tar_meta_existence(backup_opt) is True
+        assert type(check_backup_and_tar_meta_existence(backup_opt)) is dict
 
         fake_get_newest_backup = Fakeget_newest_backup()
         monkeypatch.setattr(utils, 'get_newest_backup', fake_get_newest_backup)

@@ -111,16 +111,14 @@ def show_objects(backup_opt_dict):
     return True
 
 
-def remove_object(backup_opt_dict, obj):
-    sw_connector = backup_opt_dict.sw_connector
+def _remove_object(sw_connector, container, obj):
     logging.info('[*] Removing backup object: {0}'.format(obj))
     sleep_time = 120
     retry_max_count = 60
     curr_count = 0
     while True:
         try:
-            sw_connector.delete_object(
-                backup_opt_dict.container, obj)
+            sw_connector.delete_object(container, obj)
             logging.info(
                 '[*] Remote object {0} removed'.format(obj))
             break
@@ -142,6 +140,21 @@ def remove_object(backup_opt_dict, obj):
                     ('[*] Remote object {0} failed to be removed'
                      ' Retrying intent n. {1} out of {2} totals'.format(
                          obj, curr_count, retry_max_count)))
+
+
+def remove_object(sw_connector, container, obj):
+    head_info = sw_connector.head_object(container, obj)
+    manifest = head_info.get('x-object-manifest', None)
+    _remove_object(sw_connector, container, obj)
+    if not manifest:
+        return
+    segments_container, segments_match = manifest.split('/')
+    logging.info("Removing segments of object {0} from container {1}".
+                 format(obj, segments_container))
+    segment_list = sw_connector.get_container(segments_container)[1]
+    for segment in segment_list:
+        if segment['name'].startswith(segments_match):
+            _remove_object(sw_connector, segments_container, segment['name'])
 
 
 def remove_obj_older_than(backup_opt_dict):
@@ -197,13 +210,15 @@ def remove_obj_older_than(backup_opt_dict):
             else:
                 if match_object.startswith('tar_meta'):
                     if not tar_meta_incremental_dep_flag:
-                        remove_object(backup_opt_dict, match_object)
+                        remove_object(backup_opt_dict.sw_connector,
+                                      backup_opt_dict.container, match_object)
                     else:
                         if obj_name_match.group(3) is '0':
                             tar_meta_incremental_dep_flag = False
                 else:
                     if not incremental_dep_flag:
-                        remove_object(backup_opt_dict, match_object)
+                        remove_object(backup_opt_dict.sw_connector,
+                                      backup_opt_dict.container, match_object)
                     else:
                         if obj_name_match.group(3) is '0':
                             incremental_dep_flag = False
