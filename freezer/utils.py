@@ -368,32 +368,23 @@ def eval_restart_backup(backup_opt_dict):
     return False
 
 
-def start_time():
-    '''
-    Compute start execution time, write it in the logs and return timestamp
-    '''
+class TimeStamp(object):
+    def __init__(self, date_time):
+        self.date_time = date_time
+        self.seconds_since_epoch = int(time.mktime(self.date_time.timetuple()))
 
-    fmt = '%Y-%m-%d %H:%M:%S'
-    today_start = datetime.datetime.now()
-    time_stamp = int(time.mktime(today_start.timetuple()))
-    fmt_date_start = today_start.strftime(fmt)
-    logging.info('[*] Execution Started at: {0}'.format(fmt_date_start))
-    return time_stamp, today_start
+    def strtime(self):
+        return self.date_time.strftime('%Y-%m-%d %H:%M:%S')
 
+    def __repr__(self):
+        return u'{}'.format(self.seconds_since_epoch)
 
-def elapsed_time(today_start):
-    '''
-    Compute elapsed time from today_start and write basic stats
-    in the log file
-    '''
+    def __sub__(self, other):
+        return self.date_time - other.date_time
 
-    fmt = '%Y-%m-%d %H:%M:%S'
-    today_finish = datetime.datetime.now()
-    fmt_date_finish = today_finish.strftime(fmt)
-    time_elapsed = today_finish - today_start
-    # Logging end execution information
-    logging.info('[*] Execution Finished, at: {0}'.format(fmt_date_finish))
-    logging.info('[*] Time Elapsed: {0}'.format(time_elapsed))
+    @staticmethod
+    def now():
+        return TimeStamp(datetime.datetime.now())
 
 
 def set_backup_level(backup_opt_dict, manifest_meta_dict):
