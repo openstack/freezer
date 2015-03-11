@@ -82,10 +82,7 @@ setup(
         'python-keystoneclient>=0.7.0',
         'pymysql',
         'pymongo',
-        'docutils>=0.8.1',
-        'pyrsync'],
-    dependency_links=[
-        "git+https://github.com/isislovecruft/pyrsync.git#egg=pyrsync"],
+        'docutils>=0.8.1'],
     extras_require={
         'testing': ['pytest', 'flake8'],
     }
