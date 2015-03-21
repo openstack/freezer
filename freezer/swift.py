@@ -23,9 +23,8 @@ Freezer functions to interact with OpenStack Swift client and server
 
 from freezer.utils import (
     validate_all_args, get_match_backup,
-    sort_backup_list, date_string_to_timestamp)
+    sort_backup_list, DateTime)
 
-import datetime
 import os
 import swiftclient
 import json
@@ -167,22 +166,19 @@ def remove_obj_older_than(backup_opt_dict):
         logging.warning('[*] No remote objects will be removed')
         return
 
-    remove_from_timestamp = False
     if backup_opt_dict.remove_older_than is not None:
         if backup_opt_dict.remove_from_date:
             raise Exception("Please specify remove date unambiguously")
         current_timestamp = backup_opt_dict.time_stamp
-        max_time = backup_opt_dict.remove_older_than * 86400
-        remove_from_timestamp = current_timestamp - max_time
+        max_age = int(backup_opt_dict.remove_older_than * 86400)
+        remove_from = DateTime(current_timestamp - max_age)
     else:
         if not backup_opt_dict.remove_from_date:
             raise Exception("Remove date/age not specified")
-        remove_from_timestamp = date_string_to_timestamp(
-            backup_opt_dict.remove_from_date)
+        remove_from = DateTime(backup_opt_dict.remove_from_date)
 
     logging.info('[*] Removing objects older than {0} ({1})'.format(
-        datetime.datetime.fromtimestamp(remove_from_timestamp),
-        remove_from_timestamp))
+        remove_from, remove_from.timestamp))
 
     backup_name = backup_opt_dict.backup_name
     hostname = backup_opt_dict.hostname
@@ -199,7 +195,7 @@ def remove_obj_older_than(backup_opt_dict):
         if obj_name_match:
             remote_obj_timestamp = int(obj_name_match.group(2))
 
-            if remote_obj_timestamp >= remove_from_timestamp:
+            if remote_obj_timestamp >= remove_from.timestamp:
                 if match_object.startswith('tar_meta'):
                     tar_meta_incremental_dep_flag = \
                         (obj_name_match.group(3) is not '0')

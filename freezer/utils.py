@@ -368,23 +368,33 @@ def eval_restart_backup(backup_opt_dict):
     return False
 
 
-class TimeStamp(object):
-    def __init__(self, date_time):
-        self.date_time = date_time
-        self.seconds_since_epoch = int(time.mktime(self.date_time.timetuple()))
+class DateTime(object):
+    def __init__(self, value):
+        if isinstance(value, int):
+            self.date_time = datetime.datetime.fromtimestamp(value)
+        elif isinstance(value, datetime.datetime):
+            self.date_time = value
+        else:
+            fmt = '%Y-%m-%dT%H:%M:%S'
+            try:
+                self.date_time = datetime.datetime.strptime(value, fmt)
+            except:
+                raise Exception('bad datetime format: "{0}'.format(value))
 
-    def strtime(self):
-        return self.date_time.strftime('%Y-%m-%d %H:%M:%S')
+    @property
+    def timestamp(self):
+        return int(time.mktime(self.date_time.timetuple()))
 
     def __repr__(self):
-        return u'{}'.format(self.seconds_since_epoch)
+        return self.date_time.strftime('%Y-%m-%d %H:%M:%S')
 
     def __sub__(self, other):
-        return self.date_time - other.date_time
+        assert isinstance(other, DateTime)
+        return self.date_time - other.date_time     # return timedelta
 
     @staticmethod
     def now():
-        return TimeStamp(datetime.datetime.now())
+        return DateTime(datetime.datetime.now())
 
 
 def set_backup_level(backup_opt_dict, manifest_meta_dict):
@@ -538,9 +548,3 @@ def get_mount_from_path(path):
         mount_point_path = os.path.dirname(mount_point_path)
 
     return mount_point_path
-
-
-def date_string_to_timestamp(date_string):
-    fmt = '%Y-%m-%dT%H:%M:%S'
-    opt_backup_date = datetime.datetime.strptime(date_string, fmt)
-    return int(time.mktime(opt_backup_date.timetuple()))

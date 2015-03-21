@@ -6,7 +6,7 @@ from freezer.utils import (
     get_newest_backup, get_rel_oldest_backup, get_abs_oldest_backup,
     eval_restart_backup, set_backup_level,
     get_vol_fs_type, check_backup_and_tar_meta_existence, add_host_name_ts_level,
-    get_mount_from_path, TimeStamp)
+    get_mount_from_path, DateTime)
 
 from freezer import utils
 import pytest
@@ -246,22 +246,32 @@ class TestUtils:
         pytest.raises(Exception, get_mount_from_path, dir2)
 
 
-class TestTimeStamp:
+class TestDateTime:
     def setup(self):
         d = datetime.datetime(2015, 3, 7, 17, 47, 44, 716799)
-        self.timestamp = TimeStamp(d)
+        self.datetime = DateTime(d)
 
     def test_factory(self):
-        new_timestamp = TimeStamp.now()
-        assert isinstance(new_timestamp, TimeStamp)
+        new_time = DateTime.now()
+        assert isinstance(new_time, DateTime)
 
-    def test_strtime(self):
-        assert '2015-03-07 17:47:44' == self.timestamp.strtime()
+    def test_timestamp(self):
+        assert 1425750464 == self.datetime.timestamp
 
     def test_repr(self):
-        assert '1425750464' == '{}'.format(self.timestamp)
+        assert '2015-03-07 17:47:44' == '{}'.format(self.datetime)
+
+    def test_initialize_int(self):
+        d = DateTime(1425750464)
+        assert 1425750464 == d.timestamp
+        assert '2015-03-07 17:47:44' == '{}'.format(d)
+
+    def test_initialize_string(self):
+        d = DateTime('2015-03-07T17:47:44')
+        assert 1425750464 == d.timestamp
+        assert '2015-03-07 17:47:44' == '{}'.format(d)
 
     def test_sub(self):
         d2 = datetime.datetime(2015, 3, 7, 18, 18, 38, 508411)
-        ts2 = TimeStamp(d2)
-        assert '0:30:53.791612' == '{}'.format(ts2 - self.timestamp)
+        ts2 = DateTime(d2)
+        assert '0:30:53.791612' == '{}'.format(ts2 - self.datetime)

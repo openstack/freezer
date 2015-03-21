@@ -37,20 +37,20 @@ class Job:
     @staticmethod
     def executemethod(func):
         def wrapper(self):
-            self.time_stamp = utils.TimeStamp.now()
-            self.conf.time_stamp = self.time_stamp
+            self.start_time = utils.DateTime.now()
+            self.conf.time_stamp = self.start_time.timestamp
             logging.info('[*] Job execution Started at: {0}'.
-                         format(self.time_stamp.strtime()))
+                         format(self.start_time))
 
             self.conf = swift.get_client(self.conf)
             self.conf = swift.get_containers_list(self.conf)
             retval = func(self)
 
-            end_time = utils.TimeStamp.now()
+            end_time = utils.DateTime.now()
             logging.info('[*] Job execution Finished, at: {0}'.
-                         format(end_time.strtime()))
+                         format(end_time))
             logging.info('[*] Job time Elapsed: {0}'.
-                         format(end_time - self.time_stamp))
+                         format(end_time - self.start_time))
             return retval
         return wrapper
 
@@ -108,13 +108,13 @@ class BackupJob(Job):
 
         if self.conf.mode == 'fs':
             backup.backup_mode_fs(
-                self.conf, self.time_stamp, manifest_meta_dict)
+                self.conf, self.start_time.timestamp, manifest_meta_dict)
         elif self.conf.mode == 'mongo':
             backup.backup_mode_mongo(
-                self.conf, self.time_stamp, manifest_meta_dict)
+                self.conf, self.start_time.timestamp, manifest_meta_dict)
         elif self.conf.mode == 'mysql':
             backup.backup_mode_mysql(
-                self.conf, self.time_stamp, manifest_meta_dict)
+                self.conf, self.start_time.timestamp, manifest_meta_dict)
         else:
             raise ValueError('Please provide a valid backup mode')
 
