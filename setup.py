@@ -3,6 +3,7 @@
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import os
+import io
 
 here = os.path.abspath(os.path.dirname(__file__))
 
