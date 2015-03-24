@@ -124,21 +124,16 @@ def _remove_object(sw_connector, container, obj):
         except Exception as error:
             curr_count += 1
             time.sleep(sleep_time)
+            err_msg = (
+                '[*] Remote Object {0} failed to be removed.'
+                ' Retrying intent {1} out of {2} totals'.format(
+                    obj, curr_count, retry_max_count))
             if curr_count >= retry_max_count:
-                err_msg = (
-                    '[*] Remote Object {0} failed to be removed.'
-                    ' Retrying intent '
-                    '{1} out of {2} totals'.format(
-                        obj, curr_count,
-                        retry_max_count))
                 error_message = \
                     '[*] Error: {0}: {1}'.format(err_msg, error)
                 raise Exception(error_message)
             else:
-                logging.warning(
-                    ('[*] Remote object {0} failed to be removed'
-                     ' Retrying intent n. {1} out of {2} totals'.format(
-                         obj, curr_count, retry_max_count)))
+                logging.warning(err_msg)
 
 
 def remove_object(sw_connector, container, obj):
@@ -303,7 +298,6 @@ class DryRunSwiftclientConnectionWrapper:
 
 
 class SwiftOptions:
-
     @property
     def os_options(self):
         """
@@ -339,6 +333,14 @@ def get_client(backup_opt_dict):
 
     options = SwiftOptions.create_from_dict(os.environ)
 
+    download_limit = backup_opt_dict.download_limit
+    upload_limit = backup_opt_dict.upload_limit
+
+    if upload_limit > -1 or download_limit > - 1:
+        from bandwidth import monkeypatch_socket_bandwidth
+
+        monkeypatch_socket_bandwidth(download_limit, upload_limit)
+
     backup_opt_dict.sw_connector = swiftclient.client.Connection(
         authurl=options.auth_url,
         user=options.user_name, key=options.password,
@@ -348,7 +350,7 @@ def get_client(backup_opt_dict):
         insecure=backup_opt_dict.insecure, retries=6)
 
     if backup_opt_dict.dry_run:
-        backup_opt_dict.sw_connector =\
+        backup_opt_dict.sw_connector = \
             DryRunSwiftclientConnectionWrapper(backup_opt_dict.sw_connector)
 
     return backup_opt_dict
@@ -379,7 +381,7 @@ def manifest_upload(
 
 
 def add_object(
-    backup_opt_dict, backup_queue, absolute_file_path=None,
+        backup_opt_dict, backup_queue, absolute_file_path=None,
         time_stamp=None):
     """
     Upload object on the remote swift server
@@ -507,7 +509,6 @@ def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):
     for obj_chunk in backup_opt_dict.sw_connector.get_object(
             backup_opt_dict.container, obj_name,
             resp_chunk_size=RESP_CHUNK_SIZE)[1]:
-
         write_pipe.send_bytes(obj_chunk)
 
     # Closing the pipe after checking no data

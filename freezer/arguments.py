@@ -26,6 +26,7 @@ import os
 import argparse
 import logging
 import distutils.spawn as distspawn
+import utils
 
 
 def alter_proxy(args_dict):
@@ -134,7 +135,7 @@ def backup_arguments():
         '--max-level', action='store',
         help="Set the backup level used with tar to implement incremental \
         backup. If a level 1 is specified but no level 0 is already \
-        available, a level 0 will be done and subesequently backs to level 1.\
+        available, a level 0 will be done and subsequently backs to level 1.\
         Default 0 (No Incremental)", dest='max_backup_level',
         type=int, default=False)
     arg_parser.add_argument(
@@ -170,7 +171,7 @@ def backup_arguments():
         dest='remove_from_date', default=False)
     arg_parser.add_argument(
         '--no-incremental', action='store_true',
-        help='''Disable incremantal feature. By default freezer build the
+        help='''Disable incremental feature. By default freezer build the
         meta data even for level 0 backup. By setting this option incremental
         meta data is not created at all. Default disabled''',
         dest='no_incremental', default=False)
@@ -238,7 +239,7 @@ def backup_arguments():
     arg_parser.add_argument(
         '--restore-from-date', action='store',
         help='''Set the absolute path where you want your data restored.
-        Please provide datime in forma "YYYY-MM-DDThh:mm:ss"
+        Please provide datetime in format "YYYY-MM-DDThh:mm:ss"
         i.e. "1979-10-03T23:23:23". Make sure the "T" is between date and time
         Default False.''', dest='restore_from_date', default=False)
     arg_parser.add_argument(
@@ -257,12 +258,12 @@ def backup_arguments():
         dest='quiet', default=False)
     arg_parser.add_argument(
         '--insecure', action='store_true',
-        help=('Allow to access swift servers without checking SSL certs.'),
+        help='Allow to access swift servers without checking SSL certs.',
         dest='insecure', default=False)
     arg_parser.add_argument(
         '--os-auth-ver', choices=['1', '2', '3'],
         action='store',
-        help=('Swift auth version, could be 1, 2 or 3'),
+        help='Swift auth version, could be 1, 2 or 3',
         dest='auth_version', default=2)
     arg_parser.add_argument(
         '--proxy', action='store',
@@ -271,8 +272,22 @@ def backup_arguments():
         dest='proxy', default=False)
     arg_parser.add_argument(
         '--dry-run', action='store_true',
-        help=('Do everything except writing or removing objects'),
+        help='Do everything except writing or removing objects',
         dest='dry_run', default=False)
+    arg_parser.add_argument(
+        '--upload-limit', action='store',
+        help='''Upload bandwidth limit in Bytes per sec.
+        Can be invoked with dimensions (10K, 120M, 10G).''',
+        dest='upload_limit',
+        type=utils.human2bytes,
+        default=-1)
+    arg_parser.add_argument(
+        '--download-limit', action='store',
+        help='''Download bandwidth limit in Bytes per sec.
+        Can be invoked with dimensions (10K, 120M, 10G).''',
+        dest='download_limit',
+        type=utils.human2bytes,
+        default=-1)
 
     backup_args = arg_parser.parse_args()
     # Set additional namespace attributes

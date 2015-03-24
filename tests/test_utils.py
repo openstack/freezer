@@ -5,15 +5,12 @@ from freezer.utils import (
     sort_backup_list, create_dir, get_match_backup,
     get_newest_backup, get_rel_oldest_backup, get_abs_oldest_backup,
     eval_restart_backup, set_backup_level,
-    get_vol_fs_type, check_backup_and_tar_meta_existence, add_host_name_ts_level,
-    get_mount_from_path, DateTime)
+    get_vol_fs_type, check_backup_and_tar_meta_existence,
+    add_host_name_ts_level, get_mount_from_path, human2bytes, DateTime)
 
 from freezer import utils
 import pytest
-import argparse
-import os
 import datetime
-import re
 from commons import *
 
 
@@ -244,6 +241,16 @@ class TestUtils:
         dir2 = '/tmp/nonexistentpathasdf'
         assert type(get_mount_from_path(dir1)) is str
         pytest.raises(Exception, get_mount_from_path, dir2)
+
+    def test_human2bytes(self):
+        assert human2bytes('0 B') == 0
+        assert human2bytes('1 K') == 1024
+        assert human2bytes('1 Gi') == 1073741824
+        assert human2bytes('1 tera') == 1099511627776
+        assert human2bytes('0.5kilo') == 512
+        assert human2bytes('0.1  byte') == 0
+        assert human2bytes('1 k') == 1024
+        pytest.raises(ValueError, human2bytes, '12 foo')
 
 
 class TestDateTime:
