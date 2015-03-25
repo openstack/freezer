@@ -646,10 +646,14 @@ class BackupOpt1:
         self.restart_always_backup = 100000
         self.remote_match_backup = [
             'test-hostname_test-backup-name_1234567_0',
-            'test-hostname_test-backup-name_aaaaa__a',
-            #'test-hostname_test-backup-name_9999999999999999999999999999999_0',
             'test-hostname_test-backup-name_1234568_1',
             'test-hostname_test-backup-name_1234569_2',
+            'test-hostname_test-backup-name_1234569_3',
+            'test-hostname_test-backup-name_1234569_4',
+            'test-hostname_test-backup-name_1234569_5',
+            'tar_metadata_test-hostname_test-backup-name_1234569_5',
+            'tar_metadata_test-hostname_test-backup-name_1234569_4',
+            'tar_metadata_test-hostname_test-backup-name_1234569_3',
             'tar_metadata_test-hostname_test-backup-name_1234569_2',
             'tar_metadata_test-hostname_test-backup-name_1234568_1',
             'tar_metadata_test-hostname_test-backup-name_1234567_0']

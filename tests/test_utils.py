@@ -10,10 +10,7 @@ from freezer.utils import (
 
 from freezer import utils
 import pytest
-import argparse
-import os
 import datetime
-import re
 from commons import *
 
 
@@ -63,9 +60,21 @@ class TestUtils:
 
     def test_sort_backup_list(self):
 
-        backup_opt = BackupOpt1()
+        sorted_backups = sort_backup_list(BackupOpt1())
 
-        assert type(sort_backup_list(backup_opt)) is list
+        sort_params = map(
+            lambda x: map(lambda y: int(y), x.rsplit('_', 2)[-2:]),
+            sorted_backups)
+
+        (max_time, max_level) = sort_params[0]
+
+        for param in sort_params:
+            (backup_time, level) = param
+            assert not backup_time > max_time
+            assert not (backup_time == max_time and level > max_level)
+            max_time = backup_time
+            max_level = level
+
 
     def test_create_dir(self, monkeypatch):
 

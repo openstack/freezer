@@ -152,15 +152,18 @@ def validate_any_args(required_list):
 
 
 def sort_backup_list(backup_opt_dict):
-    '''
+    """
     Sort the backups by timestamp. The provided list contains strings in the
     format hostname_backupname_timestamp_level
-    '''
+    """
 
     # Remove duplicates objects
-    sorted_backups_list = list(set(backup_opt_dict.remote_match_backup))
-    sorted_backups_list.sort(key=lambda x: x.rsplit('_', 2)[1], reverse=True)
-    return sorted_backups_list
+    backups_list = list(set(backup_opt_dict.remote_match_backup))
+
+    backups_list.sort(
+        key=lambda x: map(lambda y: int(y), x.rsplit('_', 2)[-2:]),
+        reverse=True)
+    return backups_list
 
 
 def create_dir(directory, do_log=True):
