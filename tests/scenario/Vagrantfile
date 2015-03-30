@@ -1,0 +1,27 @@
+#ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
+
+Vagrant.configure("2") do |config|
+  config.ssh.username = 'vagrant'
+  config.ssh.password = 'vagrant'
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+    vb.memory = 2048
+    vb.cpus = 2
+  end
+
+  config.vm.provider "libvirt" do |lbv|
+    lbv.driver = "kvm"
+    lbv.memory = 2048
+    lbv.cpus = 2
+  end
+
+  config.vm.define "freezer-vm" do |machine|
+    machine.vm.box = "trusty64"
+    machine.vm.network "private_network" , ip: "10.199.199.199"
+
+    machine.vm.provision :shell, path: "vagrant-scripts/fix-proxy.sh", args: "P-R-O-X-Y", keep_color: true
+    machine.vm.provision :shell, path: "vagrant-scripts/deploy-devstack.sh", args: "", keep_color: true
+    machine.vm.provision :shell, path: "vagrant-scripts/test-swift.sh", args: "", keep_color: true
+  end
+end

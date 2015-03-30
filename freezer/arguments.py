@@ -54,7 +54,7 @@ def alter_proxy(args_dict):
         raise Exception('Proxy has unknown scheme')
 
 
-def backup_arguments():
+def backup_arguments(args_dict={}):
     """
     Default arguments and command line options interface. The function return
     a name space called backup_args.
@@ -275,6 +275,9 @@ def backup_arguments():
         dest='dry_run', default=False)
 
     backup_args = arg_parser.parse_args()
+    # Intercept command line arguments if you are not using the CLI
+    if args_dict:
+        backup_args.__dict__.update(args_dict)
     # Set additional namespace attributes
     backup_args.__dict__['remote_match_backup'] = []
     backup_args.__dict__['remote_objects'] = []
