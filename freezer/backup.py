@@ -25,10 +25,43 @@ from freezer.lvm import lvm_snap, lvm_snap_remove, get_lvm_info
 from freezer.tar import tar_backup, gen_tar_command
 from freezer.swift import add_object, manifest_upload, get_client
 from freezer.utils import gen_manifest_meta, add_host_name_ts_level
+from freezer.vss import vss_create_shadow_copy
+from freezer.vss import vss_delete_shadow_copy
+from freezer.vss import start_sql_server
+from freezer.vss import stop_sql_server
+from freezer.winutils import use_shadow
+from freezer.winutils import is_windows
 
 import multiprocessing
 import logging
 import os
+
+from os.path import expanduser
+home = expanduser("~")
+
+
+def backup_mode_sql_server(backup_opt_dict, time_stamp, manifest_meta_dict):
+    """
+    Execute a SQL Server DB backup. Currently only backups with shadow
+    copy are supported. This mean, as soon as the shadow copy is created
+    the db writes will be blocked and a checkpoint will be created, as soon
+    as the backup finish the db will be unlocked and the backup will be
+    uploaded. A sql_server.conf_file is required for this operation.
+    """
+    with open(backup_opt_dict.sql_server_config, 'r') as sql_conf_file_fd:
+        for line in sql_conf_file_fd:
+            if 'instance' in line:
+                db_instance = line.split('=')[1].strip()
+                backup_opt_dict.sql_server_instance = db_instance
+                continue
+            else:
+                raise Exception('Please indicate a valid SQL Server instance')
+
+    try:
+        stop_sql_server(backup_opt_dict)
+        backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict)
+    finally:
+        start_sql_server(backup_opt_dict)
 
 
 def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
@@ -116,75 +149,104 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
 
     logging.info('[*] File System backup is being executed...')
 
-    # If lvm_auto_snap is true, the volume group and volume name will be
-    # extracted automatically
-    if backup_opt_dict.lvm_auto_snap:
-        backup_opt_dict = get_lvm_info(backup_opt_dict)
+    try:
 
-    # Generate the lvm_snap if lvm arguments are available
-    lvm_snap(backup_opt_dict)
+        if is_windows():
+            # Create a shadow copy.
+            # Create a shadow copy.
+            backup_opt_dict.shadow_path, backup_opt_dict.shadow = \
+                vss_create_shadow_copy(backup_opt_dict.volume)
 
-    # Generate a string hostname, backup name, timestamp and backup level
-    file_name = add_host_name_ts_level(backup_opt_dict, time_stamp)
-    meta_data_backup_file = u'tar_metadata_{0}'.format(file_name)
+        else:
+            # If lvm_auto_snap is true, the volume group and volume name will
+            # be extracted automatically
+            if backup_opt_dict.lvm_auto_snap:
+                backup_opt_dict = get_lvm_info(backup_opt_dict)
 
-    # Execute a tar gzip of the specified directory and return
-    # small chunks (default 128MB), timestamp, backup, filename,
-    # file chunk index and the tar meta-data file
-    (backup_opt_dict, tar_command, manifest_meta_dict) = gen_tar_command(
-        opt_dict=backup_opt_dict, time_stamp=time_stamp,
-        remote_manifest_meta=manifest_meta_dict)
-    # Initialize a Queue for a maximum of 2 items
-    tar_backup_queue = multiprocessing.Queue(maxsize=2)
-    tar_backup_stream = multiprocessing.Process(
-        target=tar_backup, args=(
-            backup_opt_dict, tar_command, tar_backup_queue,))
-    tar_backup_stream.daemon = True
-    tar_backup_stream.start()
+            # Generate the lvm_snap if lvm arguments are available
+            lvm_snap(backup_opt_dict)
 
-    add_object_stream = multiprocessing.Process(
-        target=add_object, args=(
-            backup_opt_dict, tar_backup_queue, file_name, time_stamp))
-    add_object_stream.daemon = True
-    add_object_stream.start()
+        # Generate a string hostname, backup name, timestamp and backup level
+        file_name = add_host_name_ts_level(backup_opt_dict, time_stamp)
+        meta_data_backup_file = u'tar_metadata_{0}'.format(file_name)
+        backup_opt_dict.meta_data_file = meta_data_backup_file
 
-    tar_backup_stream.join()
-    tar_backup_queue.put(({False: False}))
-    tar_backup_queue.close()
-    add_object_stream.join()
+        # Initialize a Queue for a maximum of 2 items
+        tar_backup_queue = multiprocessing.Queue(maxsize=2)
 
-    if add_object_stream.exitcode:
-        raise Exception('failed to upload object to swift server')
+        if is_windows():
+            backup_opt_dict.absolute_path = backup_opt_dict.src_file
+            backup_opt_dict.src_file = use_shadow(backup_opt_dict.src_file,
+                                                  backup_opt_dict.volume)
 
-    (backup_opt_dict, manifest_meta_dict, tar_meta_to_upload,
-        tar_meta_prev) = gen_manifest_meta(
-            backup_opt_dict, manifest_meta_dict, meta_data_backup_file)
+        # Execute a tar gzip of the specified directory and return
+        # small chunks (default 128MB), timestamp, backup, filename,
+        # file chunk index and the tar meta-data file
+        (backup_opt_dict, tar_command, manifest_meta_dict) = \
+            gen_tar_command(opt_dict=backup_opt_dict,
+                            time_stamp=time_stamp,
+                            remote_manifest_meta=manifest_meta_dict)
 
-    manifest_file = u''
-    meta_data_abs_path = '{0}/{1}'.format(
-        backup_opt_dict.workdir, tar_meta_prev)
+        tar_backup_stream = multiprocessing.Process(
+            target=tar_backup, args=(
+                backup_opt_dict, tar_command, tar_backup_queue,))
 
-    # Upload swift manifest for segments
-    if backup_opt_dict.upload:
-        # Request a new auth client in case the current token
-        # is expired before uploading tar meta data or the swift manifest
-        backup_opt_dict = get_client(backup_opt_dict)
+        tar_backup_stream.daemon = True
+        tar_backup_stream.start()
 
-        if not backup_opt_dict.no_incremental:
-            # Upload tar incremental meta data file and remove it
-            logging.info('[*] Uploading tar meta data file: {0}'.format(
-                tar_meta_to_upload))
-            with open(meta_data_abs_path, 'r') as meta_fd:
-                backup_opt_dict.sw_connector.put_object(
-                    backup_opt_dict.container, tar_meta_to_upload, meta_fd)
-            # Removing tar meta data file, so we have only one authoritative
-            # version on swift
-            logging.info('[*] Removing tar meta data file: {0}'.format(
-                meta_data_abs_path))
-            os.remove(meta_data_abs_path)
-        # Upload manifest to swift
-        manifest_upload(
-            manifest_file, backup_opt_dict, file_name, manifest_meta_dict)
+        add_object_stream = multiprocessing.Process(
+            target=add_object, args=(
+                backup_opt_dict, tar_backup_queue, file_name, time_stamp))
+        add_object_stream.daemon = True
+        add_object_stream.start()
 
-    # Unmount and remove lvm snapshot volume
-    lvm_snap_remove(backup_opt_dict)
+        tar_backup_stream.join()
+        tar_backup_queue.put(({False: False}))
+        tar_backup_queue.close()
+        add_object_stream.join()
+
+        if add_object_stream.exitcode:
+            raise Exception('failed to upload object to swift server')
+
+        (backup_opt_dict, manifest_meta_dict, tar_meta_to_upload,
+            tar_meta_prev) = gen_manifest_meta(
+                backup_opt_dict, manifest_meta_dict, meta_data_backup_file)
+
+        manifest_file = u''
+        if is_windows():
+            meta_data_abs_path = os.path.join(backup_opt_dict.workdir,
+                                              backup_opt_dict.meta_data_file)
+        else:
+            meta_data_abs_path = os.path.join(backup_opt_dict.workdir,
+                                              tar_meta_prev)
+
+        # Upload swift manifest for segments
+        if backup_opt_dict.upload:
+            # Request a new auth client in case the current token
+            # is expired before uploading tar meta data or the swift manifest
+            backup_opt_dict = get_client(backup_opt_dict)
+
+            if not backup_opt_dict.no_incremental:
+                # Upload tar incremental meta data file and remove it
+                logging.info('[*] Uploading tar meta data file: {0}'.format(
+                    tar_meta_to_upload))
+                with open(meta_data_abs_path, 'r') as meta_fd:
+                    backup_opt_dict.sw_connector.put_object(
+                        backup_opt_dict.container, tar_meta_to_upload, meta_fd)
+                # Removing tar meta data file, so we have only one
+                # authoritative version on swift
+                logging.info('[*] Removing tar meta data file: {0}'.format(
+                    meta_data_abs_path))
+                os.remove(meta_data_abs_path)
+            # Upload manifest to swift
+            manifest_upload(
+                manifest_file, backup_opt_dict, file_name, manifest_meta_dict)
+
+    finally:
+        if is_windows():
+            # Delete the shadow copy after the backup
+            vss_delete_shadow_copy(backup_opt_dict.shadow,
+                                   backup_opt_dict.volume)
+        else:
+            # Unmount and remove lvm snapshot volume
+            lvm_snap_remove(backup_opt_dict)

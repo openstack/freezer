@@ -21,7 +21,7 @@ Hudson (tjh@cryptsoft.com).
 
 """
 
-from commons import fake_create_job, BackupOpt1
+from commons import fake_create_job
 
 from freezer.main import freezer_main
 from freezer import job
@@ -29,5 +29,4 @@ from freezer import job
 
 def test_freezer_main(monkeypatch):
     monkeypatch.setattr(job, 'create_job', fake_create_job)
-    backup_opt = BackupOpt1()
-    assert freezer_main(backup_opt) is None
+    assert freezer_main() is None

@@ -591,3 +591,16 @@ def human2bytes(s):
     for i, s in enumerate(sset[1:]):
         prefix[s] = 1 << (i + 1) * 10
     return int(num * prefix[letter])
+
+
+def create_subprocess(cmd):
+    """
+    Create a new subprocess in the OS
+    :param cmd: command to execute in the subprocess
+    :return: the output and errors of the subprocess
+    """
+    process = subprocess.Popen(cmd,
+                               stdin=subprocess.PIPE,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+    return process.communicate()

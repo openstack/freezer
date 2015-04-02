@@ -40,7 +40,7 @@ def read(*filenames, **kwargs):
 
 setup(
     name='freezer',
-    version='1.1.2',
+    version='1.1.3',
     url='https://github.com/stackforge/freezer',
     license='Apache Software License',
     author='Fausto Marzi, Ryszard Chojnacki, Emil Dimitrov',
@@ -86,5 +86,11 @@ setup(
         'docutils>=0.8.1'],
     extras_require={
         'testing': ['pytest', 'flake8'],
-    }
+    },
+    entry_points={
+        'console_scripts': [
+            'freezerc=freezer.main:freezer_main'
+        ]
+    },
+    data_files=[('freezer/scripts', ['freezer/scripts/vss.ps1'])]
 )

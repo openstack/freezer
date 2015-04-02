@@ -27,6 +27,11 @@ import argparse
 import logging
 import distutils.spawn as distspawn
 import utils
+import socket
+
+from freezer.winutils import is_windows
+from os.path import expanduser
+home = expanduser("~")
 
 
 def alter_proxy(args_dict):
@@ -80,7 +85,8 @@ def backup_arguments(args_dict={}):
     arg_parser.add_argument(
         '-m', '--mode', action='store',
         help="Set the technology to back from. Options are, fs (filesystem),\
-        mongo (MongoDB), mysql (MySQL). Default set to fs", dest='mode',
+        mongo (MongoDB), mysql (MySQL), sqlserver (SQL Server)\
+        Default set to fs", dest='mode',
         default='fs')
     arg_parser.add_argument(
         '-C', '--container', action='store',
@@ -193,16 +199,24 @@ def backup_arguments(args_dict={}):
         password = <mysqlpass>
         port     = <db-port>''',
         dest='mysql_conf_file', default=False)
-    arg_parser.add_argument(
-        '--log-file', action='store',
-        help='Set log file. By default logs to /var/log/freezer.log'
-             'If that file is not writable, freezer tries to log'
-             'to ~/.freezer/freezer.log',
-        dest='log_file', default=None)
+    if is_windows():
+        arg_parser.add_argument(
+            '--log-file', action='store',
+            help='Set log file. By default logs to ~/freezer.log',
+            dest='log_file', default=os.path.join(home,
+                                                  '.freezer',
+                                                  'freezer.log'))
+    else:
+        arg_parser.add_argument(
+            '--log-file', action='store',
+            help='Set log file. By default logs to /var/log/freezer.log'
+                 'If that file is not writable, freezer tries to log'
+                 'to ~/.freezer/freezer.log',
+            dest='log_file', default=None)
     arg_parser.add_argument(
         '--exclude', action='store', help="Exclude files,\
-        given as a PATTERN.Ex: --exclude '*.log' will exclude any file with \
-        name ending with .log. Default no exclude", dest='exclude',
+        given as a PATTERN.Ex: --exclude '*.log' will exclude any file \
+        with name ending with .log. Default no exclude", dest='exclude',
         default=False)
     arg_parser.add_argument(
         '--dereference-symlink', choices=['none', 'soft', 'hard', 'all'],
@@ -288,6 +302,17 @@ def backup_arguments(args_dict={}):
         dest='download_limit',
         type=utils.human2bytes,
         default=-1)
+    arg_parser.add_argument(
+        '--sql-server-conf', action='store',
+        help='''Set the SQL Server configuration file where freezer retrieve
+        the sql server instance.
+        Following is an example of config file:
+        instance = <db-instance>''',
+        dest='sql_server_config', default=False)
+    arg_parser.add_argument(
+        '--volume', action='store',
+        help='Create a snapshot of the selected volume',
+        dest='volume', default=False)
 
     backup_args = arg_parser.parse_args()
     # Intercept command line arguments if you are not using the CLI
@@ -299,7 +324,7 @@ def backup_arguments(args_dict={}):
     backup_args.__dict__['remote_obj_list'] = []
     backup_args.__dict__['remote_newest_backup'] = u''
     # Set default workdir to ~/.freezer
-    backup_args.__dict__['workdir'] = os.path.expanduser(u'~/.freezer')
+    backup_args.__dict__['workdir'] = os.path.join(home, '.freezer')
     # Create a new namespace attribute for container_segments
     backup_args.__dict__['container_segments'] = u'{0}_segments'.format(
         backup_args.container)
@@ -317,11 +342,14 @@ def backup_arguments(args_dict={}):
 
     # If hostname is not set, hostname of the current node will be used
     if not backup_args.hostname:
-        backup_args.__dict__['hostname'] = os.uname()[1]
+        backup_args.__dict__['hostname'] = socket.gethostname()
     backup_args.__dict__['manifest_meta_dict'] = {}
     backup_args.__dict__['curr_backup_level'] = ''
     backup_args.__dict__['manifest_meta_dict'] = ''
-    backup_args.__dict__['tar_path'] = distspawn.find_executable('tar')
+    if is_windows():
+        backup_args.__dict__['tar_path'] = 'tar'
+    else:
+        backup_args.__dict__['tar_path'] = distspawn.find_executable('tar')
     # If freezer is being used under OSX, please install gnutar and
     # rename the executable as gnutar
     if 'darwin' in sys.platform or 'bsd' in sys.platform:
@@ -342,7 +370,11 @@ def backup_arguments(args_dict={}):
     backup_args.__dict__['lvremove_path'] = distspawn.find_executable(
         'lvremove')
     backup_args.__dict__['bash_path'] = distspawn.find_executable('bash')
-    backup_args.__dict__['openssl_path'] = distspawn.find_executable('openssl')
+    if is_windows():
+        backup_args.__dict__['openssl_path'] = 'openssl'
+    else:
+        backup_args.__dict__['openssl_path'] = \
+            distspawn.find_executable('openssl')
     backup_args.__dict__['file_path'] = distspawn.find_executable('file')
     backup_args.__dict__['mount_path'] = distspawn.find_executable('mount')
     backup_args.__dict__['umount_path'] = distspawn.find_executable('umount')
@@ -351,7 +383,19 @@ def backup_arguments(args_dict={}):
     # MySQLdb object
     backup_args.__dict__['mysql_db_inst'] = ''
 
+    # SQL Server object
+    backup_args.__dict__['sql_server_instance'] = ''
+
+    # Windows volume
+    backup_args.__dict__['shadow'] = ''
+    backup_args.__dict__['shadow_path'] = ''
+    backup_args.__dict__['file_name'] = ''
+
+    backup_args.__dict__['meta_data'] = {}
+    backup_args.__dict__['meta_data_file'] = ''
+    backup_args.__dict__['absolute_path'] = ''
+
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.1.2'
+    backup_args.__dict__['__version__'] = '1.1.3'
 
     return backup_args, arg_parser

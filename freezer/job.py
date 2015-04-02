@@ -115,6 +115,9 @@ class BackupJob(Job):
         elif self.conf.mode == 'mysql':
             backup.backup_mode_mysql(
                 self.conf, self.start_time.timestamp, manifest_meta_dict)
+        elif self.conf.mode == 'sqlserver':
+            backup.backup_mode_sql_server(
+                self.conf, self.time_stamp, manifest_meta_dict)
         else:
             raise ValueError('Please provide a valid backup mode')
 

@@ -57,7 +57,7 @@ MySQL backup::
 
 Freezer installation from Python package repo::
 
-    $ sudo pip install freezer 
+    $ sudo pip install freezer
 
 OR::
 
@@ -90,6 +90,33 @@ These are just use case example using Swift in the HP Cloud.
 freezer will execute a backup on point-in-time data. This avoid risks of
 data inconsistencies and corruption.*
 
+
+Windows
+-------
+
+*Note* Windows currently does not support incremental backups
+
+Install Tar, OpenSSL, Gzip GNU binaries from http://gnuwin32.sourceforge.net/packages.html and add
+GnuWin32\bin to Path:
+
+    e.g. C:\Program Files (x86)\GnuWin32\bin
+
+Swift client and Keystone client:
+
+    > pip install python-swiftclient
+    > pip install python-keystoneclient
+    > pip install freezer
+
+The basic Swift account configuration is needed to use freezer. Make sure python-swiftclient is installed.
+
+    set OS_REGION_NAME=region-a.geo-1
+    set OS_TENANT_ID=<account tenant>
+    set OS_PASSWORD=<account password>
+    set OS_AUTH_URL=https://region-a.geo-1.identity.hpcloudsvc.com:35357/v2.0
+    set OS_USERNAME=automationbackup
+    set OS_TENANT_NAME=automationbackup
+
+
 Usage Example
 =============
 
@@ -104,6 +131,11 @@ The most simple backup execution is a direct file system backup::
 
     $ sudo freezerc --file-to-backup /data/dir/to/backup
     --container freezer_new-data-backup --backup-name my-backup-name
+
+    * On windows (need admin rights)*
+    > freezerc --action backup --mode fs --backup-name testwindows
+    --path-to-backup "C:\path\to\backup" --volume C:\  --container freezer_windows
+    --log-file  C:\path\to\log\freezer.log
 
 By default --mode fs is set. The command would generate a compressed tar
 gzip file of the directory /data/dir/to/backup. The generated file will
@@ -154,7 +186,7 @@ example of the config::
 
     $ sudo cat /root/.freezer/db.conf
     host = your.mysql.host.ip
-    user = backup 
+    user = backup
     password = userpassword
 
 Every listed option is mandatory. There's no need to stop the mysql
@@ -162,7 +194,7 @@ service before the backup execution.
 
 Execute a MySQL backup using lvm snapshot::
 
-    $ sudo freezerc --lvm-srcvol /dev/mysqlvg/mysqlvol 
+    $ sudo freezerc --lvm-srcvol /dev/mysqlvg/mysqlvol
     --lvm-dirmount /var/snapshot-backup
     --lvm-volgroup mysqlvg --file-to-backup /var/snapshot-backup
     --mysql-conf /root/.freezer/freezer-mysql.conf--container
@@ -413,8 +445,8 @@ Available options::
                             The backup name you want to use to identify your
                             backup on Swift
       -m MODE, --mode MODE  Set the technology to back from. Options are, fs
-                            (filesystem), mongo (MongoDB), mysql (MySQL). Default
-                            set to fs
+                            (filesystem), mongo (MongoDB), mysql (MySQL) sqlserver (SQL Server).
+                            Default set to fs
       -C CONTAINER, --container CONTAINER
                             The Swift container used to upload files to
       -L, --list-containers
@@ -489,7 +521,7 @@ Available options::
                             password, host. Following is an example of config
                             file: # cat ~/.freezer/backup_mysql_conf host = <db-
                             host> user = <mysqluser> password = <mysqlpass>
-      --log-file LOG_FILE   Set log file. By default logs to /var/log/freezer.log
+      --log-file LOG_FILE   Set log file. By default logs to ~/freezer.log
       --exclude EXCLUDE     Exclude files, given as a PATTERN.Ex: --exclude
                             '*.log' will exclude any file with name ending with
                             .log. Default no exclude
@@ -524,4 +556,9 @@ Available options::
                             on Linux) and real-time for I/O. The process priority
                             will be set only if nice and ionice are installed
                             Default disabled. Use with caution.
-      -V, --version         Print the release version and exit
+      -V, --version         Print the release version and exit.
+      --volume              Create a snapshot of the selected volume
+      --sql-server-conf     Set the SQL Server configuration file where freezer retrieve
+                            the sql server instance.
+                            Following is an example of config file:
+                            instance = <db-instance>

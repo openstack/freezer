@@ -347,6 +347,10 @@ class FakeSubProcess:
     def communicate(cls):
         return 'successfully removed', ''
 
+    @classmethod
+    def communicate_error(cls):
+        return '', 'error'
+
     class stdin:
         def __call__(self, *args, **kwargs):
             return self
@@ -470,6 +474,23 @@ class FakeSubProcess5:
         @classmethod
         def write(cls, *args, **kwargs):
             return True
+
+
+class FakeSubProcess6:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def Popen(cls, cmd=None):
+        return cls
+
+    @classmethod
+    def communicate(cls):
+        return 'ok', ''
+
+    @classmethod
+    def communicate_error(cls):
+        return '', 'error'
 
 
 class Lvm:
@@ -683,6 +704,8 @@ class BackupOpt1:
         self.dry_run = False
         self.upload_limit = -1
         self.download_limit = -1
+        self.sql_server_instance = 'Sql Server'
+
 
 class FakeMySQLdb:
 
@@ -849,6 +872,18 @@ class Os:
     def join(cls, directory1=True, directory2=True):
         return '/tmp/testdir'
 
+    @classmethod
+    def rmdir(cls, directory1=True):
+        return True
+
+    @classmethod
+    def chdir(cls, directory1=True):
+        return True
+
+    @classmethod
+    def chdir2(cls, directory1=True):
+        raise Exception
+
 
 class Os1(Os):
     @classmethod
@@ -920,6 +955,7 @@ class FakeSwift:
     def remove_obj_older_than(self, backup_opt):
         return backup_opt
 
+
 class FakeRestore:
 
     def __init__(self):
@@ -980,5 +1016,55 @@ class FakeJob:
     def execute(self):
         return
 
+
 def fake_create_job(conf):
     return FakeJob(conf)
+
+
+class FakeVss:
+
+    def __init__(self):
+        return None
+
+    @classmethod
+    def vss_create_shadow_copy(self, volume):
+        return 'ShadowID: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
+
+    @classmethod
+    def vss_create_shadow_copy_error(self, volume):
+        return 'ShadowID: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', 'error'
+
+    @classmethod
+    def vss_get_shadow_copy(self, shadow_id):
+        return 'Shadow Copy Volume: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
+
+    @classmethod
+    def vss_get_shadow_copy_error(self, shadow_id):
+        return 'Shadow Copy Volume: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', ''
+
+    @classmethod
+    def vss_delete_shadow_copy(self, shadow_id):
+        return True
+
+    @classmethod
+    def vss_delete_shadow_copy_error(self, shadow_id):
+        return '', 'error'
+
+
+class FakeDisableFileSystemRedirection:
+    success = True
+
+    def __enter__(self):
+        return True
+
+    def __exit__(self, type, value, traceback):
+        if self.success:
+            return True
+
+
+def fake_create_subprocess(cmd):
+    return True, ''
+
+
+def fake_create_subprocess2(cmd):
+    return True, 'Error'

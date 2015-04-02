@@ -24,6 +24,7 @@ Freezer Tar related functions
 from freezer.utils import (
     validate_all_args, add_host_name_ts_level, create_dir)
 from freezer.swift import object_to_file
+from freezer.winutils import clean_tar_command, is_windows, add_gzip_to_command
 
 import os
 import logging
@@ -65,19 +66,21 @@ def tar_restore(backup_opt_dict, read_pipe):
             --directory {1} '.format(
             backup_opt_dict.tar_path, backup_opt_dict.restore_abs_path)
 
+    if is_windows():
+        os.chdir(backup_opt_dict.restore_abs_path)
+        tar_cmd = 'gzip -dc | tar -xf - --unlink-first --ignore-zeros'
+
     # Check if encryption file is provided and set the openssl decrypt
     # command accordingly
     if backup_opt_dict.encrypt_pass_file:
         openssl_cmd = " {0} enc -d -aes-256-cfb -pass file:{1}".format(
             backup_opt_dict.openssl_path,
             backup_opt_dict.encrypt_pass_file)
-        tar_cmd = ' {0} | {1} '.format(openssl_cmd, tar_cmd)
+        tar_cmd = '{0} | {1} '.format(openssl_cmd, tar_cmd)
 
     tar_cmd_proc = subprocess.Popen(
         tar_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, shell=True,
-        executable=backup_opt_dict.bash_path)
-
+        stderr=subprocess.PIPE, shell=True)
     # Start loop reading the pipe and pass the data to the tar std input.
     # If EOFError exception is raised, the loop end the std err will be
     # checked for errors.
@@ -86,7 +89,7 @@ def tar_restore(backup_opt_dict, read_pipe):
             tar_cmd_proc.stdin.write(read_pipe.recv_bytes())
     except EOFError:
         logging.info(
-            '[*] Pipe closed as EOF reached. Data transmitted succesfully.')
+            '[*] Pipe closed as EOF reached. Data transmitted succesfully')
 
     tar_err = tar_cmd_proc.communicate()[1]
 
@@ -105,6 +108,10 @@ def tar_incremental(
     file will be used in the current incremental backup. Also the level
     options will be checked and updated respectively
     """
+
+    if is_windows():
+        raise NotImplementedError('[*] Tar incrementals are not supported'
+                                  ' on windows currently.')
 
     if not tar_cmd or not backup_opt_dict:
         logging.error(('[*] Error: tar_incremental, please provide tar_cmd '
@@ -206,6 +213,11 @@ def gen_tar_command(
             opt_dict.exclude)
 
     tar_command = ' {0} . '.format(tar_command)
+
+    if is_windows():
+        tar_command = clean_tar_command(tar_command)
+        tar_command = add_gzip_to_command(tar_command)
+
     # Encrypt data if passfile is provided
     if opt_dict.encrypt_pass_file:
         openssl_cmd = "{0} enc -aes-256-cfb -pass file:{1}".format(
@@ -220,9 +232,7 @@ def tar_backup(opt_dict, tar_command, backup_queue):
     Execute an incremental backup using tar options, specified as
     function arguments
     """
-
     # Set counters, index, limits and bufsize for subprocess
-    buf_size = 1048576
     file_read_limit = 0
     file_chunk_index = 00000000
     tar_chunk = b''
@@ -232,8 +242,7 @@ def tar_backup(opt_dict, tar_command, backup_queue):
 
     tar_process = subprocess.Popen(
         tar_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        bufsize=buf_size, shell=True,
-        executable=opt_dict.bash_path, env=os.environ.copy())
+        shell=True)
 
     # Iterate over tar process stdout
     for file_block in tar_process.stdout:

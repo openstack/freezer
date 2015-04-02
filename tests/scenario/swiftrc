@@ -1,0 +1,14 @@
+unset OS_USERNAME
+unset OS_PASSWORD
+unset OS_TENANT_NAME
+unset OS_AUTH_URL
+unset OS_REGION_NAME
+unset OS_TENANT_ID
+unset OS_SERVICE_TOKEN
+unset OS_SERVICE_ENDPOINT
+
+
+export OS_USERNAME=admin
+export OS_PASSWORD=admin
+export OS_TENANT_NAME=admin
+export OS_AUTH_URL=http://10.199.199.199:5000/v2.0

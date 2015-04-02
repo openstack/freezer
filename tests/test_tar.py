@@ -24,6 +24,7 @@ Hudson (tjh@cryptsoft.com).
 from commons import *
 from freezer.tar import (tar_restore, tar_incremental, tar_backup,
     gen_tar_command, tar_restore_args_valid)
+from freezer import winutils
 
 import os
 import logging
@@ -65,6 +66,14 @@ class TestTar:
             subprocess, 'Popen', fakesubprocesspopen)
         assert tar_restore(backup_opt, fakepipe) is None
 
+        # expected_tar_cmd = 'gzip -dc | tar -xf - --unlink-first --ignore-zeros'
+        monkeypatch.setattr(winutils, 'is_windows', True)
+        fake_os = Os()
+        monkeypatch.setattr(os, 'chdir', fake_os.chdir)
+        assert tar_restore(backup_opt, fakepipe) is None
+
+        monkeypatch.setattr(os, 'chdir', fake_os.chdir2)
+        pytest.raises(Exception, tar_restore(backup_opt, fakepipe))
 
     def test_tar_incremental(self, monkeypatch):
 
@@ -72,7 +81,7 @@ class TestTar:
         fakelogging = FakeLogging()
         (tar_cmd, curr_tar_meta,
             remote_manifest_meta) = True, True, {}
-        (val1, val2, val3) =  tar_incremental(
+        (val1, val2, val3) = tar_incremental(
             tar_cmd, backup_opt, curr_tar_meta,
             remote_manifest_meta)
         assert val1 is not False
@@ -125,6 +134,7 @@ class TestTar:
         pytest.raises(Exception, gen_tar_command,
                       backup_opt, meta_data_backup_file, time_stamp,
                       remote_manifest_meta)
+
 
     def test_tar_backup(self, monkeypatch):
 

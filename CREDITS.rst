@@ -17,6 +17,7 @@ Contributors
 
 -  Duncan Thomas
 -  Coleman Corrigan
+-  Guillermo Ramirez Garcia
 -  Zahari Zahariev
 
 Credits
