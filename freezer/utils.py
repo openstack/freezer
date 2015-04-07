@@ -81,7 +81,7 @@ def gen_manifest_meta(
         # Unit is int and every int and 5 == five days.
         manifest_meta_dict['x-object-meta-remove-backup-older-than-days'] = ''
         if backup_opt_dict.remove_older_than is not False:
-            manifest_meta_dict['x-object-meta-remove-backup-older-than-days']\
+            manifest_meta_dict['x-object-meta-remove-backup-older-than-days'] \
                 = '{0}'.format(backup_opt_dict.remove_older_than)
         manifest_meta_dict['x-object-meta-hostname'] = backup_opt_dict.hostname
         manifest_meta_dict['x-object-meta-segments-size-bytes'] = \
@@ -393,7 +393,7 @@ class DateTime(object):
 
     def __sub__(self, other):
         assert isinstance(other, DateTime)
-        return self.date_time - other.date_time     # return timedelta
+        return self.date_time - other.date_time  # return timedelta
 
     @staticmethod
     def now():
@@ -490,10 +490,10 @@ def check_backup_and_tar_meta_existence(backup_opt_dict):
             not backup_opt_dict.remote_obj_list:
         logging.warning(
             ('[*] A valid Swift container, or backup name or container '
-                'content not available. Level 0 backup is being executed '))
+             'content not available. Level 0 backup is being executed '))
         return dict()
 
-    logging.info("[*] Retreiving backup name {0} on container \
+    logging.info("[*] Retrieving backup name {0} on container \
     {1}".format(
         backup_opt_dict.backup_name.lower(), backup_opt_dict.container))
     backup_opt_dict = get_match_backup(backup_opt_dict)
@@ -551,3 +551,43 @@ def get_mount_from_path(path):
         mount_point_path = os.path.dirname(mount_point_path)
 
     return mount_point_path
+
+
+# see: http://goo.gl/kTQMs
+HUMAN_2_SYMBOLS = {
+    'customary': ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'),
+    'customary_ext': ('byte', 'kilo', 'mega', 'giga', 'tera', 'peta', 'exa',
+                      'zetta', 'iotta'),
+    'iec': ('Bi', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi'),
+    'iec_ext': ('byte', 'kibi', 'mebi', 'gibi', 'tebi', 'pebi', 'exbi',
+                'zebi', 'yobi'),
+}
+
+
+def human2bytes(s):
+    """
+    Attempts to guess the string format based on default symbols
+    set and return the corresponding bytes as an integer.
+    When unable to recognize the format ValueError is raised.
+    """
+    init = s
+    num = ""
+    while s and s[0:1].isdigit() or s[0:1] == '.':
+        num += s[0]
+        s = s[1:]
+    num = float(num)
+    letter = s.strip()
+    for name, sset in HUMAN_2_SYMBOLS.items():
+        if letter in sset:
+            break
+    else:
+        if letter == 'k':
+            # treat 'k' as an alias for 'K' as per: http://goo.gl/kTQMs
+            sset = HUMAN_2_SYMBOLS['customary']
+            letter = letter.upper()
+        else:
+            raise ValueError("can't interpret %r" % init)
+    prefix = {sset[0]: 1}
+    for i, s in enumerate(sset[1:]):
+        prefix[s] = 1 << (i + 1) * 10
+    return int(num * prefix[letter])

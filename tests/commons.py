@@ -681,6 +681,8 @@ class BackupOpt1:
         self.insecure = True
         self.auth_version = 2
         self.dry_run = False
+        self.upload_limit = -1
+        self.download_limit = -1
 
 class FakeMySQLdb:
 
@@ -958,6 +960,17 @@ class FakeUtils:
         manifest_meta = {}
         backup_opt.mode = None
         return backup_opt, manifest_meta
+
+
+class FakeSocket:
+    def __init__(self):
+        pass
+
+    def recv(self):
+        return "abcdef"
+
+    def send(self):
+        raise Exception("fake send")
 
 
 class FakeJob:
