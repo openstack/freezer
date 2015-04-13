@@ -29,6 +29,35 @@ import re
 import subprocess
 
 
+class OpenstackOptions(object):
+
+    @property
+    def os_options(self):
+        """
+        :return: The OpenStack options which can have tenant_id,
+                 auth_token, service_type, endpoint_type, tenant_name,
+                 object_storage_url, region_name
+        """
+        return {'tenant_id': self.tenant_id,
+                'tenant_name': self.tenant_name,
+                'region_name': self.region_name}
+
+    @staticmethod
+    def create_from_dict(src_dict):
+        options = OpenstackOptions()
+        try:
+            options.user_name = src_dict['OS_USERNAME']
+            options.tenant_name = src_dict['OS_TENANT_NAME']
+            options.auth_url = src_dict['OS_AUTH_URL']
+            options.password = src_dict['OS_PASSWORD']
+            options.tenant_id = src_dict.get('OS_TENANT_ID', None)
+            options.region_name = src_dict.get('OS_REGION_NAME', None)
+        except Exception as e:
+            raise Exception('Missing Openstack connection parameter: {0}'
+                            .format(e))
+        return options
+
+
 def gen_manifest_meta(
         backup_opt_dict, manifest_meta_dict, meta_data_backup_file):
     ''' This function is used to load backup metadata information on Swift.

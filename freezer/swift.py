@@ -23,7 +23,7 @@ Freezer functions to interact with OpenStack Swift client and server
 
 from freezer.utils import (
     validate_all_args, get_match_backup,
-    sort_backup_list, DateTime)
+    sort_backup_list, DateTime, OpenstackOptions)
 
 import os
 import swiftclient
@@ -297,41 +297,13 @@ class DryRunSwiftclientConnectionWrapper:
         pass
 
 
-class SwiftOptions:
-    @property
-    def os_options(self):
-        """
-        :return: The OpenStack options which can have tenant_id,
-                 auth_token, service_type, endpoint_type, tenant_name,
-                 object_storage_url, region_name
-        """
-        return {'tenant_id': self.tenant_id,
-                'tenant_name': self.tenant_name,
-                'region_name': self.region_name}
-
-    @staticmethod
-    def create_from_dict(src_dict):
-        options = SwiftOptions()
-        try:
-            options.user_name = src_dict['OS_USERNAME']
-            options.tenant_name = src_dict['OS_TENANT_NAME']
-            options.auth_url = src_dict['OS_AUTH_URL']
-            options.password = src_dict['OS_PASSWORD']
-            options.tenant_id = src_dict.get('OS_TENANT_ID', None)
-            options.region_name = src_dict.get('OS_REGION_NAME', None)
-        except Exception as e:
-            raise Exception('missing swift connection parameter: {0}'
-                            .format(e))
-        return options
-
-
 def get_client(backup_opt_dict):
     """
     Initialize a swift client object and return it in
     backup_opt_dict
     """
 
-    options = SwiftOptions.create_from_dict(os.environ)
+    options = OpenstackOptions.create_from_dict(os.environ)
 
     download_limit = backup_opt_dict.download_limit
     upload_limit = backup_opt_dict.upload_limit

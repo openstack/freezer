@@ -6,7 +6,8 @@ from freezer.utils import (
     get_newest_backup, get_rel_oldest_backup, get_abs_oldest_backup,
     eval_restart_backup, set_backup_level,
     get_vol_fs_type, check_backup_and_tar_meta_existence,
-    add_host_name_ts_level, get_mount_from_path, human2bytes, DateTime)
+    add_host_name_ts_level, get_mount_from_path, human2bytes, DateTime,
+    OpenstackOptions)
 
 from freezer import utils
 import pytest
@@ -264,6 +265,39 @@ class TestUtils:
         assert human2bytes('1 k') == 1024
         pytest.raises(ValueError, human2bytes, '12 foo')
 
+    def test_OpenstackOptions_creation_success(self, monkeypatch):
+        env_dict = dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl',
+                        OS_PASSWORD='testpassword', OS_REGION_NAME='testregion', OS_TENANT_ID='0123456789')
+        options = OpenstackOptions.create_from_dict(env_dict)
+        assert options.user_name == env_dict['OS_USERNAME']
+        assert options.tenant_name == env_dict['OS_TENANT_NAME']
+        assert options.auth_url == env_dict['OS_AUTH_URL']
+        assert options.password == env_dict['OS_PASSWORD']
+        assert options.region_name == env_dict['OS_REGION_NAME']
+        assert options.tenant_id == env_dict['OS_TENANT_ID']
+
+        env_dict= dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl',
+                       OS_PASSWORD='testpassword')
+        options = OpenstackOptions.create_from_dict(env_dict)
+        assert options.user_name == env_dict['OS_USERNAME']
+        assert options.tenant_name == env_dict['OS_TENANT_NAME']
+        assert options.auth_url == env_dict['OS_AUTH_URL']
+        assert options.password == env_dict['OS_PASSWORD']
+        assert options.region_name is None
+        assert options.tenant_id is None
+
+    def test_OpenstackOption_creation_error_for_missing_parameter(self, monkeypatch):
+        env_dict = dict(OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl', OS_PASSWORD='testpassword')
+        pytest.raises(Exception, OpenstackOptions.create_from_dict, env_dict)
+
+        env_dict = dict(OS_USERNAME='testusername', OS_AUTH_URL='testauthurl', OS_PASSWORD='testpassword')
+        pytest.raises(Exception, OpenstackOptions.create_from_dict, env_dict)
+
+        env_dict = dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_PASSWORD='testpassword')
+        pytest.raises(Exception, OpenstackOptions.create_from_dict, env_dict)
+
+        env_dict = dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl')
+        pytest.raises(Exception, OpenstackOptions.create_from_dict, env_dict)
 
 class TestDateTime:
     def setup(self):
