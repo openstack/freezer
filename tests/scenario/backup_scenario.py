@@ -18,9 +18,12 @@ This product includes cryptographic software written by Eric Young
 Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
+
 import os
+import re
 import sys
 import uuid
+import time
 import unittest
 import tempfile
 import shutil
@@ -37,23 +40,26 @@ class BackupScenarioFS(unittest.TestCase):
     def create_tmp_tree(self, path):
         """
         freezer_test_XXXXXX
-                          |-dir_foo
-                          |       |-dir_bar
-                          |       |       |
-                          |       |       |-hello.lock
-                          |       |       |-foo
-                          |       |       |-bar
-                          |       |       |-foobar
-                          |       |
-                          |       |-hello.lock
-                          |       |-foo
-                          |       |-bar
-                          |       |-foobar
-                          |
-                          |-hello.lock
-                          |-foo
-                          |-bar
-                          |-foobar
+            <tmp_files>
+            ...........
+            dir_foo
+                <tmp_files>
+                ...........
+                dir_bar
+                    <tmp_files>
+                    ...........
+                    dir_foobar
+                        <tmp_files>
+                        ...........
+                        dir_barfoo
+                            <tmp_files>
+                            ...........
+                            dir_foofoo
+                                <tmp_files>
+                                ...........
+                                dir_barbar
+                                    <tmp_files>
+                                    ...........
         """
         dir_path = copy(path)
         tmp_files = ['foo', 'bar', 'foobar', 'barfoo', 'foofoo', 'barbar', 'hello.lock']
@@ -82,6 +88,11 @@ class BackupScenarioFS(unittest.TestCase):
         return hash_obj.hexdigest()
 
     def snap_tmp_tree_sha1(self, file_list):
+        """
+        Record in a dictionary all files' absulute paths and SHA1
+        hashes so they can be compared taken before the backup and
+        after the restore of a given level.
+        """
         hash_dict = {}
         for file_name in file_list:
             if os.path.isfile(file_name):
@@ -92,20 +103,26 @@ class BackupScenarioFS(unittest.TestCase):
         """
         Delete and modify random files from the tree file structure
         """
-        # Delete 4 file
+        # Delete some files
         tmp_files = copy(tmp_files)
-        for nfile in range(4):
+        for counter in range(0, 5):
             fn = random.choice(tmp_files)
-            os.unlink(fn)
-            tmp_files.remove(fn)
-            self.tmp_deleted.append(fn)
-        # Change the content of 3 files
-        for nfile in range(3):
+            if fn not in self.tmp_deleted:
+                os.unlink(fn)
+                self.tmp_deleted.append(fn)
+        # Change the content of a couple files
+        for counter in range(0, 2):
             fn = random.choice(tmp_files)
-            f = open(fn, 'w')
-            f.write('foofoo\n')
-            f.close()
-            self.tmp_modified.append(fn)
+            if fn not in self.tmp_deleted:
+                f = open(fn, 'w')
+                change_date = time.strftime('%Y-%m-%dT%H:%M:%S',
+                    time.localtime()
+                    )
+                f.write('text changed on {}\n'.format(
+                    change_date
+                    ))
+                f.close()
+                self.tmp_modified.append(fn)
 
     def setUp(self):
         self.tmp_files = []
@@ -260,5 +277,158 @@ class BackupScenarioFS(unittest.TestCase):
                 self.assertTrue(os.path.isfile(key))
                 self.assertEqual(key + fdict_before[key], key + fdict_after[key])
 
+
+    def test_bandwith_limit(self):
+        """
+        Freezer upload/download speed limit test. We set a fixed 512KB/s speed and
+        try to backup (upload) 1MB file na restore (download) the backup. Each of
+        those action on avarage should not take more than 2s or less than 3s
+        2s < EXEC_TIME < 3s. Without throttle it is normaly about 0.4s.
+
+        freezerc --action backup
+                 --path-to-backup /tmp/freezer_test_XXXX
+                 --backup-name UUID
+                 --container UUID
+                 --upload-limit 524288
+
+        freezerc --action restore
+                 --path-to-backup /tmp/freezer_test_XXXX
+                 --backup-name UUID
+                 --container UUID
+                 --download-limit 524288
+        """
+        # print '\nWorking in:', self.tmp_path
+        # Set 512KB/s connection limit
+        speed_limit_bytes = 512 * 1024
+        time_low = 2
+        abs_file_name = self.tmp_path + os.path.sep + 'limitfoo'
+        # Create 1MB test text file with random data
+        self.create_big_file(abs_file_name, 2 * speed_limit_bytes)
+        # Freezer CLI for backup argument dictionary
+        backup_args = {
+            'action' : 'backup',
+            'src_file' : copy(self.tmp_path),
+            'backup_name' : str(uuid.uuid4()),
+            'container' : str(uuid.uuid4()),
+            'upload_limit' : speed_limit_bytes
+        }
+        start_time = time.time()
+        # Call Freezer CLI backup
+        main.freezer_main(backup_args)
+        end_time = time.time()
+        # Calculate backup time in sec
+        upload_time = end_time - start_time
+        # print "\nUpload time: %g seconds" % upload_time
+        # Test that time is longer than the theoretical 2 sec
+        self.assertTrue(time_low < upload_time)
+        # Delete test file
+        os.unlink(abs_file_name)
+        # Build dictionary for Freezer CLI restore
+        restore_args = {
+            'action' : 'restore',
+            'restore_abs_path' : copy(self.tmp_path),
+            'backup_name' : copy(backup_args.backup_name),
+            'container' : copy(backup_args.container),
+            'download_limit' : speed_limit_bytes
+        }
+        start_time = time.time()
+        # Call the actual Freezer CLI restore
+        main.freezer_main(restore_args)
+        end_time = time.time()
+        self.assertTrue(os.path.isfile(abs_file_name))
+        # Calculate restore time in sec
+        download_time = end_time - start_time
+        # print "Download time: %g seconds" % download_time
+        # sys.stdout.flush()
+        # Test that time is longer than the theoretical 2 sec
+        self.assertTrue(time_low < download_time)
+
+
+    def test_lvm_incremental_level5(self):
+        """
+        Incremental LVM snapshots filesystem backup
+
+        freezerc --action backup
+                 --lvm-srcvol /dev/freezer-test1-volgroup/freezer-test1-vol
+                 --lvm-dirmount /tmp/freezer-test-lvm-snapshot
+                 --lvm-volgroup freezer-test1-volgroup
+                 --lvm-snapsize 1M
+                 --file-to-backup /mnt/freezer-test-lvm/lvm_test_XXXX/
+                 --container UUID
+                 --exclude "\*.lock"
+                 --backup-name UUID
+                 --max-level 5
+        """
+        # Set arguments
+        lvm_path = '/mnt/freezer-test-lvm'
+        self.tmp_path = tempfile.mkdtemp(prefix='lvm_test_', dir=lvm_path)
+        self.create_tmp_tree(self.tmp_path)
+        max_level = 5
+        backup_args = {
+            'action' : 'backup',
+            'lvm_srcvol' : '/dev/freezer-test1-volgroup/freezer-test1-vol',
+            'lvm_dirmount' : '/tmp/freezer-test-lvm-snapshot',
+            'lvm_volgroup' : 'freezer-test1-volgroup',
+            'lvm_snapsize' : '1M',
+            'src_file' : copy(self.tmp_path),
+            'backup_name' : str(uuid.uuid4()),
+            'container' : str(uuid.uuid4()),
+            'max_backup_level' : max_level
+        }
+        fdict_before = []
+        print ''
+        for i in range(0, max_level):
+            # print "TEST FILE CONTENT BEFORE BACKUP %s:" % i
+            # print open(self.tmp_path + os.path.sep + 'foo', 'r').read()
+            fdict_before.append(
+                self.snap_tmp_tree_sha1(self.tmp_files)
+                )
+            ns_backup_args = main.freezer_main(backup_args)
+            self.damage_tmp_tree(self.tmp_files)
+            # time.sleep(2)
+        ns_backup_args = swift.get_container_content(ns_backup_args)
+        # Filter only the container names from all other data
+        name_list = [item['name'] for item in ns_backup_args.remote_obj_list]
+        for counter in range(0, max_level):
+            found_objects = [obj for obj in name_list if obj.endswith('_%s' % counter)]
+            objects_str = ' '.join(found_objects)
+            # print objects_str
+            self.assertEqual('%s(%s)' % (objects_str,
+                len(found_objects)), objects_str + '(2)')
+            found_objects = sorted(found_objects)
+            self.assertEqual(found_objects[1], found_objects[0][-len(found_objects[1]):])
+
+        # From max_level-1 downto 0
+        for i in range(max_level - 1, -1, -1):
+            restore_level = i
+            restore_epoch = re.findall('_(\d{10}?)_%s' % restore_level , ' '.join(name_list))[0]
+            restore_epoch = int(restore_epoch) + 0
+            restore_date = time.strftime('%Y-%m-%dT%H:%M:%S',
+                time.localtime(int(restore_epoch))
+                )
+            # print 'Restore level:', restore_level, restore_epoch, restore_date
+            # Remove all files in the whole testing directory
+            shutil.rmtree(self.tmp_path)
+            self.assertFalse(os.path.isdir(self.tmp_path))
+            os.makedirs(self.tmp_path)
+            # Build
+            restore_args = {
+                'action' : 'restore',
+                'restore_abs_path' : copy(self.tmp_path),
+                'backup_name' : copy(backup_args['backup_name']),
+                'container' : copy(backup_args['container']),
+                'restore_from_date' : restore_date
+            }
+            # Call RESTORE on Freezer code base
+            main.freezer_main(restore_args)
+            fdict_after = self.snap_tmp_tree_sha1(self.tmp_files)
+            self.assertEqual(len(fdict_before[restore_level]), len(fdict_after))
+            for key in fdict_before[restore_level]:
+                self.assertTrue(os.path.isfile(key))
+                self.assertEqual(key + fdict_before[restore_level][key], key + fdict_after[key])
+            # print 'Just checked %s files' % len(fdict_after)
+
+
+>>>>>>> f38302f... Incremental LVM functional test
 if __name__ == '__main__':
     unittest.main()
