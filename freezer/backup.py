@@ -213,12 +213,8 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
                 backup_opt_dict, manifest_meta_dict, meta_data_backup_file)
 
         manifest_file = u''
-        if is_windows():
-            meta_data_abs_path = os.path.join(backup_opt_dict.workdir,
-                                              backup_opt_dict.meta_data_file)
-        else:
-            meta_data_abs_path = os.path.join(backup_opt_dict.workdir,
-                                              tar_meta_prev)
+        meta_data_abs_path = os.path.join(backup_opt_dict.workdir,
+                                          tar_meta_prev)
 
         # Upload swift manifest for segments
         if backup_opt_dict.upload:

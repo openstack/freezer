@@ -94,12 +94,8 @@ data inconsistencies and corruption.*
 Windows
 -------
 
-*Note* Windows currently does not support incremental backups
-
-Install Tar, OpenSSL, Gzip GNU binaries from http://gnuwin32.sourceforge.net/packages.html and add
-GnuWin32\bin to Path:
-
-    e.g. C:\Program Files (x86)\GnuWin32\bin
+Install OpenSSL binaries from http://www.openssl.org/related/binaries.html and add
+it to Path:
 
 Swift client and Keystone client:
 

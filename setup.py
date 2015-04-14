@@ -92,5 +92,22 @@ setup(
             'freezerc=freezer.main:freezer_main'
         ]
     },
-    data_files=[('freezer/scripts', ['freezer/scripts/vss.ps1'])]
+    data_files=[('freezer/scripts', ['freezer/scripts/vss.ps1']),
+                ('freezer/bin', ['freezer/bin/bunzip2.exe']),
+                ('freezer/bin', ['freezer/bin/bzcat.exe']),
+                ('freezer/bin', ['freezer/bin/bzip2.exe']),
+                ('freezer/bin', ['freezer/bin/bzip2_LICENSE']),
+                ('freezer/bin', ['freezer/bin/bzip2recover.exe']),
+                ('freezer/bin', ['freezer/bin/find.exe']),
+                ('freezer/bin', ['freezer/bin/LICENSE']),
+                ('freezer/bin', ['freezer/bin/gzip.exe']),
+                ('freezer/bin', ['freezer/bin/tar.exe']),
+                ('freezer/bin', ['freezer/bin/cygwin1.dll']),
+                ('freezer/bin', ['freezer/bin/cygintl-8.dll']),
+                ('freezer/bin', ['freezer/bin/cygiconv-2.dll']),
+                ('freezer/bin', ['freezer/bin/cygbz2-1.dll']),
+                ('freezer/bin', ['freezer/bin/bzip2-1.0.6.tar.gz']),
+                ('freezer/bin', ['freezer/bin/gzip-1.6-1.src.tar']),
+                ('freezer/bin', ['freezer/bin/tar-1.27.1.tar.xz']),
+                ('freezer/bin', ['freezer/bin/findutils-4.5.12.tar.gz'])]
 )

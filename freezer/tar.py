@@ -24,7 +24,7 @@ Freezer Tar related functions
 from freezer.utils import (
     validate_all_args, add_host_name_ts_level, create_dir)
 from freezer.swift import object_to_file
-from freezer.winutils import clean_tar_command, is_windows, add_gzip_to_command
+from freezer.winutils import is_windows
 
 import os
 import logging
@@ -67,8 +67,10 @@ def tar_restore(backup_opt_dict, read_pipe):
             backup_opt_dict.tar_path, backup_opt_dict.restore_abs_path)
 
     if is_windows():
+        # on windows, chdir to restore path.
         os.chdir(backup_opt_dict.restore_abs_path)
-        tar_cmd = 'gzip -dc | tar -xf - --unlink-first --ignore-zeros'
+        tar_cmd = '{0} -x -z --incremental --unlink-first ' \
+                  '--ignore-zeros -f - '.format(backup_opt_dict.tar_path)
 
     # Check if encryption file is provided and set the openssl decrypt
     # command accordingly
@@ -108,10 +110,6 @@ def tar_incremental(
     file will be used in the current incremental backup. Also the level
     options will be checked and updated respectively
     """
-
-    if is_windows():
-        raise NotImplementedError('[*] Tar incrementals are not supported'
-                                  ' on windows currently.')
 
     if not tar_cmd or not backup_opt_dict:
         logging.error(('[*] Error: tar_incremental, please provide tar_cmd '
@@ -213,10 +211,6 @@ def gen_tar_command(
             opt_dict.exclude)
 
     tar_command = ' {0} . '.format(tar_command)
-
-    if is_windows():
-        tar_command = clean_tar_command(tar_command)
-        tar_command = add_gzip_to_command(tar_command)
 
     # Encrypt data if passfile is provided
     if opt_dict.encrypt_pass_file:

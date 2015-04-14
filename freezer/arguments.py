@@ -315,6 +315,9 @@ def backup_arguments(args_dict={}):
         dest='volume', default=False)
 
     backup_args = arg_parser.parse_args()
+    # windows bin
+    path_to_binaries = os.path.dirname(os.path.abspath(__file__))
+
     # Intercept command line arguments if you are not using the CLI
     if args_dict:
         backup_args.__dict__.update(args_dict)
@@ -347,7 +350,8 @@ def backup_arguments(args_dict={}):
     backup_args.__dict__['curr_backup_level'] = ''
     backup_args.__dict__['manifest_meta_dict'] = ''
     if is_windows():
-        backup_args.__dict__['tar_path'] = 'tar'
+        backup_args.__dict__['tar_path'] = '{0}\\bin\\tar.exe'.\
+            format(path_to_binaries)
     else:
         backup_args.__dict__['tar_path'] = distspawn.find_executable('tar')
     # If freezer is being used under OSX, please install gnutar and
