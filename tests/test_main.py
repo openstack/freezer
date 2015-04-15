@@ -41,5 +41,4 @@ def test_freezer_main(monkeypatch):
     
     monkeypatch.setattr(job, 'create_job', fake_create_job)
     monkeypatch.setattr(sys, 'argv', FakeSys.fake_sys_argv())
-    assert freezer_main() is None
-
+    assert freezer_main() is not None

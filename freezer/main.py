@@ -126,4 +126,4 @@ def freezer_main(args={}):
     freezer_job = job.create_job(backup_args)
     freezer_job.execute()
 
-    return
+    return backup_args

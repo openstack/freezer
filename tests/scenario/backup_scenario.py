@@ -56,8 +56,8 @@ class BackupScenarioFS(unittest.TestCase):
                           |-foobar
         """
         dir_path = copy(path)
-        tmp_files = ['foo', 'bar', 'foobar', 'hello.lock']
-        tmp_dirs = ['', 'dir_foo', 'dir_bar']
+        tmp_files = ['foo', 'bar', 'foobar', 'barfoo', 'foofoo', 'barbar', 'hello.lock']
+        tmp_dirs = ['', 'dir_foo', 'dir_bar', 'dir_foobar', 'dir_barfoo', 'dir_foofoo', 'dir_barbar']
         self.tmp_files = []
         for fd in tmp_dirs:
             if fd:
@@ -147,34 +147,35 @@ class BackupScenarioFS(unittest.TestCase):
                  --backup-name rsync-var-log-test-XX
                  --container var-log-test-XX
         """
+        max_retry = 5
         # Set arguments
-        test_args = {
+        backup_args = {
             #'proxy' : '',
             'action' : 'backup',
             'src_file' : copy(self.tmp_path),
             'backup_name' : str(uuid.uuid4()),
             'container' : str(uuid.uuid4())
         }
-        (backup_args, _) = arguments.backup_arguments(test_args)
-        self.assertEqual(backup_args.mode, 'fs')
-        self.assertEqual(backup_args.max_backup_level, 0)
-        main.freezer_main(backup_args)
-        backup_args = swift.get_containers_list(backup_args)
-        name_list = [item['name'] for item in backup_args.containers_list]
-        self.assertTrue(backup_args.container in name_list)
-        self.assertTrue(backup_args.container_segments in name_list)
+        # Namespace backup_args object
+        name_list = []
+        retry = 0
+        while backup_args['container'] not in name_list and retry < max_retry:
+            ns_backup_args = main.freezer_main(backup_args)
+            ns_backup_args = swift.get_container_content(ns_backup_args)
+            name_list = [item['name'] for item in ns_backup_args.containers_list]
+            retry += 1
+        self.assertTrue(ns_backup_args.container in name_list)
+        self.assertTrue(ns_backup_args.container_segments in name_list)
         fdict_before = self.snap_tmp_tree_sha1(self.tmp_files)
         self.damage_tmp_tree(self.tmp_files)
         # Restore
-        test_args = {
+        restore_args = {
             #'proxy' : '',
             'action' : 'restore',
             'restore_abs_path' : copy(self.tmp_path),
-            'backup_name' : copy(backup_args.backup_name),
-            'container' : copy(backup_args.container)
+            'backup_name' : copy(backup_args['backup_name']),
+            'container' : copy(backup_args['container'])
         }
-        (restore_args, _) = arguments.backup_arguments(test_args)
-        self.assertEqual(backup_args.mode, 'fs')
         main.freezer_main(restore_args)
         fdict_after = self.snap_tmp_tree_sha1(self.tmp_files)
         self.assertEqual(len(self.tmp_files), len(fdict_before))
@@ -197,11 +198,12 @@ class BackupScenarioFS(unittest.TestCase):
                  --exclude "\*.lock"
                  --backup-name UUID
         """
+        max_retry = 5
         # Set arguments
         lvm_path = '/mnt/freezer-test-lvm'
         self.tmp_path = tempfile.mkdtemp(prefix='lvm_test_', dir=lvm_path)
         self.create_tmp_tree(self.tmp_path)
-        test_args = {
+        backup_args = {
             #'proxy' : '',
             'action' : 'backup',
             'lvm_srcvol' : '/dev/freezer-test1-volgroup/freezer-test1-vol',
@@ -213,22 +215,17 @@ class BackupScenarioFS(unittest.TestCase):
             'backup_name' : str(uuid.uuid4()),
             'container' : str(uuid.uuid4())
         }
-        (backup_args, _) = arguments.backup_arguments(test_args)
-        # Make sure default value for MODE is filesystem
-        self.assertEqual(backup_args.mode, 'fs')
-        # Check that if not explicitly defined the MAX-BACKUP is 0
-        self.assertEqual(backup_args.max_backup_level, 0)
         # Call the actual BACKUP
-        main.freezer_main(backup_args)
-        # Retrieve a list of all container data on Swift
-        backup_args = swift.get_containers_list(backup_args)
-        # Filter only the container names from all other data
-        name_list = [item['name'] for item in backup_args.containers_list]
-        # Amke sure that we have created a container with the desired name
-        # in Swift
-        self.assertTrue(backup_args.container in name_list)
-        # Ensure that the SEGMENTS container is found on Swift as well
-        self.assertTrue(backup_args.container_segments in name_list)
+        # Namespace backup_args object
+        name_list = []
+        retry = 0
+        while backup_args['container'] not in name_list and retry < max_retry:
+            ns_backup_args = main.freezer_main(backup_args)
+            ns_backup_args = swift.get_container_content(ns_backup_args)
+            name_list = [item['name'] for item in ns_backup_args.containers_list]
+            retry += 1
+        self.assertTrue(ns_backup_args.container in name_list)
+        self.assertTrue(ns_backup_args.container_segments in name_list)
         # Create a file => SAH1 hash dictionary that will recored file
         # hashes before any files being modified or deleted
         fdict_before = self.snap_tmp_tree_sha1(self.tmp_files)
@@ -239,15 +236,13 @@ class BackupScenarioFS(unittest.TestCase):
         # Create RESTORE action dictionary to be passed to
         # arguments.backup_arguments() they will emulate the
         # command line arguments
-        test_args = {
+        restore_args = {
             #'proxy' : '',
             'action' : 'restore',
             'restore_abs_path' : copy(self.tmp_path),
-            'backup_name' : copy(backup_args.backup_name),
-            'container' : copy(backup_args.container)
+            'backup_name' : copy(backup_args['backup_name']),
+            'container' : copy(backup_args['container'])
         }
-        (restore_args, _) = arguments.backup_arguments(test_args)
-        self.assertEqual(restore_args.mode, 'fs')
         # Call RESTORE on Freezer code base
         main.freezer_main(restore_args)
         fdict_after = self.snap_tmp_tree_sha1(self.tmp_files)
