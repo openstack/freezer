@@ -22,7 +22,7 @@ Hudson (tjh@cryptsoft.com).
 import json
 import requests
 
-from freezer.freezerclient import exceptions
+from freezer.apiclient import exceptions
 
 
 class BackupsManager(object):

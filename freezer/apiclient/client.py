@@ -29,7 +29,7 @@ if os.path.exists(os.path.join(possible_topdir, 'freezer', '__init__.py')):
 
 import keystoneclient
 
-from freezer.freezerclient.backups import BackupsManager
+from freezer.apiclient.backups import BackupsManager
 
 
 class Client(object):
