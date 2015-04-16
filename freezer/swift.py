@@ -23,8 +23,8 @@ Freezer functions to interact with OpenStack Swift client and server
 
 from freezer.utils import (
     validate_all_args, get_match_backup,
-    sort_backup_list, DateTime, OpenstackOptions)
-
+    sort_backup_list, DateTime)
+from freezer.bandwidth import monkeypatch_socket_bandwidth
 import os
 import swiftclient
 import json
@@ -303,15 +303,9 @@ def get_client(backup_opt_dict):
     backup_opt_dict
     """
 
-    options = OpenstackOptions.create_from_dict(os.environ)
+    options = backup_opt_dict.options
 
-    download_limit = backup_opt_dict.download_limit
-    upload_limit = backup_opt_dict.upload_limit
-
-    if upload_limit > -1 or download_limit > - 1:
-        from bandwidth import monkeypatch_socket_bandwidth
-
-        monkeypatch_socket_bandwidth(download_limit, upload_limit)
+    monkeypatch_socket_bandwidth(backup_opt_dict)
 
     backup_opt_dict.sw_connector = swiftclient.client.Connection(
         authurl=options.auth_url,
@@ -352,6 +346,57 @@ def manifest_upload(
     logging.info('[*] Manifest successfully uploaded!')
 
 
+def add_stream(backup_opt_dict, stream, package_name):
+    max_len = len(str(len(stream))) or 10
+
+    def format_chunk(number):
+        str_repr = str(number)
+        return "0" * (max_len - len(str_repr)) + str_repr
+
+    i = 0
+    for el in stream:
+        add_chunk(backup_opt_dict,
+                  "{0}/{1}".format(package_name, format_chunk(i)), el)
+        i += 1
+    headers = {'X-Object-Manifest': u'{0}/{1}/'.format(
+        backup_opt_dict.container_segments, package_name),
+        'x-object-meta-length': len(stream)}
+    backup_opt_dict.sw_connector.put_object(
+        backup_opt_dict.container, package_name, "", headers=headers)
+
+
+def add_chunk(backup_opt_dict, package_name, content):
+    # If for some reason the swift client object is not available anymore
+    # an exception is generated and a new client object is initialized/
+    # If the exception happens for 10 consecutive times for a total of
+    # 1 hour, then the program will exit with an Exception.
+    sw_connector = backup_opt_dict.sw_connector
+    count = 0
+    while True:
+        try:
+            logging.info(
+                '[*] Uploading file chunk index: {0}'.format(
+                    package_name))
+            sw_connector.put_object(
+                backup_opt_dict.container_segments,
+                package_name, content,
+                content_type='application/octet-stream',
+                content_length=len(content))
+            logging.info('[*] Data successfully uploaded!')
+            print '[*] Data successfully uploaded!'
+            break
+        except Exception as error:
+            logging.info('[*] Retrying to upload file chunk index: {0}'.format(
+                package_name))
+            time.sleep(60)
+            backup_opt_dict = get_client(backup_opt_dict)
+            count += 1
+            if count == 10:
+                logging.critical('[*] Error: add_object: {0}'
+                                 .format(error))
+                sys.exit(1)
+
+
 def add_object(
         backup_opt_dict, backup_queue, absolute_file_path=None,
         time_stamp=None):
@@ -371,7 +416,6 @@ def add_object(
         logging.exception(err_msg)
         sys.exit(1)
 
-    sw_connector = backup_opt_dict.sw_connector
     while True:
         package_name = absolute_file_path.split('/')[-1]
         file_chunk_index, file_chunk = backup_queue.get().popitem()
@@ -380,34 +424,7 @@ def add_object(
         package_name = u'{0}/{1}/{2}/{3}'.format(
             package_name, time_stamp,
             backup_opt_dict.max_seg_size, file_chunk_index)
-        # If for some reason the swift client object is not available anymore
-        # an exception is generated and a new client object is initialized/
-        # If the exception happens for 10 consecutive times for a total of
-        # 1 hour, then the program will exit with an Exception.
-        count = 0
-        while True:
-            try:
-                logging.info(
-                    '[*] Uploading file chunk index: {0}'.format(
-                        package_name))
-                sw_connector.put_object(
-                    backup_opt_dict.container_segments,
-                    package_name, file_chunk,
-                    content_type='application/octet-stream',
-                    content_length=len(file_chunk))
-                logging.info('[*] Data successfully uploaded!')
-                break
-            except Exception as error:
-                time.sleep(60)
-                logging.info(
-                    '[*] Retrying to upload file chunk index: {0}'.format(
-                        package_name))
-                backup_opt_dict = get_client(backup_opt_dict)
-                count += 1
-                if count == 10:
-                    logging.critical('[*] Error: add_object: {0}'
-                                     .format(error))
-                    sys.exit(1)
+        add_chunk(backup_opt_dict, package_name, file_chunk)
 
 
 def get_containers_list(backup_opt_dict):

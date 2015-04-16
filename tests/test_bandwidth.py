@@ -1,4 +1,4 @@
-from freezer.bandwidth import ThrottledSocket, monkeypatch_socket_bandwidth
+from freezer.bandwidth import ThrottledSocket, monkeypatch_bandwidth
 from commons import FakeSocket
 import pytest
 
@@ -27,7 +27,7 @@ class TestBandwidth:
         ThrottledSocket._sleep(10, 5, 5, 7)
 
     def test_monkeypatch(self):
-        monkeypatch_socket_bandwidth(100, 100)
+        monkeypatch_bandwidth(100, 100)
 
     def test_set(self):
         fake = FakeSocket()

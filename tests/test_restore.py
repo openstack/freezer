@@ -23,7 +23,7 @@ Hudson (tjh@cryptsoft.com).
 
 from commons import *
 from freezer.restore import (
-    restore_fs, restore_fs_sort_obj)
+    restore_fs, restore_fs_sort_obj, restore_cinder)
 import freezer
 import logging
 import pytest
@@ -66,7 +66,6 @@ class TestRestore:
         backup_opt.remote_match_backup = []
         pytest.raises(ValueError, restore_fs, backup_opt)
 
-
     def test_restore_fs_sort_obj(self, monkeypatch):
 
         backup_opt = BackupOpt1()
@@ -82,3 +81,14 @@ class TestRestore:
         backup_opt = BackupOpt1()
         backup_opt.backup_name = 'abcdtest'
         pytest.raises(Exception, restore_fs_sort_obj, backup_opt)
+
+    def test_backup_mode_cinder(self, monkeypatch):
+        backup_opt = BackupOpt1()
+        backup_opt.volume_id = 34
+
+        backup_opt.glance = FakeGlanceClient()
+        backup_opt.cinder = FakeCinderClient()
+        fakeswiftclient = FakeSwiftClient()
+        monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
+
+        restore_cinder(backup_opt, False)

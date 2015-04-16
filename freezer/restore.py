@@ -21,17 +21,20 @@ Hudson (tjh@cryptsoft.com).
 Freezer restore modes related functions
 '''
 
-from freezer.tar import tar_restore
-from freezer.swift import object_to_stream
-from freezer.utils import (
-    validate_all_args, get_match_backup, sort_backup_list)
-
 import multiprocessing
 import os
 import logging
 import re
 import datetime
 import time
+
+from freezer.tar import tar_restore
+from freezer.swift import object_to_stream
+from freezer.glance import glance
+from freezer.cinder import cinder
+from freezer.glance import ReSizeStream
+from freezer.utils import (
+    validate_all_args, get_match_backup, sort_backup_list)
 
 
 def restore_fs(backup_opt_dict):
@@ -159,3 +162,45 @@ def restore_fs_sort_obj(backup_opt_dict):
             from container {1}, into directory {2}'.format(
             backup_opt_dict.backup_name, backup_opt_dict.container,
             backup_opt_dict.restore_abs_path))
+
+
+def restore_cinder(backup_opt_dict, create_clients=True):
+    """
+    1) Define swift directory
+    2) Download and upload to glance
+    3) Create volume from glance
+    4) Delete
+    :param backup_opt_dict: global dictionary with params
+    :param create_clients: if set to True -
+        recreates cinder and glance clients,
+        False - uses existing from backup_opt_dict
+    """
+    if create_clients:
+        backup_opt_dict = cinder(backup_opt_dict)
+        backup_opt_dict = glance(backup_opt_dict)
+    volume_id = backup_opt_dict.volume_id
+    container = backup_opt_dict.container
+    connector = backup_opt_dict.sw_connector
+    info, backups = connector.get_container(container, path=volume_id)
+    backups = sorted(map(lambda x: x["name"].rsplit("/", 1)[-1], backups))
+    if not backups:
+        msg = "Cannot find backups for volume: %s" % volume_id
+        logging.error(msg)
+        raise BaseException(msg)
+    backup = backups[-1]
+    stream = connector.get_object(
+        backup_opt_dict.container, "%s/%s" % (volume_id, backup),
+        resp_chunk_size=10000000)
+    length = int(stream[0]["x-object-meta-length"])
+    stream = stream[1]
+    images = backup_opt_dict.glance.images
+    image = images.create(data=ReSizeStream(stream, length, 1),
+                          container_format="bare",
+                          disk_format="raw")
+    gb = 1073741824
+    size = length / gb
+    if length % gb > 0:
+        size += 1
+
+    backup_opt_dict.cinder.volumes.create(size, imageRef=image.id)
+    images.delete(image)

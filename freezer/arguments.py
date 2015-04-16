@@ -29,6 +29,7 @@ import distutils.spawn as distspawn
 import utils
 import socket
 
+from freezer.utils import OpenstackOptions
 from freezer.winutils import is_windows
 from os.path import expanduser
 home = expanduser("~")
@@ -296,6 +297,11 @@ def backup_arguments(args_dict={}):
         type=utils.human2bytes,
         default=-1)
     arg_parser.add_argument(
+        "--volume-id", action='store',
+        help='Id of cinder volume for backup',
+        dest="volume_id",
+        default='')
+    arg_parser.add_argument(
         '--download-limit', action='store',
         help='''Download bandwidth limit in Bytes per sec.
         Can be invoked with dimensions (10K, 120M, 10G).''',
@@ -401,5 +407,8 @@ def backup_arguments(args_dict={}):
 
     # Freezer version
     backup_args.__dict__['__version__'] = '1.1.3'
+
+    backup_args.__dict__['options'] = \
+        OpenstackOptions.create_from_dict(os.environ)
 
     return backup_args, arg_parser

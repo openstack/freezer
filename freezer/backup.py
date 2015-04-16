@@ -21,6 +21,11 @@ Hudson (tjh@cryptsoft.com).
 Freezer Backup modes related functions
 """
 
+import multiprocessing
+import logging
+import os
+from os.path import expanduser
+
 from freezer.lvm import lvm_snap, lvm_snap_remove, get_lvm_info
 from freezer.tar import tar_backup, gen_tar_command
 from freezer.swift import add_object, manifest_upload, get_client
@@ -31,12 +36,12 @@ from freezer.vss import start_sql_server
 from freezer.vss import stop_sql_server
 from freezer.winutils import use_shadow
 from freezer.winutils import is_windows
+from freezer.cinder import provide_snapshot, do_copy_volume, make_glance_image
+from freezer.cinder import download_image, clean_snapshot
+from freezer.glance import glance
+from freezer.cinder import cinder
+from freezer import swift
 
-import multiprocessing
-import logging
-import os
-
-from os.path import expanduser
 home = expanduser("~")
 
 
@@ -140,6 +145,36 @@ def backup_mode_mongo(backup_opt_dict, time_stamp, manifest_meta_dict):
         logging.warning('[*] localhost {0} is not Master/Primary,\
         exiting...'.format(local_hostname))
         return True
+
+
+def backup_mode_cinder(backup_dict, time_stamp, create_clients=True):
+    """
+    Implements cinder backup:
+        1) Gets a stream of the image from glance
+        2) Stores resulted image to the swift as multipart object
+
+    :param backup_dict: global dict with variables
+    :param time_stamp: timestamp of snapshot
+    :param create_clients: if set to True -
+        recreates cinder and glance clients,
+        False - uses existing from backup_opt_dict
+    """
+    if create_clients:
+        backup_dict = cinder(backup_dict)
+        backup_dict = glance(backup_dict)
+
+    volume_id = backup_dict.volume_id
+    volume = backup_dict.cinder.volumes.get(volume_id)
+    snapshot = provide_snapshot(backup_dict, volume,
+                                "backup_snapshot_for_volume_%s" % volume_id)
+    copied_volume = do_copy_volume(backup_dict, snapshot)
+    image = make_glance_image(backup_dict, "name", copied_volume)
+    stream = download_image(backup_dict, image)
+    package = "{0}/{1}".format(backup_dict, volume_id, time_stamp)
+    swift.add_stream(backup_dict, stream, package)
+    clean_snapshot(backup_dict, snapshot)
+    backup_dict.cinder.volumes.delete(copied_volume)
+    backup_dict.glance.images.delete(image)
 
 
 def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):

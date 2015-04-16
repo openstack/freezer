@@ -12,6 +12,8 @@ import pymongo
 import re
 from collections import OrderedDict
 import __builtin__
+from glanceclient.common.utils import IterableWithLength
+from freezer.utils import OpenstackOptions
 
 os.environ['OS_REGION_NAME'] = 'testregion'
 os.environ['OS_TENANT_ID'] = '0123456789'
@@ -504,6 +506,74 @@ class Lvm:
         return False
 
 
+class FakeIdObject:
+    def __init__(self, id):
+        self.id = id
+        self.status = "available"
+        self.size = 10
+        self.min_disk = 10
+
+
+class FakeCinderClient:
+    def __init__(self):
+        self.volumes = FakeCinderClient.Volumes()
+        self.volume_snapshots = FakeCinderClient.VolumeSnapshot
+
+    class Volumes:
+        def __init__(self):
+            pass
+
+        @staticmethod
+        def get(id):
+            return FakeIdObject("5")
+
+        @staticmethod
+        def create(size, snapshot_id=None, imageRef=None):
+            return FakeIdObject("2")
+
+        @staticmethod
+        def upload_to_image(volume, force, image_name,
+                            container_format, disk_format):
+            pass
+
+        @staticmethod
+        def delete(volume):
+            pass
+
+    class VolumeSnapshot:
+        def __init__(self):
+            pass
+
+        @staticmethod
+        def create(volume_id, display_name, force):
+            return FakeIdObject("10")
+
+        @staticmethod
+        def delete(snapshot):
+            pass
+
+
+class FakeGlanceClient:
+    def __init__(self):
+        self.images = FakeGlanceClient.Images()
+
+    class Images:
+        def __init__(self):
+            pass
+
+        @staticmethod
+        def data(image):
+            return IterableWithLength(iter("abc"), 3)
+
+        @staticmethod
+        def delete(image):
+            pass
+
+        @staticmethod
+        def create(data, container_format, disk_format):
+            return FakeIdObject("10")
+
+
 class FakeSwiftClient:
 
     def __init__(self):
@@ -516,7 +586,6 @@ class FakeSwiftClient:
         class Connection:
             def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
                 self.num_try = 0
-                return None
 
             def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
                 return True
@@ -543,6 +612,11 @@ class FakeSwiftClient:
                         {'bytes': 251, 'last_modified': '2015-03-09T10:37:01.701170', 'hash': '9a8cbdb30c226d11bf7849f3d48831b9', 'name': 'hostname_backup_name_1234567890_0/1234567890/67108864/00000000', 'content_type': 'application/octet-stream'},
                         {'bytes': 632, 'last_modified': '2015-03-09T11:54:27.860730', 'hash': 'd657a4035d0dcc18deaf9bfd2a3d0ebf', 'name': 'hostname_backup_name_1234567891_1/1234567891/67108864/00000000', 'content_type': 'application/octet-stream'}
                     ])
+                elif container == "test-container" and 'path' in kwargs:
+                    return ({'container_metadata': True}, [
+                        {'bytes': 251, 'last_modified': '2015-03-09T10:37:01.701170', 'hash': '9a8cbdb30c226d11bf7849f3d48831b9', 'name': 'hostname_backup_name_1234567890_0/1234567890/67108864/00000000', 'content_type': 'application/octet-stream'},
+                        {'bytes': 632, 'last_modified': '2015-03-09T11:54:27.860730', 'hash': 'd657a4035d0dcc18deaf9bfd2a3d0ebf', 'name': 'hostname_backup_name_1234567891_1/1234567891/67108864/00000000', 'content_type': 'application/octet-stream'}
+                    ])
                 else:
                     return [{}, []]
 
@@ -550,7 +624,7 @@ class FakeSwiftClient:
                 return True, [{'name': 'test-container'}, {'name': 'test-container-segments'}]
 
             def get_object(self, *args, **kwargs):
-                return ['abcdef', 'hijlmno']
+                return [{'x-object-meta-length': "123"}, "abc"]
 
 
 class FakeSwiftClient1:
@@ -705,6 +779,8 @@ class BackupOpt1:
         self.upload_limit = -1
         self.download_limit = -1
         self.sql_server_instance = 'Sql Server'
+        self.volume_id = ''
+        self.options = OpenstackOptions.create_from_dict(os.environ)
 
 
 class FakeMySQLdb:

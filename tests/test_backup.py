@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
 from freezer.backup import backup_mode_mysql, backup_mode_fs, backup_mode_mongo
+from freezer.backup import backup_mode_cinder
 import freezer
+from freezer import cinder
+from freezer import glance
 import swiftclient
 import multiprocessing
 import subprocess
@@ -189,3 +192,14 @@ class TestBackUP:
         monkeypatch.setattr(pymongo, 'MongoClient', fakemongo2)
         assert backup_mode_mongo(
             backup_opt, 123456789, test_meta) is True
+
+    def test_backup_mode_cinder(self, monkeypatch):
+        backup_opt = BackupOpt1()
+        backup_opt.volume_id = 34
+
+        backup_opt.glance = FakeGlanceClient()
+        backup_opt.cinder = FakeCinderClient()
+        fakeswiftclient = FakeSwiftClient()
+        monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
+
+        backup_mode_cinder(backup_opt, 123456789, False)

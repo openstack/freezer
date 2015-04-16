@@ -105,8 +105,10 @@ class BackupJob(Job):
             self.conf, manifest_meta_dict)
 
         self.conf.manifest_meta_dict = manifest_meta_dict
-
-        if self.conf.mode == 'fs':
+        if self.conf.volume_id:
+            backup.backup_mode_cinder(
+                self.conf, self.start_time.timestamp)
+        elif self.conf.mode == 'fs':
             backup.backup_mode_fs(
                 self.conf, self.start_time.timestamp, manifest_meta_dict)
         elif self.conf.mode == 'mongo':
@@ -137,7 +139,10 @@ class RestoreJob(Job):
         # Get the object list of the remote containers and store it in the
         # same dict passes as argument under the dict.remote_obj_list namespace
         self.conf = swift.get_container_content(self.conf)
-        restore.restore_fs(self.conf)
+        if self.conf.volume_id:
+            restore.restore_cinder(self.conf)
+        else:
+            restore.restore_fs(self.conf)
 
 
 class AdminJob(Job):

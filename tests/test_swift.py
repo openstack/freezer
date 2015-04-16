@@ -27,7 +27,6 @@ from freezer.swift import (create_containers, show_containers,
     check_container_existance,
     get_client, manifest_upload, add_object, get_containers_list,
     object_to_file, object_to_stream, _remove_object, remove_object)
-from freezer.swift import OpenstackOptions
 import os
 import logging
 import subprocess
