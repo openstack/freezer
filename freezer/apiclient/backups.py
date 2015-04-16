@@ -29,10 +29,13 @@ class BackupsManager(object):
 
     def __init__(self, client):
         self.client = client
-        self.endpoint = self.client.endpoint + 'backups/'
-        self.headers = {'X-Auth-Token': client.token}
+        self.endpoint = self.client.api_endpoint + '/v1/backups/'
 
-    def create(self, backup_metadata, username=None, tenant_name=None):
+    @property
+    def headers(self):
+        return {'X-Auth-Token': self.client.auth_token}
+
+    def create(self, backup_metadata):
         r = requests.post(self.endpoint,
                           data=json.dumps(backup_metadata),
                           headers=self.headers)
@@ -42,14 +45,14 @@ class BackupsManager(object):
         backup_id = r.json()['backup_id']
         return backup_id
 
-    def delete(self, backup_id, username=None, tenant_name=None):
+    def delete(self, backup_id):
         endpoint = self.endpoint + backup_id
         r = requests.delete(endpoint, headers=self.headers)
         if r.status_code != 204:
             raise exceptions.MetadataDeleteFailure(
                 "[*] Error {0}".format(r.status_code))
 
-    def list(self,  username=None, tenant_name=None):
+    def list(self):
         r = requests.get(self.endpoint, headers=self.headers)
         if r.status_code != 200:
             raise exceptions.MetadataGetFailure(
@@ -57,7 +60,7 @@ class BackupsManager(object):
 
         return r.json()['backups']
 
-    def get(self, backup_id, username=None, tenant_name=None):
+    def get(self, backup_id):
         endpoint = self.endpoint + backup_id
         r = requests.get(endpoint, headers=self.headers)
         if r.status_code == 200:

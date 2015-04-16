@@ -20,27 +20,17 @@ Hudson (tjh@cryptsoft.com).
 """
 
 
-class FreezerClientException(Exception):
-    """
-    Base Freezer API Exception
-    """
-    message = ("Unknown exception occurred")
-
-    def __init__(self, message=None, *args, **kwargs):
-        if not message:
-            message = self.message
-        message = message % kwargs
-
-        Exception.__init__(self, message)
-
-
-class MetadataCreationFailure(FreezerClientException):
+class MetadataCreationFailure(Exception):
     message = "Metadata creation failed: %reason"
 
 
-class MetadataGetFailure(FreezerClientException):
+class MetadataGetFailure(Exception):
     message = "Metadata read failed: %reason"
 
 
-class MetadataDeleteFailure(FreezerClientException):
+class MetadataDeleteFailure(Exception):
     message = "Metadata deletion failed: %reason"
+
+
+class AuthFailure(Exception):
+    message = "Authentication Error: %reason"
