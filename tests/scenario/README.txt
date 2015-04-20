@@ -13,7 +13,7 @@ In order to prepare your Vagrant + VirtualBox/KVM environment there is:
 The script is tested to work on Ubuntu and will automatically download
 and deploy Vagrant, VirtualBox, KVM and libvrt as well as mutate Vagrant
 plugins. It will also download a base Ubuntu 14.04 64bit Vagrant box and
-use mutate plugin to deoplu a libvrt version for KVM use.
+use mutate plugin to convert the box from virtualbox to libvirt.
 
 Before running 'vagrant up' for the first time make sure you have replaced
 the 'P-R-O-X-Y' string (Vagrant file) with the correct HTTP proxy URL and
