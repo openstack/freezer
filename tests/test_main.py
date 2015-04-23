@@ -22,11 +22,24 @@ Hudson (tjh@cryptsoft.com).
 """
 
 from commons import fake_create_job
+from commons import FakeSys
+from commons import BackupOpt1
 
 from freezer.main import freezer_main
 from freezer import job
 
+import pytest
+import sys
+
 
 def test_freezer_main(monkeypatch):
+    fake_sys = FakeSys()
     monkeypatch.setattr(job, 'create_job', fake_create_job)
+    monkeypatch.setattr(sys, 'exit', fake_sys.fake_sys_exit)
+    with pytest.raises(SystemExit):
+        freezer_main()
+    
+    monkeypatch.setattr(job, 'create_job', fake_create_job)
+    monkeypatch.setattr(sys, 'argv', FakeSys.fake_sys_argv())
     assert freezer_main() is None
+

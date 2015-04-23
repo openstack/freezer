@@ -1068,3 +1068,17 @@ def fake_create_subprocess(cmd):
 
 def fake_create_subprocess2(cmd):
     return True, 'Error'
+
+
+class FakeSys:
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def fake_sys_argv():
+        return [1, 2, 3]
+
+    # @staticmethod
+    def fake_sys_exit(self, status_code):
+        raise SystemExit(status_code)

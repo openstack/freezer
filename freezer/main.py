@@ -33,6 +33,12 @@ import sys
 # Initialize backup options
 (backup_args, arg_parse) = backup_arguments()
 
+# Configure logging
+logging.basicConfig(
+    filename=backup_args.log_file,
+    level=logging.INFO,
+    format='%(asctime)s %(name)s %(levelname)s %(message)s')
+
 
 def configure_log_file_using_defaults():
     """ Configure log file for freezer """
@@ -94,6 +100,10 @@ def fail(exit_code, e, do_log=True):
 def freezer_main():
     """Freezer main loop for job execution.
     """
+
+    if len(sys.argv) < 2:
+        arg_parse.print_help()
+        sys.exit(1)
 
     if backup_args.version:
         print "freezer version {0}".format(backup_args.__version__)
