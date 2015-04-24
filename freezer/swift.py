@@ -193,10 +193,10 @@ def remove_obj_older_than(backup_opt_dict):
             if remote_obj_timestamp >= remove_from.timestamp:
                 if match_object.startswith('tar_meta'):
                     tar_meta_incremental_dep_flag = \
-                        (obj_name_match.group(3) is not '0')
+                        (obj_name_match.group(3) != '0')
                 else:
                     incremental_dep_flag = \
-                        (obj_name_match.group(3) is not '0')
+                        (obj_name_match.group(3) != '0')
 
             else:
                 if match_object.startswith('tar_meta'):
@@ -204,14 +204,14 @@ def remove_obj_older_than(backup_opt_dict):
                         remove_object(backup_opt_dict.sw_connector,
                                       backup_opt_dict.container, match_object)
                     else:
-                        if obj_name_match.group(3) is '0':
+                        if obj_name_match.group(3) == '0':
                             tar_meta_incremental_dep_flag = False
                 else:
                     if not incremental_dep_flag:
                         remove_object(backup_opt_dict.sw_connector,
                                       backup_opt_dict.container, match_object)
                     else:
-                        if obj_name_match.group(3) is '0':
+                        if obj_name_match.group(3) == '0':
                             incremental_dep_flag = False
 
 
