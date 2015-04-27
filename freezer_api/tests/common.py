@@ -170,6 +170,58 @@ fake_data_0_elasticsearch_miss = {
     "took": 1
 }
 
+fake_data_1_wrapped_backup_metadata = {
+    'backup_id': 'freezer_container_alpha_important_data_backup_125235431_1',
+    'user_id': 'qwerty1234',
+    'user_name': 'asdffdsa',
+    'backup_metadata': {
+        "container": "freezer_container",
+        "host_name": "alpha",
+        "backup_name": "important_data_backup",
+        "timestamp": 125235431,
+        "level": 1,
+        "backup_session": 8475903425,
+        "max_level": 5,
+        "mode" : "fs",
+        "fs_real_path": "/blabla",
+        "vol_snap_path": "/blablasnap",
+        "total_broken_links" : 0,
+        "total_fs_files" : 11,
+        "total_directories" : 2,
+        "backup_size_uncompressed" : 4567,
+        "backup_size_compressed" : 1212,
+        "total_backup_session_size" : 6789,
+        "compression_alg": "None",
+        "encrypted": "false",
+        "client_os": "linux",
+        "broken_links": ["link_01", "link_02"],
+        "excluded_files": ["excluded_file_01", "excluded_file_02"],
+        "cli": ""
+    }
+}
+
+fake_client_info_0 = {
+  "client_id": "test-tenant_5253_test-hostname_09544",
+  "description": "some usefule text here",
+  "config_id": "config_id_contains_uuid_of_config"
+}
+
+fake_client_info_1 = {
+  "client_id": "test-tenant_5253_test-hostname_6543",
+  "description": "also some useful text here",
+  "config_id": "config_id_blablawhatever"
+}
+
+fake_client_entry_0 = {
+  "client" : fake_client_info_0,
+  "user_id": "user_id-is-provided-keystone"
+}
+
+fake_client_entry_1 = {
+  "client" : fake_client_info_0,
+  "user_id": "user_id-is-provided-keystone"
+}
+
 
 class FakeReqResp:
 
@@ -183,119 +235,3 @@ class FakeReqResp:
 
     def get_header(self, key):
         return self.header.get(key, None)
-
-
-class FakeElasticsearch_hit:
-    def __init__(self, host=None):
-        pass
-
-    def search(self, index, doc_type, q):
-        return fake_data_0_elasticsearch_hit
-
-    def index(self, index, doc_type, body):
-        return {'created': True}
-
-    def delete_by_query(self, index, doc_type, q):
-        pass
-
-
-class FakeElasticsearch_insert_ok:
-    def __init__(self, host=None):
-        pass
-
-    def search(self, index, doc_type, q):
-        return fake_data_0_elasticsearch_miss
-
-    def index(self, index, doc_type, body):
-        return {'created': True}
-
-    def delete_by_query(self, index, doc_type, q):
-        pass
-
-
-class FakeElasticsearch_miss:
-    def __init__(self, host=None):
-        pass
-
-    def search(self, index, doc_type, q):
-        return fake_data_0_elasticsearch_miss
-
-    def index(self, index, doc_type, body):
-        return {'created': False}
-
-    def delete_by_query(self, index, doc_type, q):
-        pass
-
-
-class FakeElasticsearch_index_raise:
-    def __init__(self, host=None):
-        pass
-
-    def search(self, index, doc_type, q):
-        return fake_data_0_elasticsearch_miss
-
-    def index(self, index, doc_type, body):
-        raise Exception
-
-    def delete_by_query(self, index, doc_type, q):
-        pass
-
-
-class FakeElasticsearch_search_raise:
-    def __init__(self, host=None):
-        pass
-
-    def search(self, index, doc_type, q):
-        raise Exception
-
-    def index(self, index, doc_type, body):
-        return {'created': True}
-
-    def delete_by_query(self, index, doc_type, q):
-        pass
-
-class FakeElasticsearch_delete_raise:
-    def __init__(self, host=None):
-        pass
-
-    def search(self, index, doc_type, q):
-        return fake_data_0_elasticsearch_miss
-
-    def index(self, index, doc_type, body):
-        return {'created': True}
-
-    def delete_by_query(self, index, doc_type, q):
-        raise Exception
-
-
-class FakeLogging:
-
-    def __init__(self):
-        return None
-
-    def __call__(self, *args, **kwargs):
-        return True
-
-    @classmethod
-    def logging(cls, opt1=True):
-        return True
-
-    @classmethod
-    def info(cls, opt1=True):
-        return True
-
-    @classmethod
-    def warning(cls, opt1=True):
-        return True
-
-    @classmethod
-    def critical(cls, opt1=True):
-        return True
-
-    @classmethod
-    def exception(cls, opt1=True):
-        return True
-
-    @classmethod
-    def error(cls, opt1=True):
-        return True

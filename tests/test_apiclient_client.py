@@ -60,7 +60,7 @@ class TestClientMock(unittest.TestCase):
                           tenant_name='mytenant',
                           auth_url='http://whatever:35357/v2.0/')
         self.assertIsInstance(c, client.Client)
-        self.assertEqual(c.api_endpoint, 'http://frezerapiurl:9090')
+        self.assertEqual(c.endpoint, 'http://frezerapiurl:9090')
 
     @patch('freezer.apiclient.client.os_client')
     def test_client_create_token(self, mock_os_client):
@@ -68,7 +68,7 @@ class TestClientMock(unittest.TestCase):
         c = client.Client(token='mytoken',
                           auth_url='http://whatever:35357/v2.0/')
         self.assertIsInstance(c, client.Client)
-        self.assertEqual(c.api_endpoint, 'http://frezerapiurl:9090')
+        self.assertEqual(c.endpoint, 'http://frezerapiurl:9090')
 
     @patch('freezer.apiclient.client.os_client')
     def test_client_error_no_credentials(self, mock_os_client):

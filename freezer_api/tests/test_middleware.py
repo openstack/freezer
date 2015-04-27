@@ -21,9 +21,10 @@ Hudson (tjh@cryptsoft.com).
 """
 
 
-import json
 import unittest
+#from mock import Mock
 
+import json
 import falcon
 
 from freezer_api.api.common import middleware

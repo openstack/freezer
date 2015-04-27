@@ -22,41 +22,27 @@ Hudson (tjh@cryptsoft.com).
 
 
 import unittest
+from mock import patch
 
-import pytest
+#import pytest
+#import falcon
+#from common import *
 
-import falcon
-
-from common import *
-from freezer_api.common.exceptions import *
 from oslo.config import cfg
 
-
+from freezer_api.common.exceptions import *
 from freezer_api.storage import driver, elastic, simpledict
 
 
-class TestStorageDriver:
+class TestStorageDriver(unittest.TestCase):
 
-    def patch_logging(self, monkeypatch):
-        fakelogging = FakeLogging()
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-    def test_get_db_raises_when_db_not_supported(self, monkeypatch):
-        self.patch_logging(monkeypatch)
+    @patch('freezer_api.storage.elastic.logging')
+    def test_get_db_raises_when_db_not_supported(self, mock_logging):
         cfg.CONF.storage.db = 'nodb'
-        pytest.raises(Exception, driver.get_db)
+        self.assertRaises(Exception, driver.get_db)
 
-    def test_get_db_simpledict(self, monkeypatch):
-        self.patch_logging(monkeypatch)
-        cfg.CONF.storage.db = 'simpledict'
-        db = driver.get_db()
-        assert isinstance(db, simpledict.SimpleDictStorageEngine)
-
-    def test_get_db_elastic(self, monkeypatch):
-        self.patch_logging(monkeypatch)
+    @patch('freezer_api.storage.elastic.logging')
+    def test_get_db_elastic(self, mock_logging):
         cfg.CONF.storage.db = 'elasticsearch'
         db = driver.get_db()
-        assert isinstance(db, elastic.ElasticSearchEngine)
+        self.assertIsInstance(db, elastic.ElasticSearchEngine)

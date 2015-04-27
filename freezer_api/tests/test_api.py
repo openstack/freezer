@@ -20,27 +20,19 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-
-import pytest
+import unittest
+from mock import Mock, patch
 
 from common import *
 from freezer_api.common.exceptions import *
 from keystonemiddleware import auth_token
 
-
 from freezer_api.cmd import api
 
 
-class TestAPI:
+class TestAPI(unittest.TestCase):
 
-    def patch_logging(self, monkeypatch):
-        fakelogging = FakeLogging()
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-    def test_auth_install(self, monkeypatch):
-        self.patch_logging(monkeypatch)
+    @patch('freezer_api.storage.elastic.logging')
+    def test_auth_install(self, mock_logging):
         app = api.get_application(None)
         assert isinstance(app, auth_token.AuthProtocol)

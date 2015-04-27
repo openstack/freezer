@@ -30,9 +30,8 @@ opt_group = cfg.OptGroup(name='storage',
 
 storage_opts = [
     cfg.StrOpt('db',
-               default='simpledict',
-               help='specify the storage db to use: simpledoct (default),'
-                    ' elasticsearch'),
+               default='elasticsearch',
+               help='specify the storage db to use: elasticsearch (default)'),
     cfg.StrOpt('endpoint',
                default='http://localhost:9200',
                help='specify the storage endpoint')
@@ -45,10 +44,7 @@ CONF.register_opts(storage_opts, opt_group)
 
 def get_db():
     db_engine = CONF.storage.db
-    if db_engine == 'simpledict':
-        logging.info('Storage backend: simple dictionary')
-        db = simpledict.SimpleDictStorageEngine()
-    elif db_engine == 'elasticsearch':
+    if db_engine == 'elasticsearch':
         endpoint = CONF.storage.endpoint
         logging.info('Storage backend: Elasticsearch at {0}'.format(endpoint))
         db = elastic.ElasticSearchEngine(endpoint)
