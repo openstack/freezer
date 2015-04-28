@@ -22,14 +22,15 @@ Hudson (tjh@cryptsoft.com).
 import os
 import sys
 
+from openstackclient.identity import client as os_client
+
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
                                    os.pardir, os.pardir, os.pardir))
 if os.path.exists(os.path.join(possible_topdir, 'freezer', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
-import keystoneclient
-
 from freezer.apiclient.backups import BackupsManager
+import exceptions
 
 
 class Client(object):
@@ -40,26 +41,66 @@ class Client(object):
                  password=None,
                  tenant_name=None,
                  auth_url=None,
-                 endpoint=None,
-                 session=None):
-        if endpoint is None:
-                raise Exception('Missing endpoint information')
-        self.endpoint = endpoint
-
-        if token is not None:
-            # validate the token ?
-            self.token = token
-        elif session is not None:
-            pass
-            # TODO: handle session auth
-            # assert isinstance(session, keystoneclient.session.Session)
-        else:
-            self.username = username
-            self.tenant_name = tenant_name
-            kc = keystoneclient.v2_0.client.Client(
-                username=username,
-                password=password,
-                tenant_name=tenant_name,
-                auth_url=auth_url)
-            self.token = kc.auth_token
+                 session=None,
+                 api_endpoint=None):
+        self.version = version
+        self.token = token
+        self.username = username
+        self.tenant_name = tenant_name
+        self.password = password
+        self.auth_url = auth_url
+        self._api_endpoint = api_endpoint
+        self.session = session
+        self._auth = None
         self.backups = BackupsManager(self)
+
+    def _update_api_endpoint(self):
+        services = self.auth.services.list()
+        try:
+            freezer_service = next(x for x in services if x.name == 'freezer')
+        except:
+            raise exceptions.AuthFailure(
+                'freezer service not found in services list')
+        endpoints = self.auth.endpoints.list()
+        try:
+            freezer_endpoint =\
+                next(x for x in endpoints
+                     if x.service_id == freezer_service.id)
+        except:
+            raise exceptions.AuthFailure(
+                'freezer endpoint not found in endpoint list')
+        self._api_endpoint = freezer_endpoint.publicurl
+
+    @property
+    def auth(self):
+        if self._auth is None:
+            if self.username and self.password:
+                self._auth = os_client.IdentityClientv2(
+                    auth_url=self.auth_url,
+                    username=self.username,
+                    password=self.password,
+                    tenant_name=self.tenant_name)
+            elif self.token:
+                self._auth = os_client.IdentityClientv2(
+                    endpoint=self.auth_url,
+                    token=self.token)
+            else:
+                raise exceptions.AuthFailure("Missing auth credentials")
+        return self._auth
+
+    @property
+    def auth_token(self):
+        return self.auth.auth_token
+
+    @property
+    def api_endpoint(self):
+        if self._api_endpoint is None:
+            self._update_api_endpoint()
+        return self._api_endpoint
+
+    def api_exists(self):
+        try:
+            if self.api_endpoint is not None:
+                return True
+        except:
+            return False

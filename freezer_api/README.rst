@@ -61,6 +61,22 @@ utilizes the timestamp of the first (level 0) backup in the session
 It is identified by (container, hostname, backupname, timestamp-of-level-0)
 
 
+API registration
+================
+keystone user-create --name freezer --pass FREEZER_PWD
+keystone user-role-add --user freezer --tenant service --role admin
+
+keystone service-create --name freezer --type backup \
+  --description "Freezer Backup Service"
+
+keystone endpoint-create \
+  --service-id $(keystone service-list | awk '/ backup / {print $2}') \
+  --publicurl http://freezer_api_publicurl:port \
+  --internalurl http://freezer_api_internalurl:port \
+  --adminurl http://freezer_api_adminurl:port \
+  --region regionOne
+
+
 API routes
 ==========
 
