@@ -21,62 +21,60 @@ Hudson (tjh@cryptsoft.com).
 
 import falcon
 from freezer_api.common import exceptions
-import logging
 
-
-class BackupsCollectionResource(object):
+class ClientsCollectionResource(object):
     """
-    Handler for endpoint: /v1/backups
+    Handler for endpoint: /v1/clients
     """
     def __init__(self, storage_driver):
         self.db = storage_driver
 
     def on_get(self, req, resp):
-        # GET /v1/backups(?limit,offset)     Lists backups
+        # GET /v1/clients(?limit,offset)     Lists backups
         user_id = req.get_header('X-User-ID')
         offset = req.get_param_as_int('offset') or 0
         limit = req.get_param_as_int('limit') or 10
         search = req.context.get('doc', {})
-        obj_list = self.db.get_backup(user_id=user_id, offset=offset,
+        obj_list = self.db.get_client(user_id=user_id, offset=offset,
                                       limit=limit, search=search)
-        req.context['result'] = {'backups': obj_list}
+        req.context['result'] = {'clients': obj_list}
 
     def on_post(self, req, resp):
-        # POST /v1/backups    Creates backup entry
+        # POST /v1/clients    Creates client entry
         try:
             doc = req.context['doc']
         except KeyError:
             raise exceptions.BadDataFormat(
                 message='Missing request body',
                 resp_body={'error': 'missing request body'})
-        user_name = req.get_header('X-User-Name')
         user_id = req.get_header('X-User-ID')
-        backup_id = self.db.add_backup(
-            user_id=user_id, user_name=user_name, doc=doc)
+        client_id = self.db.add_client(
+            user_id=user_id, doc=doc)
         resp.status = falcon.HTTP_201
-        req.context['result'] = {'backup_id': backup_id}
+        req.context['result'] = {'client_id': client_id}
 
 
-class BackupsResource(object):
+class ClientsResource(object):
     """
-    Handler for endpoint: /v1/backups/{backup_id}
+    Handler for endpoint: /v1/clients/{client_id}
     """
     def __init__(self, storage_driver):
         self.db = storage_driver
 
-    def on_get(self, req, resp, backup_id):
-        # GET /v1/backups/{backup_id}     Get backup details
-        user_id = req.get_header('X-User-ID')
-        obj = self.db.get_backup(user_id=user_id, backup_id=backup_id)
+    def on_get(self, req, resp, client_id):
+        # GET /v1/clients(?limit,offset)
+        # search in body
+        user_id = req.get_header('X-User-ID') or ''
+        obj = self.db.get_client(user_id=user_id, client_id=client_id)
         if obj:
-            req.context['result'] = obj
+            req.context['result'] = obj[0]
         else:
             resp.status = falcon.HTTP_404
 
-    def on_delete(self, req, resp, backup_id):
-        # DELETE /v1/backups/{backup_id}     Deletes the specified backup
+    def on_delete(self, req, resp, client_id):
+        # DELETE /v1/clients/{client_id}     Deletes the specified backup
         user_id = req.get_header('X-User-ID')
-        self.db.delete_backup(
-            user_id=user_id, backup_id=backup_id)
-        req.context['result'] = {'backup_id': backup_id}
+        self.db.delete_client(
+            user_id=user_id, client_id=client_id)
+        req.context['result'] = {'client_id': client_id}
         resp.status = falcon.HTTP_204

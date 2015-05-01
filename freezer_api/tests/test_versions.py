@@ -21,8 +21,9 @@ Hudson (tjh@cryptsoft.com).
 """
 
 import unittest
+from mock import Mock
+
 import falcon
-from common import FakeReqResp
 from freezer_api.api import versions
 from freezer_api.api import v1
 import json
@@ -32,7 +33,7 @@ class TestVersionResource(unittest.TestCase):
 
     def setUp(self):
         self.resource = versions.Resource()
-        self.req = FakeReqResp()
+        self.req = Mock()
 
     def test_on_get_return_versions(self):
         self.resource.on_get(self.req, self.req)

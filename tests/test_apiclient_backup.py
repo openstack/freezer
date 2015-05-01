@@ -32,7 +32,7 @@ class TestBackupManager(unittest.TestCase):
 
     def setUp(self):
         self.mock_client = Mock()
-        self.mock_client.api_endpoint = 'http://testendpoint:9999'
+        self.mock_client.endpoint = 'http://testendpoint:9999'
         self.mock_client.auth_token = 'testtoken'
         self.b = backups.BackupsManager(self.mock_client)
 
@@ -51,10 +51,9 @@ class TestBackupManager(unittest.TestCase):
         self.assertEqual(retval, 'qwerqwer')
 
     @patch('freezer.apiclient.backups.requests')
-    def test_create_fail(self, mock_requests):
+    def test_create_fail_when_api_return_error_code(self, mock_requests):
         mock_response = Mock()
         mock_response.status_code = 500
-        #mock_response.json.return_value = {'backup_id': 'qwerqwer'}
         mock_requests.post.return_value = mock_response
         self.assertRaises(exceptions.MetadataCreationFailure, self.b.create, {'backup': 'metadata'})
 

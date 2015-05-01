@@ -43,14 +43,6 @@ class FreezerAPIException(Exception):
         req.context['result'] = {'error': 'internal server error'}
 
 
-class ObjectNotFound(FreezerAPIException):
-    @staticmethod
-    def handle(ex, req, resp, params):
-        resp.status = falcon.HTTP_404
-        ex.resp_body.update({'found': False})
-        req.context['result'] = ex.resp_body
-
-
 class BadDataFormat(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
@@ -76,7 +68,6 @@ class StorageEngineError(FreezerAPIException):
 
 
 exception_handlers_catalog = [
-    ObjectNotFound,
     BadDataFormat,
     DocumentExists,
     StorageEngineError

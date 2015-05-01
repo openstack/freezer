@@ -20,6 +20,7 @@ Hudson (tjh@cryptsoft.com).
 """
 
 from freezer_api.api.v1 import backups
+from freezer_api.api.v1 import clients
 from freezer_api.api.v1 import homedoc
 
 VERSION = {
@@ -44,5 +45,12 @@ def public_endpoints(storage_driver):
          backups.BackupsCollectionResource(storage_driver)),
 
         ('/backups/{backup_id}',
-         backups.BackupsResource(storage_driver))
+         backups.BackupsResource(storage_driver)),
+
+        ('/clients',
+         clients.ClientsCollectionResource(storage_driver)),
+
+        ('/clients/{client_id}',
+         clients.ClientsResource(storage_driver)),
+
     ]

@@ -30,6 +30,7 @@ if os.path.exists(os.path.join(possible_topdir, 'freezer', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
 from freezer.apiclient.backups import BackupsManager
+from freezer.apiclient.registration import RegistrationManager
 import exceptions
 
 
@@ -42,17 +43,18 @@ class Client(object):
                  tenant_name=None,
                  auth_url=None,
                  session=None,
-                 api_endpoint=None):
+                 endpoint=None):
         self.version = version
         self.token = token
         self.username = username
         self.tenant_name = tenant_name
         self.password = password
         self.auth_url = auth_url
-        self._api_endpoint = api_endpoint
+        self._endpoint = endpoint
         self.session = session
         self._auth = None
         self.backups = BackupsManager(self)
+        self.registration = RegistrationManager(self)
 
     def _update_api_endpoint(self):
         services = self.auth.services.list()
@@ -69,7 +71,7 @@ class Client(object):
         except:
             raise exceptions.AuthFailure(
                 'freezer endpoint not found in endpoint list')
-        self._api_endpoint = freezer_endpoint.publicurl
+        self._endpoint = freezer_endpoint.publicurl
 
     @property
     def auth(self):
@@ -93,14 +95,14 @@ class Client(object):
         return self.auth.auth_token
 
     @property
-    def api_endpoint(self):
-        if self._api_endpoint is None:
+    def endpoint(self):
+        if self._endpoint is None:
             self._update_api_endpoint()
-        return self._api_endpoint
+        return self._endpoint
 
     def api_exists(self):
         try:
-            if self.api_endpoint is not None:
+            if self.endpoint is not None:
                 return True
         except:
             return False

@@ -21,7 +21,8 @@ Hudson (tjh@cryptsoft.com).
 """
 
 import unittest
-from common import FakeReqResp
+from mock import Mock, patch
+
 from freezer_api.api import v1
 import json
 
@@ -30,7 +31,7 @@ class TestHomedocResource(unittest.TestCase):
 
     def setUp(self):
         self.resource = v1.homedoc.Resource()
-        self.req = FakeReqResp()
+        self.req = Mock()
 
     def test_on_get_return_resources_information(self):
         self.resource.on_get(self.req, self.req)

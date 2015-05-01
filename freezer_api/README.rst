@@ -94,6 +94,14 @@ GET    /v1/backups/{backup_id}     Get backup details
 UPDATE /v1/backups/{backup_id}     Updates the specified backup
 DELETE /v1/backups/{backup_id}     Deletes the specified backup
 
+Freezer clients management
+--------------------------
+GET    /v1/clients(?limit,offset)       Lists registered clients
+POST   /v1/clients                      Creates client entry
+
+GET    /v1/clients/{freezerc_id}     Get client details
+UPDATE /v1/clients/{freezerc_id}     Updates the specified client information
+DELETE /v1/clients/{freezerc_id}     Deletes the specified client information
 
 Data Structures
 ===============
@@ -145,4 +153,25 @@ It stores and returns the information provided in this form:
     "timestamp": int,
     ...
   }
+}
+
+
+Freezer Client document structure
+---------------------------------
+Identifies a freezer client for the purpose of sending action
+
+# client_info document contains information relevant for client identification
+client_info:=
+{
+  "client_id": string   actually a concatenation "tenant-id_hostname"
+  "description": string
+  "config_id": string   # configuration in use by the client
+}
+
+
+# client_type document embeds the client_info and adds user_id
+client_type :=
+{
+  "client" : client_info document,
+  "user_id": string,    # owner of the information (OS X-User-Id, keystone provided, added by api)
 }

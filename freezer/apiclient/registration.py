@@ -25,43 +25,58 @@ import requests
 from freezer.apiclient import exceptions
 
 
-class BackupsManager(object):
+class RegistrationManager(object):
 
     def __init__(self, client):
         self.client = client
-        self.endpoint = self.client.endpoint + '/v1/backups/'
+        self.endpoint = self.client.endpoint + 'clients/'
+        self.headers = {'X-Auth-Token': client.token}
 
-    @property
-    def headers(self):
-        return {'X-Auth-Token': self.client.auth_token}
-
-    def create(self, backup_metadata):
+    def create(self, client_info):
         r = requests.post(self.endpoint,
-                          data=json.dumps(backup_metadata),
+                          data=json.dumps(client_info),
                           headers=self.headers)
         if r.status_code != 201:
             raise exceptions.MetadataCreationFailure(
-                "[*] Error {0}".format(r.status_code))
-        backup_id = r.json()['backup_id']
-        return backup_id
+                "[*] Error {0}: {1}".format(r.status_code, r.text))
+        client_id = r.json()['client_id']
+        return client_id
 
-    def delete(self, backup_id):
-        endpoint = self.endpoint + backup_id
+    def delete(self, client_id):
+        endpoint = self.endpoint + client_id
         r = requests.delete(endpoint, headers=self.headers)
         if r.status_code != 204:
             raise exceptions.MetadataDeleteFailure(
                 "[*] Error {0}".format(r.status_code))
 
-    def list(self):
-        r = requests.get(self.endpoint, headers=self.headers)
+    def list(self, limit=10, offset=0, search=None):
+        """
+        Retrieves a list of client info structures
+
+        :param limit: number of result to return (optional, default 10)
+        :param offset: order of first document (optional, default 0)
+        :param search: structured query (optional)
+                       can contain:
+                       * "match": list of {field, value}
+                       Example:
+                       { "match": [
+                               {"description": "some search text here"},
+                               {"client_id": "giano"},
+                               ...
+                             ],
+                       }
+        """
+        data = json.dumps(search) if search else None
+        query = {'limit': int(limit), 'offset': int(offset)}
+        r = requests.get(self.endpoint, headers=self.headers,
+                         params=query, data=data)
         if r.status_code != 200:
             raise exceptions.MetadataGetFailure(
-                "[*] Error {0}".format(r.status_code))
+                "[*] Error {0}: {1}".format(r.status_code, r.text))
+        return r.json()['clients']
 
-        return r.json()['backups']
-
-    def get(self, backup_id):
-        endpoint = self.endpoint + backup_id
+    def get(self, client_id):
+        endpoint = self.endpoint + client_id
         r = requests.get(endpoint, headers=self.headers)
         if r.status_code == 200:
             return r.json()

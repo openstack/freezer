@@ -20,99 +20,85 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-
 import unittest
+from mock import Mock, patch
 
 import falcon
 from freezer_api.api.v1 import backups
-from freezer_api.storage import simpledict
+from freezer_api.common.exceptions import *
 
 from common import *
-from freezer_api.common.exceptions import *
 
 
 class TestBackupsCollectionResource(unittest.TestCase):
 
     def setUp(self):
-        self.db = simpledict.SimpleDictStorageEngine()
-        self.resource = backups.BackupsCollectionResource(self.db)
-        self.req = FakeReqResp()
-        self.req.header['X-User-ID'] = fake_data_0_user_id
+        self.mock_db = Mock()
+        self.mock_req = Mock()
+        self.mock_req.get_header.return_value = {'X-User-ID': fake_data_0_user_id}
+        self.mock_req.context = {}
+        self.mock_req.status = falcon.HTTP_200
+        self.resource = backups.BackupsCollectionResource(self.mock_db)
 
     def test_on_get_return_empty_list(self):
+        self.mock_db.get_backup.return_value = []
         expected_result = {'backups': []}
-        self.resource.on_get(self.req, self.req)
-        result = self.req.context['result']
+        self.resource.on_get(self.mock_req, self.mock_req)
+        result = self.mock_req.context['result']
         self.assertEqual(result, expected_result)
+        self.assertEqual(self.mock_req.status, falcon.HTTP_200)
 
     def test_on_get_return_correct_list(self):
-        self.db.add_backup(user_id=fake_data_0_user_id,
-                           user_name=fake_data_0_user_name,
-                           data=fake_data_0_backup_metadata)
-        self.resource.on_get(self.req, self.req)
-        result = self.req.context['result']
-        expected_result = {'backups': [fake_data_0_wrapped_backup_metadata]}
+        self.mock_db.get_backup.return_value = [fake_data_0_backup_metadata]
+        expected_result = {'backups': [fake_data_0_backup_metadata]}
+        self.resource.on_get(self.mock_req, self.mock_req)
+        result = self.mock_req.context['result']
         self.assertEqual(result, expected_result)
-
-    def test_on_get_return_empty_list_without_user_id(self):
-        self.req.header.pop('X-User-ID')
-        self.db.add_backup(user_id=fake_data_0_user_id,
-                           user_name=fake_data_0_user_name,
-                           data=fake_data_0_backup_metadata)
-        self.resource.on_get(self.req, self.req)
-        result = self.req.context['result']
-        expected_result = {'backups': []}
-        self.assertEqual(result, expected_result)
-
-    def test_on_get_return_empty_list_with_different_user_id(self):
-        self.req.header['X-User-ID'] = 'LupinIII'
-        self.db.add_backup(user_id=fake_data_0_user_id,
-                           user_name=fake_data_0_user_name,
-                           data=fake_data_0_backup_metadata)
-        self.resource.on_get(self.req, self.req)
-        result = self.req.context['result']
-        expected_result = {'backups': []}
-        self.assertEqual(result, expected_result)
+        self.assertEqual(self.mock_req.status, falcon.HTTP_200)
 
     def test_on_post_raises_when_missing_body(self):
-        self.assertRaises(BadDataFormat, self.resource.on_post, self.req, self.req)
+        self.mock_db.add_backup.return_value = [fake_data_0_wrapped_backup_metadata['backup_id']]
+        expected_result = {'backup_id': fake_data_0_wrapped_backup_metadata['backup_id']}
+        self.assertRaises(BadDataFormat, self.resource.on_post, self.mock_req, self.mock_req)
 
     def test_on_post_inserts_correct_data(self):
-        self.req.context['doc'] = fake_data_0_backup_metadata
-        self.resource.on_post(self.req, self.req)
-        self.assertEquals(self.req.status, falcon.HTTP_201)
-        expected_result = {'backup_id': fake_data_0_backup_id}
-        self.assertEquals(self.req.context['result'], expected_result)
+        self.mock_req.context['doc'] = fake_data_0_backup_metadata
+        self.mock_db.add_backup.return_value = fake_data_0_wrapped_backup_metadata['backup_id']
+        self.resource.on_post(self.mock_req, self.mock_req)
+        expected_result = {'backup_id': fake_data_0_wrapped_backup_metadata['backup_id']}
+        self.assertEqual(self.mock_req.status, falcon.HTTP_201)
+        self.assertEqual(self.mock_req.context['result'], expected_result)
+        self.assertEqual(self.mock_req.status, falcon.HTTP_201)
 
 
 class TestBackupsResource(unittest.TestCase):
 
     def setUp(self):
-        self.db = simpledict.SimpleDictStorageEngine()
-        self.resource = backups.BackupsResource(self.db)
-        self.req = FakeReqResp()
-        self.req.header['X-User-ID'] = fake_data_0_user_id
+        self.mock_db = Mock()
+        self.mock_req = Mock()
+        self.mock_req.get_header.return_value = {'X-User-ID': fake_data_0_user_id}
+        self.mock_req.context = {}
+        self.mock_req.status = falcon.HTTP_200
+        self.resource = backups.BackupsResource(self.mock_db)
 
-    def test_on_get_raises_when_not_found(self):
-        self.assertRaises(ObjectNotFound, self.resource.on_get, self.req, self.req, fake_data_0_backup_id)
+    def test_on_get_return_no_result_and_404_when_not_found(self):
+        self.mock_db.get_backup.return_value = []
+        self.resource.on_get(self.mock_req, self.mock_req, fake_data_0_wrapped_backup_metadata['backup_id'])
+        self.assertNotIn('result', self.mock_req.context)
+        self.assertEqual(self.mock_req.status, falcon.HTTP_404)
 
     def test_on_get_return_correct_data(self):
-        self.db.add_backup(user_id=fake_data_0_user_id,
-                           user_name=fake_data_0_user_name,
-                           data=fake_data_0_backup_metadata)
-        self.resource.on_get(self.req, self.req, fake_data_0_backup_id)
-        result = self.req.context['result']
-        self.assertEqual(result, fake_data_0_wrapped_backup_metadata)
-
-    def test_on_delete_raises_when_not_found(self):
-        self.assertRaises(ObjectNotFound, self.resource.on_delete, self.req, self.req, fake_data_0_backup_id)
+        self.mock_db.get_backup.return_value = [fake_data_0_wrapped_backup_metadata]
+        expected_result = [fake_data_0_wrapped_backup_metadata]
+        self.resource.on_get(self.mock_req, self.mock_req, fake_data_0_wrapped_backup_metadata['backup_id'])
+        result = self.mock_req.context['result']
+        self.assertEqual(result, expected_result)
+        self.assertEqual(self.mock_req.status, falcon.HTTP_200)
 
     def test_on_delete_removes_proper_data(self):
-        self.db.add_backup(user_id=fake_data_0_user_id,
-                           user_name=fake_data_0_user_name,
-                           data=fake_data_0_backup_metadata)
-        self.resource.on_delete(self.req, self.req, fake_data_0_backup_id)
-        result = self.req.context['result']
+        #self.mock_db.delete_backup.return_value = True
+        self.resource.on_delete(self.mock_req, self.mock_req, fake_data_0_backup_id)
+        result = self.mock_req.context['result']
         expected_result = {'backup_id': fake_data_0_backup_id}
-        self.assertEquals(self.req.status, falcon.HTTP_204)
+        self.assertEquals(self.mock_req.status, falcon.HTTP_204)
         self.assertEqual(result, expected_result)
