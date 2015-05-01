@@ -105,6 +105,24 @@ class TestBackupManager(unittest.TestCase):
         retval = self.b.list()
         self.assertEqual(retval, backup_list)
 
+
+    @patch('freezer.apiclient.backups.requests')
+    def test_list_parameters(self, mock_requests):
+        mock_response = Mock()
+        mock_response.status_code = 200
+        backup_list = [{'backup_id_0': 'qwerqwer'}, {'backup_id_1': 'asdfasdf'}]
+        mock_response.json.return_value = {'backups': backup_list}
+        mock_requests.get.return_value = mock_response
+        retval = self.b.list(limit=5,
+                             offset=5,
+                             search={"time_before": 1428529956})
+        mock_requests.get.assert_called_with(
+            'http://testendpoint:9999/v1/backups/',
+            params={'limit': 5, 'offset': 5},
+            data='{"time_before": 1428529956}',
+            headers={'X-Auth-Token': 'testtoken'})
+        self.assertEqual(retval, backup_list)
+
     @patch('freezer.apiclient.backups.requests')
     def test_list_error(self, mock_requests):
         mock_response = Mock()

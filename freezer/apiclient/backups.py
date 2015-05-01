@@ -52,8 +52,23 @@ class BackupsManager(object):
             raise exceptions.MetadataDeleteFailure(
                 "[*] Error {0}".format(r.status_code))
 
-    def list(self):
-        r = requests.get(self.endpoint, headers=self.headers)
+    def list(self, limit=10, offset=0, search=None):
+        """
+        Retrieves a list of backup infos
+
+        :param limit: number of result to return (optional, default 10)
+        :param offset: order of first document (optional, default 0)
+        :param search: structured query (optional)
+                       can contain:
+                       * "time_before": timestamp
+                       * "time_after": timestamp
+                       Example:
+                       { "time_before": 1428529956 }
+        """
+        data = json.dumps(search) if search else None
+        query = {'limit': int(limit), 'offset': int(offset)}
+        r = requests.get(self.endpoint, headers=self.headers,
+                         params=query, data=data)
         if r.status_code != 200:
             raise exceptions.MetadataGetFailure(
                 "[*] Error {0}".format(r.status_code))
