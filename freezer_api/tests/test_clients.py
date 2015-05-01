@@ -15,7 +15,7 @@ class TestClientsCollectionResource(unittest.TestCase):
     def setUp(self):
         self.mock_db = Mock()
         self.mock_req = Mock()
-        self.mock_req.get_header.return_value = {'X-User-ID': fake_data_0_user_id}
+        self.mock_req.get_header.return_value = fake_data_0_user_id
         self.mock_req.context = {}
         self.mock_req.status = falcon.HTTP_200
         self.resource = v1_clients.ClientsCollectionResource(self.mock_db)
@@ -37,7 +37,7 @@ class TestClientsCollectionResource(unittest.TestCase):
         self.assertEqual(self.mock_req.status, falcon.HTTP_200)
 
     def test_on_post_raises_when_missing_body(self):
-        self.mock_db.add_client.return_value = [fake_client_info_0['client_id']]
+        self.mock_db.add_client.return_value = fake_client_info_0['client_id']
         self.assertRaises(BadDataFormat, self.resource.on_post, self.mock_req, self.mock_req)
 
     def test_on_post_inserts_correct_data(self):
@@ -54,7 +54,7 @@ class TestClientsResource(unittest.TestCase):
     def setUp(self):
         self.mock_db = Mock()
         self.mock_req = Mock()
-        self.mock_req.get_header.return_value = {'X-User-ID': fake_data_0_user_id}
+        self.mock_req.get_header.return_value = fake_data_0_user_id
         self.mock_req.context = {}
         self.mock_req.status = falcon.HTTP_200
         self.resource = v1_clients.ClientsResource(self.mock_db)

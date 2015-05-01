@@ -19,18 +19,44 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-
-class MetadataCreationFailure(Exception):
-    message = "Metadata creation failed: %reason"
+import json
 
 
-class MetadataGetFailure(Exception):
-    message = "Metadata read failed: %reason"
+class ApiClientException(Exception):
+    def __init__(self, r):
+        try:
+            body = json.loads(r.text)
+            message = "[*] Error {0}: {1}".format(
+                r.status_code,
+                body['description'])
+        except:
+            message = r
+        super(ApiClientException, self).__init__(message)
+
+    def __str__(self):
+        return self.message
 
 
-class MetadataDeleteFailure(Exception):
-    message = "Metadata deletion failed: %reason"
+class MetadataCreationFailure(ApiClientException):
+    def __init__(self, r=''):
+        super(self.__class__, self).__init__(r)
 
 
-class AuthFailure(Exception):
-    message = "Authentication Error: %reason"
+class MetadataGetFailure(ApiClientException):
+    def __init__(self, r=''):
+        super(self.__class__, self).__init__(r)
+
+
+class MetadataDeleteFailure(ApiClientException):
+    def __init__(self, r=''):
+        super(self.__class__, self).__init__(r)
+
+
+class AuthFailure(ApiClientException):
+    def __init__(self, r=''):
+        super(self.__class__, self).__init__(r)
+
+
+class MetadataUpdateFailure(ApiClientException):
+    def __init__(self, r=''):
+        super(self.__class__, self).__init__(r)

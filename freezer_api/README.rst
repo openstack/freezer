@@ -103,6 +103,16 @@ GET    /v1/clients/{freezerc_id}     Get client details
 UPDATE /v1/clients/{freezerc_id}     Updates the specified client information
 DELETE /v1/clients/{freezerc_id}     Deletes the specified client information
 
+Freezer actions management
+---------------------------
+GET    /v1/actions(?limit,offset)       Lists registered actions
+POST   /v1/actions                      Creates action entry
+
+GET    /v1/actions/{action_id}     Get action details
+UPDATE /v1/actions/{action_id}     Updates the specified action information
+DELETE /v1/actions/{action_id}     Deletes the specified action information
+PATCH  /v1/actions/{action_id}     updates part of the document (such as status information)
+
 Data Structures
 ===============
 
@@ -173,5 +183,59 @@ client_info:=
 client_type :=
 {
   "client" : client_info document,
+  "user_id": string,    # owner of the information (OS X-User-Id, keystone provided, added by api)
+}
+
+
+Jobs and Actions
+----------------
+
+job_info
+{
+  parameters for freezer to execute a specific job.
+}
+
+example backup job_info
+{
+  "action" = "backup"
+  "mode" = "fs"
+  "src_file" = /home/tylerdurden/project_mayhem
+  "backup_name" = project_mayhem_backup
+  "container" = my_backup_container
+  "max_backup_level" : int
+  "always_backup_level": int
+  "restart_always_backup": int
+  "no_incremental" : bool
+  "encrypt_pass_file" = private_key_file
+  "log_file" = /var/log/freezer.log
+  "hostname" = false
+  "max_cpu_priority" = false
+}
+
+example restore job_info
+{
+  "action": "restore"
+  "restore-abs-path": "/home/tylerdurden/project_mayhem"
+  "container" : "my_backup_container"
+  "backup-name": "project_mayhem_backup"
+  "restore-from-host": "another_host"
+  "max_cpu_priority": true
+}
+
+action_info
+{
+  "action_id": string uuid4, not analyzed
+  "job": job_info     list ?
+  "client_id":  string
+  "description": string
+  "time_created": int  (timestamp)
+  "time_started":    int  (timestamp)
+  "time_ended":   int  (timestamp)
+  "status":  string: pending | notified(?) | started | abort_req | aborting | aborted | success | fail
+}
+
+Action document (the actual document stored in elasticsearch)
+{
+  "action": action_info
   "user_id": string,    # owner of the information (OS X-User-Id, keystone provided, added by api)
 }

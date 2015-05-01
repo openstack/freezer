@@ -45,8 +45,7 @@ class ClientsCollectionResource(object):
             doc = req.context['doc']
         except KeyError:
             raise exceptions.BadDataFormat(
-                message='Missing request body',
-                resp_body={'error': 'missing request body'})
+                message='Missing request body')
         user_id = req.get_header('X-User-ID')
         client_id = self.db.add_client(
             user_id=user_id, doc=doc)

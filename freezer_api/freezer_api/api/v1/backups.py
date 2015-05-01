@@ -47,8 +47,7 @@ class BackupsCollectionResource(object):
             doc = req.context['doc']
         except KeyError:
             raise exceptions.BadDataFormat(
-                message='Missing request body',
-                resp_body={'error': 'missing request body'})
+                message='Missing request body')
         user_name = req.get_header('X-User-Name')
         user_id = req.get_header('X-User-ID')
         backup_id = self.db.add_backup(
