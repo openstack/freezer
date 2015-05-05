@@ -174,6 +174,7 @@ Identifies a freezer client for the purpose of sending action
 client_info:=
 {
   "client_id": string   actually a concatenation "tenant-id_hostname"
+  "hostname": string
   "description": string
   "config_id": string   # configuration in use by the client
 }
