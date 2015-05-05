@@ -89,7 +89,13 @@ class TestBackupManager(unittest.TestCase):
         retval = self.b.get('test_backup_id')
         self.assertIsNone(retval)
 
-    # get_error
+    @patch('freezer.apiclient.backups.requests')
+    def test_get_error(self, mock_requests):
+        mock_response = Mock()
+        mock_response.status_code = 403
+        mock_requests.get.return_value = mock_response
+        self.assertRaises(exceptions.MetadataGetFailure,
+                          self.b.get, 'test_backup_id')
 
     @patch('freezer.apiclient.backups.requests')
     def test_list_ok(self, mock_requests):
