@@ -29,8 +29,11 @@ class RegistrationManager(object):
 
     def __init__(self, client):
         self.client = client
-        self.endpoint = self.client.endpoint + 'clients/'
-        self.headers = {'X-Auth-Token': client.token}
+        self.endpoint = self.client.endpoint + '/v1/clients/'
+
+    @property
+    def headers(self):
+        return {'X-Auth-Token': self.client.auth_token}
 
     def create(self, client_info):
         r = requests.post(self.endpoint,
