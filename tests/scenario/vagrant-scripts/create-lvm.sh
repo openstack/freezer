@@ -14,6 +14,10 @@ fi
 
 MOUNT_DIR='/mnt/freezer-test-lvm'
 IMG_DIR='/tmp'
+IMG_FILE=''
+# Sizes in MB
+DISK_SIZE=2048
+LVM_SIZE=1024
 
 function delete_test_lvm {
   cd ~
@@ -26,12 +30,13 @@ function delete_test_lvm {
 }
 
 function create_test_lvm {
-  dd if=/dev/zero of=${IMG_DIR}/freezer-test-lvm${1}.img bs=20 count=1048576
-  sudo losetup /dev/loop${1} ${IMG_DIR}/freezer-test-lvm${1}.img
+  IMG_FILE=${IMG_DIR}/freezer-test-lvm${1}.img
+  dd if=/dev/zero of=${IMG_FILE} bs=${DISK_SIZE} count=1048576
+  sudo losetup /dev/loop${1} ${IMG_FILE}
   sudo apt-get install lvm2 -y || yum install lvm2 -y
   sudo pvcreate /dev/loop${1}
   sudo vgcreate freezer-test${1}-volgroup /dev/loop${1}
-  sudo lvcreate -L 10M --name freezer-test${1}-vol freezer-test${1}-volgroup
+  sudo lvcreate -L ${LVM_SIZE}M --name freezer-test${1}-vol freezer-test${1}-volgroup
   LVM_VOL=/dev/freezer-test${1}-volgroup/freezer-test${1}-vol
   sudo mkfs.ext4 ${LVM_VOL}
   sudo mkdir -p ${MOUNT_DIR}
@@ -41,12 +46,12 @@ function create_test_lvm {
 
 ### MAIN ###
 
-# >>> Uncomment if you get stuck <<<
-# delete_test_lvm ${1};
-# exit 0;
+# If LVM image file id older than 7 days recreate
+if [ "X$(find ${IMG_FILE} -mtime +7 -print)" != "X" ]; then
+    delete_test_lvm ${1};
+fi
 
 if [ "X$(sudo losetup -a|grep loop${1})" == "X" ]; then
-    delete_test_lvm ${1};
     create_test_lvm ${1};
 fi
 
