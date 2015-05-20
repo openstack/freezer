@@ -147,7 +147,7 @@ def backup_mode_mongo(backup_opt_dict, time_stamp, manifest_meta_dict):
         return True
 
 
-def backup_mode_cinder(backup_dict, time_stamp, create_clients=True):
+def backup_cinder(backup_dict, time_stamp, create_clients=True):
     """
     Implements cinder backup:
         1) Gets a stream of the image from glance
@@ -165,15 +165,22 @@ def backup_mode_cinder(backup_dict, time_stamp, create_clients=True):
 
     volume_id = backup_dict.volume_id
     volume = backup_dict.cinder.volumes.get(volume_id)
+    logging.info("[*] Creation temporary snapshot")
     snapshot = provide_snapshot(backup_dict, volume,
                                 "backup_snapshot_for_volume_%s" % volume_id)
+    logging.info("[*] Creation temporary volume")
     copied_volume = do_copy_volume(backup_dict, snapshot)
+    logging.info("[*] Creation temporary glance image")
     image = make_glance_image(backup_dict, "name", copied_volume)
     stream = download_image(backup_dict, image)
     package = "{0}/{1}".format(backup_dict, volume_id, time_stamp)
+    logging.info("[*] Uploading image to swift")
     swift.add_stream(backup_dict, stream, package)
+    logging.info("[*] Deleting temporary snapshot")
     clean_snapshot(backup_dict, snapshot)
+    logging.info("[*] Deleting temporary volume")
     backup_dict.cinder.volumes.delete(copied_volume)
+    logging.info("[*] Deleting temporary image")
     backup_dict.glance.images.delete(image)
 
 
@@ -183,6 +190,12 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
     """
 
     logging.info('[*] File System backup is being executed...')
+
+    if backup_opt_dict.volume_id:
+        logging.info('[*] Detected volume_id parameter')
+        logging.info('[*] Executing cinder snapshot')
+        backup_cinder(backup_opt_dict, time_stamp, manifest_meta_dict)
+        return
 
     try:
 

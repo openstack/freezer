@@ -196,8 +196,21 @@ Execute a MySQL backup using lvm snapshot::
     --mysql-conf /root/.freezer/freezer-mysql.conf--container
     freezer_mysql-backup-prod --mode mysql --backup-name mysql-ops002
 
+Cinder backups
+
+To make a cinder backup you should provide volume-id parameter in arguments.
+Freezer doesn't do any additional checks and assumes that making backup
+of that image will be sufficient to restore your data in future.
+
 Execute a cinder backup::
     $ freezerc --volume-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+
+Execute a mysql backup with cinder::
+
+   $ freezerc --mysql-conf /root/.freezer/freezer-mysql.conf
+   --container freezer_mysql-backup-prod --mode mysql
+   --backup-name mysql-ops002
+   --volume-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 All the freezerc activities are logged into /var/log/freezer.log.
 
@@ -256,6 +269,12 @@ List remote objects in container::
 Remove backups older then 1 day::
 
     $ freezerc --action admin --container freezer_dev-test --remove-older-then 1 --backup-name dev-test-01
+
+
+Cinder restore currently creates a volume with content of saved one, but
+doesn't implement deattach of existing volume and attach the new one to the
+vm. You should implement this steps manually. To create new volume from
+existing content run next command:
 
 Execute a cinder restore::
     $ freezerc --action restore --volume-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b

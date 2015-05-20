@@ -26,7 +26,6 @@ import os
 import logging
 import re
 import datetime
-import time
 
 from freezer.tar import tar_restore
 from freezer.swift import object_to_stream
@@ -34,7 +33,7 @@ from freezer.glance import glance
 from freezer.cinder import cinder
 from freezer.glance import ReSizeStream
 from freezer.utils import (
-    validate_all_args, get_match_backup, sort_backup_list)
+    validate_all_args, get_match_backup, sort_backup_list, date_to_timestamp)
 
 
 def restore_fs(backup_opt_dict):
@@ -100,10 +99,7 @@ def restore_fs_sort_obj(backup_opt_dict):
     '''
 
     # Convert backup_opt_dict.restore_from_date to timestamp
-    fmt = '%Y-%m-%dT%H:%M:%S'
-    opt_backup_date = datetime.datetime.strptime(
-        backup_opt_dict.restore_from_date, fmt)
-    opt_backup_timestamp = int(time.mktime(opt_backup_date.timetuple()))
+    opt_backup_timestamp = date_to_timestamp(backup_opt_dict.restore_from_date)
 
     # Sort remote backup list using timestamp in reverse order,
     # that is from the newest to the oldest executed backup
@@ -175,6 +171,8 @@ def restore_cinder(backup_opt_dict, create_clients=True):
         recreates cinder and glance clients,
         False - uses existing from backup_opt_dict
     """
+    timestamp = date_to_timestamp(backup_opt_dict.restore_from_date)
+
     if create_clients:
         backup_opt_dict = cinder(backup_opt_dict)
         backup_opt_dict = glance(backup_opt_dict)
@@ -182,18 +180,22 @@ def restore_cinder(backup_opt_dict, create_clients=True):
     container = backup_opt_dict.container
     connector = backup_opt_dict.sw_connector
     info, backups = connector.get_container(container, path=volume_id)
-    backups = sorted(map(lambda x: x["name"].rsplit("/", 1)[-1], backups))
+    backups = sorted(map(lambda x: int(x["name"].rsplit("/", 1)[-1]), backups))
+    backups = filter(lambda x: x >= timestamp, backups)
+
     if not backups:
         msg = "Cannot find backups for volume: %s" % volume_id
         logging.error(msg)
         raise BaseException(msg)
     backup = backups[-1]
+
     stream = connector.get_object(
         backup_opt_dict.container, "%s/%s" % (volume_id, backup),
         resp_chunk_size=10000000)
     length = int(stream[0]["x-object-meta-length"])
     stream = stream[1]
     images = backup_opt_dict.glance.images
+    logging.info("[*] Creation glance image")
     image = images.create(data=ReSizeStream(stream, length, 1),
                           container_format="bare",
                           disk_format="raw")
@@ -201,6 +203,7 @@ def restore_cinder(backup_opt_dict, create_clients=True):
     size = length / gb
     if length % gb > 0:
         size += 1
-
+    logging.info("[*] Creation volume from image")
     backup_opt_dict.cinder.volumes.create(size, imageRef=image.id)
+    logging.info("[*] Deleting temporary image")
     images.delete(image)

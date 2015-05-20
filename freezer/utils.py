@@ -633,3 +633,9 @@ def create_subprocess(cmd):
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
     return process.communicate()
+
+
+def date_to_timestamp(date):
+    fmt = '%Y-%m-%dT%H:%M:%S'
+    opt_backup_date = datetime.datetime.strptime(date, fmt)
+    return int(time.mktime(opt_backup_date.timetuple()))

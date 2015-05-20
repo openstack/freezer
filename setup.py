@@ -81,6 +81,8 @@ setup(
     install_requires=[
         'python-swiftclient>=1.6.0',
         'python-keystoneclient>=0.7.0',
+        'python-cinderclient',
+        'python-glanceclient',
         'pymysql',
         'pymongo',
         'docutils>=0.8.1'],

@@ -105,10 +105,7 @@ class BackupJob(Job):
             self.conf, manifest_meta_dict)
 
         self.conf.manifest_meta_dict = manifest_meta_dict
-        if self.conf.volume_id:
-            backup.backup_mode_cinder(
-                self.conf, self.start_time.timestamp)
-        elif self.conf.mode == 'fs':
+        if self.conf.mode == 'fs':
             backup.backup_mode_fs(
                 self.conf, self.start_time.timestamp, manifest_meta_dict)
         elif self.conf.mode == 'mongo':

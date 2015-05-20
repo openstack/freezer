@@ -7,7 +7,7 @@ from freezer.utils import (
     eval_restart_backup, set_backup_level,
     get_vol_fs_type, check_backup_and_tar_meta_existence,
     add_host_name_ts_level, get_mount_from_path, human2bytes, DateTime,
-    OpenstackOptions)
+    date_to_timestamp)
 
 from freezer import utils
 import pytest
@@ -298,6 +298,10 @@ class TestUtils:
 
         env_dict = dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl')
         pytest.raises(Exception, OpenstackOptions.create_from_dict, env_dict)
+
+    def test_date_to_timestamp(self):
+        assert 1417649003 == date_to_timestamp("2014-12-03T23:23:23")
+
 
 class TestDateTime:
     def setup(self):

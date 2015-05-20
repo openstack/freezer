@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from freezer.backup import backup_mode_mysql, backup_mode_fs, backup_mode_mongo
-from freezer.backup import backup_mode_cinder
+from freezer.backup import backup_cinder
 import freezer
 from freezer import cinder
 from freezer import glance
@@ -193,7 +193,7 @@ class TestBackUP:
         assert backup_mode_mongo(
             backup_opt, 123456789, test_meta) is True
 
-    def test_backup_mode_cinder(self, monkeypatch):
+    def test_backup_cinder(self, monkeypatch):
         backup_opt = BackupOpt1()
         backup_opt.volume_id = 34
 
@@ -202,4 +202,4 @@ class TestBackUP:
         fakeswiftclient = FakeSwiftClient()
         monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
 
-        backup_mode_cinder(backup_opt, 123456789, False)
+        backup_cinder(backup_opt, 1417649003, False)

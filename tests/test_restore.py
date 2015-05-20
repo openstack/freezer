@@ -82,7 +82,7 @@ class TestRestore:
         backup_opt.backup_name = 'abcdtest'
         pytest.raises(Exception, restore_fs_sort_obj, backup_opt)
 
-    def test_backup_mode_cinder(self, monkeypatch):
+    def test_restore_cinder(self, monkeypatch):
         backup_opt = BackupOpt1()
         backup_opt.volume_id = 34
 
