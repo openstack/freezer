@@ -22,7 +22,7 @@ Hudson (tjh@cryptsoft.com).
 from oslo.config import cfg
 import logging
 
-from freezer_api.storage import simpledict, elastic
+from freezer_api.storage import elastic
 
 
 opt_group = cfg.OptGroup(name='storage',

@@ -24,14 +24,10 @@ Hudson (tjh@cryptsoft.com).
 import unittest
 from mock import patch
 
-#import pytest
-#import falcon
-#from common import *
-
 from oslo.config import cfg
 
 from freezer_api.common.exceptions import *
-from freezer_api.storage import driver, elastic, simpledict
+from freezer_api.storage import driver, elastic
 
 
 class TestStorageDriver(unittest.TestCase):
