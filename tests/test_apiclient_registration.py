@@ -1,5 +1,4 @@
-"""Freezer swift.py related tests
-
+"""
 Copyright 2015 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +17,6 @@ This product includes cryptographic software written by Eric Young
 (eay@cryptsoft.com). This product includes software written by Tim
 Hudson (tjh@cryptsoft.com).
 ========================================================================
-
 """
 
 import unittest
@@ -88,8 +86,6 @@ class TestRegistrationManager(unittest.TestCase):
         mock_requests.get.return_value = mock_response
         retval = self.r.get('test_client_id')
         self.assertIsNone(retval)
-
-    # get_error
 
     @patch('freezer.apiclient.registration.requests')
     def test_list_ok(self, mock_requests):

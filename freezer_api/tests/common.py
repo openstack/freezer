@@ -170,6 +170,73 @@ fake_data_0_elasticsearch_miss = {
     "took": 1
 }
 
+fake_action_0_user_id = "f4db4da085f043059441565720b217c7"
+fake_action_0_action_id = "e7181e5e-2c75-43f8-92c0-c037ae5f11e4"
+
+fake_action_0_elasticsearch_not_found = {
+    "_id": "e7181e5e-2c75-43f8-92c0-c037ae5f11e43",
+    "_index": "freezer",
+    "_type": "actions",
+    "found": False
+}
+
+fake_action_0 = {
+            "action_id": "e7181e5e-2c75-43f8-92c0-c037ae5f11e4",
+            "client_id": "mytenantid_myhostname",
+            "description": "test action 4",
+            "job": {
+                "action": "restore",
+                "backup-name": "project_mayhem_backup",
+                "container": "my_backup_container",
+                "max_cpu_priority": True,
+                "restore-abs-path": "/home/tylerdurden/project_mayhem",
+                "restore-from-host": "another_host"
+            },
+            "status": "pending",
+            "time_created": 1431100962,
+            "time_end": 0,
+            "time_start": 0
+}
+
+fake_action_0_doc = {
+        "action": fake_action_0,
+        "user_id": "f4db4da085f043059441565720b217c7"
+    }
+
+fake_action_0_elasticsearch_found = {
+    "_id": "e7181e5e-2c75-43f8-92c0-c037ae5f11e4",
+    "_index": "freezer",
+    "_source": fake_action_0_doc,
+    "_type": "actions",
+    "_version": 1,
+    "found": True
+}
+
+
+fake_action_1 = {
+            "action_id": "1b05e367-7832-42df-850e-bc48eabee04e",
+            "client_id": "mytenantid_myhostname",
+            "description": "test action 4",
+            "job": {
+                "action": "restore",
+                "backup-name": "project_mayhem_backup",
+                "container": "my_backup_container",
+                "max_cpu_priority": True,
+                "restore-abs-path": "/home/tylerdurden/project_mayhem",
+                "restore-from-host": "another_host"
+            },
+            "status": "pending",
+            "time_created": 1431100962,
+            "time_end": 0,
+            "time_start": 0
+}
+
+fake_action_1_doc = {
+        "action": fake_action_1,
+        "user_id": "f4db4da085f043059441565720b217c7"
+    }
+
+
 fake_data_1_wrapped_backup_metadata = {
     'backup_id': 'freezer_container_alpha_important_data_backup_125235431_1',
     'user_id': 'qwerty1234',

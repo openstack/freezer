@@ -23,52 +23,60 @@ Hudson (tjh@cryptsoft.com).
 import falcon
 import logging
 
-
-class FreezerAPIException(Exception):
+class FreezerAPIException(falcon.HTTPError):
     """
     Base Freezer API Exception
     """
-    json_message = ({'error': 'Unknown exception occurred'})
+    message = "unknown error"
 
-    def __init__(self, message=None, resp_body={}):
+    def __init__(self, message=''):
         if message:
             self.message = message
-        self.resp_body = resp_body
         logging.error(message)
         Exception.__init__(self, message)
 
     @staticmethod
     def handle(ex, req, resp, params):
-        resp.status = falcon.HTTP_500
-        req.context['result'] = {'error': 'internal server error'}
+        raise falcon.HTTPError('500 unknown server error',
+                               title="Internal Server Error",
+                               description=FreezerAPIException.message)
 
 
 class BadDataFormat(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
-        resp.status = falcon.HTTP_400
-        ex.resp_body.update({'error': 'bad data format'})
-        req.context['result'] = ex.resp_body
+        raise falcon.HTTPBadRequest(
+            title="Bad request format",
+            description=ex.message)
 
 
 class DocumentExists(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
-        resp.status = falcon.HTTP_409
-        ex.resp_body.update({'error': 'document already exists'})
-        req.context['result'] = ex.resp_body
+        raise falcon.HTTPConflict(
+            title="Document already existing",
+            description=ex.message)
 
 
 class StorageEngineError(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
-        resp.status = falcon.HTTP_500
-        ex.resp_body.update({'error': 'storage engine'})
-        req.context['result'] = ex.resp_body
+        raise falcon.HTTPInternalServerError(
+            title="Internal Storage Error",
+            description=ex.message)
+
+
+class DocumentNotFound(FreezerAPIException):
+    @staticmethod
+    def handle(ex, req, resp, params):
+        raise falcon.HTTPNotFound(
+            title="Not Found",
+            description=ex.message)
 
 
 exception_handlers_catalog = [
     BadDataFormat,
     DocumentExists,
-    StorageEngineError
+    StorageEngineError,
+    DocumentNotFound
 ]
