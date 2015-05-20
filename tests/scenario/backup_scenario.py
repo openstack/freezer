@@ -29,6 +29,8 @@ import tempfile
 import shutil
 import random
 import hashlib
+import string
+import time
 from copy import copy
 
 lib_path = os.path.abspath(os.path.join('..', '..'))
@@ -76,6 +78,7 @@ class BackupScenarioFS(unittest.TestCase):
                     handle.close()
                 self.tmp_files.append(file_path)
 
+
     def hashfile(self, filepath):
         """
         Get GIT style sha1 hash for a file
@@ -86,6 +89,7 @@ class BackupScenarioFS(unittest.TestCase):
         with open(filepath, 'rb') as handle:
             hash_obj.update(handle.read())
         return hash_obj.hexdigest()
+
 
     def snap_tmp_tree_sha1(self, file_list):
         """
@@ -98,6 +102,7 @@ class BackupScenarioFS(unittest.TestCase):
             if os.path.isfile(file_name):
                 hash_dict[file_name] = self.hashfile(file_name)
         return hash_dict
+
 
     def damage_tmp_tree(self, tmp_files):
         """
@@ -123,6 +128,20 @@ class BackupScenarioFS(unittest.TestCase):
                     ))
                 f.close()
                 self.tmp_modified.append(fn)
+
+
+    def create_big_file(self, file_path, size):
+        """
+        Create test text file with random data and
+        configurable size
+        """
+        buf = list(string.printable)
+        with open(file_path, 'w') as handle:
+            for i in range(size//len(buf)):
+                random.shuffle(buf)
+                handle.write('%s' % ''.join(buf))
+            handle.close()
+
 
     def setUp(self):
         self.tmp_files = []
@@ -154,6 +173,7 @@ class BackupScenarioFS(unittest.TestCase):
             else:
                 self.assertTrue(os.path.isfile(key))
                 self.assertEqual(key + dict_1[key], key + dict_2[key])
+
 
     def test_no_lvm_level0(self):
         """
@@ -200,6 +220,7 @@ class BackupScenarioFS(unittest.TestCase):
         for key in self.tmp_files:
             self.assertTrue(os.path.isfile(key))
             self.assertEqual(key + fdict_before[key], key + fdict_after[key])
+
 
     def test_lvm_level0(self):
         """
@@ -327,8 +348,8 @@ class BackupScenarioFS(unittest.TestCase):
         restore_args = {
             'action' : 'restore',
             'restore_abs_path' : copy(self.tmp_path),
-            'backup_name' : copy(backup_args.backup_name),
-            'container' : copy(backup_args.container),
+            'backup_name' : copy(backup_args['backup_name']),
+            'container' : copy(backup_args['container']),
             'download_limit' : speed_limit_bytes
         }
         start_time = time.time()
@@ -376,7 +397,7 @@ class BackupScenarioFS(unittest.TestCase):
             'max_backup_level' : max_level
         }
         fdict_before = []
-        print ''
+        # print ''
         for i in range(0, max_level):
             # print "TEST FILE CONTENT BEFORE BACKUP %s:" % i
             # print open(self.tmp_path + os.path.sep + 'foo', 'r').read()
@@ -429,6 +450,5 @@ class BackupScenarioFS(unittest.TestCase):
             # print 'Just checked %s files' % len(fdict_after)
 
 
->>>>>>> f38302f... Incremental LVM functional test
 if __name__ == '__main__':
     unittest.main()
