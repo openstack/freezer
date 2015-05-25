@@ -29,7 +29,16 @@ import re
 import subprocess
 
 
-class OpenstackOptions(object):
+class OpenstackOptions:
+
+    def __init__(self, user_name, tenant_name, auth_url, password,
+                 tenant_id=None, region_name=None):
+        self.user_name = user_name
+        self.tenant_name = tenant_name
+        self.auth_url = auth_url
+        self.password = password
+        self.tenant_id = tenant_id
+        self.region_name = region_name
 
     @property
     def os_options(self):
@@ -44,18 +53,18 @@ class OpenstackOptions(object):
 
     @staticmethod
     def create_from_dict(src_dict):
-        options = OpenstackOptions()
         try:
-            options.user_name = src_dict['OS_USERNAME']
-            options.tenant_name = src_dict['OS_TENANT_NAME']
-            options.auth_url = src_dict['OS_AUTH_URL']
-            options.password = src_dict['OS_PASSWORD']
-            options.tenant_id = src_dict.get('OS_TENANT_ID', None)
-            options.region_name = src_dict.get('OS_REGION_NAME', None)
+            return OpenstackOptions(
+                user_name=src_dict['OS_USERNAME'],
+                tenant_name=src_dict['OS_TENANT_NAME'],
+                auth_url=src_dict['OS_AUTH_URL'],
+                password=src_dict['OS_PASSWORD'],
+                tenant_id=src_dict.get('OS_TENANT_ID', None),
+                region_name=src_dict.get('OS_REGION_NAME', None)
+            )
         except Exception as e:
             raise Exception('Missing Openstack connection parameter: {0}'
                             .format(e))
-        return options
 
 
 def gen_manifest_meta(
@@ -529,10 +538,10 @@ def check_backup_and_tar_meta_existence(backup_opt_dict):
     backup_opt_dict = get_newest_backup(backup_opt_dict)
 
     if backup_opt_dict.remote_newest_backup:
-        sw_connector = backup_opt_dict.sw_connector
+        swift = backup_opt_dict.client_manager.get_swift()
         logging.info("[*] Backup {0} found!".format(
             backup_opt_dict.backup_name))
-        backup_match = sw_connector.head_object(
+        backup_match = swift.head_object(
             backup_opt_dict.container, backup_opt_dict.remote_newest_backup)
 
         return backup_match
@@ -643,3 +652,62 @@ def date_to_timestamp(date):
     fmt = '%Y-%m-%dT%H:%M:%S'
     opt_backup_date = datetime.datetime.strptime(date, fmt)
     return int(time.mktime(opt_backup_date.timetuple()))
+
+
+class Bunch:
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+    def __getattr__(self, item):
+        return self.__dict__.get(item)
+
+
+class ReSizeStream:
+    """
+    Iterator/File-like object for changing size of chunk in stream
+    """
+    def __init__(self, stream, length, chunk_size):
+        self.stream = stream
+        self.length = length
+        self.chunk_size = chunk_size
+        self.reminder = ""
+        self.transmitted = 0
+
+    def __len__(self):
+        return self.length
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        logging.info("Transmitted (%s) of (%s)" % (self.transmitted,
+                                                   self.length))
+        chunk_size = self.chunk_size
+        if len(self.reminder) > chunk_size:
+            result = self.reminder[:chunk_size]
+            self.reminder = self.reminder[chunk_size:]
+            self.transmitted += len(result)
+            return result
+        else:
+            stop = False
+            while not stop and len(self.reminder) < chunk_size:
+                try:
+                    self.reminder += next(self.stream)
+                except StopIteration:
+                    stop = True
+            if stop:
+                result = self.reminder
+                if len(self.reminder) == 0:
+                    raise StopIteration()
+                self.reminder = []
+                self.transmitted += len(result)
+                return result
+            else:
+                result = self.reminder[:chunk_size]
+                self.reminder = self.reminder[chunk_size:]
+                self.transmitted += len(result)
+                return result
+
+    def read(self, chunk_size):
+        self.chunk_size = chunk_size
+        return self.next()

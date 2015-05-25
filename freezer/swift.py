@@ -24,9 +24,7 @@ Freezer functions to interact with OpenStack Swift client and server
 from freezer.utils import (
     validate_all_args, get_match_backup,
     sort_backup_list, DateTime)
-from freezer.bandwidth import monkeypatch_socket_bandwidth
 import os
-import swiftclient
 import json
 import re
 from copy import deepcopy
@@ -49,13 +47,14 @@ def create_containers(backup_opt):
     # Create backup container
     logging.warning(
         "[*] Creating container {0}".format(backup_opt.container))
-    backup_opt.sw_connector.put_container(backup_opt.container)
+    sw_connector = backup_opt.client_manager.get_swift()
+    sw_connector.put_container(backup_opt.container)
 
     # Create segments container
     logging.warning(
         "[*] Creating container segments: {0}".format(
             backup_opt.container_segments))
-    backup_opt.sw_connector.put_container(backup_opt.container_segments)
+    sw_connector.put_container(backup_opt.container_segments)
 
     return True
 
@@ -199,16 +198,17 @@ def remove_obj_older_than(backup_opt_dict):
                         (obj_name_match.group(3) != '0')
 
             else:
+                sw_connector = backup_opt_dict.client_manager.get_swift()
                 if match_object.startswith('tar_meta'):
                     if not tar_meta_incremental_dep_flag:
-                        remove_object(backup_opt_dict.sw_connector,
+                        remove_object(sw_connector,
                                       backup_opt_dict.container, match_object)
                     else:
                         if obj_name_match.group(3) == '0':
                             tar_meta_incremental_dep_flag = False
                 else:
                     if not incremental_dep_flag:
-                        remove_object(backup_opt_dict.sw_connector,
+                        remove_object(sw_connector,
                                       backup_opt_dict.container, match_object)
                     else:
                         if obj_name_match.group(3) == '0':
@@ -224,7 +224,7 @@ def get_container_content(backup_opt_dict):
     if not backup_opt_dict.container:
         raise Exception('please provide a valid container name')
 
-    sw_connector = backup_opt_dict.sw_connector
+    sw_connector = backup_opt_dict.client_manager.get_swift()
     try:
         backup_opt_dict.remote_obj_list = \
             sw_connector.get_container(backup_opt_dict.container)[1]
@@ -249,7 +249,7 @@ def check_container_existance(backup_opt_dict):
 
     logging.info(
         "[*] Retrieving container {0}".format(backup_opt_dict.container))
-    sw_connector = backup_opt_dict.sw_connector
+    sw_connector = backup_opt_dict.client_manager.get_swift()
     containers_list = sw_connector.get_account()[1]
 
     match_container = [
@@ -282,46 +282,6 @@ def check_container_existance(backup_opt_dict):
     return containers
 
 
-class DryRunSwiftclientConnectionWrapper:
-    def __init__(self, sw_connector):
-        self.sw_connector = sw_connector
-        self.get_object = sw_connector.get_object
-        self.get_account = sw_connector.get_account
-        self.get_container = sw_connector.get_container
-        self.head_object = sw_connector.head_object
-        self.put_object = self.dummy
-        self.put_container = self.dummy
-        self.delete_object = self.dummy
-
-    def dummy(self, *args, **kwargs):
-        pass
-
-
-def get_client(backup_opt_dict):
-    """
-    Initialize a swift client object and return it in
-    backup_opt_dict
-    """
-
-    options = backup_opt_dict.options
-
-    monkeypatch_socket_bandwidth(backup_opt_dict)
-
-    backup_opt_dict.sw_connector = swiftclient.client.Connection(
-        authurl=options.auth_url,
-        user=options.user_name, key=options.password,
-        tenant_name=options.tenant_name,
-        os_options=options.os_options,
-        auth_version=backup_opt_dict.os_auth_ver,
-        insecure=backup_opt_dict.insecure, retries=6)
-
-    if backup_opt_dict.dry_run:
-        backup_opt_dict.sw_connector = \
-            DryRunSwiftclientConnectionWrapper(backup_opt_dict.sw_connector)
-
-    return backup_opt_dict
-
-
 def manifest_upload(
         manifest_file, backup_opt_dict, file_prefix, manifest_meta_dict):
     """
@@ -331,7 +291,7 @@ def manifest_upload(
     if not manifest_meta_dict:
         raise Exception('Manifest Meta dictionary not available')
 
-    sw_connector = backup_opt_dict.sw_connector
+    sw_connector = backup_opt_dict.client_manager.get_swift()
     tmp_manifest_meta = dict()
     for key, value in manifest_meta_dict.items():
         if key.startswith('x-object-meta'):
@@ -346,39 +306,36 @@ def manifest_upload(
     logging.info('[*] Manifest successfully uploaded!')
 
 
-def add_stream(backup_opt_dict, stream, package_name):
-    max_len = len(str(len(stream))) or 10
-
-    def format_chunk(number):
-        str_repr = str(number)
-        return "0" * (max_len - len(str_repr)) + str_repr
-
+def add_stream(client_manager, container_segments, container, stream,
+               package_name, headers=None):
     i = 0
     for el in stream:
-        add_chunk(backup_opt_dict,
-                  "{0}/{1}".format(package_name, format_chunk(i)), el)
+        add_chunk(client_manager, container_segments,
+                  "{0}/{1}".format(package_name, "%08d" % i), el)
         i += 1
-    headers = {'X-Object-Manifest': u'{0}/{1}/'.format(
-        backup_opt_dict.container_segments, package_name),
-        'x-object-meta-length': len(stream)}
-    backup_opt_dict.sw_connector.put_object(
-        backup_opt_dict.container, package_name, "", headers=headers)
+    if not headers:
+        headers = {}
+    headers['X-Object-Manifest'] = u'{0}/{1}/'.format(
+        container_segments, package_name)
+    headers['x-object-meta-length'] = len(stream)
+
+    swift = client_manager.get_swift()
+    swift.put_object(container, package_name, "", headers=headers)
 
 
-def add_chunk(backup_opt_dict, package_name, content):
+def add_chunk(client_manager, container_segments, package_name, content):
     # If for some reason the swift client object is not available anymore
     # an exception is generated and a new client object is initialized/
     # If the exception happens for 10 consecutive times for a total of
     # 1 hour, then the program will exit with an Exception.
-    sw_connector = backup_opt_dict.sw_connector
     count = 0
     while True:
         try:
             logging.info(
                 '[*] Uploading file chunk index: {0}'.format(
                     package_name))
-            sw_connector.put_object(
-                backup_opt_dict.container_segments,
+            client_manager.get_swift().put_object(
+                container_segments,
                 package_name, content,
                 content_type='application/octet-stream',
                 content_length=len(content))
@@ -389,7 +346,7 @@ def add_chunk(backup_opt_dict, package_name, content):
             logging.info('[*] Retrying to upload file chunk index: {0}'.format(
                 package_name))
             time.sleep(60)
-            backup_opt_dict = get_client(backup_opt_dict)
+            client_manager.create_swift()
             count += 1
             if count == 10:
                 logging.critical('[*] Error: add_object: {0}'
@@ -424,7 +381,9 @@ def add_object(
         package_name = u'{0}/{1}/{2}/{3}'.format(
             package_name, time_stamp,
             backup_opt_dict.max_segment_size, file_chunk_index)
-        add_chunk(backup_opt_dict, package_name, file_chunk)
+        add_chunk(backup_opt_dict.client_manager,
+                  backup_opt_dict.container_segment,
+                  package_name, file_chunk)
 
 
 def get_containers_list(backup_opt_dict):
@@ -433,7 +392,7 @@ def get_containers_list(backup_opt_dict):
     """
 
     try:
-        sw_connector = backup_opt_dict.sw_connector
+        sw_connector = backup_opt_dict.client_manager.get_swift()
         backup_opt_dict.containers_list = sw_connector.get_account()[1]
         return backup_opt_dict
     except Exception as error:
@@ -454,7 +413,7 @@ def object_to_file(backup_opt_dict, file_name_abs_path):
         raise ValueError('Error in object_to_file(): Please provide ALL the '
                          'following arguments: --container file_name_abs_path')
 
-    sw_connector = backup_opt_dict.sw_connector
+    sw_connector = backup_opt_dict.client_manager.get_swift()
     file_name = file_name_abs_path.split('/')[-1]
     logging.info('[*] Downloading object {0} on {1}'.format(
         file_name, file_name_abs_path))
@@ -487,7 +446,7 @@ def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):
         raise ValueError('Error in object_to_stream(): Please provide '
                          'ALL the following argument: --container')
 
-    backup_opt_dict = get_client(backup_opt_dict)
+    sw_connector = backup_opt_dict.client_manager.get_swift()
     logging.info('[*] Downloading data stream...')
 
     # Close the read pipe in this child as it is unneeded
@@ -495,7 +454,7 @@ def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):
     # Chunk size is set by RESP_CHUNK_SIZE and sent to che write
     # pipe
     read_pipe.close()
-    for obj_chunk in backup_opt_dict.sw_connector.get_object(
+    for obj_chunk in sw_connector.get_object(
             backup_opt_dict.container, obj_name,
             resp_chunk_size=RESP_CHUNK_SIZE)[1]:
         write_pipe.send_bytes(obj_chunk)

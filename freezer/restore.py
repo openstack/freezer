@@ -29,11 +29,8 @@ import datetime
 
 from freezer.tar import tar_restore
 from freezer.swift import object_to_stream
-from freezer.glance import glance
-from freezer.cinder import cinder
-from freezer.glance import ReSizeStream
-from freezer.utils import (
-    validate_all_args, get_match_backup, sort_backup_list, date_to_timestamp)
+from freezer.utils import (validate_all_args, get_match_backup,
+                           sort_backup_list, date_to_timestamp, ReSizeStream)
 
 
 def restore_fs(backup_opt_dict):
@@ -160,50 +157,68 @@ def restore_fs_sort_obj(backup_opt_dict):
             backup_opt_dict.restore_abs_path))
 
 
-def restore_cinder(backup_opt_dict, create_clients=True):
-    """
-    1) Define swift directory
-    2) Download and upload to glance
-    3) Create volume from glance
-    4) Delete
-    :param backup_opt_dict: global dictionary with params
-    :param create_clients: if set to True -
-        recreates cinder and glance clients,
-        False - uses existing from backup_opt_dict
-    """
-    timestamp = date_to_timestamp(backup_opt_dict.restore_from_date)
+class RestoreOs:
+    def __init__(self, client_manager, container):
+        self.client_manager = client_manager
+        self.container = container
 
-    if create_clients:
-        backup_opt_dict = cinder(backup_opt_dict)
-        backup_opt_dict = glance(backup_opt_dict)
-    volume_id = backup_opt_dict.volume_id
-    container = backup_opt_dict.container
-    connector = backup_opt_dict.sw_connector
-    info, backups = connector.get_container(container, path=volume_id)
-    backups = sorted(map(lambda x: int(x["name"].rsplit("/", 1)[-1]), backups))
-    backups = filter(lambda x: x >= timestamp, backups)
+    def _get_backups(self, path, restore_from_date):
+        timestamp = date_to_timestamp(restore_from_date)
+        swift = self.client_manager.get_swift()
+        info, backups = swift.get_container(self.container, path=path)
+        backups = sorted(map(lambda x: int(x["name"].rsplit("/", 1)[-1]),
+                             backups))
+        backups = filter(lambda x: x >= timestamp, backups)
 
-    if not backups:
-        msg = "Cannot find backups for volume: %s" % volume_id
-        logging.error(msg)
-        raise BaseException(msg)
-    backup = backups[-1]
+        if not backups:
+            msg = "Cannot find backups for path: %s" % path
+            logging.error(msg)
+            raise BaseException(msg)
+        return backups[-1]
 
-    stream = connector.get_object(
-        backup_opt_dict.container, "%s/%s" % (volume_id, backup),
-        resp_chunk_size=10000000)
-    length = int(stream[0]["x-object-meta-length"])
-    stream = stream[1]
-    images = backup_opt_dict.glance.images
-    logging.info("[*] Creation glance image")
-    image = images.create(data=ReSizeStream(stream, length, 1),
-                          container_format="bare",
-                          disk_format="raw")
-    gb = 1073741824
-    size = length / gb
-    if length % gb > 0:
-        size += 1
-    logging.info("[*] Creation volume from image")
-    backup_opt_dict.cinder.volumes.create(size, imageRef=image.id)
-    logging.info("[*] Deleting temporary image")
-    images.delete(image)
+    def _create_image(self, path, restore_from_date):
+        swift = self.client_manager.get_swift()
+        glance = self.client_manager.get_glance()
+        backup = self._get_backups(path, restore_from_date)
+        stream = swift.get_object(
+            self.container, "%s/%s" % (path, backup), resp_chunk_size=10000000)
+        length = int(stream[0]["x-object-meta-length"])
+        logging.info("[*] Creation glance image")
+        image = glance.images.create(
+            data=ReSizeStream(stream[1], length, 1),
+            container_format="bare",
+            disk_format="raw")
+        return stream[0], image
+
+    def restore_cinder(self, restore_from_date, volume_id):
+        """
+        1) Define swift directory
+        2) Download and upload to glance
+        3) Create volume from glance
+        4) Delete
+        :param restore_from_date - date in format '%Y-%m-%dT%H:%M:%S'
+        :param volume_id - id of attached cinder volume
+        """
+        (info, image) = self._create_image(volume_id, restore_from_date)
+        length = int(info["x-object-meta-length"])
+        gb = 1073741824
+        size = length / gb
+        if length % gb > 0:
+            size += 1
+        logging.info("[*] Creation volume from image")
+        self.client_manager.get_cinder().volumes.create(size,
+                                                        imageRef=image.id)
+        logging.info("[*] Deleting temporary image")
+        self.client_manager.get_glance().images.delete(image)
+
+    def restore_nova(self, restore_from_date, instance_id):
+        """
+        :param restore_from_date:  date in format '%Y-%m-%dT%H:%M:%S'
+        :param instance_id: id of attached nova instance
+        :return:
+        """
+        (info, image) = self._create_image(instance_id, restore_from_date)
+        nova = self.client_manager.get_nova()
+        flavor = nova.flavors.get(info['x-object-meta-tenant-id'])
+        logging.info("[*] Creation an instance")
+        nova.servers.create(info['x-object-meta-name'], image, flavor)

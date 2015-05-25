@@ -23,8 +23,10 @@ from freezer import swift
 from freezer import utils
 from freezer import backup
 from freezer import restore
+from freezer.osclients import ClientManager
 
 import logging
+from freezer.restore import RestoreOs
 
 
 class Job:
@@ -42,7 +44,15 @@ class Job:
             logging.info('[*] Job execution Started at: {0}'.
                          format(self.start_time))
 
-            self.conf = swift.get_client(self.conf)
+            if not hasattr(self.conf, 'client_manager'):
+                self.conf.client_manager = ClientManager(
+                    self.conf.options,
+                    self.conf.insecure,
+                    self.conf.download_limit,
+                    self.conf.upload_limit,
+                    self.conf.os_auth_ver,
+                    self.conf.dry_run
+                )
             self.conf = swift.get_containers_list(self.conf)
             retval = func(self)
 
@@ -136,8 +146,14 @@ class RestoreJob(Job):
         # Get the object list of the remote containers and store it in the
         # same dict passes as argument under the dict.remote_obj_list namespace
         self.conf = swift.get_container_content(self.conf)
-        if self.conf.volume_id:
-            restore.restore_cinder(self.conf)
+        if self.conf.volume_id or self.conf.instance_id:
+            res = RestoreOs(self.conf.client_manager, self.conf.container)
+            if self.conf.volume_id:
+                res.restore_cinder(self.conf.restore_from_date,
+                                   self.conf.volume_id)
+            else:
+                res.restore_nova(self.conf.restore_from_date,
+                                 self.conf.instance_id)
         else:
             restore.restore_fs(self.conf)
 

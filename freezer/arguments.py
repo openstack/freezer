@@ -357,6 +357,11 @@ def backup_arguments(args_dict={}):
         dest="volume_id",
         default='')
     arg_parser.add_argument(
+        "--instance-id", action='store',
+        help='Id of nova instance for backup',
+        dest="instance_id",
+        default='')
+    arg_parser.add_argument(
         '--download-limit', action='store',
         help='''Download bandwidth limit in Bytes per sec.
         Can be invoked with dimensions (10K, 120M, 10G).''',

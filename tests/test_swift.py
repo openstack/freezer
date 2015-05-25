@@ -25,11 +25,10 @@ from commons import *
 from freezer.swift import (create_containers, show_containers,
     show_objects, remove_obj_older_than, get_container_content,
     check_container_existance,
-    get_client, manifest_upload, add_object, get_containers_list,
+    manifest_upload, add_object, get_containers_list,
     object_to_file, object_to_stream, _remove_object, remove_object)
 import os
 import logging
-import subprocess
 import pytest
 import time
 
@@ -182,12 +181,6 @@ class TestSwift:
         backup_opt.container = False
         pytest.raises(Exception, get_container_content, backup_opt)
 
-        fakeclient = FakeSwiftClient1()
-        fakeconnector = fakeclient.client()
-        fakeswclient = fakeconnector.Connection()
-        backup_opt = BackupOpt1()
-        backup_opt.sw_connector = fakeswclient
-        pytest.raises(Exception, get_container_content, backup_opt)
 
     def test_check_container_existance(self, monkeypatch):
 
@@ -209,18 +202,6 @@ class TestSwift:
         backup_opt.container = 'test-abcd'
         backup_opt.container_segments = 'test-abcd-segments'
         assert type(check_container_existance(backup_opt)) is dict
-
-    def test_get_client(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        assert isinstance(get_client(backup_opt), BackupOpt1) is True
 
     def test_manifest_upload(self, monkeypatch):
 
@@ -268,20 +249,6 @@ class TestSwift:
         pytest.raises(SystemExit, add_object, backup_opt, backup_queue,
                       absolute_file_path, time_stamp)
 
-        fakeclient = FakeSwiftClient1()
-        fakeconnector = fakeclient.client()
-        fakeswclient = fakeconnector.Connection()
-        backup_opt = BackupOpt1()
-        backup_opt.sw_connector = fakeswclient
-        pytest.raises(SystemExit, add_object, backup_opt, backup_queue,
-                      absolute_file_path, time_stamp)
-
-        backup_opt = BackupOpt1()
-        absolute_file_path = None
-        backup_queue = None
-        pytest.raises(SystemExit, add_object, backup_opt, backup_queue,
-                      absolute_file_path, time_stamp)
-
     def test_get_containers_list(self, monkeypatch):
 
         backup_opt = BackupOpt1()
@@ -294,13 +261,6 @@ class TestSwift:
 
         assert isinstance(get_containers_list(backup_opt), BackupOpt1) is True
 
-        fakeclient = FakeSwiftClient1()
-        fakeconnector = fakeclient.client()
-        fakeswclient = fakeconnector.Connection()
-        backup_opt = BackupOpt1()
-        backup_opt.sw_connector = fakeswclient
-
-        pytest.raises(Exception, get_containers_list, backup_opt)
 
     def test_object_to_file(self, monkeypatch):
 
@@ -325,14 +285,11 @@ class TestSwift:
 
         backup_opt = BackupOpt1()
         fakelogging = FakeLogging()
-        fakeclient = FakeSwiftClient()
-        fakeconnector = fakeclient.client
 
         monkeypatch.setattr(logging, 'critical', fakelogging.critical)
         monkeypatch.setattr(logging, 'warning', fakelogging.warning)
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
-        monkeypatch.setattr(swiftclient, 'client', fakeconnector)
 
         obj_name = 'test-obj-name'
         fakemultiprocessing = FakeMultiProcessing1()

@@ -2,6 +2,7 @@ python-swiftclient>=1.6.0
 python-keystoneclient>=0.8.0
 python-cinderclient
 python-glanceclient
+python-novaclient
 
 docutils>=0.8.1
 pymysql
@@ -10,3 +11,4 @@ pymongo
 [testing]
 pytest
 flake8
+mock

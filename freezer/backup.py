@@ -20,15 +20,16 @@ Hudson (tjh@cryptsoft.com).
 
 Freezer Backup modes related functions
 """
-
 import multiprocessing
 import logging
 import os
 from os.path import expanduser
+import time
 
 from freezer.lvm import lvm_snap, lvm_snap_remove, get_lvm_info
+from freezer.osclients import ClientManager
 from freezer.tar import tar_backup, gen_tar_command
-from freezer.swift import add_object, manifest_upload, get_client
+from freezer.swift import add_object, manifest_upload
 from freezer.utils import gen_manifest_meta, add_host_name_ts_level
 from freezer.vss import vss_create_shadow_copy
 from freezer.vss import vss_delete_shadow_copy
@@ -36,10 +37,6 @@ from freezer.vss import start_sql_server
 from freezer.vss import stop_sql_server
 from freezer.winutils import use_shadow
 from freezer.winutils import is_windows
-from freezer.cinder import provide_snapshot, do_copy_volume, make_glance_image
-from freezer.cinder import download_image, clean_snapshot
-from freezer.glance import glance
-from freezer.cinder import cinder
 from freezer import swift
 
 home = expanduser("~")
@@ -147,7 +144,42 @@ def backup_mode_mongo(backup_opt_dict, time_stamp, manifest_meta_dict):
         return True
 
 
-def backup_cinder(backup_dict, time_stamp, create_clients=True):
+def backup_nova(backup_dict, time_stamp):
+    """
+    Implement nova backup
+    :param backup_dict: backup configuration dictionary
+    :param time_stamp: timestamp of backup
+    :return:
+    """
+    instance_id = backup_dict.instance_id
+    client_manager = backup_dict.client_manager
+    nova = client_manager.get_nova()
+    instance = nova.servers.get(instance_id)
+    glance = client_manager.get_glance()
+
+    if instance.__dict__['OS-EXT-STS:task_state']:
+        time.sleep(5)
+        instance = nova.servers.get(instance)
+
+    image = instance.create_image("snapshot_of_%s" % instance_id)
+    image = glance.images.get(image)
+    while image.status != 'active':
+        time.sleep(5)
+        image = glance.images.get(image)
+
+    stream = client_manager.download_image(image)
+    package = "{0}/{1}".format(instance_id, time_stamp)
+    logging.info("[*] Uploading image to swift")
+    headers = {"x-object-meta-name": instance._info['name'],
+               "x-object-meta-tenant_id": instance._info['tenant_id']}
+    swift.add_stream(backup_dict.client_manager,
+                     backup_dict.container_segments,
+                     backup_dict.container, stream, package, headers)
+    logging.info("[*] Deleting temporary image")
+    glance.images.delete(image)
+
+
+def backup_cinder(backup_dict, time_stamp):
     """
     Implements cinder backup:
         1) Gets a stream of the image from glance
@@ -155,33 +187,33 @@ def backup_cinder(backup_dict, time_stamp, create_clients=True):
 
     :param backup_dict: global dict with variables
     :param time_stamp: timestamp of snapshot
-    :param create_clients: if set to True -
-        recreates cinder and glance clients,
-        False - uses existing from backup_opt_dict
     """
-    if create_clients:
-        backup_dict = cinder(backup_dict)
-        backup_dict = glance(backup_dict)
+    client_manager = backup_dict.client_manager
+    cinder = client_manager.get_cinder()
+    glance = client_manager.get_glance()
 
     volume_id = backup_dict.volume_id
-    volume = backup_dict.cinder.volumes.get(volume_id)
+    volume = cinder.volumes.get(volume_id)
     logging.info("[*] Creation temporary snapshot")
-    snapshot = provide_snapshot(backup_dict, volume,
-                                "backup_snapshot_for_volume_%s" % volume_id)
+    snapshot = client_manager.provide_snapshot(
+        volume, "backup_snapshot_for_volume_%s" % volume_id)
     logging.info("[*] Creation temporary volume")
-    copied_volume = do_copy_volume(backup_dict, snapshot)
+    copied_volume = client_manager.do_copy_volume(snapshot)
     logging.info("[*] Creation temporary glance image")
-    image = make_glance_image(backup_dict, "name", copied_volume)
-    stream = download_image(backup_dict, image)
-    package = "{0}/{1}".format(backup_dict, volume_id, time_stamp)
+    image = client_manager.make_glance_image("name", copied_volume)
+    stream = client_manager.download_image(image)
+    package = "{0}/{1}".format(volume_id, time_stamp)
     logging.info("[*] Uploading image to swift")
-    swift.add_stream(backup_dict, stream, package)
+    headers = {}
+    swift.add_stream(backup_dict.client_manager,
+                     backup_dict.container_segments,
+                     backup_dict.container, stream, package, headers=headers)
     logging.info("[*] Deleting temporary snapshot")
-    clean_snapshot(backup_dict, snapshot)
+    client_manager.clean_snapshot(snapshot)
     logging.info("[*] Deleting temporary volume")
-    backup_dict.cinder.volumes.delete(copied_volume)
+    cinder.volumes.delete(copied_volume)
     logging.info("[*] Deleting temporary image")
-    backup_dict.glance.images.delete(image)
+    glance.images.delete(image)
 
 
 def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
@@ -194,7 +226,12 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
     if backup_opt_dict.volume_id:
         logging.info('[*] Detected volume_id parameter')
         logging.info('[*] Executing cinder snapshot')
-        backup_cinder(backup_opt_dict, time_stamp, manifest_meta_dict)
+        backup_cinder(backup_opt_dict, time_stamp)
+        return
+    if backup_opt_dict.instance_id:
+        logging.info('[*] Detected instance_id parameter')
+        logging.info('[*] Executing nova snapshot')
+        backup_nova(backup_opt_dict, time_stamp)
         return
 
     try:
@@ -269,14 +306,21 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
         if backup_opt_dict.upload:
             # Request a new auth client in case the current token
             # is expired before uploading tar meta data or the swift manifest
-            backup_opt_dict = get_client(backup_opt_dict)
+            backup_opt_dict.client_manger = ClientManager(
+                backup_opt_dict.options,
+                backup_opt_dict.insecure,
+                backup_opt_dict.download_limit,
+                backup_opt_dict.upload_limit,
+                backup_opt_dict.os_auth_ver,
+                backup_opt_dict.dry_run
+            )
 
             if not backup_opt_dict.no_incremental:
                 # Upload tar incremental meta data file and remove it
                 logging.info('[*] Uploading tar meta data file: {0}'.format(
                     tar_meta_to_upload))
                 with open(meta_data_abs_path, 'r') as meta_fd:
-                    backup_opt_dict.sw_connector.put_object(
+                    backup_opt_dict.client_manger.get_swift().put_object(
                         backup_opt_dict.container, tar_meta_to_upload, meta_fd)
                 # Removing tar meta data file, so we have only one
                 # authoritative version on swift

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from mock import MagicMock
 
 from freezer.backup import backup_mode_mysql, backup_mode_fs, backup_mode_mongo
 import freezer
@@ -11,7 +12,6 @@ import pymysql as MySQLdb
 import pymongo
 import re
 from collections import OrderedDict
-import __builtin__
 from glanceclient.common.utils import IterableWithLength
 from freezer.utils import OpenstackOptions
 
@@ -590,11 +590,11 @@ class FakeGlanceClient:
 class FakeSwiftClient:
 
     def __init__(self):
-        return None
+        pass
 
     class client:
         def __init__(self):
-            return None
+            pass
 
         class Connection:
             def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
@@ -637,21 +637,23 @@ class FakeSwiftClient:
                 return True, [{'name': 'test-container'}, {'name': 'test-container-segments'}]
 
             def get_object(self, *args, **kwargs):
-                return [{'x-object-meta-length': "123"}, "abc"]
+                return [{'x-object-meta-length': "123",
+                         'x-object-meta-tenant-id': "12",
+                         'x-object-meta-name': "name"}, "abc"]
 
 
 class FakeSwiftClient1:
 
     def __init__(self):
-        return None
+        pass
 
     class client:
         def __init__(self):
-            return None
+            pass
 
         class Connection:
             def __init__(self, key=True, os_options=True, os_auth_ver=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
-                return None
+                pass
 
             def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
                 raise Exception
@@ -793,13 +795,24 @@ class BackupOpt1:
         self.download_limit = -1
         self.sql_server_instance = 'Sql Server'
         self.volume_id = ''
+        self.instance_id = ''
         self.options = OpenstackOptions.create_from_dict(os.environ)
+        from freezer.osclients import ClientManager
+        from mock import Mock
+        self.client_manager = ClientManager(None, False, -1, -1, 2, False)
+        self.client_manager.get_swift = Mock(
+            return_value=FakeSwiftClient().client.Connection())
+        self.client_manager.get_glance = Mock(return_value=FakeGlanceClient())
+        self.client_manager.get_cinder = Mock(return_value=FakeCinderClient())
+        nova_client = MagicMock()
+
+        self.client_manager.get_nova = Mock(return_value=nova_client)
 
 
 class FakeMySQLdb:
 
     def __init__(self):
-        return None
+        pass
 
     def __call__(self, *args, **kwargs):
         return self
@@ -1014,9 +1027,6 @@ class FakeSwift:
     def fake_get_containers_list2(self, backup_opt):
         backup_opt.list_containers = None
         backup_opt.list_objects = None
-        return backup_opt
-
-    def fake_get_client(self, backup_opt):
         return backup_opt
 
     def fake_show_containers(self, backup_opt):

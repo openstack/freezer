@@ -217,6 +217,22 @@ Execute a mysql backup with cinder::
    --backup-name mysql-ops002
    --volume-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
+Nova backups
+
+To make a nova backup you should provide instance-id parameter in arguments.
+Freezer doesn't do any additional checks and assumes that making backup
+of that instance will be sufficient to restore your data in future.
+
+Execute a nova backup::
+    $ freezerc --instance-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+
+Execute a mysql backup with nova::
+
+   $ freezerc --mysql-conf /root/.freezer/freezer-mysql.conf
+   --container freezer_mysql-backup-prod --mode mysql
+   --backup-name mysql-ops002
+   --instance-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+
 All the freezerc activities are logged into /var/log/freezer.log.
 
 Restore
@@ -283,6 +299,12 @@ existing content run next command:
 
 Execute a cinder restore::
     $ freezerc --action restore --volume-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+
+Nova restore currently creates an instance with content of saved one, but the
+ip address of vm will be different as well as it's id.
+
+Execute a nova restore::
+    $ freezerc --action restore --instance-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Architecture
 ============
@@ -441,6 +463,7 @@ Miscellanea
 Available options::
 
     $ freezerc
+
     usage: freezerc [-h] [--config CONFIG] [--action {backup,restore,info,admin}]
                     [-F PATH_TO_BACKUP] [-N BACKUP_NAME] [-m MODE] [-C CONTAINER]
                     [-L] [-l] [-o GET_OBJECT] [-d DST_FILE]
@@ -460,14 +483,15 @@ Available options::
                     [--restore-from-date RESTORE_FROM_DATE] [--max-priority] [-V]
                     [-q] [--insecure] [--os-auth-ver {1,2,3}] [--proxy PROXY]
                     [--dry-run] [--upload-limit UPLOAD_LIMIT]
-                    [--volume-id VOLUME_ID] [--download-limit DOWNLOAD_LIMIT]
+                    [--volume-id VOLUME_ID] [--instance-id INSTANCE_ID]
+                    [--download-limit DOWNLOAD_LIMIT]
                     [--sql-server-conf SQL_SERVER_CONF] [--volume VOLUME]
 
     optional arguments:
       -h, --help            show this help message and exit
       --config CONFIG       Config file abs path. Option arguments are provided
                             from config file. When config file is used any option
-                            from command line is ignored.
+                            from command line provided take precedence.
       --action {backup,restore,info,admin}
                             Set the action to be taken. backup and restore are
                             self explanatory, info is used to retrieve info from
@@ -558,6 +582,8 @@ Available options::
       --mysql-conf MYSQL_CONF
                             Set the MySQL configuration file where freezer
                             retrieve important information as db_name, user,
+                            password, host, port. Following is an example of
+                            config file: # cat ~/.freezer/backup_mysql_conf host =
                             <db-host> user = <mysqluser> password = <mysqlpass>
                             port = <db-port>
       --log-file LOG_FILE   Set log file. By default logs to
@@ -611,6 +637,8 @@ Available options::
                             invoked with dimensions (10K, 120M, 10G).
       --volume-id VOLUME_ID
                             Id of cinder volume for backup
+      --instance-id INSTANCE_ID
+                            Id of nova instance for backup
       --download-limit DOWNLOAD_LIMIT
                             Download bandwidth limit in Bytes per sec. Can be
                             invoked with dimensions (10K, 120M, 10G).
@@ -619,4 +647,3 @@ Available options::
                             retrieve the sql server instance. Following is an
                             example of config file: instance = <db-instance>
       --volume VOLUME       Create a snapshot of the selected volume
-

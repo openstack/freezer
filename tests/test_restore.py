@@ -23,7 +23,7 @@ Hudson (tjh@cryptsoft.com).
 
 from commons import *
 from freezer.restore import (
-    restore_fs, restore_fs_sort_obj, restore_cinder)
+    restore_fs, restore_fs_sort_obj, RestoreOs)
 import freezer
 import logging
 import pytest
@@ -82,13 +82,12 @@ class TestRestore:
         backup_opt.backup_name = 'abcdtest'
         pytest.raises(Exception, restore_fs_sort_obj, backup_opt)
 
-    def test_restore_cinder(self, monkeypatch):
+    def test_restore_cinder(self):
         backup_opt = BackupOpt1()
-        backup_opt.volume_id = 34
+        ros = RestoreOs(backup_opt.client_manager, backup_opt.container)
+        ros.restore_cinder(backup_opt.restore_from_date, 34)
 
-        backup_opt.glance = FakeGlanceClient()
-        backup_opt.cinder = FakeCinderClient()
-        fakeswiftclient = FakeSwiftClient()
-        monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
-
-        restore_cinder(backup_opt, False)
+    def test_restore_nova(self):
+        backup_opt = BackupOpt1()
+        ros = RestoreOs(backup_opt.client_manager, backup_opt.container)
+        ros.restore_nova(backup_opt.restore_from_date, 34)

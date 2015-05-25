@@ -7,7 +7,6 @@ import sys
 import os
 import pytest
 import distutils.spawn as distspawn
-import __builtin__
 
 
 class TestArguments(object):
@@ -53,8 +52,10 @@ class TestArguments(object):
         platform = sys.platform
         assert backup_arguments() is not False
 
+        if sys.__dict__['platform'] != 'darwin':
+            sys.__dict__['platform'] = 'darwin'
+            pytest.raises(Exception, backup_arguments)
         sys.__dict__['platform'] = 'darwin'
-        pytest.raises(Exception, backup_arguments)
         monkeypatch.setattr(
             distspawn, 'find_executable', fakedistutilsspawn.find_executable)
         assert backup_arguments() is not False

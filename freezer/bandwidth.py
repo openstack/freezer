@@ -51,20 +51,18 @@ def monkeypatch_bandwidth(download_bytes_per_sec, upload_bytes_per_sec):
         Monkey patch socket to ensure that all
         new sockets created are throttled.
     """
+    if upload_bytes_per_sec > -1 or download_bytes_per_sec > - 1:
+        def make_throttled_socket(*args, **kwargs):
+            return ThrottledSocket(
+                download_bytes_per_sec,
+                upload_bytes_per_sec,
+                socket._realsocket(*args, **kwargs))
 
-    def make_throttled_socket(*args, **kwargs):
-        return ThrottledSocket(
-            download_bytes_per_sec,
-            upload_bytes_per_sec,
-            socket._realsocket(*args, **kwargs))
-
-    socket.socket = make_throttled_socket
-    socket.SocketType = ThrottledSocket
+        socket.socket = make_throttled_socket
+        socket.SocketType = ThrottledSocket
 
 
 def monkeypatch_socket_bandwidth(backup_opt_dict):
     download_limit = backup_opt_dict.download_limit
     upload_limit = backup_opt_dict.upload_limit
-
-    if upload_limit > -1 or download_limit > - 1:
-        monkeypatch_bandwidth(download_limit, upload_limit)
+    monkeypatch_bandwidth(download_limit, upload_limit)

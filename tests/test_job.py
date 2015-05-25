@@ -42,7 +42,6 @@ class TestJob:
         monkeypatch.setattr(logging, 'warning', fakelogging.warning)
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
-        monkeypatch.setattr(swift, 'get_client', fakeswift.fake_get_client)
         monkeypatch.setattr(swift, 'get_containers_list', fakeswift.fake_get_containers_list1)
 
     def test_execute(self, monkeypatch):

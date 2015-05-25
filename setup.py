@@ -83,6 +83,7 @@ setup(
         'python-keystoneclient>=0.7.0',
         'python-cinderclient',
         'python-glanceclient',
+        'python-novaclient',
         'pymysql',
         'pymongo',
         'docutils>=0.8.1'],
