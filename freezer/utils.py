@@ -82,7 +82,7 @@ def gen_manifest_meta(
         manifest_meta_dict['x-object-meta-backup-name'] = \
             backup_opt_dict.backup_name
         manifest_meta_dict['x-object-meta-src-file-to-backup'] = \
-            backup_opt_dict.src_file
+            backup_opt_dict.path_to_backup
         manifest_meta_dict['x-object-meta-abs-file-path'] = ''
 
         # Set manifest meta if encrypt_pass_file is provided
@@ -92,17 +92,17 @@ def gen_manifest_meta(
         if backup_opt_dict.encrypt_pass_file is False:
             manifest_meta_dict['x-object-meta-encrypt-data'] = ''
         manifest_meta_dict['x-object-meta-always-backup-level'] = ''
-        if backup_opt_dict.always_backup_level:
+        if backup_opt_dict.always_level:
             manifest_meta_dict['x-object-meta-always-backup-level'] = \
-                backup_opt_dict.always_backup_level
+                backup_opt_dict.always_level
 
-        # Set manifest meta if max_backup_level argument is provided
-        # Once the incremental backup arrive to max_backup_level, it will
+        # Set manifest meta if max_level argument is provided
+        # Once the incremental backup arrive to max_level, it will
         # restart from level 0
         manifest_meta_dict['x-object-meta-maximum-backup-level'] = ''
-        if backup_opt_dict.max_backup_level is not False:
+        if backup_opt_dict.max_level is not False:
             manifest_meta_dict['x-object-meta-maximum-backup-level'] = \
-                str(backup_opt_dict.max_backup_level)
+                str(backup_opt_dict.max_level)
 
         # At the end of the execution, checks the objects ages for the
         # specified swift container. If there are object older then the
@@ -114,7 +114,7 @@ def gen_manifest_meta(
                 = '{0}'.format(backup_opt_dict.remove_older_than)
         manifest_meta_dict['x-object-meta-hostname'] = backup_opt_dict.hostname
         manifest_meta_dict['x-object-meta-segments-size-bytes'] = \
-            str(backup_opt_dict.max_seg_size)
+            str(backup_opt_dict.max_segment_size)
         manifest_meta_dict['x-object-meta-backup-created-timestamp'] = \
             str(backup_opt_dict.time_stamp)
         manifest_meta_dict['x-object-meta-providers-list'] = 'HP'
@@ -130,14 +130,14 @@ def gen_manifest_meta(
         manifest_meta_dict['x-object-meta-container-segments'] = \
             backup_opt_dict.container_segments
 
-        # Set the restart_always_backup value to n days. According
-        # to the following option, when the always_backup_level is set
+        # Set the restart_always_level value to n days. According
+        # to the following option, when the always_level is set
         # the backup will be reset to level 0 if the current backup
         # times tamp is older then the days in x-object-meta-container-segments
         manifest_meta_dict['x-object-meta-restart-always-backup'] = ''
-        if backup_opt_dict.restart_always_backup is not False:
+        if backup_opt_dict.restart_always_level is not False:
             manifest_meta_dict['x-object-meta-restart-always-backup'] = \
-                backup_opt_dict.restart_always_backup
+                backup_opt_dict.restart_always_level
 
     return (
         backup_opt_dict, manifest_meta_dict,
@@ -354,11 +354,11 @@ def get_abs_oldest_backup(backup_opt_dict):
 
 def eval_restart_backup(backup_opt_dict):
     '''
-    Restart backup level if the first backup execute with always_backup_level
-    is older then restart_always_backup
+    Restart backup level if the first backup execute with always_level
+    is older then restart_always_level
     '''
 
-    if not backup_opt_dict.restart_always_backup:
+    if not backup_opt_dict.restart_always_level:
         logging.info('[*] No need to set Backup {0} to level 0.'.format(
             backup_opt_dict.backup_name))
         return False
@@ -366,7 +366,7 @@ def eval_restart_backup(backup_opt_dict):
     logging.info('[*] Checking always backup level timestamp...')
     # Compute the amount of seconds to be compared with
     # the remote backup timestamp
-    max_time = int(float(backup_opt_dict.restart_always_backup) * 86400)
+    max_time = int(float(backup_opt_dict.restart_always_level) * 86400)
     current_timestamp = backup_opt_dict.time_stamp
     backup_name = backup_opt_dict.backup_name
     hostname = backup_opt_dict.hostname
@@ -390,7 +390,7 @@ def eval_restart_backup(backup_opt_dict):
     if (current_timestamp - first_backup_ts) > max_time:
         logging.info(
             '[*] Backup {0} older then {1} days. Backup level set to 0'.format(
-                backup_name, backup_opt_dict.restart_always_backup))
+                backup_name, backup_opt_dict.restart_always_level))
 
         return True
     else:
@@ -438,32 +438,32 @@ def set_backup_level(backup_opt_dict, manifest_meta_dict):
     if manifest_meta_dict.get('x-object-meta-backup-name'):
         backup_opt_dict.curr_backup_level = int(
             manifest_meta_dict.get('x-object-meta-backup-current-level'))
-        max_backup_level = manifest_meta_dict.get(
+        max_level = manifest_meta_dict.get(
             'x-object-meta-maximum-backup-level')
-        always_backup_level = manifest_meta_dict.get(
+        always_level = manifest_meta_dict.get(
             'x-object-meta-always-backup-level')
-        restart_always_backup = manifest_meta_dict.get(
+        restart_always_level = manifest_meta_dict.get(
             'x-object-meta-restart-always-backup')
-        if max_backup_level:
-            max_backup_level = int(max_backup_level)
-            if backup_opt_dict.curr_backup_level < max_backup_level:
+        if max_level:
+            max_level = int(max_level)
+            if backup_opt_dict.curr_backup_level < max_level:
                 backup_opt_dict.curr_backup_level += 1
                 manifest_meta_dict['x-object-meta-backup-current-level'] = \
                     str(backup_opt_dict.curr_backup_level)
             else:
                 manifest_meta_dict['x-object-meta-backup-current-level'] = \
                     backup_opt_dict.curr_backup_level = '0'
-        elif always_backup_level:
-            always_backup_level = int(always_backup_level)
-            if backup_opt_dict.curr_backup_level < always_backup_level:
+        elif always_level:
+            always_level = int(always_level)
+            if backup_opt_dict.curr_backup_level < always_level:
                 backup_opt_dict.curr_backup_level += 1
                 manifest_meta_dict['x-object-meta-backup-current-level'] = \
                     str(backup_opt_dict.curr_backup_level)
-            # If restart_always_backup is set, the backup_age will be computed
-            # and if the backup age in days is >= restart_always_backup, then
+            # If restart_always_level is set, the backup_age will be computed
+            # and if the backup age in days is >= restart_always_level, then
             # backup-current-level will be set to 0
-            if restart_always_backup:
-                backup_opt_dict.restart_always_backup = restart_always_backup
+            if restart_always_level:
+                backup_opt_dict.restart_always_level = restart_always_level
                 if eval_restart_backup(backup_opt_dict):
                     backup_opt_dict.curr_backup_level = '0'
                     manifest_meta_dict['x-object-meta-backup-current-level'] \

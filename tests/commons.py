@@ -637,7 +637,7 @@ class FakeSwiftClient1:
             return None
 
         class Connection:
-            def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
+            def __init__(self, key=True, os_options=True, os_auth_ver=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
                 return None
 
             def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
@@ -699,7 +699,7 @@ class BackupOpt1:
         fakeclient = FakeSwiftClient()
         fakeconnector = fakeclient.client()
         fakeswclient = fakeconnector.Connection()
-        self.mysql_conf_file = '/tmp/freezer-test-conf-file'
+        self.mysql_conf = '/tmp/freezer-test-conf-file'
         self.mysql_db_inst = FakeMySQLdb()
         self.lvm_auto_snap = '/dev/null'
         self.lvm_volgroup = 'testgroup'
@@ -717,28 +717,28 @@ class BackupOpt1:
         self.backup_name = 'test-backup-name'
         self.hostname = 'test-hostname'
         self.curr_backup_level = 0
-        self.src_file = '/tmp'
+        self.path_to_backup = '/tmp'
         self.tar_path = 'true'
         self.dereference_symlink = 'true'
         self.no_incremental = 'true'
         self.exclude = 'true'
         self.encrypt_pass_file = 'true'
         self.openssl_path = 'true'
-        self.always_backup_level = '0'
-        self.max_backup_level = '0'
+        self.always_level = '0'
+        self.max_level = '0'
         self.remove_older_than = '0'
-        self.max_seg_size = '0'
+        self.max_segment_size = '0'
         self.time_stamp = 123456789
         self.container_segments = 'test-container-segments'
         self.container = 'test-container'
         self.workdir = '/tmp'
         self.upload = 'true'
         self.sw_connector = fakeswclient
-        self.max_backup_level = '20'
+        self.max_level = '20'
         self.encrypt_pass_file = '/dev/random'
-        self.always_backup_level = '20'
+        self.always_level = '20'
         self.remove_from_date = '2014-12-03T23:23:23'
-        self.restart_always_backup = 100000
+        self.restart_always_level = 100000
         self.remote_match_backup = [
             'test-hostname_test-backup-name_1234567_0',
             'test-hostname_test-backup-name_1234568_1',
@@ -768,13 +768,13 @@ class BackupOpt1:
         self.containers_list = [
             {'name' : 'testcontainer1', 'bytes' : 123423, 'count' : 10}
         ]
-        self.list_container = False
+        self.list_containers = False
         self.list_objects = False
         self.restore_from_date = '2014-12-03T23:23:23'
         self.restore_from_host = 'test-hostname'
         self.action = 'info'
         self.insecure = True
-        self.auth_version = 2
+        self.os_auth_ver = 2
         self.dry_run = False
         self.upload_limit = -1
         self.download_limit = -1
@@ -999,7 +999,7 @@ class FakeSwift:
         return backup_opt
 
     def fake_get_containers_list2(self, backup_opt):
-        backup_opt.list_container = None
+        backup_opt.list_containers = None
         backup_opt.list_objects = None
         return backup_opt
 

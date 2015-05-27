@@ -130,7 +130,7 @@ class TestTar:
         assert val2 is not False
         assert val3 is not False
 
-        backup_opt.__dict__['src_file'] = ''
+        backup_opt.__dict__['path_to_backup'] = ''
         pytest.raises(Exception, gen_tar_command,
                       backup_opt, meta_data_backup_file, time_stamp,
                       remote_manifest_meta)
@@ -154,7 +154,7 @@ class TestTar:
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
-        backup_opt.__dict__['max_seg_size'] = 1
+        backup_opt.__dict__['max_segment_size'] = 1
         assert tar_backup(backup_opt, 'tar_command', fakebackup_queue) is not False
 
     def test_tar_restore_args_valid(self, monkeypatch):

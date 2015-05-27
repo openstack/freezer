@@ -58,7 +58,7 @@ class Job:
 class InfoJob(Job):
     @Job.executemethod
     def execute(self):
-        if self.conf.list_container:
+        if self.conf.list_containers:
             swift.show_containers(self.conf)
         elif self.conf.list_objects:
             containers = swift.check_container_existance(self.conf)
@@ -85,8 +85,8 @@ class BackupJob(Job):
             swift.create_containers(self.conf)
 
         if self.conf.no_incremental:
-            if self.conf.max_backup_level or \
-               self.conf.always_backup_level:
+            if self.conf.max_level or \
+               self.conf.always_level:
                 raise Exception(
                     'no-incremental option is not compatible '
                     'with backup level options')

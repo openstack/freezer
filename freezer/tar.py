@@ -161,20 +161,20 @@ def gen_tar_command(
 
     required_list = [
         opt_dict.backup_name,
-        opt_dict.src_file,
-        os.path.exists(opt_dict.src_file)]
+        opt_dict.path_to_backup,
+        os.path.exists(opt_dict.path_to_backup)]
 
     if not validate_all_args(required_list):
         raise Exception('Error: Please ALL the following options: '
                         '--path-to-backup, --backup-name')
 
-    # Change che current working directory to op_dict.src_file
-    os.chdir(os.path.normpath(opt_dict.src_file.strip()))
+    # Change che current working directory to op_dict.path_to_backup
+    os.chdir(os.path.normpath(opt_dict.path_to_backup.strip()))
 
     logging.info('[*] Changing current working directory to: {0} \
-    '.format(opt_dict.src_file))
+    '.format(opt_dict.path_to_backup))
     logging.info('[*] Backup started for: {0} \
-    '.format(opt_dict.src_file))
+    '.format(opt_dict.path_to_backup))
 
     # Tar option for default behavior. Please refer to man tar to have
     # a better options explanation
@@ -232,7 +232,7 @@ def tar_backup(opt_dict, tar_command, backup_queue):
     tar_chunk = b''
     logging.info(
         '[*] Archiving and compressing files from {0}'.format(
-            opt_dict.src_file))
+            opt_dict.path_to_backup))
 
     tar_process = subprocess.Popen(
         tar_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -242,14 +242,14 @@ def tar_backup(opt_dict, tar_command, backup_queue):
     for file_block in tar_process.stdout:
         tar_chunk += file_block
         file_read_limit += len(file_block)
-        if file_read_limit >= opt_dict.max_seg_size:
+        if file_read_limit >= opt_dict.max_segment_size:
             backup_queue.put(
                 ({("%08d" % file_chunk_index): tar_chunk}))
             file_chunk_index += 1
             tar_chunk = b''
             file_read_limit = 0
 
-    # Upload segments smaller then opt_dict.max_seg_size
-    if len(tar_chunk) < opt_dict.max_seg_size:
+    # Upload segments smaller then opt_dict.max_segment_size
+    if len(tar_chunk) < opt_dict.max_segment_size:
         backup_queue.put(
             ({("%08d" % file_chunk_index): tar_chunk}))

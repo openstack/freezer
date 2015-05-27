@@ -53,7 +53,7 @@ def backup_mode_sql_server(backup_opt_dict, time_stamp, manifest_meta_dict):
     as the backup finish the db will be unlocked and the backup will be
     uploaded. A sql_server.conf_file is required for this operation.
     """
-    with open(backup_opt_dict.sql_server_config, 'r') as sql_conf_file_fd:
+    with open(backup_opt_dict.sql_server_conf, 'r') as sql_conf_file_fd:
         for line in sql_conf_file_fd:
             if 'instance' in line:
                 db_instance = line.split('=')[1].strip()
@@ -76,7 +76,7 @@ def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
     the db tables will be flushed and locked for read, then the lvm create
     command will be executed and after that, the table will be unlocked and
     the backup will be executed. It is important to have the available in
-    backup_args.mysql_conf_file the file where the database host, name, user,
+    backup_args.mysql_conf the file where the database host, name, user,
     password and port are set.
     """
 
@@ -85,14 +85,14 @@ def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
     except ImportError:
         raise ImportError('Please install PyMySQL module')
 
-    if not backup_opt_dict.mysql_conf_file:
+    if not backup_opt_dict.mysql_conf:
         raise ValueError('MySQL: please provide a valid config file')
-    # Open the file provided in backup_args.mysql_conf_file and extract the
+    # Open the file provided in backup_args.mysql_conf and extract the
     # db host, name, user, password and port.
     db_user = db_host = db_pass = False
     # Use the default mysql port if not provided
     db_port = 3306
-    with open(backup_opt_dict.mysql_conf_file, 'r') as mysql_file_fd:
+    with open(backup_opt_dict.mysql_conf, 'r') as mysql_file_fd:
         for line in mysql_file_fd:
             if 'host' in line:
                 db_host = line.split('=')[1].strip()
@@ -223,9 +223,10 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
         tar_backup_queue = multiprocessing.Queue(maxsize=2)
 
         if is_windows():
-            backup_opt_dict.absolute_path = backup_opt_dict.src_file
-            backup_opt_dict.src_file = use_shadow(backup_opt_dict.src_file,
-                                                  backup_opt_dict.volume)
+            backup_opt_dict.absolute_path = backup_opt_dict.path_to_backup
+            backup_opt_dict.path_to_backup = use_shadow(
+                backup_opt_dict.path_to_backup,
+                backup_opt_dict.volume)
 
         # Execute a tar gzip of the specified directory and return
         # small chunks (default 128MB), timestamp, backup, filename,

@@ -202,11 +202,12 @@ def lvm_snap(backup_opt_dict):
 
 def get_lvm_info(backup_opt_dict):
     """
-    Take a file system path as argument as backup_opt_dict.src_file
+    Take a file system path as argument as backup_opt_dict.path_to_backup
     and return a dictionary containing dictionary['lvm_srcvol']
     and dictionary['lvm_volgroup'] where the path is mounted on.
 
-    :param backup_opt_dict: backup_opt_dict.src_file, the file system path
+    :param backup_opt_dict: backup_opt_dict.path_to_backup, the file system
+    path
     :returns: the dictionary backup_opt_dict containing keys lvm_srcvol
               and lvm_volgroup with respective values
     """

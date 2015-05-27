@@ -148,7 +148,7 @@ class TestUtils:
         backup_opt = BackupOpt1()
         assert eval_restart_backup(backup_opt) is False
 
-        backup_opt.__dict__['restart_always_backup'] = None
+        backup_opt.__dict__['restart_always_level'] = None
         assert eval_restart_backup(backup_opt) is False
 
         backup_opt = BackupOpt1()
@@ -205,8 +205,8 @@ class TestUtils:
 
         manifest_meta = dict()
         backup_opt = BackupOpt1()
-        backup_opt.__dict__['max_backup_level'] = False
-        backup_opt.__dict__['always_backup_level'] = False
+        backup_opt.__dict__['max_level'] = False
+        backup_opt.__dict__['always_level'] = False
         (backup_opt, manifest_meta) = set_backup_level(
             backup_opt, manifest_meta)
         assert manifest_meta['x-object-meta-backup-current-level'] == '0'

@@ -58,10 +58,10 @@ class TestSwift:
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
-        backup_opt.__dict__['list_container'] = True
+        backup_opt.__dict__['list_containers'] = True
         assert show_containers(backup_opt) is True
 
-        backup_opt.__dict__['list_container'] = False
+        backup_opt.__dict__['list_containers'] = False
         assert show_containers(backup_opt) is False
 
     def test_show_objects(self, monkeypatch):

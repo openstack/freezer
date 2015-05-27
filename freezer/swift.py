@@ -65,7 +65,7 @@ def show_containers(backup_opt_dict):
     Print remote containers in sorted order
     """
 
-    if not backup_opt_dict.list_container:
+    if not backup_opt_dict.list_containers:
         return False
 
     ordered_container = {}
@@ -312,7 +312,7 @@ def get_client(backup_opt_dict):
         user=options.user_name, key=options.password,
         tenant_name=options.tenant_name,
         os_options=options.os_options,
-        auth_version=backup_opt_dict.auth_version,
+        auth_version=backup_opt_dict.os_auth_ver,
         insecure=backup_opt_dict.insecure, retries=6)
 
     if backup_opt_dict.dry_run:
@@ -423,7 +423,7 @@ def add_object(
             break
         package_name = u'{0}/{1}/{2}/{3}'.format(
             package_name, time_stamp,
-            backup_opt_dict.max_seg_size, file_chunk_index)
+            backup_opt_dict.max_segment_size, file_chunk_index)
         add_chunk(backup_opt_dict, package_name, file_chunk)
 
 

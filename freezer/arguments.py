@@ -78,7 +78,7 @@ def backup_arguments(args_dict={}):
     arg_parser.add_argument(
         '-F', '--path-to-backup', '--file-to-backup', action='store',
         help="The file or directory you want to back up to Swift",
-        dest='src_file', default=False)
+        dest='path_to_backup', default=False)
     arg_parser.add_argument(
         '-N', '--backup-name', action='store',
         help="The backup name you want to use to identify your backup \
@@ -96,7 +96,7 @@ def backup_arguments(args_dict={}):
     arg_parser.add_argument(
         '-L', '--list-containers', action='store_true',
         help='''List the Swift containers on remote Object Storage Server''',
-        dest='list_container', default=False)
+        dest='list_containers', default=False)
     arg_parser.add_argument(
         '-l', '--list-objects', action='store_true',
         help='''List the Swift objects stored in a container on remote Object\
@@ -104,7 +104,7 @@ def backup_arguments(args_dict={}):
     arg_parser.add_argument(
         '-o', '--get-object', action='store',
         help="The Object name you want to download on the local file system.",
-        dest='object', default=False)
+        dest='get_object', default=False)
     arg_parser.add_argument(
         '-d', '--dst-file', action='store',
         help="The file name used to save the object on your local disk and\
@@ -143,7 +143,7 @@ def backup_arguments(args_dict={}):
         help="Set the backup level used with tar to implement incremental \
         backup. If a level 1 is specified but no level 0 is already \
         available, a level 0 will be done and subsequently backs to level 1.\
-        Default 0 (No Incremental)", dest='max_backup_level',
+        Default 0 (No Incremental)", dest='max_level',
         type=int, default=False)
     arg_parser.add_argument(
         '--always-level', action='store', help="Set backup\
@@ -152,14 +152,14 @@ def backup_arguments(args_dict={}):
         level 3 and to that point always a backup level 3 will be executed. \
         It will not restart from level 0. This option has precedence over \
         --max-backup-level. Default False (Disabled)",
-        dest='always_backup_level', type=int, default=False)
+        dest='always_level', type=int, default=False)
     arg_parser.add_argument(
         '--restart-always-level', action='store', help="Restart the backup \
         from level 0 after n days. Valid only if --always-level option \
         if set. If --always-level is used together with --remove-older-then, \
         there might be the chance where the initial level 0 will be removed \
         Default False (Disabled)",
-        dest='restart_always_backup', type=float, default=False)
+        dest='restart_always_level', type=float, default=False)
     arg_parser.add_argument(
         '-R', '--remove-older-then', '--remove-older-than', action='store',
         help=('Checks in the specified container for object older than the '
@@ -199,7 +199,7 @@ def backup_arguments(args_dict={}):
         user     = <mysqluser>
         password = <mysqlpass>
         port     = <db-port>''',
-        dest='mysql_conf_file', default=False)
+        dest='mysql_conf', default=False)
     if is_windows():
         arg_parser.add_argument(
             '--log-file', action='store',
@@ -238,7 +238,7 @@ def backup_arguments(args_dict={}):
         '-M', '--max-segment-size', action='store',
         help="Set the maximum file chunk size in bytes to upload to swift\
         Default 67108864 bytes (64MB)",
-        dest='max_seg_size', type=int, default=67108864)
+        dest='max_segment_size', type=int, default=67108864)
     arg_parser.add_argument(
         '--restore-abs-path', action='store',
         help=('Set the absolute path where you want your data restored. '
@@ -279,7 +279,7 @@ def backup_arguments(args_dict={}):
         '--os-auth-ver', choices=['1', '2', '3'],
         action='store',
         help='Swift auth version, could be 1, 2 or 3',
-        dest='auth_version', default=2)
+        dest='os_auth_ver', default=2)
     arg_parser.add_argument(
         '--proxy', action='store',
         help='''Enforce proxy that alters system HTTP_PROXY and HTTPS_PROXY,
@@ -314,7 +314,7 @@ def backup_arguments(args_dict={}):
         the sql server instance.
         Following is an example of config file:
         instance = <db-instance>''',
-        dest='sql_server_config', default=False)
+        dest='sql_server_conf', default=False)
     arg_parser.add_argument(
         '--volume', action='store',
         help='Create a snapshot of the selected volume',

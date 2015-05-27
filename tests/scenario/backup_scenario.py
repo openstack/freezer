@@ -189,7 +189,7 @@ class BackupScenarioFS(unittest.TestCase):
         backup_args = {
             #'proxy' : '',
             'action' : 'backup',
-            'src_file' : copy(self.tmp_path),
+            'path_to_backup' : copy(self.tmp_path),
             'backup_name' : str(uuid.uuid4()),
             'container' : str(uuid.uuid4())
         }
@@ -249,7 +249,7 @@ class BackupScenarioFS(unittest.TestCase):
             'lvm_volgroup' : 'freezer-test1-volgroup',
             'lvm_snapsize' : '1M',
             'exclude' : '*.lock',
-            'src_file' : copy(self.tmp_path),
+            'path_to_backup' : copy(self.tmp_path),
             'backup_name' : str(uuid.uuid4()),
             'container' : str(uuid.uuid4())
         }
@@ -328,7 +328,7 @@ class BackupScenarioFS(unittest.TestCase):
         # Freezer CLI for backup argument dictionary
         backup_args = {
             'action' : 'backup',
-            'src_file' : copy(self.tmp_path),
+            'path_to_backup' : copy(self.tmp_path),
             'backup_name' : str(uuid.uuid4()),
             'container' : str(uuid.uuid4()),
             'upload_limit' : speed_limit_bytes
@@ -391,10 +391,10 @@ class BackupScenarioFS(unittest.TestCase):
             'lvm_dirmount' : '/tmp/freezer-test-lvm-snapshot',
             'lvm_volgroup' : 'freezer-test1-volgroup',
             'lvm_snapsize' : '1M',
-            'src_file' : copy(self.tmp_path),
+            'path_to_backup' : copy(self.tmp_path),
             'backup_name' : str(uuid.uuid4()),
             'container' : str(uuid.uuid4()),
-            'max_backup_level' : max_level
+            'max_level' : max_level
         }
         fdict_before = []
         # print ''

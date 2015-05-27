@@ -59,10 +59,10 @@ class TestInfoJob(TestJob):
         job = InfoJob(backup_opt)
         assert job.execute() is False
 
-    def test_execute_list_container(self, monkeypatch):
+    def test_execute_list_containers(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
         backup_opt = BackupOpt1()
-        backup_opt.list_container = True
+        backup_opt.list_containers = True
         job = InfoJob(backup_opt)
         assert job.execute() is True
 

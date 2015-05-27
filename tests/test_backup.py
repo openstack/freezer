@@ -59,13 +59,13 @@ class TestBackUP:
         monkeypatch.setattr(os.path, 'exists', expanduser.exists)
         monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
 
-        mysql_conf_file = backup_opt.mysql_conf_file
-        backup_opt.__dict__['mysql_conf_file'] = None
+        mysql_conf = backup_opt.mysql_conf
+        backup_opt.__dict__['mysql_conf'] = None
         pytest.raises(Exception, backup_mode_mysql, backup_opt, 123456789, test_meta)
 
         # Generate mysql conf test file
-        backup_opt.__dict__['mysql_conf_file'] = mysql_conf_file
-        with open(backup_opt.mysql_conf_file, 'w') as mysql_conf_fd:
+        backup_opt.__dict__['mysql_conf'] = mysql_conf
+        with open(backup_opt.mysql_conf, 'w') as mysql_conf_fd:
             mysql_conf_fd.write('host=abcd\nport=1234\nuser=abcd\npassword=abcd\n')
         assert backup_mode_mysql(
             backup_opt, 123456789, test_meta) is None
@@ -73,7 +73,7 @@ class TestBackUP:
         fakemysql2 = FakeMySQLdb2()
         monkeypatch.setattr(MySQLdb, 'connect', fakemysql2.connect)
         pytest.raises(Exception, backup_mode_mysql, backup_opt, 123456789, test_meta)
-        os.unlink(backup_opt.mysql_conf_file)
+        os.unlink(backup_opt.mysql_conf)
 
     def test_backup_mode_fs(self, monkeypatch):
 
