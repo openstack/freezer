@@ -154,6 +154,19 @@ class FakeArgparse:
             self.hostname = None
             return self
 
+        @classmethod
+        def parse_known_args(self):
+            config_file = '/tmp/freezer-config-test-{}.conf'.format(int(time.time()))
+            config_fd = open(config_file, 'wb')
+            config_fd.write('[test:section]\nbackup_name = False\n')
+            config_fd.close()
+            self.config = config_file
+            return self, []
+
+        @classmethod
+        def set_defaults(self, *args, **kwargs):
+            return self
+
 
 class FakeOpen:
     def __init__(self):

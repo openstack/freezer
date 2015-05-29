@@ -1,0 +1,223 @@
+# This is a config file example of a freezer job. It can be used
+# for backup, restore or any action/job that need to be executed
+# by the freezer client. The naming convention is consistent with
+# the option arguments metavar provider by command line or by the
+# same command line arguments but "-" are substituted with "_" and
+# the leading "--" are removed.
+# For every single option it is possible to get verbose help
+# from the freezer client help (i.e. freezerc --help, freezerc, etc)
+# Values that take no arguments can be disable by using None or
+# False and
+# Job name
+[job:var-log]
+
+# OS auth version, could be 1, 2 or 3
+os_auth_ver = 2
+
+# List the Swift objects stored in a container on remote
+# Object Storage Server.
+list_objects = False
+
+# The Object name you want to download on the local file
+# system.
+get_object = False
+
+# Suppress verbose output
+quiet = False
+
+# Automatically guess the volume group and volume name
+# for a given PATH
+lvm_auto_snap = False
+
+# Specify the volume group of your logical volume. This
+# is important to mount your snapshot volume
+lvm_volgroup = False
+
+# Set the absolute path where you want your data
+# restored. Please provide datetime in format "YYYY-MM-
+# DDThh:mm:ss" i.e. "1979-10-03T23:23:23". Make sure the
+# "T" is between date and time
+restore_from_date = False
+
+# Exclude files, given as a PATTERN.Ex: --exclude
+# '*.log' will exclude any file with name ending with .log
+exclude = False
+
+# Set the SQL Server configuration file where freezer
+# retrieve the sql server instance. Following is an
+# example of config file: instance = <db-instance>
+sql_server_conf = False
+
+# The backup name you want to use to identify your
+# backup on the storage media
+backup_name = freezer-windows-restore-2
+
+# The Swift container used to upload files to or retrieve from
+container = freezer-windows-restore
+
+# Disable incremental feature. By default freezer build
+# the meta data even for level 0 backup. By setting this
+# option incremental meta data is not created at all.
+no_incremental = False
+
+# Set the maximum file chunk size in bytes to upload to
+# the storage media Default 67108864 bytes (64MB)
+max_segment_size = 67108864
+
+# Set the lvm volume you want to take a snaphost from
+lvm_srcvol = False
+
+# Download bandwidth limit in Bytes per sec. Can be
+# invoked with dimensions (10K, 120M, 10G)
+download_limit = -1
+
+# Set hostname to execute actions. If you are executing
+# freezer from one host but you want to delete objects
+# belonging to another host then you can set this option
+# that hostname and execute appropriate actions. Default
+# current node hostname.
+hostname = False
+
+# Checks the specified container and removes objects
+# older than the provided datetime in the form
+# "YYYY-MM-DDThh:mm:ss i.e. "1974-03-25T23:23:23".
+# Make sure the "T" is between date and time
+remove_from_date = False
+
+# Restart the backup from level 0 after n days. Valid
+# only if --always-level option if set. If --always-
+# level is used together with --remove-older-then, there
+# might be the chance where the initial level 0 will be removed
+restart_always_level = False
+
+# The file name used to save the object on your local
+# disk
+dst_file = False
+
+# Follow hard and soft links and archive and dump the
+# files they refer to. Possible options are {none,soft,hard,all}
+dereference_symlink = none
+
+# Set the hostname used to identify the data you want to
+# restore from. If you want to restore data in the same
+# host where the backup was executed just type from your
+# shell: "$ hostname" and the output is the value that
+# needs to be passed to this option. Mandatory with action restore
+restore_from_host = False
+
+# Config file abs path. Option arguments are provided
+# from config file. When config file is used any option
+# from command line provided take precedence.
+config = /home/anakin/.freezer/jobs-name.conf
+
+# Set the MySQL configuration file where freezer
+# retrieve important information as db_name, user,
+# password, host, port. Following is an example of
+# config file: # cat ~/.freezer/backup_mysql_conf
+# host = <db-host>
+# user = <mysqluser>
+# password = <mysqlpass>
+# port = <db-port>
+mysql_conf = False
+
+# Set the directory you want to mount the lvm snapshot to
+lvm_dirmount = False
+
+# Allow to access swift servers without checking SSL certs
+insecure = False
+
+# Set the lvm snapshot name to use. If the snapshot name
+# already exists, the old one will be used a no new one
+# will be created. Default freezer_backup_snap.
+lvm_snapname = False
+
+# Set the cpu process to the highest priority (i.e. -20
+# on Linux) and real-time for I/O. The process priority
+# will be set only if nice and ionice are installed
+# Default disabled. Use with caution.
+max_priority = False
+
+# Set the backup level used with tar to implement
+# incremental backup. If a level 1 is specified but no
+# level 0 is already available, a level 0 will be done
+# and subsequently backs to level 1. Default 0 (No Incremental)
+max_level = False
+
+# The file or directory you want to back up to the storage media
+path_to_backup = False
+
+# Passing a private key to this option, allow you to
+# encrypt the files before to be uploaded to the storage media, or
+# decrypt data in stream before data touch the disk when restoring
+encrypt_pass_file = False
+
+# Create a snapshot of the selected volume
+volume = False
+
+# Enforce proxy that alters system HTTP_PROXY and
+# HTTPS_PROXY, use '' to eliminate all system proxies
+proxy = False
+
+# ID of cinder volume for backup or restore
+volume_id = False
+
+# List the Swift containers on remote Object Storage
+# Server
+list_containers = False
+
+# Checks in the specified container for object older
+# than the specified days.If i.e. 30 is specified, it
+# will remove the remote object older than 30 days.
+# Default False (Disabled)
+remove_older_than = None
+
+# Upload bandwidth limit in Bytes per sec. Can be
+# invoked with dimensions (10K, 120M, 10G).
+upload_limit = -1
+
+# Set backup maximum level used with tar to implement
+# incremental backup. If a level 3 is specified, the
+# backup will be executed from level 0 to level 3 and to
+# that point always a backup level 3 will be executed.
+# It will not restart from level 0. This option has
+# precedence over --max-backup-level. Default False
+always_level = False
+
+# Print out the freezerc client (freezerc) version
+version = False
+
+# Do everything except writing or removing objects
+dry_run = False
+
+# Set the lvm snapshot size when creating a new
+# snapshot. Please add G for Gigabytes or M for
+# Megabytes, i.e. 500M or 8G. Default 5G.
+# WARNING: It is important that the volume snapshot
+# size will not be filled at 100% while executing the backup
+# or the data on the volume snapshot will be currupted.
+# This is an LVM behavior
+lvm_snapsize = False
+
+# Set the absolute path where you want your data
+# restored. Default False
+restore_abs_path = /home/anakin/freezer-restore-test/
+
+# Upload data to the media storage. Default True
+upload = True
+
+# Set the technology to back from. Options are, fs
+# (filesystem), mongo (MongoDB), mysql (MySQL),
+# sqlserver (SQL Server) Default set to fs
+mode = fs
+
+# Set the action to be taken. backup and restore are
+# self explanatory, info is used to retrieve info from
+# the storage media, while admin is used to delete old
+# backups and other admin actions.
+# Possible options: {backup,restore,info,admin}. Default backup.
+action = restore
+
+# Set log file. By default logs to
+# /var/log/freezer.logIf that file is not writable,
+# freezer tries to log to ~/.freezer/freezer.log
+log_file = None

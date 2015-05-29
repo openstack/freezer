@@ -120,6 +120,11 @@ Freezer will automatically add the prefix "freezer_" to the container name,
 where it is provided by the user and doesn't already start with this prefix.
 If no container name is provided, the default is freezer_backups.
 
+The execution arguments can be set from command line and/or config file
+in ini format. there's an example of the job config file available in
+freezer/freezer/specs/job-backup.conf.example. Command line options
+always override the same options in the config file.
+
 Backup
 ------
 
@@ -436,36 +441,39 @@ Miscellanea
 Available options::
 
     $ freezerc
-    usage: freezerc [-h] [--action {backup,restore,info,admin}] [-F SRC_FILE]
-                    [-N BACKUP_NAME] [-m MODE] [-C CONTAINER] [-L] [-l]
-                    [-o OBJECT] [-d DST_FILE] [--lvm-auto-snap LVM_AUTO_SNAP]
-                    [--lvm-srcvol LVM_SRCVOL] [--lvm-snapname LVM_SNAPNAME]
-                    [--lvm-snapsize LVM_SNAPSIZE] [--lvm-dirmount LVM_DIRMOUNT]
-                    [--lvm-volgroup LVM_VOLGROUP] [--max-level MAX_BACKUP_LEVEL]
-                    [--always-level ALWAYS_BACKUP_LEVEL]
-                    [--restart-always-level RESTART_ALWAYS_BACKUP]
+    usage: freezerc [-h] [--config CONFIG] [--action {backup,restore,info,admin}]
+                    [-F PATH_TO_BACKUP] [-N BACKUP_NAME] [-m MODE] [-C CONTAINER]
+                    [-L] [-l] [-o GET_OBJECT] [-d DST_FILE]
+                    [--lvm-auto-snap LVM_AUTO_SNAP] [--lvm-srcvol LVM_SRCVOL]
+                    [--lvm-snapname LVM_SNAPNAME] [--lvm-snapsize LVM_SNAPSIZE]
+                    [--lvm-dirmount LVM_DIRMOUNT] [--lvm-volgroup LVM_VOLGROUP]
+                    [--max-level MAX_LEVEL] [--always-level ALWAYS_LEVEL]
+                    [--restart-always-level RESTART_ALWAYS_LEVEL]
                     [-R REMOVE_OLDER_THAN] [--remove-from-date REMOVE_FROM_DATE]
                     [--no-incremental] [--hostname HOSTNAME]
-                    [--mysql-conf MYSQL_CONF_FILE] [--log-file LOG_FILE]
+                    [--mysql-conf MYSQL_CONF] [--log-file LOG_FILE]
                     [--exclude EXCLUDE]
                     [--dereference-symlink {none,soft,hard,all}] [-U]
-                    [--encrypt-pass-file ENCRYPT_PASS_FILE] [-M MAX_SEG_SIZE]
+                    [--encrypt-pass-file ENCRYPT_PASS_FILE] [-M MAX_SEGMENT_SIZE]
                     [--restore-abs-path RESTORE_ABS_PATH]
                     [--restore-from-host RESTORE_FROM_HOST]
                     [--restore-from-date RESTORE_FROM_DATE] [--max-priority] [-V]
                     [-q] [--insecure] [--os-auth-ver {1,2,3}] [--proxy PROXY]
                     [--dry-run] [--upload-limit UPLOAD_LIMIT]
                     [--volume-id VOLUME_ID] [--download-limit DOWNLOAD_LIMIT]
-                    [--sql-server-conf SQL_SERVER_CONFIG] [--volume VOLUME]
+                    [--sql-server-conf SQL_SERVER_CONF] [--volume VOLUME]
 
     optional arguments:
       -h, --help            show this help message and exit
+      --config CONFIG       Config file abs path. Option arguments are provided
+                            from config file. When config file is used any option
+                            from command line is ignored.
       --action {backup,restore,info,admin}
                             Set the action to be taken. backup and restore are
                             self explanatory, info is used to retrieve info from
                             the storage media, while admin is used to delete old
                             backups and other admin actions. Default backup.
-      -F SRC_FILE, --path-to-backup SRC_FILE, --file-to-backup SRC_FILE
+      -F PATH_TO_BACKUP, --path-to-backup PATH_TO_BACKUP, --file-to-backup PATH_TO_BACKUP
                             The file or directory you want to back up to Swift
       -N BACKUP_NAME, --backup-name BACKUP_NAME
                             The backup name you want to use to identify your
@@ -480,7 +488,7 @@ Available options::
                             Server
       -l, --list-objects    List the Swift objects stored in a container on remote
                             Object Storage Server.
-      -o OBJECT, --get-object OBJECT
+      -o GET_OBJECT, --get-object GET_OBJECT
                             The Object name you want to download on the local file
                             system.
       -d DST_FILE, --dst-file DST_FILE
@@ -507,13 +515,13 @@ Available options::
                             Specify the volume group of your logical volume. This
                             is important to mount your snapshot volume. Default
                             not set
-      --max-level MAX_BACKUP_LEVEL
+      --max-level MAX_LEVEL
                             Set the backup level used with tar to implement
                             incremental backup. If a level 1 is specified but no
                             level 0 is already available, a level 0 will be done
                             and subsequently backs to level 1. Default 0 (No
                             Incremental)
-      --always-level ALWAYS_BACKUP_LEVEL
+      --always-level ALWAYS_LEVEL
                             Set backup maximum level used with tar to implement
                             incremental backup. If a level 3 is specified, the
                             backup will be executed from level 0 to level 3 and to
@@ -521,7 +529,7 @@ Available options::
                             It will not restart from level 0. This option has
                             precedence over --max-backup-level. Default False
                             (Disabled)
-      --restart-always-level RESTART_ALWAYS_BACKUP
+      --restart-always-level RESTART_ALWAYS_LEVEL
                             Restart the backup from level 0 after n days. Valid
                             only if --always-level option if set. If --always-
                             level is used together with --remove-older-then, there
@@ -547,11 +555,9 @@ Available options::
                             belonging to another host then you can set this option
                             that hostname and execute appropriate actions. Default
                             current node hostname.
-      --mysql-conf MYSQL_CONF_FILE
+      --mysql-conf MYSQL_CONF
                             Set the MySQL configuration file where freezer
                             retrieve important information as db_name, user,
-                            password, host, port. Following is an example of
-                            config file: # cat ~/.freezer/backup_mysql_conf host =
                             <db-host> user = <mysqluser> password = <mysqlpass>
                             port = <db-port>
       --log-file LOG_FILE   Set log file. By default logs to
@@ -569,7 +575,7 @@ Available options::
                             Passing a private key to this option, allow you to
                             encrypt the files before to be uploaded in Swift.
                             Default do not encrypt.
-      -M MAX_SEG_SIZE, --max-segment-size MAX_SEG_SIZE
+      -M MAX_SEGMENT_SIZE, --max-segment-size MAX_SEGMENT_SIZE
                             Set the maximum file chunk size in bytes to upload to
                             swift Default 67108864 bytes (64MB)
       --restore-abs-path RESTORE_ABS_PATH
@@ -608,164 +614,9 @@ Available options::
       --download-limit DOWNLOAD_LIMIT
                             Download bandwidth limit in Bytes per sec. Can be
                             invoked with dimensions (10K, 120M, 10G).
-      --sql-server-conf SQL_SERVER_CONFIG
+      --sql-server-conf SQL_SERVER_CONF
                             Set the SQL Server configuration file where freezer
                             retrieve the sql server instance. Following is an
                             example of config file: instance = <db-instance>
       --volume VOLUME       Create a snapshot of the selected volume
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      --action {backup,restore,info,admin}
-                            Set the action to be taken. backup and restore are
-                            self explanatory, info is used to retrieve info from
-                            the storage media, while admin is used to delete old
-                            backups and other admin actions. Default backup.
-      -F SRC_FILE, --path-to-backup SRC_FILE, --file-to-backup SRC_FILE
-                            The file or directory you want to back up to Swift
-      -N BACKUP_NAME, --backup-name BACKUP_NAME
-                            The backup name you want to use to identify your
-                            backup on Swift
-      -m MODE, --mode MODE  Set the technology to back from. Options are, fs
-                            (filesystem), mongo (MongoDB), mysql (MySQL),
-                            sqlserver (SQL Server) Default set to fs
-      -C CONTAINER, --container CONTAINER
-                            The Swift container used to upload files to
-      -L, --list-containers
-                            List the Swift containers on remote Object Storage
-                            Server
-      -l, --list-objects    List the Swift objects stored in a container on remote
-                            Object Storage Server.
-      -o OBJECT, --get-object OBJECT
-                            The Object name you want to download on the local file
-                            system.
-      -d DST_FILE, --dst-file DST_FILE
-                            The file name used to save the object on your local
-                            disk and upload file in swift
-      --lvm-auto-snap LVM_AUTO_SNAP
-                            Automatically guess the volume group and volume name
-                            for given PATH.
-      --lvm-srcvol LVM_SRCVOL
-                            Set the lvm volume you want to take a snaphost from.
-                            Default no volume
-      --lvm-snapname LVM_SNAPNAME
-                            Set the lvm snapshot name to use. If the snapshot name
-                            already exists, the old one will be used a no new one
-                            will be created. Default freezer_backup_snap.
-      --lvm-snapsize LVM_SNAPSIZE
-                            Set the lvm snapshot size when creating a new
-                            snapshot. Please add G for Gigabytes or M for
-                            Megabytes, i.e. 500M or 8G. Default 5G.
-      --lvm-dirmount LVM_DIRMOUNT
-                            Set the directory you want to mount the lvm snapshot
-                            to. Default not set
-      --lvm-volgroup LVM_VOLGROUP
-                            Specify the volume group of your logical volume. This
-                            is important to mount your snapshot volume. Default
-                            not set
-      --max-level MAX_BACKUP_LEVEL
-                            Set the backup level used with tar to implement
-                            incremental backup. If a level 1 is specified but no
-                            level 0 is already available, a level 0 will be done
-                            and subsequently backs to level 1. Default 0 (No
-                            Incremental)
-      --always-level ALWAYS_BACKUP_LEVEL
-                            Set backup maximum level used with tar to implement
-                            incremental backup. If a level 3 is specified, the
-                            backup will be executed from level 0 to level 3 and to
-                            that point always a backup level 3 will be executed.
-                            It will not restart from level 0. This option has
-                            precedence over --max-backup-level. Default False
-                            (Disabled)
-      --restart-always-level RESTART_ALWAYS_BACKUP
-                            Restart the backup from level 0 after n days. Valid
-                            only if --always-level option if set. If --always-
-                            level is used together with --remove-older-then, there
-                            might be the chance where the initial level 0 will be
-                            removed Default False (Disabled)
-      -R REMOVE_OLDER_THAN, --remove-older-then REMOVE_OLDER_THAN, --remove-older-than REMOVE_OLDER_THAN
-                            Checks in the specified container for object older
-                            than the specified days.If i.e. 30 is specified, it
-                            will remove the remote object older than 30 days.
-                            Default False (Disabled) The option --remove-older-
-                            then is deprecated and will be removed soon
-      --remove-from-date REMOVE_FROM_DATE
-                            Checks the specified container and removes objects
-                            older than the provided datetime in the form "YYYY-MM-
-                            DDThh:mm:ss i.e. "1974-03-25T23:23:23". Make sure the
-                            "T" is between date and time
-      --no-incremental      Disable incremental feature. By default freezer build
-                            the meta data even for level 0 backup. By setting this
-                            option incremental meta data is not created at all.
-                            Default disabled
-      --hostname HOSTNAME   Set hostname to execute actions. If you are executing
-                            freezer from one host but you want to delete objects
-                            belonging to another host then you can set this option
-                            that hostname and execute appropriate actions. Default
-                            current node hostname.
-      --mysql-conf MYSQL_CONF_FILE
-                            Set the MySQL configuration file where freezer
-                            retrieve important information as db_name, user,
-                            password, host, port. Following is an example of
-                            config file: # cat ~/.freezer/backup_mysql_conf host =
-                            <db-host> user = <mysqluser> password = <mysqlpass>
-                            port = <db-port>
-      --log-file LOG_FILE   Set log file. By default logs to
-                            /var/log/freezer.logIf that file is not writable,
-                            freezer tries to logto ~/.freezer/freezer.log
-      --exclude EXCLUDE     Exclude files, given as a PATTERN.Ex: --exclude
-                            '*.log' will exclude any file with name ending with
-                            .log. Default no exclude
-      --dereference-symlink {none,soft,hard,all}
-                            Follow hard and soft links and archive and dump the
-                            files they refer to. Default False.
-      -U, --upload          Upload to Swift the destination file passed to the -d
-                            option. Default upload the data
-      --encrypt-pass-file ENCRYPT_PASS_FILE
-                            Passing a private key to this option, allow you to
-                            encrypt the files before to be uploaded in Swift.
-                            Default do not encrypt.
-      -M MAX_SEG_SIZE, --max-segment-size MAX_SEG_SIZE
-                            Set the maximum file chunk size in bytes to upload to
-                            swift Default 67108864 bytes (64MB)
-      --restore-abs-path RESTORE_ABS_PATH
-                            Set the absolute path where you want your data
-                            restored. Default False.
-      --restore-from-host RESTORE_FROM_HOST
-                            Set the hostname used to identify the data you want to
-                            restore from. If you want to restore data in the same
-                            host where the backup was executed just type from your
-                            shell: "$ hostname" and the output is the value that
-                            needs to be passed to this option. Mandatory with
-                            Restore Default False.
-      --restore-from-date RESTORE_FROM_DATE
-                            Set the absolute path where you want your data
-                            restored. Please provide datetime in format "YYYY-MM-
-                            DDThh:mm:ss" i.e. "1979-10-03T23:23:23". Make sure the
-                            "T" is between date and time Default False.
-      --max-priority        Set the cpu process to the highest priority (i.e. -20
-                            on Linux) and real-time for I/O. The process priority
-                            will be set only if nice and ionice are installed
-                            Default disabled. Use with caution.
-      -V, --version         Print the release version and exit
-      -q, --quiet           Suppress error messages
-      --insecure            Allow to access swift servers without checking SSL
-                            certs.
-      --os-auth-ver {1,2,3}
-                            Swift auth version, could be 1, 2 or 3
-      --proxy PROXY         Enforce proxy that alters system HTTP_PROXY and
-                            HTTPS_PROXY, use '' to eliminate all system proxies
-      --dry-run             Do everything except writing or removing objects
-      --upload-limit UPLOAD_LIMIT
-                            Upload bandwidth limit in Bytes per sec. Can be
-                            invoked with dimensions (10K, 120M, 10G).
-      --volume-id VOLUME_ID
-                            Id of cinder volume for backup
-      --download-limit DOWNLOAD_LIMIT
-                            Download bandwidth limit in Bytes per sec. Can be
-                            invoked with dimensions (10K, 120M, 10G).
-      --sql-server-conf SQL_SERVER_CONFIG
-                            Set the SQL Server configuration file where freezer
-                            retrieve the sql server instance. Following is an
-                            example of config file: instance = <db-instance>
-      --volume VOLUME       Create a snapshot of the selected volume

@@ -599,6 +599,10 @@ def human2bytes(s):
     set and return the corresponding bytes as an integer.
     When unable to recognize the format ValueError is raised.
     """
+
+    if s in (False, None, '-1'):
+        return -1
+
     init = s
     num = ""
     while s and s[0:1].isdigit() or s[0:1] == '.':

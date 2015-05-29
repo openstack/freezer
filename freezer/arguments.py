@@ -24,6 +24,11 @@ Arguments and general parameters definitions
 import sys
 import os
 import argparse
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
 import logging
 import distutils.spawn as distspawn
 import utils
@@ -32,6 +37,8 @@ import socket
 from freezer.utils import OpenstackOptions
 from freezer.winutils import is_windows
 from os.path import expanduser
+
+
 home = expanduser("~")
 
 
@@ -66,7 +73,55 @@ def backup_arguments(args_dict={}):
     Default arguments and command line options interface. The function return
     a name space called backup_args.
     """
-    arg_parser = argparse.ArgumentParser(prog='freezerc')
+
+    conf_parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False, prog='freezerc')
+
+    conf_parser.add_argument(
+        '--config', action='store', dest='config', default=False,
+        help=("Config file abs path. Option arguments are provided "
+              "from config file. When config file is used any option "
+              "from command line provided take precedence."))
+
+    defaults = {}
+    args, remaining_argv = conf_parser.parse_known_args()
+    if args.config:
+        config = configparser.SafeConfigParser()
+        config.read([args.config])
+        section = config.sections()[0]
+        for option in config.options(section):
+            option_value = config.get(section, option)
+            if option_value in ('False', 'None'):
+                option_value = False
+            defaults[option] = option_value
+    else:
+        defaults = {
+            'os_auth_ver': 2, 'list_objects': False, 'get_object': False,
+            'lvm_auto_snap': False, 'lvm_volgroup': False,
+            'exclude': False, 'sql_server_conf': False,
+            'backup_name': False, 'quiet': False,
+            'container': 'freezer_backups', 'no_incremental': False,
+            'max_segment_size': 67108864, 'lvm_srcvol': False,
+            'download_limit': -1, 'hostname': False, 'remove_from_date': False,
+            'restart_always_level': False, 'lvm_dirmount': False,
+            'dst_file': False, 'dereference_symlink': 'none',
+            'restore_from_host': False, 'config': False, 'mysql_conf': False,
+            'insecure': False, 'lvm_snapname': False, 'max_priority': False,
+            'max_level': False, 'path_to_backup': False,
+            'encrypt_pass_file': False, 'volume': False, 'proxy': False,
+            'volume_id': '', 'list_containers': False,
+            'remove_older_than': None, 'restore_from_date': False,
+            'upload_limit': -1, 'always_level': False, 'version': False,
+            'dry_run': False, 'lvm_snapsize': False,
+            'restore_abs_path': False, 'log_file': None,
+            'upload': True, 'mode': 'fs', 'action': 'backup'}
+
+    # Generate a new argparse istance and inherit options from config parse
+    arg_parser = argparse.ArgumentParser(
+        parents=[conf_parser])
+
     arg_parser.add_argument(
         '--action', choices=['backup', 'restore', 'info', 'admin'],
         help=(
@@ -320,13 +375,16 @@ def backup_arguments(args_dict={}):
         help='Create a snapshot of the selected volume',
         dest='volume', default=False)
 
+    arg_parser.set_defaults(**defaults)
     backup_args = arg_parser.parse_args()
+
     # windows bin
     path_to_binaries = os.path.dirname(os.path.abspath(__file__))
 
     # Intercept command line arguments if you are not using the CLI
     if args_dict:
         backup_args.__dict__.update(args_dict)
+
     # Set additional namespace attributes
     backup_args.__dict__['remote_match_backup'] = []
     backup_args.__dict__['remote_objects'] = []
