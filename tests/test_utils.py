@@ -12,6 +12,7 @@ from freezer.utils import (
 from freezer import utils
 import pytest
 import datetime
+import time
 from commons import *
 
 
@@ -300,7 +301,8 @@ class TestUtils:
         pytest.raises(Exception, OpenstackOptions.create_from_dict, env_dict)
 
     def test_date_to_timestamp(self):
-        assert 1417649003 == date_to_timestamp("2014-12-03T23:23:23")
+        #ensure that timestamp is check with appropriate timezone offset
+        assert (1417649003+time.timezone) == date_to_timestamp("2014-12-03T23:23:23")
 
 
 class TestDateTime:
@@ -313,7 +315,8 @@ class TestDateTime:
         assert isinstance(new_time, DateTime)
 
     def test_timestamp(self):
-        assert 1425750464 == self.datetime.timestamp
+        #ensure that timestamp is check with appropriate timezone offset
+        assert (1425750464+time.timezone) == self.datetime.timestamp
 
     def test_repr(self):
         assert '2015-03-07 17:47:44' == '{}'.format(self.datetime)
@@ -321,11 +324,16 @@ class TestDateTime:
     def test_initialize_int(self):
         d = DateTime(1425750464)
         assert 1425750464 == d.timestamp
-        assert '2015-03-07 17:47:44' == '{}'.format(d)
+        #ensure that time is check with appropriate timezone offset
+        t = time.strftime("%Y-%m-%d %H:%M:%S", 
+              time.localtime((time.mktime(time.strptime("2015-03-07 17:47:44", 
+                                                    "%Y-%m-%d %H:%M:%S")))-time.timezone))
+        assert t == '{}'.format(d)
 
     def test_initialize_string(self):
         d = DateTime('2015-03-07T17:47:44')
-        assert 1425750464 == d.timestamp
+        assert 1425750464        #ensure that timestamp is check with appropriate timezone offset
+        assert (1425750464+time.timezone) == d.timestamp
         assert '2015-03-07 17:47:44' == '{}'.format(d)
 
     def test_sub(self):
