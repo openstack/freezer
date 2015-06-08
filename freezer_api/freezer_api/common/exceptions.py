@@ -23,6 +23,7 @@ Hudson (tjh@cryptsoft.com).
 import falcon
 import logging
 
+
 class FreezerAPIException(falcon.HTTPError):
     """
     Base Freezer API Exception
@@ -73,10 +74,17 @@ class DocumentNotFound(FreezerAPIException):
             title="Not Found",
             description=ex.message)
 
+class AccessForbidden(FreezerAPIException):
+    @staticmethod
+    def handle(ex, req, resp, params):
+        raise falcon.HTTPForbidden(
+            title="Access Forbidden",
+            description=ex.message)
 
 exception_handlers_catalog = [
     BadDataFormat,
     DocumentExists,
     StorageEngineError,
-    DocumentNotFound
+    DocumentNotFound,
+    AccessForbidden
 ]

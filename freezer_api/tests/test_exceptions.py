@@ -14,7 +14,6 @@ class TestExceptions(unittest.TestCase):
         self.ex.message = 'test exception'
         self.mock_req = Mock()
         self.mock_req.context = {}
-        self.exceptions = [e() for e in exceptions.exception_handlers_catalog]
 
     def test_FreezerAPIException(self):
         e = exceptions.FreezerAPIException(message='testing')
@@ -31,7 +30,6 @@ class TestExceptions(unittest.TestCase):
         self.assertRaises(falcon.HTTPConflict,
                           e.handle, self.ex, self.mock_req, self.mock_req, None)
 
-
     def test_StorageEngineError(self):
         e = exceptions.StorageEngineError(message='testing')
         self.assertRaises(falcon.HTTPInternalServerError,
@@ -40,4 +38,9 @@ class TestExceptions(unittest.TestCase):
     def test_DocumentNotFound(self):
         e = exceptions.DocumentNotFound(message='testing')
         self.assertRaises(falcon.HTTPNotFound,
+                          e.handle, self.ex, self.mock_req, self.mock_req, None)
+
+    def test_AccessForbidden(self):
+        e = exceptions.AccessForbidden(message='testing')
+        self.assertRaises(falcon.HTTPForbidden,
                           e.handle, self.ex, self.mock_req, self.mock_req, None)

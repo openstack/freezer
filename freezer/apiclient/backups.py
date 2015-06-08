@@ -22,7 +22,7 @@ Hudson (tjh@cryptsoft.com).
 import json
 import requests
 
-from freezer.apiclient import exceptions
+import exceptions
 
 
 class BackupsManager(object):
@@ -40,8 +40,7 @@ class BackupsManager(object):
                           data=json.dumps(backup_metadata),
                           headers=self.headers)
         if r.status_code != 201:
-            raise exceptions.MetadataCreationFailure(
-                "[*] Error {0}".format(r.status_code))
+            raise exceptions.ApiClientException(r)
         backup_id = r.json()['backup_id']
         return backup_id
 
@@ -49,8 +48,7 @@ class BackupsManager(object):
         endpoint = self.endpoint + backup_id
         r = requests.delete(endpoint, headers=self.headers)
         if r.status_code != 204:
-            raise exceptions.MetadataDeleteFailure(
-                "[*] Error {0}".format(r.status_code))
+            raise exceptions.ApiClientException(r)
 
     def list(self, limit=10, offset=0, search=None):
         """
@@ -70,8 +68,7 @@ class BackupsManager(object):
         r = requests.get(self.endpoint, headers=self.headers,
                          params=query, data=data)
         if r.status_code != 200:
-            raise exceptions.MetadataGetFailure(
-                "[*] Error {0}".format(r.status_code))
+            raise exceptions.ApiClientException(r)
 
         return r.json()['backups']
 
@@ -82,5 +79,4 @@ class BackupsManager(object):
             return r.json()
         if r.status_code == 404:
             return None
-        raise exceptions.MetadataGetFailure(
-            "[*] Error {0}".format(r.status_code))
+        raise exceptions.ApiClientException(r)

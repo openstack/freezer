@@ -19,7 +19,12 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
+import time
 import uuid
+import jsonschema
+
+import json_schemas
+from freezer_api.common import exceptions
 
 
 class BackupMetadataDoc:
@@ -46,13 +51,6 @@ class BackupMetadataDoc:
                 'user_name': self.user_name,
                 'backup_metadata': self.data}
 
-    @staticmethod
-    def un_serialize(d):
-        return BackupMetadataDoc(
-            user_id=d['user_id'],
-            user_name=d['user_name'],
-            data=d['backup_metadata'])
-
     @property
     def backup_set_id(self):
         return '{0}_{1}_{2}'.format(
@@ -70,42 +68,55 @@ class BackupMetadataDoc:
         )
 
 
-class ConfigDoc:
-    """
-    Wraps a config_file dict and adds some utility methods,
-    and fields
-    """
-    def __init__(self, user_id='', user_name='', data={}):
-        self.user_id = user_id
-        self.user_name = user_name
-        self.data = data
-        # self.id = str(uuid.uuid4().hex)
-
-    def is_valid(self):
-        try:
-            assert (self.config_id is not '')
-            assert (self.user_id is not '')
-        except Exception:
-            return False
-        return True
-
-    def serialize(self):
-        return {'config_id': self.config_id,
-                'user_id': self.user_id,
-                'user_name': self.user_name,
-                'config_file': self.data}
+class JobDoc:
+    job_doc_validator = jsonschema.Draft4Validator(
+        schema=json_schemas.job_schema)
+    job_patch_validator = jsonschema.Draft4Validator(
+        schema=json_schemas.job_patch_schema)
 
     @staticmethod
-    def un_serialize(d):
-        return ConfigDoc(
-            user_id=d['user_id'],
-            user_name=d['user_name'],
-            data=d['config_file'])
+    def validate(doc):
+        try:
+            JobDoc.job_doc_validator.validate(doc)
+        except Exception as e:
+            raise exceptions.BadDataFormat(str(e).splitlines()[0])
 
-    @property
-    def config_set_id(self):
-        return {'config_id': str(uuid.uuid4().hex)}
+    @staticmethod
+    def validate_patch(doc):
+        try:
+            JobDoc.job_patch_validator.validate(doc)
+        except Exception as e:
+            raise exceptions.BadDataFormat(str(e).splitlines()[0])
 
-    @property
-    def config_id(self):
-        return str(uuid.uuid4().hex)
+    @staticmethod
+    def create_patch(doc):
+        # changes in user_id or job_id are not allowed
+        doc.pop('user_id', None)
+        doc.pop('job_id', None)
+        JobDoc.validate_patch(doc)
+        return doc
+
+    @staticmethod
+    def create(doc, user_id):
+        job_schedule = doc.get('job_schedule', {})
+        job_schedule.update({
+            'time_created': int(time.time()),
+            'time_started': -1,
+            'time_ended': -1
+        })
+        doc.update({
+            'user_id': user_id,
+            'job_id': uuid.uuid4().hex,
+            'job_schedule': job_schedule
+        })
+        JobDoc.validate(doc)
+        return doc
+
+    @staticmethod
+    def update(doc, user_id, job_id):
+        doc.update({
+            'user_id': user_id,
+            'job_id': job_id,
+        })
+        JobDoc.validate(doc)
+        return doc
