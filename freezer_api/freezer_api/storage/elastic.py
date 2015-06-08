@@ -23,6 +23,8 @@ import elasticsearch
 import logging
 from freezer_api.common.utils import BackupMetadataDoc
 from freezer_api.common.utils import JobDoc
+from freezer_api.common.utils import ActionDoc
+from freezer_api.common.utils import SessionDoc
 from freezer_api.common import exceptions
 
 
@@ -33,16 +35,19 @@ class TypeManager:
         self.doc_type = doc_type
 
     @staticmethod
-    def get_base_search_filter(user_id, search={}):
+    def get_base_search_filter(user_id, search=None):
+        search = search or {}
         user_id_filter = {"term": {"user_id": user_id}}
         base_filter = [user_id_filter]
         match_list = [{"match": m} for m in search.get('match', [])]
         match_not_list = [{"match": m} for m in search.get('match_not', [])]
-        base_filter.append({"query": {"bool": {"must": match_list, "must_not": match_not_list}}})
+        base_filter.append({"query": {"bool": {"must": match_list,
+                                               "must_not": match_not_list}}})
         return base_filter
 
     @staticmethod
-    def get_search_query(user_id, doc_id, search={}):
+    def get_search_query(user_id, doc_id, search=None):
+        search = search or {}
         try:
             base_filter = TypeManager.get_base_search_filter(user_id, search)
             query_filter = {"filter": {"bool": {"must": base_filter}}}
@@ -65,16 +70,19 @@ class TypeManager:
                 message='Get operation failed: {0}'.format(e))
         if doc['user_id'] != user_id:
             raise exceptions.AccessForbidden("Document access forbidden")
+        if '_version' in res:
+            doc['_version'] = res['_version']
         return doc
 
-    def search(self, user_id, doc_id=None, search={}, offset=0, limit=10):
+    def search(self, user_id, doc_id=None, search=None, offset=0, limit=10):
+        search = search or {}
         query_dsl = self.get_search_query(user_id, doc_id, search)
         try:
             res = self.es.search(index=self.index, doc_type=self.doc_type,
                                  size=limit, from_=offset, body=query_dsl)
         except elasticsearch.ConnectionError:
             raise exceptions.StorageEngineError(
-                message='unable to connecto to db server')
+                message='unable to connect to db server')
         except Exception as e:
             raise exceptions.StorageEngineError(
                 message='search operation failed: {0}'.format(e))
@@ -82,11 +90,17 @@ class TypeManager:
         return [x['_source'] for x in hit_list]
 
     def insert(self, doc, doc_id=None):
+        version = doc.pop('_version', 0)
         try:
             res = self.es.index(index=self.index, doc_type=self.doc_type,
-                                body=doc, id=doc_id)
+                                body=doc, id=doc_id, version=version)
             created = res['created']
             version = res['_version']
+        except elasticsearch.TransportError as e:
+            if e.status_code == 409:
+                raise exceptions.DocumentExists(message=e.error)
+            raise exceptions.StorageEngineError(
+                message='index operation failed {0}'.format(e))
         except Exception as e:
             raise exceptions.StorageEngineError(
                 message='index operation failed {0}'.format(e))
@@ -109,7 +123,8 @@ class BackupTypeManager(TypeManager):
         TypeManager.__init__(self, es, doc_type, index=index)
 
     @staticmethod
-    def get_search_query(user_id, doc_id, search={}):
+    def get_search_query(user_id, doc_id, search=None):
+        search = search or {}
         base_filter = TypeManager.get_base_search_filter(user_id, search)
         if doc_id is not None:
             base_filter.append({"term": {"backup_id": doc_id}})
@@ -132,7 +147,8 @@ class ClientTypeManager(TypeManager):
         TypeManager.__init__(self, es, doc_type, index=index)
 
     @staticmethod
-    def get_search_query(user_id, doc_id, search={}):
+    def get_search_query(user_id, doc_id, search=None):
+        search = search or {}
         base_filter = TypeManager.get_base_search_filter(user_id, search)
         if doc_id is not None:
             base_filter.append({"term": {"client_id": doc_id}})
@@ -145,7 +161,8 @@ class JobTypeManager(TypeManager):
         TypeManager.__init__(self, es, doc_type, index=index)
 
     @staticmethod
-    def get_search_query(user_id, doc_id, search={}):
+    def get_search_query(user_id, doc_id, search=None):
+        search = search or {}
         base_filter = TypeManager.get_base_search_filter(user_id, search)
         if doc_id is not None:
             base_filter.append({"term": {"job_id": doc_id}})
@@ -153,18 +170,90 @@ class JobTypeManager(TypeManager):
         return {'query': {'filtered': query_filter}}
 
     def update(self, job_id, job_update_doc):
+        version = job_update_doc.pop('_version', 0)
         update_doc = {"doc": job_update_doc}
         try:
             res = self.es.update(index=self.index, doc_type=self.doc_type,
-                                 id=job_id, body=update_doc)
+                                 id=job_id, body=update_doc, version=version)
             version = res['_version']
-        except elasticsearch.TransportError:
+        except elasticsearch.TransportError as e:
+            if e.status_code == 409:
+                raise exceptions.DocumentExists(message=e.error)
             raise exceptions.DocumentNotFound(
                 message='Unable to find job to update '
-                        'with id {0} '.format(job_id))
+                        'with id {0}. {1}'.format(job_id, e))
         except Exception:
             raise exceptions.StorageEngineError(
                 message='Unable to update job with id {0}'.format(job_id))
+        return version
+
+
+class ActionTypeManager(TypeManager):
+    def __init__(self, es, doc_type, index='freezer'):
+        TypeManager.__init__(self, es, doc_type, index=index)
+
+    @staticmethod
+    def get_search_query(user_id, doc_id, search=None):
+        search = search or {}
+        base_filter = TypeManager.get_base_search_filter(user_id, search)
+        if doc_id is not None:
+            base_filter.append({"term": {"action_id": doc_id}})
+        query_filter = {"filter": {"bool": {"must": base_filter}}}
+        return {'query': {'filtered': query_filter}}
+
+    def update(self, action_id, action_update_doc):
+        version = action_update_doc.pop('_version', 0)
+        update_doc = {"doc": action_update_doc}
+        try:
+            res = self.es.update(index=self.index, doc_type=self.doc_type,
+                                 id=action_id, body=update_doc,
+                                 version=version)
+            version = res['_version']
+        except elasticsearch.TransportError as e:
+            if e.status_code == 409:
+                raise exceptions.DocumentExists(message=e.error)
+            raise exceptions.DocumentNotFound(
+                message='Unable to find action to update '
+                        'with id {0} '.format(action_id))
+        except Exception:
+            raise exceptions.StorageEngineError(
+                message='Unable to update action with'
+                        ' id {0}'.format(action_id))
+        return version
+
+
+class SessionTypeManager(TypeManager):
+    def __init__(self, es, doc_type, index='freezer'):
+        TypeManager.__init__(self, es, doc_type, index=index)
+
+    @staticmethod
+    def get_search_query(user_id, doc_id, search=None):
+        search = search or {}
+        base_filter = TypeManager.get_base_search_filter(user_id, search)
+        if doc_id is not None:
+            base_filter.append({"term": {"session_id": doc_id}})
+        query_filter = {"filter": {"bool": {"must": base_filter}}}
+        return {'query': {'filtered': query_filter}}
+
+    def update(self, session_id, session_update_doc):
+        version = session_update_doc.pop('_version', 0)
+        update_doc = {"doc": session_update_doc}
+        try:
+            res = self.es.update(index=self.index, doc_type=self.doc_type,
+                                 id=session_id, body=update_doc,
+                                 version=version)
+            version = res['_version']
+        except elasticsearch.TransportError as e:
+            if e.status_code == 409:
+                raise exceptions.DocumentExists(message=e.error)
+            raise exceptions.DocumentNotFound(
+                message='Unable to update session {0}. '
+                        '{1}'.format(session_id, e))
+
+        except Exception:
+            raise exceptions.StorageEngineError(
+                message='Unable to update session with '
+                        'id {0}'.format(session_id))
         return version
 
 
@@ -177,9 +266,12 @@ class ElasticSearchEngine(object):
         self.backup_manager = BackupTypeManager(self.es, 'backups')
         self.client_manager = ClientTypeManager(self.es, 'clients')
         self.job_manager = JobTypeManager(self.es, 'jobs')
+        self.action_manager = ActionTypeManager(self.es, 'actions')
+        self.session_manager = SessionTypeManager(self.es, 'sessions')
 
     def get_backup(self, user_id, backup_id=None,
-                   offset=0, limit=10, search={}):
+                   offset=0, limit=10, search=None):
+        search = search or {}
         return self.backup_manager.search(user_id,
                                           backup_id,
                                           search=search,
@@ -204,7 +296,8 @@ class ElasticSearchEngine(object):
         return self.backup_manager.delete(user_id, backup_id)
 
     def get_client(self, user_id, client_id=None,
-                   offset=0, limit=10, search={}):
+                   offset=0, limit=10, search=None):
+        search = search or {}
         return self.client_manager.search(user_id,
                                           client_id,
                                           search=search,
@@ -233,7 +326,8 @@ class ElasticSearchEngine(object):
     def get_job(self, user_id, job_id):
         return self.job_manager.get(user_id, job_id)
 
-    def search_job(self, user_id, offset=0, limit=10, search={}):
+    def search_job(self, user_id, offset=0, limit=10, search=None):
+        search = search or {}
         return self.job_manager.search(user_id,
                                        search=search,
                                        offset=offset,
@@ -277,4 +371,104 @@ class ElasticSearchEngine(object):
         else:
             logging.info('Job {0} replaced with version {1}'.
                          format(job_id, version))
+        return version
+
+    def get_action(self, user_id, action_id):
+        return self.action_manager.get(user_id, action_id)
+
+    def search_action(self, user_id, offset=0, limit=10, search=None):
+        search = search or {}
+        return self.action_manager.search(user_id,
+                                          search=search,
+                                          offset=offset,
+                                          limit=limit)
+
+    def add_action(self, user_id, doc):
+        actiondoc = ActionDoc.create(doc, user_id)
+        action_id = actiondoc['action_id']
+        self.action_manager.insert(actiondoc, action_id)
+        logging.info('Action registered, action id: {0}'.
+                     format(action_id))
+        return action_id
+
+    def delete_action(self, user_id, action_id):
+        return self.action_manager.delete(user_id, action_id)
+
+    def update_action(self, user_id, action_id, patch_doc):
+        valid_patch = ActionDoc.create_patch(patch_doc)
+
+        # check that document exists
+        assert (self.action_manager.get(user_id, action_id))
+
+        version = self.action_manager.update(action_id, valid_patch)
+        logging.info('Action {0} updated to version {1}'.
+                     format(action_id, version))
+        return version
+
+    def replace_action(self, user_id, action_id, doc):
+        # check that no document exists with
+        # same action_id and different user_id
+        try:
+            self.action_manager.get(user_id, action_id)
+        except exceptions.DocumentNotFound:
+            pass
+
+        valid_doc = ActionDoc.update(doc, user_id, action_id)
+
+        (created, version) = self.action_manager.insert(valid_doc, action_id)
+        if created:
+            logging.info('Action {0} created'.format(action_id, version))
+        else:
+            logging.info('Action {0} replaced with version {1}'.
+                         format(action_id, version))
+        return version
+
+    def get_session(self, user_id, session_id):
+        return self.session_manager.get(user_id, session_id)
+
+    def search_session(self, user_id, offset=0, limit=10, search=None):
+        search = search or {}
+        return self.session_manager.search(user_id,
+                                           search=search,
+                                           offset=offset,
+                                           limit=limit)
+
+    def add_session(self, user_id, doc):
+        session_doc = SessionDoc.create(doc, user_id)
+        session_id = session_doc['session_id']
+        self.session_manager.insert(session_doc, session_id)
+        logging.info('Session registered, session id: {0}'.
+                     format(session_id))
+        return session_id
+
+    def delete_session(self, user_id, session_id):
+        return self.session_manager.delete(user_id, session_id)
+
+    def update_session(self, user_id, session_id, patch_doc):
+        valid_patch = SessionDoc.create_patch(patch_doc)
+
+        # check that document exists
+        assert (self.session_manager.get(user_id, session_id))
+
+        version = self.session_manager.update(session_id, valid_patch)
+        logging.info('Session {0} updated to version {1}'.
+                     format(session_id, version))
+        return version
+
+    def replace_session(self, user_id, session_id, doc):
+        # check that no document exists with
+        # same session_id and different user_id
+        try:
+            self.session_manager.get(user_id, session_id)
+        except exceptions.DocumentNotFound:
+            pass
+
+        valid_doc = SessionDoc.update(doc, user_id, session_id)
+
+        (created, version) = self.session_manager.insert(valid_doc, session_id)
+        if created:
+            logging.info('Session {0} created'.format(session_id))
+        else:
+            logging.info('Session {0} replaced with version {1}'.
+                         format(session_id, version))
         return version

@@ -92,7 +92,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'freezerc=freezer.main:freezer_main'
+            'freezer-scheduler=freezer.scheduler.freezer_scheduler:main'
         ]
     },
     data_files=[('freezer/scripts', ['freezer/scripts/vss.ps1']),

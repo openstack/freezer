@@ -7,6 +7,8 @@ python-novaclient>=2.21.0
 docutils>=0.8.1
 pymysql
 pymongo
+apscheduler
+pep3143daemon
 
 [testing]
 pytest

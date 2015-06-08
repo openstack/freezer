@@ -77,8 +77,13 @@ except Exception as err:
 
 
 def main():
+    # quick simple server for testing purposes or simple scenarios
     ip, port = '127.0.0.1', 9090
-    httpd = simple_server.make_server(ip, port, application)
+    if len(sys.argv) > 1:
+        ip = sys.argv[1]
+        if ':' in ip:
+            ip, port = ip.split(':')
+    httpd = simple_server.make_server(ip, int(port), application)
     message = 'Server listening on {0}:{1}'.format(ip, port)
     print message
     logging.info(message)

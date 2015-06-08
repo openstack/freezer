@@ -31,7 +31,7 @@ import os
 import subprocess
 import logging
 import sys
-
+import json
 # Initialize backup options
 (backup_args, arg_parse) = backup_arguments()
 
@@ -124,6 +124,11 @@ def freezer_main(args={}):
 
     freezer_job = job.create_job(backup_args)
     freezer_job.execute()
+
+    if backup_args.metadata_out == '-':
+        metadata = freezer_job.get_metadata()
+        if metadata:
+            sys.stdout.write(json.dumps(metadata))
 
     return backup_args
 

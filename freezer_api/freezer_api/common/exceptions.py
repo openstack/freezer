@@ -32,7 +32,7 @@ class FreezerAPIException(falcon.HTTPError):
 
     def __init__(self, message=''):
         if message:
-            self.message = message
+            self.message = str(message)
         logging.error(message)
         Exception.__init__(self, message)
 
@@ -74,6 +74,7 @@ class DocumentNotFound(FreezerAPIException):
             title="Not Found",
             description=ex.message)
 
+
 class AccessForbidden(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
@@ -81,10 +82,20 @@ class AccessForbidden(FreezerAPIException):
             title="Access Forbidden",
             description=ex.message)
 
+
+class MethodNotImplemented(FreezerAPIException):
+    @staticmethod
+    def handle(ex, req, resp, params):
+        raise falcon.HTTPMethodNotAllowed(
+            title="Bad Method",
+            description=ex.message)
+
+
 exception_handlers_catalog = [
     BadDataFormat,
     DocumentExists,
     StorageEngineError,
     DocumentNotFound,
-    AccessForbidden
+    AccessForbidden,
+    MethodNotImplemented
 ]

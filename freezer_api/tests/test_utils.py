@@ -30,10 +30,10 @@ from common import *
 
 DATA_backup_metadata = {
     "container": "freezer_container",
-    "host_name": "alpha",
+    "hostname": "alpha",
     "backup_name": "important_data_backup",
-    "timestamp": 12341234,
-    "level": 0,
+    "time_stamp": 12341234,
+    "curr_backup_level": 0,
     "backup_session": 12341234,
     "max_level": 5,
     "mode" : "fs",
@@ -65,10 +65,10 @@ DATA_wrapped_backup_metadata = {
     'backup_id': DATA_backup_id,
     'backup_medatada': {
         "container": "freezer_container",
-        "host_name": "alpha",
+        "hostname": "alpha",
         "backup_name": "important_data_backup",
-        "timestamp": 12341234,
-        "level": 0,
+        "time_stamp": 12341234,
+        "curr_backup_level": 0,
         "backup_session": 12341234,
         "max_level": 5,
         "mode": "fs",
@@ -184,3 +184,113 @@ class TestJobDoc(unittest.TestCase):
         self.assertRaises(BadDataFormat, utils.JobDoc.create, job_doc, 'dude')
 
 
+class TestActionDoc(unittest.TestCase):
+
+    def test_validate_ok_when_data_ok(self):
+        action_doc = get_fake_action_0()
+        res = utils.ActionDoc.validate(action_doc)
+        self.assertIsNone(res)
+
+    def test_validate_raises_BadDataFormat_when_doc_has_no_actionid(self):
+        action_doc = get_fake_action_0()
+        action_doc.pop('action_id')
+        self.assertRaises(BadDataFormat, utils.ActionDoc.validate, action_doc)
+
+    def test_validate_raises_BadDataFormat_when_doc_has_no_userid(self):
+        action_doc = get_fake_action_0()
+        action_doc.pop('user_id')
+        self.assertRaises(BadDataFormat, utils.ActionDoc.validate, action_doc)
+
+    def test_validate_raises_BadDataFormat_when_doc_has_invalid_field(self):
+        action_doc = get_fake_action_0()
+        action_doc['action_id'] = 44
+        self.assertRaises(BadDataFormat, utils.ActionDoc.validate, action_doc)
+
+    def test_validate_patch_raises_when_doc_has_invalid_field(self):
+        action_doc = get_fake_action_0()
+        action_doc['action_id'] = 44
+        self.assertRaises(BadDataFormat, utils.ActionDoc.validate_patch, action_doc)
+
+    def test_createpatch_pops_actionid_and_userid(self):
+        action_doc = get_fake_action_0()
+        res_doc = utils.ActionDoc.create_patch(action_doc)
+        self.assertFalse('action_id' in res_doc)
+        self.assertFalse('user_id' in res_doc)
+
+    def test_createpatch_raises_BadDataFormat_when_patch_has_invalid_field(self):
+        action_doc = get_fake_action_0()
+        action_doc['action'] = 44
+        self.assertRaises(BadDataFormat, utils.ActionDoc.create_patch, action_doc)
+
+    @patch('freezer_api.common.utils.uuid')
+    def test_create_inserts_correct_uuid(self, mock_uuid):
+        mock_uuid.uuid4.return_value = mock_uuid
+        mock_uuid.hex = 'hotforteacher'
+        action_doc = get_fake_action_0()
+        res_doc = utils.ActionDoc.create(action_doc, 'dude')
+        self.assertEqual(res_doc['user_id'], 'dude')
+        self.assertEqual(res_doc['action_id'], 'hotforteacher')
+
+    @patch('freezer_api.common.utils.uuid')
+    def test_create_raises_BadDataFormat_when_isvalid_fails(self, mock_uuid):
+        mock_uuid.uuid4.return_value = mock_uuid
+        mock_uuid.hex = 'hotforteacher'
+        action_doc = get_fake_action_0()
+        action_doc['action'] = 44
+        self.assertRaises(BadDataFormat, utils.ActionDoc.create, action_doc, 'dude')
+
+
+class TestSessionDoc(unittest.TestCase):
+
+    def test_validate_ok_when_data_ok(self):
+        session_doc = get_fake_session_0()
+        res = utils.SessionDoc.validate(session_doc)
+        self.assertIsNone(res)
+
+    def test_validate_raises_BadDataFormat_when_doc_has_no_sessionid(self):
+        session_doc = get_fake_session_0()
+        session_doc.pop('session_id')
+        self.assertRaises(BadDataFormat, utils.SessionDoc.validate, session_doc)
+
+    def test_validate_raises_BadDataFormat_when_doc_has_no_userid(self):
+        session_doc = get_fake_session_0()
+        session_doc.pop('user_id')
+        self.assertRaises(BadDataFormat, utils.SessionDoc.validate, session_doc)
+
+    def test_validate_raises_BadDataFormat_when_doc_has_invalid_field(self):
+        session_doc = get_fake_session_0()
+        session_doc['session_id'] = 44
+        self.assertRaises(BadDataFormat, utils.SessionDoc.validate, session_doc)
+
+    def test_validate_patch_raises_when_doc_has_invalid_field(self):
+        session_doc = get_fake_session_0()
+        session_doc['session_id'] = 44
+        self.assertRaises(BadDataFormat, utils.SessionDoc.validate_patch, session_doc)
+
+    def test_createpatch_pops_sessionid_and_userid(self):
+        session_doc = get_fake_session_0()
+        res_doc = utils.SessionDoc.create_patch(session_doc)
+        self.assertFalse('session_id' in res_doc)
+        self.assertFalse('user_id' in res_doc)
+
+    def test_createpatch_raises_BadDataFormat_when_patch_has_invalid_field(self):
+        session_doc = get_fake_session_0()
+        session_doc['session_tag'] = 'ouch'
+        self.assertRaises(BadDataFormat, utils.SessionDoc.create_patch, session_doc)
+
+    @patch('freezer_api.common.utils.uuid')
+    def test_create_inserts_correct_uuid(self, mock_uuid):
+        mock_uuid.uuid4.return_value = mock_uuid
+        mock_uuid.hex = 'hotforteacher'
+        session_doc = get_fake_session_0()
+        res_doc = utils.SessionDoc.create(session_doc, 'dude')
+        self.assertEqual(res_doc['user_id'], 'dude')
+        self.assertEqual(res_doc['session_id'], 'hotforteacher')
+
+    @patch('freezer_api.common.utils.uuid')
+    def test_create_raises_BadDataFormat_when_isvalid_fails(self, mock_uuid):
+        mock_uuid.uuid4.return_value = mock_uuid
+        mock_uuid.hex = 'hotforteacher'
+        session_doc = get_fake_session_0()
+        session_doc['time_started'] = 'ouch'
+        self.assertRaises(BadDataFormat, utils.SessionDoc.create, session_doc, 'dude')

@@ -19,6 +19,8 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
+import sys
+
 from freezer import swift
 from freezer import utils
 from freezer import backup
@@ -34,6 +36,9 @@ class Job:
 
     def execute(self):
         logging.info('[*] Action not implemented')
+
+    def get_metadata(self):
+        return None
 
     @staticmethod
     def executemethod(func):
@@ -114,6 +119,25 @@ class BackupJob(Job):
                 self.conf, self.time_stamp, manifest_meta_dict)
         else:
             raise ValueError('Please provide a valid backup mode')
+
+    def get_metadata(self):
+        metadata = {
+            'current_level': self.conf.curr_backup_level,
+            'fs_real_path': (self.conf.lvm_auto_snap or
+                             self.conf.path_to_backup),
+            'vol_snap_path':
+                self.conf.path_to_backup if self.conf.lvm_auto_snap else '',
+            'client_os': sys.platform,
+            'client_version': self.conf.__version__
+        }
+        fields = ['action', 'always_level', 'backup_media', 'backup_name',
+                  'container', 'container_segments', 'curr_backup_level',
+                  'dry_run', 'hostname', 'path_to_backup', 'max_level',
+                  'mode', 'meta_data_file', 'backup_name', 'hostname',
+                  'time_stamp', 'curr_backup_level']
+        for field_name in fields:
+            metadata[field_name] = self.conf.__dict__.get(field_name, '')
+        return metadata
 
 
 class RestoreJob(Job):

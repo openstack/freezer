@@ -451,12 +451,9 @@ def get_newest_backup(hostname, backup_name, remote_match_backup):
         raise Exception("remote match backups are empty")
     sorted_backups_list = sort_backup_list(remote_match_backup)
 
-    print sorted_backups_list
-
     for remote_obj in sorted_backups_list:
         obj_name_match = re.search(r'^{0}_({1})_(\d+)_\d+?$'.format(
             hostname, backup_name), remote_obj, re.I)
-        print obj_name_match
         if not obj_name_match:
             continue
         tar_metadata_obj = 'tar_metadata_{0}'.format(remote_obj)

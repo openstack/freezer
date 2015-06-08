@@ -26,6 +26,8 @@ from openstackclient.identity import client as os_client
 from backups import BackupsManager
 from registration import RegistrationManager
 from jobs import JobManager
+from actions import ActionManager
+from sessions import SessionManager
 
 import exceptions
 
@@ -64,6 +66,8 @@ class Client(object):
         self.backups = BackupsManager(self)
         self.registration = RegistrationManager(self)
         self.jobs = JobManager(self)
+        self.actions = ActionManager(self)
+        self.sessions = SessionManager(self)
 
     @cached_property
     def endpoint(self):

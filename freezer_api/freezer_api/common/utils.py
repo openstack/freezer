@@ -55,7 +55,7 @@ class BackupMetadataDoc:
     def backup_set_id(self):
         return '{0}_{1}_{2}'.format(
             self.data['container'],
-            self.data['host_name'],
+            self.data['hostname'],
             self.data['backup_name']
         )
 
@@ -63,8 +63,8 @@ class BackupMetadataDoc:
     def backup_id(self):
         return '{0}_{1}_{2}'.format(
             self.backup_set_id,
-            self.data['timestamp'],
-            self.data['level']
+            self.data['time_stamp'],
+            self.data['curr_backup_level']
         )
 
 
@@ -119,4 +119,103 @@ class JobDoc:
             'job_id': job_id,
         })
         JobDoc.validate(doc)
+        return doc
+
+
+class ActionDoc:
+    action_doc_validator = jsonschema.Draft4Validator(
+        schema=json_schemas.action_schema)
+    action_patch_validator = jsonschema.Draft4Validator(
+        schema=json_schemas.action_patch_schema)
+
+    @staticmethod
+    def validate(doc):
+        try:
+            ActionDoc.action_doc_validator.validate(doc)
+        except Exception as e:
+            raise exceptions.BadDataFormat(str(e).splitlines()[0])
+
+    @staticmethod
+    def validate_patch(doc):
+        try:
+            ActionDoc.action_patch_validator.validate(doc)
+        except Exception as e:
+            raise exceptions.BadDataFormat(str(e).splitlines()[0])
+
+    @staticmethod
+    def create_patch(doc):
+        # changes in user_id or action_id are not allowed
+        doc.pop('user_id', None)
+        doc.pop('action_id', None)
+        ActionDoc.validate_patch(doc)
+        return doc
+
+    @staticmethod
+    def create(doc, user_id):
+        doc.update({
+            'user_id': user_id,
+            'action_id': uuid.uuid4().hex,
+        })
+        ActionDoc.validate(doc)
+        return doc
+
+    @staticmethod
+    def update(doc, user_id, action_id):
+        doc.update({
+            'user_id': user_id,
+            'action_id': action_id,
+        })
+        ActionDoc.validate(doc)
+        return doc
+
+
+class SessionDoc:
+    session_doc_validator = jsonschema.Draft4Validator(
+        schema=json_schemas.session_schema)
+    session_patch_validator = jsonschema.Draft4Validator(
+        schema=json_schemas.session_patch_schema)
+
+    @staticmethod
+    def validate(doc):
+        try:
+            SessionDoc.session_doc_validator.validate(doc)
+        except Exception as e:
+            raise exceptions.BadDataFormat(str(e).splitlines()[0])
+
+    @staticmethod
+    def validate_patch(doc):
+        try:
+            SessionDoc.session_patch_validator.validate(doc)
+        except Exception as e:
+            raise exceptions.BadDataFormat(str(e).splitlines()[0])
+
+    @staticmethod
+    def create_patch(doc):
+        # changes in user_id or session_id are not allowed
+        doc.pop('user_id', None)
+        doc.pop('session_id', None)
+        SessionDoc.validate_patch(doc)
+        return doc
+
+    @staticmethod
+    def create(doc, user_id, hold_off=30):
+        doc.update({
+            'user_id': user_id,
+            'session_id': uuid.uuid4().hex,
+            'session_tag': 0,
+            'status': 'active',
+            'last_start': '',
+            'jobs': []
+        })
+        doc['hold_off'] = doc.get('hold_off', hold_off)
+        SessionDoc.validate(doc)
+        return doc
+
+    @staticmethod
+    def update(doc, user_id, session_id):
+        doc.update({
+            'user_id': user_id,
+            'session_id': session_id,
+        })
+        SessionDoc.validate(doc)
         return doc

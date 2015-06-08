@@ -88,6 +88,13 @@ class TestRegistrationManager(unittest.TestCase):
         self.assertIsNone(retval)
 
     @patch('freezer.apiclient.registration.requests')
+    def test_get_raises_ApiClientException_on_error_not_404(self, mock_requests):
+        mock_response = Mock()
+        mock_response.status_code = 500
+        mock_requests.get.return_value = mock_response
+        self.assertRaises(exceptions.ApiClientException, self.r.get, 'test_client_id')
+
+    @patch('freezer.apiclient.registration.requests')
     def test_list_ok(self, mock_requests):
         mock_response = Mock()
         mock_response.status_code = 200

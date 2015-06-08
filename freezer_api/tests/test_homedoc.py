@@ -1,6 +1,6 @@
 """Freezer swift.py related tests
 
-Copyright 2014 Hewlett-Packard
+Copyright 2015 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

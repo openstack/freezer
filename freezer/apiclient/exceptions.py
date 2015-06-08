@@ -67,4 +67,8 @@ class ApiClientException(Exception):
         message = self.get_message_from_api_response(r) or \
             self.get_message_from_response(r) or \
             str(r)
+        try:
+            self.status_code = r.status_code
+        except:
+            self.status_code = None
         super(ApiClientException, self).__init__(message)

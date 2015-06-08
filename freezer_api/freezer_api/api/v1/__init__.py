@@ -19,10 +19,13 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
+from freezer_api.api.v1 import actions
 from freezer_api.api.v1 import backups
 from freezer_api.api.v1 import clients
-from freezer_api.api.v1 import jobs
 from freezer_api.api.v1 import homedoc
+from freezer_api.api.v1 import jobs
+from freezer_api.api.v1 import sessions
+
 
 VERSION = {
     'id': '1',
@@ -59,4 +62,23 @@ def public_endpoints(storage_driver):
 
         ('/jobs/{job_id}',
          jobs.JobsResource(storage_driver)),
+
+        ('/actions',
+         actions.ActionsCollectionResource(storage_driver)),
+
+        ('/actions/{action_id}',
+         actions.ActionsResource(storage_driver)),
+
+        ('/sessions',
+         sessions.SessionsCollectionResource(storage_driver)),
+
+        ('/sessions/{session_id}',
+         sessions.SessionsResource(storage_driver)),
+
+        ('/sessions/{session_id}/action',
+         sessions.SessionsAction(storage_driver)),
+
+        ('/sessions/{session_id}/jobs/{job_id}',
+         sessions.SessionsJob(storage_driver)),
+
     ]

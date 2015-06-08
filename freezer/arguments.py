@@ -64,7 +64,7 @@ DEFAULT_PARAMS = {
     'restore_abs_path': False, 'log_file': None,
     'upload': True, 'mode': 'fs', 'action': 'backup',
     'vssadmin': True, 'shadow': '', 'shadow_path': '',
-    'windows_volume': '', 'command': None
+    'windows_volume': '', 'command': None, 'metadata_out': False
 }
 
 
@@ -268,6 +268,12 @@ def backup_arguments(args_dict={}):
         password = <mysqlpass>
         port     = <db-port>''',
         dest='mysql_conf', default=False)
+    arg_parser.add_argument(
+        '--metadata-out', action='store',
+        help=('Set the filename to which write the metadata regarding '
+              'the backup metrics. Use "-" to output to standard output.'),
+        dest='metadata_out', default=False)
+
     if is_windows():
         arg_parser.add_argument(
             '--log-file', action='store',

@@ -1,0 +1,6 @@
+oslo.config
+oslo.i18n
+keystonemiddleware
+jsonschema
+elasticsearch
+falcon>=0.2.0

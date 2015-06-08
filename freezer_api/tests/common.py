@@ -34,10 +34,10 @@ fake_data_0_wrapped_backup_metadata = {
     'user_name': 'asdffdsa',
     'backup_metadata': {
         "container": "freezer_container",
-        "host_name": "alpha",
+        "hostname": "alpha",
         "backup_name": "important_data_backup",
-        "timestamp": 8475903425,
-        "level": 0,
+        "time_stamp": 8475903425,
+        "curr_backup_level": 0,
         "backup_session": 8475903425,
         "max_level": 5,
         "mode" : "fs",
@@ -60,10 +60,10 @@ fake_data_0_wrapped_backup_metadata = {
 
 fake_data_0_backup_metadata = {
     "container": "freezer_container",
-    "host_name": "alpha",
+    "hostname": "alpha",
     "backup_name": "important_data_backup",
-    "timestamp": 8475903425,
-    "level": 0,
+    "time_stamp": 8475903425,
+    "curr_backup_level": 0,
     "backup_session": 8475903425,
     "max_level": 5,
     "mode": "fs",
@@ -84,10 +84,10 @@ fake_data_0_backup_metadata = {
 }
 
 fake_malformed_data_0_backup_metadata = {
-    "host_name": "alpha",
+    "hostname": "alpha",
     "backup_name": "important_data_backup",
-    "timestamp": 8475903425,
-    "level": 0,
+    "time_stamp": 8475903425,
+    "curr_backup_level": 0,
     "backup_session": 8475903425,
     "max_level": 5,
     "mode": "fs",
@@ -123,10 +123,10 @@ fake_data_0_elasticsearch_hit = {
                 "_type": "backups",
                 "_source": {
                     "container": "freezer_container",
-                    "host_name": "alpha",
+                    "hostname": "alpha",
                     "backup_name": "important_data_backup",
-                    "timestamp": 8475903425,
-                    "level": 0,
+                    "time_stamp": 8475903425,
+                    "curr_backup_level": 0,
                     "backup_session": 8475903425,
                     "max_level": 5,
                     "mode" : "fs",
@@ -180,33 +180,57 @@ fake_job_0_elasticsearch_not_found = {
     "found": False
 }
 
+
 fake_job_0 = {
-  "job_action": {
-      "action": "backup",
-      "mode": "fs",
-      "src_file": "/home/tylerdurden/project_mayhem",
-      "backup_name": "project_mayhem_backup",
-      "container": "my_backup_container"
-  },
-  "job_schedule": {
-    "time_created": 1234,
-    "time_started": 1234,
-    "time_ended": 1234,
-    "status": "stop",
-    "schedule_date": "2015-06-02T16:20:00",
-    "schedule_interval": "2 days"
-  },
-  "job_id": "e7181e5e-2c75-43f8-92c0-c037ae5f11e4",
-  "client_id": "mytenantid_myhostname",
-  "user_id": "f4db4da085f043059441565720b217c7",
-  "description": "test action 4"
+    "job_actions": [
+        {
+            "freezer_action": {
+                "action": "backup",
+                "mode": "fs",
+                "src_file": "/home/tylerdurden/project_mayhem",
+                "backup_name": "project_mayhem_backup",
+                "container": "my_backup_container"
+            },
+            "max_retries": 3,
+            "max_retries_interval": 60,
+            "mandatory": False
+        },
+        {
+            "freezer_action": {
+                "action": "restore",
+                "mode": "fs",
+                "restore_abs_path": "/home/tylerdurden/project_mayhem",
+                "restore_from_host": "node_on_which_backup_was_made",
+                "backup_name": "project_mayhem_backup",
+                "container": "my_backup_container"
+            },
+            "max_retries": 3,
+            "max_retries_interval": 60,
+            "mandatory": True
+        }
+    ],
+    "job_schedule": {
+        "time_created": 1234,
+        "time_started": 1234,
+        "time_ended": 1234,
+        "status": "stop",
+        "result": "success",
+        "schedule_date": "2015-06-02T16:20:00",
+        "schedule_interval": "2 days"
+    },
+    "job_id": "e7181e5e-2c75-43f8-92c0-c037ae5f11e4",
+    "client_id": "mytenantid_myhostname",
+    "user_id": "f4db4da085f043059441565720b217c7",
+    "description": "test action 4"
 }
 
 def get_fake_job_0():
     return copy.deepcopy(fake_job_0)
 
 def get_fake_job_1():
-    return copy.deepcopy(fake_job_1)
+    job = copy.deepcopy(fake_job_0)
+    job["job_id"] = 'pqoqurioew'
+    return job
 
 fake_job_0_elasticsearch_found = {
     "_id": "e7181e5e-2c75-43f8-92c0-c037ae5f11e4",
@@ -218,61 +242,16 @@ fake_job_0_elasticsearch_found = {
 }
 
 
-fake_job_1 = {
-  "job_action": {
-      "action": "backup",
-      "mode": "fs",
-      "src_file": "/home/tylerdurden/project_mayhem",
-      "backup_name": "project_mayhem_backup",
-      "container": "my_backup_container",
-  },
-  "job_schedule": {
-    "time_created": 1234,
-    "time_started": 1234,
-    "time_ended": 0,
-    "status": "invalid",
-    "schedule_time": "2015-06-02T16:20:00"
-  },
-  "job_id": "1b05e367-7832-42df-850e-bc48eabee04e",
-  "client_id": "mytenantid_myhostname",
-  "user_id": "f4db4da085f043059441565720b217c7",
-  "description": "test action 4"
-}
-
-# fake_action_1 = {
-#             "action_id": "1b05e367-7832-42df-850e-bc48eabee04e",
-#             "client_id": "mytenantid_myhostname",
-#             "description": "test action 4",
-#             "job": {
-#                 "action": "restore",
-#                 "backup-name": "project_mayhem_backup",
-#                 "container": "my_backup_container",
-#                 "max_cpu_priority": True,
-#                 "restore-abs-path": "/home/tylerdurden/project_mayhem",
-#                 "restore-from-host": "another_host"
-#             },
-#             "status": "pending",
-#             "time_created": 1431100962,
-#             "time_end": 0,
-#             "time_start": 0
-# }
-#
-# fake_action_1_doc = {
-#         "action": fake_action_1,
-#         "user_id": "f4db4da085f043059441565720b217c7"
-#     }
-#
-#
 fake_data_1_wrapped_backup_metadata = {
     'backup_id': 'freezer_container_alpha_important_data_backup_125235431_1',
     'user_id': 'qwerty1234',
     'user_name': 'asdffdsa',
     'backup_metadata': {
         "container": "freezer_container",
-        "host_name": "alpha",
+        "hostname": "alpha",
         "backup_name": "important_data_backup",
-        "timestamp": 125235431,
-        "level": 1,
+        "time_stamp": 125235431,
+        "curr_backup_level": 1,
         "backup_session": 8475903425,
         "max_level": 5,
         "mode" : "fs",
@@ -314,6 +293,117 @@ fake_client_entry_1 = {
   "client" : fake_client_info_0,
   "user_id": "user_id-is-provided-keystone"
 }
+
+
+fake_action_0 = {
+    "freezer_action":
+        {
+            "action": "backup",
+            "mode": "fs",
+            "src_file": "/home/tylerdurden/project_mayhem",
+            "backup_name": "project_mayhem_backup",
+            "container": "my_backup_container",
+        },
+    "exit_status": "success",
+    "max_retries": 3,
+    "max_retries_interval": 60,
+    "mandatory": True,
+
+    "action_id": "qwerqwerqwerrewq",
+    "user_id": "user_id-is-provided-by-keystone"
+}
+
+
+fake_action_1 = {
+    "freezer_action":
+        {
+            "action": "backup",
+            "mode": "fs",
+            "src_file": "/home/tylerdurden/project_mayhem",
+            "backup_name": "project_mayhem_backup",
+            "container": "my_backup_container",
+        },
+    "exit_status": "success",
+    "max_retries": 3,
+    "max_retries_interval": 60,
+    "mandatory": True,
+
+    "action_id": "jk4lkjbn4r3k",
+    "user_id": "user_id-is-provided-by-keystone"
+}
+
+
+def get_fake_action_0():
+    return copy.deepcopy(fake_action_0)
+
+
+def get_fake_action_1():
+    return copy.deepcopy(fake_action_1)
+
+
+fake_session_0 = {
+    "session_id": 'turistidellademocrazia',
+    "session_tag": 5,
+    "description": 'some text here',
+    "hold_off": 60,
+    "schedule": {
+        "time_created": 1234,
+        "time_started": 1234,
+        "time_ended": 0,
+        "status": "invalid",
+        "schedule_time": "2015-06-02T16:20:00"
+    },
+    "jobs": {
+        'venerescollataincorpodalolita': {
+            "client_id": 'bruco',
+            "status": 'running',
+            "start_time": 12344321,
+        },
+        'job_id_2': {
+            "client_id": "cocktail",
+            "status": 'completed',
+            "result": 'success',
+            "start_time": 123321,
+            "end_time": 123325,
+        }
+    },
+    "time_start": 123412344,
+    "time_end": 432234432,
+    "status": "running",
+    "user_id": "califfo"
+}
+
+fake_session_1 = {
+    "session_id": 'turistidellademocrazia',
+    "session_tag": 5,
+    "description": 'some text here',
+    "hold_off": 60,
+    "schedule": {
+        "time_created": 1234,
+        "time_started": 1234,
+        "time_ended": 0,
+        "status": "invalid",
+        "schedule_time": "2015-06-02T16:20:00"
+    },
+    "jobs": {
+        'venerescollataincorpodalolita': {
+            "client_id": 'bruco',
+            "status": 'running',
+            "start_time": 12344321,
+        }
+    },
+    "time_start": 123412344,
+    "time_end": 432234432,
+    "status": "running",
+    "user_id": "califfo"
+}
+
+
+def get_fake_session_0():
+    return copy.deepcopy(fake_session_0)
+
+def get_fake_session_1():
+    return copy.deepcopy(fake_session_1)
 
 
 class FakeReqResp:
