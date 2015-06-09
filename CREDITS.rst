@@ -19,6 +19,7 @@ Contributors
 -  Coleman Corrigan
 -  Guillermo Ramirez Garcia
 -  Zahari Zahariev
+-  Eldar Nugaev
 
 Credits
 =======

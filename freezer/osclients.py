@@ -6,9 +6,9 @@ from utils import ReSizeStream
 
 
 class ClientManager:
-    def __init__(self, options, insecure,
-                 download_bytes_per_sec, upload_bytes_per_sec,
-                 swift_auth_version, dry_run):
+    def __init__(self, options, insecure=True,
+                 download_bytes_per_sec=-1, upload_bytes_per_sec=-1,
+                 swift_auth_version=2, dry_run=False):
         """
         Creates manager of connections to swift, nova, glance and cinder
         :param options: OpenstackOptions
@@ -143,7 +143,6 @@ class ClientManager:
     def provide_snapshot(self, volume, snapshot_name):
         """
         Creates snapshot for cinder volume with --force parameter
-        :param client_manager: Manager os clients
         :param volume: volume object for snapshoting
         :param snapshot_name: name of snapshot
         :return: snapshot object

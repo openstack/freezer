@@ -56,8 +56,6 @@ def create_containers(backup_opt):
             backup_opt.container_segments))
     sw_connector.put_container(backup_opt.container_segments)
 
-    return True
-
 
 def show_containers(backup_opt_dict):
     """
@@ -429,8 +427,6 @@ def object_to_file(backup_opt_dict, file_name_abs_path):
                 backup_opt_dict.container, file_name,
                 resp_chunk_size=16000000)[1]:
             obj_fd.write(obj_chunk)
-
-    return True
 
 
 def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):

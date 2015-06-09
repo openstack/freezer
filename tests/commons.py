@@ -32,18 +32,6 @@ class FakeTime:
         return True
 
 
-class FakeValidate:
-
-    def __init__(self):
-        return None
-
-    def validate_all_args_false(self, *args, **kwargs):
-        return False
-
-    def validate_any_args_false(self, *args, **kwargs):
-        return False
-
-
 class FakeLogging:
 
     def __init__(self):
@@ -165,6 +153,9 @@ class FakeArgparse:
 
         @classmethod
         def set_defaults(self, *args, **kwargs):
+            for k, v in kwargs.iteritems():
+                if k not in self.__dict__:
+                    self.__dict__[k] = v
             return self
 
 
@@ -510,7 +501,7 @@ class FakeSubProcess6:
 
 class Lvm:
     def __init__(self):
-        return None
+        pass
 
     def lvm_snap_remove(self, opt1=True):
         return True
@@ -525,12 +516,24 @@ class FakeIdObject:
         self.status = "available"
         self.size = 10
         self.min_disk = 10
+        self.created_at = 1234
 
 
 class FakeCinderClient:
     def __init__(self):
         self.volumes = FakeCinderClient.Volumes()
         self.volume_snapshots = FakeCinderClient.VolumeSnapshot
+        self.backups = FakeCinderClient.Backups()
+
+    class Backups:
+        def __init__(self):
+            pass
+
+        def create(self, id, container, name, desription):
+            pass
+
+        def findall(self, **kwargs):
+            return [FakeIdObject(4)]
 
     class Volumes:
         def __init__(self):
@@ -715,6 +718,7 @@ class BackupOpt1:
         fakeconnector = fakeclient.client()
         fakeswclient = fakeconnector.Connection()
         self.mysql_conf = '/tmp/freezer-test-conf-file'
+        self.backup_media = 'fs'
         self.mysql_db_inst = FakeMySQLdb()
         self.lvm_auto_snap = '/dev/null'
         self.lvm_volgroup = 'testgroup'
@@ -794,14 +798,16 @@ class BackupOpt1:
         self.upload_limit = -1
         self.download_limit = -1
         self.sql_server_instance = 'Sql Server'
-        self.volume_id = ''
-        self.instance_id = ''
+        self.cinder_vol_id = ''
+        self.cindernative_vol_id = ''
+        self.nova_inst_id = ''
         self.options = OpenstackOptions.create_from_dict(os.environ)
         from freezer.osclients import ClientManager
         from mock import Mock
         self.client_manager = ClientManager(None, False, -1, -1, 2, False)
         self.client_manager.get_swift = Mock(
             return_value=FakeSwiftClient().client.Connection())
+        self.client_manager.create_swift = self.client_manager.get_swift
         self.client_manager.get_glance = Mock(return_value=FakeGlanceClient())
         self.client_manager.get_cinder = Mock(return_value=FakeCinderClient())
         nova_client = MagicMock()

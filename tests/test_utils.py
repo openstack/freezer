@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 from freezer.utils import (
-    gen_manifest_meta, validate_all_args, validate_any_args,
+    gen_manifest_meta, validate_all_args,
     sort_backup_list, create_dir, get_match_backup,
-    get_newest_backup, get_rel_oldest_backup, get_abs_oldest_backup,
+    get_newest_backup, get_rel_oldest_backup,
     eval_restart_backup, set_backup_level,
     get_vol_fs_type, check_backup_and_tar_meta_existence,
     add_host_name_ts_level, get_mount_from_path, human2bytes, DateTime,
@@ -50,16 +50,6 @@ class TestUtils:
         assert validate_all_args(elements2) is False
         pytest.raises(Exception, validate_all_args, elements3)
 
-    def test_validate_any_args(self):
-
-        elements1 = ['test1', 'test2', 'test3']
-        elements2 = [None, None, False, None]
-        elements3 = None
-
-        assert validate_any_args(elements1) is True
-        assert validate_any_args(elements2) is False
-        pytest.raises(Exception, validate_any_args, elements3)
-
     def test_sort_backup_list(self):
 
         sorted_backups = sort_backup_list(BackupOpt1())
@@ -76,7 +66,6 @@ class TestUtils:
             assert not (backup_time == max_time and level > max_level)
             max_time = backup_time
             max_level = level
-
 
     def test_create_dir(self, monkeypatch):
 
@@ -128,22 +117,6 @@ class TestUtils:
         backup_opt.__dict__['backup_name'] = ''
         pytest.raises(Exception, get_rel_oldest_backup, backup_opt)
 
-    def test_get_abs_oldest_backup(self):
-
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['remote_match_backup'] = []
-        backup_opt = get_abs_oldest_backup(backup_opt)
-        assert len(backup_opt.remote_abs_oldest) == 0
-
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['remote_match_backup'] = backup_opt.remote_obj_list
-        backup_opt = get_abs_oldest_backup(backup_opt)
-        assert len(backup_opt.remote_abs_oldest) > 0
-
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['backup_name'] = ''
-        pytest.raises(Exception, get_abs_oldest_backup, backup_opt)
-
     def test_eval_restart_backup(self, monkeypatch):
 
         backup_opt = BackupOpt1()
@@ -164,7 +137,6 @@ class TestUtils:
         monkeypatch.setattr(re, 'search', fakere2.search)
         assert eval_restart_backup(backup_opt) is not None
         #pytest.raises(Exception, eval_restart_backup, backup_opt)
-
 
     def test_set_backup_level(self):
 

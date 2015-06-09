@@ -45,7 +45,7 @@ class TestSwift:
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
-        assert create_containers(backup_opt) is True
+        create_containers(backup_opt)
 
     def test_show_containers(self, monkeypatch):
 
@@ -82,7 +82,6 @@ class TestSwift:
         backup_opt.__dict__['list_objects'] = False
         assert show_objects(backup_opt) is False
 
-
     def test__remove_object(self, monkeypatch):
         backup_opt = BackupOpt1()
         fakelogging = FakeLogging()
@@ -105,7 +104,6 @@ class TestSwift:
 
         fakeswclient.num_try = 60
         pytest.raises(Exception, _remove_object, fakeclient, 'container', 'obj_name')
-
 
     def test_remove_object(self, monkeypatch):
         backup_opt = BackupOpt1()
@@ -180,7 +178,6 @@ class TestSwift:
         backup_opt = BackupOpt1()
         backup_opt.container = False
         pytest.raises(Exception, get_container_content, backup_opt)
-
 
     def test_check_container_existance(self, monkeypatch):
 
@@ -261,7 +258,6 @@ class TestSwift:
 
         assert isinstance(get_containers_list(backup_opt), BackupOpt1) is True
 
-
     def test_object_to_file(self, monkeypatch):
 
         backup_opt = BackupOpt1()
@@ -273,7 +269,7 @@ class TestSwift:
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
         file_name_abs_path = '/tmp/test-abs-file-path'
-        assert object_to_file(backup_opt, file_name_abs_path) is True
+        object_to_file(backup_opt, file_name_abs_path)
 
         backup_opt = BackupOpt1()
         backup_opt.container = None

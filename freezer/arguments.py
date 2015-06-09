@@ -24,6 +24,7 @@ Arguments and general parameters definitions
 import sys
 import os
 import argparse
+
 try:
     import configparser
 except ImportError:
@@ -38,8 +39,33 @@ from freezer.utils import OpenstackOptions
 from freezer.winutils import is_windows
 from os.path import expanduser
 
-
 home = expanduser("~")
+
+
+DEFAULT_PARAMS = {
+    'os_auth_ver': 2, 'list_objects': False, 'get_object': False,
+    'lvm_auto_snap': False, 'lvm_volgroup': False,
+    'exclude': False, 'sql_server_conf': False,
+    'backup_name': False, 'quiet': False,
+    'container': 'freezer_backups', 'no_incremental': False,
+    'max_segment_size': 67108864, 'lvm_srcvol': False,
+    'download_limit': -1, 'hostname': False, 'remove_from_date': False,
+    'restart_always_level': False, 'lvm_dirmount': False,
+    'dst_file': False, 'dereference_symlink': 'none',
+    'restore_from_host': False, 'config': False, 'mysql_conf': False,
+    'insecure': False, 'lvm_snapname': False, 'max_priority': False,
+    'max_level': False, 'path_to_backup': False,
+    'encrypt_pass_file': False, 'volume': False, 'proxy': False,
+    'cinder_vol_id': '', 'cindernative_vol_id': '',
+    'nova_inst_id': '', 'list_containers': False,
+    'remove_older_than': None, 'restore_from_date': False,
+    'upload_limit': -1, 'always_level': False, 'version': False,
+    'dry_run': False, 'lvm_snapsize': False,
+    'restore_abs_path': False, 'log_file': None,
+    'upload': True, 'mode': 'fs', 'action': 'backup',
+    'vssadmin': True, 'shadow': '', 'shadow_path': '',
+    'windows_volume': ''
+}
 
 
 def alter_proxy(args_dict):
@@ -85,7 +111,7 @@ def backup_arguments(args_dict={}):
               "from config file. When config file is used any option "
               "from command line provided take precedence."))
 
-    defaults = {}
+    defaults = DEFAULT_PARAMS.copy()
     args, remaining_argv = conf_parser.parse_known_args()
     if args.config:
         config = configparser.SafeConfigParser()
@@ -96,30 +122,6 @@ def backup_arguments(args_dict={}):
             if option_value in ('False', 'None'):
                 option_value = False
             defaults[option] = option_value
-    else:
-        defaults = {
-            'os_auth_ver': 2, 'list_objects': False, 'get_object': False,
-            'lvm_auto_snap': False, 'lvm_volgroup': False,
-            'exclude': False, 'sql_server_conf': False,
-            'backup_name': False, 'quiet': False,
-            'container': 'freezer_backups', 'no_incremental': False,
-            'max_segment_size': 67108864, 'lvm_srcvol': False,
-            'download_limit': -1, 'hostname': False, 'remove_from_date': False,
-            'restart_always_level': False, 'lvm_dirmount': False,
-            'dst_file': False, 'dereference_symlink': 'none',
-            'restore_from_host': False, 'config': False, 'mysql_conf': False,
-            'insecure': False, 'lvm_snapname': False, 'max_priority': False,
-            'max_level': False, 'path_to_backup': False,
-            'encrypt_pass_file': False, 'volume': False, 'proxy': False,
-            'volume_id': '', 'list_containers': False,
-            'remove_older_than': None, 'restore_from_date': False,
-            'upload_limit': -1, 'always_level': False, 'version': False,
-            'dry_run': False, 'lvm_snapsize': False,
-            'restore_abs_path': False, 'log_file': None,
-            'upload': True, 'mode': 'fs', 'action': 'backup',
-            'vssadmin': True, 'shadow': '', 'shadow_path': '',
-            'windows_volume': ''
-        }
 
     # Generate a new argparse istance and inherit options from config parse
     arg_parser = argparse.ArgumentParser(
@@ -355,14 +357,19 @@ def backup_arguments(args_dict={}):
         type=utils.human2bytes,
         default=-1)
     arg_parser.add_argument(
-        "--volume-id", action='store',
+        "--cinder-vol-id", action='store',
         help='Id of cinder volume for backup',
-        dest="volume_id",
+        dest="cinder_vol_id",
         default='')
     arg_parser.add_argument(
-        "--instance-id", action='store',
+        "--nova-inst-id", action='store',
         help='Id of nova instance for backup',
-        dest="instance_id",
+        dest="nova_inst_id",
+        default='')
+    arg_parser.add_argument(
+        "--cindernative-vol-id", action='store',
+        help='Id of cinder volume for native backup',
+        dest="cindernative_vol_id",
         default='')
     arg_parser.add_argument(
         '--download-limit', action='store',
@@ -423,7 +430,7 @@ def backup_arguments(args_dict={}):
     backup_args.__dict__['curr_backup_level'] = ''
     backup_args.__dict__['manifest_meta_dict'] = ''
     if is_windows():
-        backup_args.__dict__['tar_path'] = '{0}\\bin\\tar.exe'.\
+        backup_args.__dict__['tar_path'] = '{0}\\bin\\tar.exe'. \
             format(path_to_binaries)
     else:
         backup_args.__dict__['tar_path'] = distspawn.find_executable('tar')
@@ -482,7 +489,17 @@ def backup_arguments(args_dict={}):
     # Freezer version
     backup_args.__dict__['__version__'] = '1.1.3'
 
-    backup_args.__dict__['options'] = \
-        OpenstackOptions.create_from_dict(os.environ)
+    backup_args.__dict__['options'] = OpenstackOptions.create_from_env()
+
+    # todo(enugaev) move it to new command line param backup_media
+    backup_media = 'fs'
+    if backup_args.cinder_vol_id:
+        backup_media = 'cinder'
+    elif backup_args.cindernative_vol_id:
+        backup_media = 'cindernative'
+    elif backup_args.nova_inst_id:
+        backup_media = 'nova'
+
+    backup_args.__dict__['backup_media'] = backup_media
 
     return backup_args, arg_parser

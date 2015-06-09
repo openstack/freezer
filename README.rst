@@ -203,35 +203,36 @@ Execute a MySQL backup using lvm snapshot::
 
 Cinder backups
 
-To make a cinder backup you should provide volume-id parameter in arguments.
-Freezer doesn't do any additional checks and assumes that making backup
-of that image will be sufficient to restore your data in future.
+To make a cinder backup you should provide cinder-vol-id or cindernative-vol-id
+parameter in command line arguments. Freezer doesn't do any additional checks
+and assumes that making backup of that image will be sufficient to restore your
+data in future.
 
 Execute a cinder backup::
-    $ freezerc --volume-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezerc --cinder-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Execute a mysql backup with cinder::
 
    $ freezerc --mysql-conf /root/.freezer/freezer-mysql.conf
    --container freezer_mysql-backup-prod --mode mysql
    --backup-name mysql-ops002
-   --volume-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+   --cinder-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Nova backups
 
-To make a nova backup you should provide instance-id parameter in arguments.
+To make a nova backup you should provide nova parameter in arguments.
 Freezer doesn't do any additional checks and assumes that making backup
 of that instance will be sufficient to restore your data in future.
 
 Execute a nova backup::
-    $ freezerc --instance-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezerc --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Execute a mysql backup with nova::
 
    $ freezerc --mysql-conf /root/.freezer/freezer-mysql.conf
    --container freezer_mysql-backup-prod --mode mysql
    --backup-name mysql-ops002
-   --instance-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+   --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 All the freezerc activities are logged into /var/log/freezer.log.
 
@@ -298,13 +299,16 @@ vm. You should implement this steps manually. To create new volume from
 existing content run next command:
 
 Execute a cinder restore::
-    $ freezerc --action restore --volume-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+
+    $ freezerc --action restore --cinder-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezerc --action restore --cindernative-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Nova restore currently creates an instance with content of saved one, but the
 ip address of vm will be different as well as it's id.
 
 Execute a nova restore::
-    $ freezerc --action restore --instance-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+
+    $ freezerc --action restore --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Architecture
 ============
@@ -456,6 +460,39 @@ The hostname of the node where the Freezer perform the backup. This meta
 data is important to identify a backup with a specific node, thus avoid
 possible confusion and associate backup to the wrong node.
 
+Nova and Cinder Backups
+-----------------------
+
+If our data is stored on cinder volume or nova instance disk, we can implement
+file backup using nova snapshots or volume backups.
+
+Nova backups:
+
+If you provide nova argument in parameters freezer assume that all
+necessary data is located on instance disk and it can be successfully stored
+using nova snapshot mechanism.
+
+For example if we want to store our mysql located on instance disk, we
+will execute the same actions like in case of lvm or tar snapshots, but
+we will invoke nova snapshot instead of lvm or tar.
+
+After that we will place snapshot to swift container as dynamic large object.
+
+container/%instance_id%/%timestamp% <- large object with metadata
+container_segments/%instance_id%/%timestamp%/segments...
+
+Restore will create a snapshot from stored data and restore an instance from
+this snapshot. Instance will have different id and old instance should be
+terminated manually.
+
+
+Cinder backups:
+
+Cinder has it's own mechanism for backups and freezer supports it. But it also
+allows create a glance image from volume and upload to swift.
+
+To use standard cinder backups please provide --cindernative-vol-id argument.
+
 
 Miscellanea
 -----------
@@ -464,7 +501,7 @@ Available options::
 
     $ freezerc
 
-    usage: freezerc [-h] [--config CONFIG] [--action {backup,restore,info,admin}]
+          usage: freezerc [-h] [--config CONFIG] [--action {backup,restore,info,admin}]
                     [-F PATH_TO_BACKUP] [-N BACKUP_NAME] [-m MODE] [-C CONTAINER]
                     [-L] [-l] [-o GET_OBJECT] [-d DST_FILE]
                     [--lvm-auto-snap LVM_AUTO_SNAP] [--lvm-srcvol LVM_SRCVOL]
@@ -483,9 +520,10 @@ Available options::
                     [--restore-from-date RESTORE_FROM_DATE] [--max-priority] [-V]
                     [-q] [--insecure] [--os-auth-ver {1,2,3}] [--proxy PROXY]
                     [--dry-run] [--upload-limit UPLOAD_LIMIT]
-                    [--volume-id VOLUME_ID] [--instance-id INSTANCE_ID]
+                    [--cinder-vol-id CINDER_VOL_ID] [--nova-inst-id NOVA_INST_ID]
+                    [--cindernative-vol-id CINDERNATIVE_VOL_ID]
                     [--download-limit DOWNLOAD_LIMIT]
-                    [--sql-server-conf SQL_SERVER_CONF] [--volume VOLUME]
+                    [--sql-server-conf SQL_SERVER_CONF] [--vssadmin VSSADMIN]
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -635,10 +673,12 @@ Available options::
       --upload-limit UPLOAD_LIMIT
                             Upload bandwidth limit in Bytes per sec. Can be
                             invoked with dimensions (10K, 120M, 10G).
-      --volume-id VOLUME_ID
+      --cinder-vol-id CINDER_VOL_ID
                             Id of cinder volume for backup
-      --instance-id INSTANCE_ID
+      --nova-inst-id NOVA_INST_ID
                             Id of nova instance for backup
+      --cindernative-vol-id CINDERNATIVE_VOL_ID
+                            Id of cinder volume for native backup
       --download-limit DOWNLOAD_LIMIT
                             Download bandwidth limit in Bytes per sec. Can be
                             invoked with dimensions (10K, 120M, 10G).
@@ -646,6 +686,5 @@ Available options::
                             Set the SQL Server configuration file where freezer
                             retrieve the sql server instance. Following is an
                             example of config file: instance = <db-instance>
-      --vssadmin VSSADMIN   Create a backup using a snapshot on windows
-                            using vssadmin. Options are: True and False,
-                            default is True
+      --vssadmin VSSADMIN   Create a backup using a snapshot on windows using
+                            vssadmin. Options are: True and False, default is True

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from freezer.backup import backup_mode_mysql, backup_mode_fs, backup_mode_mongo
-from freezer.backup import backup_cinder
+from freezer.backup import BackupOs
 import freezer
 import swiftclient
 import multiprocessing
@@ -189,7 +189,18 @@ class TestBackUP:
         assert backup_mode_mongo(
             backup_opt, 123456789, test_meta) is True
 
+    def test_backup_cinder_by_glance(self):
+        backup_opt = BackupOpt1()
+        backup_opt.volume_id = 34
+        BackupOs(backup_opt.client_manager,
+                 backup_opt.container,
+                 backup_opt.container_segments).backup_cinder_by_glance(
+            backup_opt, 1417649003)
+
     def test_backup_cinder(self):
         backup_opt = BackupOpt1()
         backup_opt.volume_id = 34
-        backup_cinder(backup_opt, 1417649003)
+        BackupOs(backup_opt.client_manager,
+                 backup_opt.container,
+                 backup_opt.container_segments).backup_cinder(
+            backup_opt, 1417649003)

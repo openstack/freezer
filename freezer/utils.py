@@ -1,4 +1,4 @@
-'''
+"""
 Copyright 2014 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 
 Freezer general utils functions
-'''
+"""
 
 import logging
 import os
@@ -30,7 +30,13 @@ import subprocess
 
 
 class OpenstackOptions:
-
+    """
+    Stores credentials for OpenStack API.
+    Can be created using
+    >> create_from_env()
+    or
+    >> create_from_dict(dict)
+    """
     def __init__(self, user_name, tenant_name, auth_url, password,
                  tenant_id=None, region_name=None):
         self.user_name = user_name
@@ -50,6 +56,10 @@ class OpenstackOptions:
         return {'tenant_id': self.tenant_id,
                 'tenant_name': self.tenant_name,
                 'region_name': self.region_name}
+
+    @staticmethod
+    def create_from_env():
+        return OpenstackOptions.create_from_dict(os.environ)
 
     @staticmethod
     def create_from_dict(src_dict):
@@ -168,25 +178,6 @@ def validate_all_args(required_list):
                         .format(required_list, error))
 
     return True
-
-
-def validate_any_args(required_list):
-    '''
-    Ensure ANY of the elements of required_list are True. raise Exception
-    Exception otherwise
-    '''
-
-    try:
-        for element in required_list:
-            if element:
-                return True
-    except Exception as error:
-        err = "[*] Error: validate_any_args: {0} {1}".format(
-            required_list, error)
-        logging.exception(err)
-        raise Exception(err)
-
-    return False
 
 
 def sort_backup_list(backup_opt_dict):
@@ -323,41 +314,6 @@ def get_rel_oldest_backup(backup_opt_dict):
             first_backup_ts = remote_obj_timestamp
 
     backup_opt_dict.remote_rel_oldest = first_backup_name
-    return backup_opt_dict
-
-
-def get_abs_oldest_backup(backup_opt_dict):
-    '''
-    Return from swift, the absolute oldest backup matching the provided
-    backup name and hostname of the node where freezer is executed.
-    The absolute oldest backup correspond the oldest available level 0 backup.
-    '''
-    if not backup_opt_dict.backup_name:
-        err = "[*] Error: please provide a valid backup name in \
-            backup_opt_dict.backup_name"
-        logging.exception(err)
-        raise Exception(err)
-
-    backup_opt_dict.remote_abs_oldest = u''
-    if len(backup_opt_dict.remote_match_backup) == 0:
-        return backup_opt_dict
-
-    backup_timestamp = 0
-    hostname = backup_opt_dict.hostname
-    for remote_obj in backup_opt_dict.remote_match_backup:
-        object_name = remote_obj.get('name', '')
-        obj_name_match = re.search(r'{0}_({1})_(\d+)_(\d+?)$'.format(
-            hostname, backup_opt_dict.backup_name), object_name.lower(), re.I)
-        if not obj_name_match:
-            continue
-        remote_obj_timestamp = int(obj_name_match.group(2))
-        if backup_timestamp == 0:
-            backup_timestamp = remote_obj_timestamp
-
-        if remote_obj_timestamp <= backup_timestamp:
-            backup_timestamp = remote_obj_timestamp
-            backup_opt_dict.remote_abs_oldest = object_name
-
     return backup_opt_dict
 
 

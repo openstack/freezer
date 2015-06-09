@@ -192,6 +192,22 @@ class RestoreOs:
 
     def restore_cinder(self, restore_from_date, volume_id):
         """
+        Restoring cinder backup using
+        :param volume_id:
+        :return:
+        """
+        cinder = self.client_manager.get_cinder()
+        backups = cinder.backups.findall(volume_id=volume_id,
+                                         status='available')
+        backups = [x for x in backups if x.created_at >= restore_from_date]
+        if not backups:
+            logging.error("no available backups for cinder volume")
+        else:
+            backup = min(backups, key=lambda x: x.created_at)
+            cinder.restores.restore(backup_id=backup.id)
+
+    def restore_cinder_by_glance(self, restore_from_date, volume_id):
+        """
         1) Define swift directory
         2) Download and upload to glance
         3) Create volume from glance

@@ -116,7 +116,7 @@ class BackupJob(Job):
 
         self.conf.manifest_meta_dict = manifest_meta_dict
         if self.conf.mode == 'fs':
-            backup.backup_mode_fs(
+            backup.backup(
                 self.conf, self.start_time.timestamp, manifest_meta_dict)
         elif self.conf.mode == 'mongo':
             backup.backup_mode_mongo(
@@ -146,16 +146,19 @@ class RestoreJob(Job):
         # Get the object list of the remote containers and store it in the
         # same dict passes as argument under the dict.remote_obj_list namespace
         self.conf = swift.get_container_content(self.conf)
-        if self.conf.volume_id or self.conf.instance_id:
-            res = RestoreOs(self.conf.client_manager, self.conf.container)
-            if self.conf.volume_id:
-                res.restore_cinder(self.conf.restore_from_date,
-                                   self.conf.volume_id)
-            else:
-                res.restore_nova(self.conf.restore_from_date,
-                                 self.conf.instance_id)
-        else:
+        res = RestoreOs(self.conf.client_manager, self.conf.container)
+        restore_from_date = self.conf.restore_from_date
+        backup_media = self.conf.backup_media
+        if backup_media == 'fs':
             restore.restore_fs(self.conf)
+        elif backup_media == 'nova':
+            res.restore_nova(restore_from_date, self.conf.nova_inst_id)
+        elif backup_media == 'cinder':
+            res.restore_cinder_by_glance(restore_from_date, self.conf.cinder)
+        elif backup_media == 'cindernative':
+            res.restore_cinder(restore_from_date, self.conf.cinder_vol_id)
+        else:
+            raise Exception("unknown backup type: %s" % backup_media)
 
 
 class AdminJob(Job):

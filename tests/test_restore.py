@@ -82,12 +82,20 @@ class TestRestore:
         backup_opt.backup_name = 'abcdtest'
         pytest.raises(Exception, restore_fs_sort_obj, backup_opt)
 
+    def test_restore_cinder_by_glance(self):
+        backup_opt = BackupOpt1()
+        ros = RestoreOs(backup_opt.client_manager, backup_opt.container)
+        ros.restore_cinder_by_glance(backup_opt.restore_from_date, 34)
+
     def test_restore_cinder(self):
         backup_opt = BackupOpt1()
         ros = RestoreOs(backup_opt.client_manager, backup_opt.container)
         ros.restore_cinder(backup_opt.restore_from_date, 34)
 
+
     def test_restore_nova(self):
         backup_opt = BackupOpt1()
         ros = RestoreOs(backup_opt.client_manager, backup_opt.container)
         ros.restore_nova(backup_opt.restore_from_date, 34)
+
+
