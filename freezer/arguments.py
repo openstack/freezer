@@ -116,7 +116,10 @@ def backup_arguments(args_dict={}):
             'upload_limit': -1, 'always_level': False, 'version': False,
             'dry_run': False, 'lvm_snapsize': False,
             'restore_abs_path': False, 'log_file': None,
-            'upload': True, 'mode': 'fs', 'action': 'backup'}
+            'upload': True, 'mode': 'fs', 'action': 'backup',
+            'vssadmin': True, 'shadow': '', 'shadow_path': '',
+            'windows_volume': ''
+        }
 
     # Generate a new argparse istance and inherit options from config parse
     arg_parser = argparse.ArgumentParser(
@@ -376,9 +379,10 @@ def backup_arguments(args_dict={}):
         instance = <db-instance>''',
         dest='sql_server_conf', default=False)
     arg_parser.add_argument(
-        '--volume', action='store',
-        help='Create a snapshot of the selected volume',
-        dest='volume', default=False)
+        '--vssadmin', action='store',
+        help='''Create a backup using a snapshot on windows
+        using vssadmin. Options are: True and False, default is True''',
+        dest='vssadmin', default=True)
 
     arg_parser.set_defaults(**defaults)
     backup_args = arg_parser.parse_args()
@@ -386,7 +390,7 @@ def backup_arguments(args_dict={}):
     # windows bin
     path_to_binaries = os.path.dirname(os.path.abspath(__file__))
 
-    # Intercept command line arguments if you are not using the CLI
+    # Intercept command line arguments if you are not using the CLIvss
     if args_dict:
         backup_args.__dict__.update(args_dict)
 
@@ -463,6 +467,13 @@ def backup_arguments(args_dict={}):
     backup_args.__dict__['shadow'] = ''
     backup_args.__dict__['shadow_path'] = ''
     backup_args.__dict__['file_name'] = ''
+    if is_windows():
+        if backup_args.path_to_backup:
+            backup_args.__dict__['windows_volume'] = \
+                backup_args.path_to_backup[:3]
+
+        if backup_args.vssadmin == 'False' or backup_args.vssadmin == 'false':
+            backup_args.vssadmin = False
 
     backup_args.__dict__['meta_data'] = {}
     backup_args.__dict__['meta_data_file'] = ''

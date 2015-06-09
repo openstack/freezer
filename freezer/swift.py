@@ -382,7 +382,7 @@ def add_object(
             package_name, time_stamp,
             backup_opt_dict.max_segment_size, file_chunk_index)
         add_chunk(backup_opt_dict.client_manager,
-                  backup_opt_dict.container_segment,
+                  backup_opt_dict.container_segments,
                   package_name, file_chunk)
 
 

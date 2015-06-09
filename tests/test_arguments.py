@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from freezer.arguments import  backup_arguments, alter_proxy
+from freezer.arguments import backup_arguments, alter_proxy
 import argparse
 from commons import *
 import sys

@@ -19,11 +19,11 @@ import logging
 import os
 
 
-def vss_create_shadow_copy(volume):
+def vss_create_shadow_copy(windows_volume):
     """
     Create a new shadow copy for the specified volume
 
-    Windows registry path for vss:
+    Windows registry path for vssadmin:
     HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\VSS\Settings
 
     MaxShadowCopies
@@ -64,10 +64,10 @@ def vss_create_shadow_copy(volume):
         (out, err) = create_subprocess(['powershell.exe',
                                         '-executionpolicy', 'unrestricted',
                                         '-command', script,
-                                        '-volume', volume])
+                                        '-volume', windows_volume])
         if err != '':
             raise Exception('[*] Error creating a new shadow copy on {0}'
-                            ', error {1}' .format(volume, err))
+                            ', error {1}' .format(windows_volume, err))
 
         for line in out.split('\n'):
             if 'symbolic' in line:
@@ -82,7 +82,7 @@ def vss_create_shadow_copy(volume):
         return shadow_path, shadow_id
 
 
-def vss_delete_shadow_copy(shadow_id, volume):
+def vss_delete_shadow_copy(shadow_id, windows_volume):
     """
     Delete a shadow copy from the volume with the given shadow_id
     :param shadow_id: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -98,38 +98,12 @@ def vss_delete_shadow_copy(shadow_id, volume):
                             ', error {1}' .format(shadow_id, err))
 
         try:
-            os.rmdir(os.path.join(volume, 'shadowcopy'))
+            os.rmdir(os.path.join(windows_volume, 'shadowcopy'))
         except Exception:
             logging.error('Failed to delete shadow copy symlink {0}'.
-                          format(os.path.join(volume, 'shadowcopy')))
+                          format(os.path.join(windows_volume, 'shadowcopy')))
 
         logging.info('[*] Deleting shadow copy {0}'.
                      format(shadow_id))
 
         return True
-
-
-def stop_sql_server(backup_opt_dict):
-    """ Stop a SQL Server instance to perform the backup of the db files """
-
-    logging.info('[*] Stopping SQL Server for backup')
-    with DisableFileSystemRedirection():
-        cmd = 'net stop "SQL Server ({0})"'\
-            .format(backup_opt_dict.sql_server_instance)
-        (out, err) = create_subprocess(cmd)
-        if err != '':
-            raise Exception('[*] Error while stopping SQL Server,'
-                            ', error {0}'.format(err))
-
-
-def start_sql_server(backup_opt_dict):
-    """ Start the SQL Server instance after the backup is completed """
-
-    with DisableFileSystemRedirection():
-        cmd = 'net start "SQL Server ({0})"'\
-            .format(backup_opt_dict.sql_server_instance)
-        (out, err) = create_subprocess(cmd)
-        if err != '':
-            raise Exception('[*] Error while starting SQL Server'
-                            ', error {0}'.format(err))
-        logging.info('[*] SQL Server back to normal')

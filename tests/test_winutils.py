@@ -17,7 +17,9 @@ from freezer.winutils import use_shadow
 from freezer.winutils import clean_tar_command
 from freezer.winutils import add_gzip_to_command
 from freezer.winutils import DisableFileSystemRedirection
+from freezer import winutils
 from commons import *
+import logging
 
 import pytest
 
@@ -33,7 +35,7 @@ class TestWinutils:
         test_volume = 'C:'
         test_volume2 = 'C:\\'
         path = 'C:\\Users\\Test'
-        expected = 'C:\\shadowcopy\\Users\\Test'
+        expected = 'C:\\freezer_shadowcopy\\Users\\Test'
         assert use_shadow(path, test_volume2) == expected
 
         # test if the volume format is incorrect
@@ -68,3 +70,70 @@ class TestWinutils:
         pytest.raises(Exception, fake_disable_redirection.__enter__)
         pytest.raises(Exception, fake_disable_redirection.__exit__)
 
+    def test_start_sql_server(self, monkeypatch):
+        fake_disable_redirection = FakeDisableFileSystemRedirection()
+        backup_opt = BackupOpt1()
+        fakelogging = FakeLogging()
+        fakesubprocess = FakeSubProcess()
+        fakesubprocesspopen = fakesubprocess.Popen()
+
+        monkeypatch.setattr(
+            subprocess.Popen, 'communicate',
+            fakesubprocesspopen.communicate)
+        monkeypatch.setattr(
+            subprocess, 'Popen', fakesubprocesspopen)
+        monkeypatch.setattr(
+            winutils.DisableFileSystemRedirection, '__enter__',
+            fake_disable_redirection.__enter__)
+        monkeypatch.setattr(
+            winutils.DisableFileSystemRedirection, '__exit__',
+            fake_disable_redirection.__exit__)
+
+        monkeypatch.setattr(logging, 'info', fakelogging.info)
+
+        assert winutils.start_sql_server(backup_opt) is not False
+
+        fakesubprocess = FakeSubProcess3()
+        fakesubprocesspopen = fakesubprocess.Popen()
+
+        monkeypatch.setattr(
+            subprocess.Popen, 'communicate',
+            fakesubprocesspopen.communicate)
+        monkeypatch.setattr(
+            subprocess, 'Popen', fakesubprocesspopen)
+
+        pytest.raises(Exception, winutils.start_sql_server(backup_opt))
+
+    def test_stop_sql_server(self, monkeypatch):
+        fake_disable_redirection = FakeDisableFileSystemRedirection()
+        backup_opt = BackupOpt1()
+        fakelogging = FakeLogging()
+        fakesubprocess = FakeSubProcess()
+        fakesubprocesspopen = fakesubprocess.Popen()
+
+        monkeypatch.setattr(
+            subprocess.Popen, 'communicate',
+            fakesubprocesspopen.communicate)
+        monkeypatch.setattr(
+            subprocess, 'Popen', fakesubprocesspopen)
+        monkeypatch.setattr(
+            winutils.DisableFileSystemRedirection, '__enter__',
+            fake_disable_redirection.__enter__)
+        monkeypatch.setattr(
+            winutils.DisableFileSystemRedirection, '__exit__',
+            fake_disable_redirection.__exit__)
+
+        monkeypatch.setattr(logging, 'info', fakelogging.info)
+
+        assert winutils.start_sql_server(backup_opt) is not False
+
+        fakesubprocess = FakeSubProcess3()
+        fakesubprocesspopen = fakesubprocess.Popen()
+
+        monkeypatch.setattr(
+            subprocess.Popen, 'communicate',
+            fakesubprocesspopen.communicate)
+        monkeypatch.setattr(
+            subprocess, 'Popen', fakesubprocesspopen)
+
+        pytest.raises(Exception, winutils.stop_sql_server(backup_opt))

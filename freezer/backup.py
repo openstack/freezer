@@ -33,8 +33,8 @@ from freezer.swift import add_object, manifest_upload
 from freezer.utils import gen_manifest_meta, add_host_name_ts_level
 from freezer.vss import vss_create_shadow_copy
 from freezer.vss import vss_delete_shadow_copy
-from freezer.vss import start_sql_server
-from freezer.vss import stop_sql_server
+from freezer.winutils import start_sql_server
+from freezer.winutils import stop_sql_server
 from freezer.winutils import use_shadow
 from freezer.winutils import is_windows
 from freezer import swift
@@ -63,7 +63,10 @@ def backup_mode_sql_server(backup_opt_dict, time_stamp, manifest_meta_dict):
         stop_sql_server(backup_opt_dict)
         backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict)
     finally:
-        start_sql_server(backup_opt_dict)
+        if not backup_opt_dict.vssadmin:
+            # if vssadmin is false, wait until the backup is complete
+            # to start sql server again
+            start_sql_server(backup_opt_dict)
 
 
 def backup_mode_mysql(backup_opt_dict, time_stamp, manifest_meta_dict):
@@ -237,10 +240,14 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
     try:
 
         if is_windows():
-            # Create a shadow copy.
-            # Create a shadow copy.
-            backup_opt_dict.shadow_path, backup_opt_dict.shadow = \
-                vss_create_shadow_copy(backup_opt_dict.volume)
+            if backup_opt_dict.vssadmin:
+                # Create a shadow copy.
+                backup_opt_dict.shadow_path, backup_opt_dict.shadow = \
+                    vss_create_shadow_copy(backup_opt_dict.windows_volume)
+
+                # execute this after the snapshot creation
+                if backup_opt_dict.mode == 'sqlserver':
+                    start_sql_server(backup_opt_dict)
 
         else:
             # If lvm_auto_snap is true, the volume group and volume name will
@@ -335,7 +342,7 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
         if is_windows():
             # Delete the shadow copy after the backup
             vss_delete_shadow_copy(backup_opt_dict.shadow,
-                                   backup_opt_dict.volume)
+                                   backup_opt_dict.windows_volume)
         else:
             # Unmount and remove lvm snapshot volume
             lvm_snap_remove(backup_opt_dict)

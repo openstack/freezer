@@ -17,8 +17,12 @@
 # Hudson (tjh@cryptsoft.com).
 # ========================================================================
 
-import sys
+
 import ctypes
+import logging
+import sys
+
+from freezer.utils import create_subprocess
 
 
 def is_windows():
@@ -51,9 +55,10 @@ class DisableFileSystemRedirection:
             self._revert(self.old_value)
 
 
-def use_shadow(to_backup, volume):
+def use_shadow(to_backup, windows_volume):
     """ add the shadow path to the backup directory """
-    return to_backup.replace(volume, '{0}shadowcopy\\'.format(volume))
+    return to_backup.replace(windows_volume, '{0}freezer_shadowcopy\\'
+                             .format(windows_volume))
 
 
 def clean_tar_command(tar_cmd):
@@ -69,3 +74,29 @@ def clean_tar_command(tar_cmd):
 def add_gzip_to_command(tar_cmd):
     gzip_cmd = 'gzip -7'
     return '{0} | {1}'.format(tar_cmd, gzip_cmd)
+
+
+def stop_sql_server(backup_opt_dict):
+    """ Stop a SQL Server instance to perform the backup of the db files """
+
+    logging.info('[*] Stopping SQL Server for backup')
+    with DisableFileSystemRedirection():
+        cmd = 'net stop "SQL Server ({0})"'\
+            .format(backup_opt_dict.sql_server_instance)
+        (out, err) = create_subprocess(cmd)
+        if err != '':
+            raise Exception('[*] Error while stopping SQL Server,'
+                            ', error {0}'.format(err))
+
+
+def start_sql_server(backup_opt_dict):
+    """ Start the SQL Server instance after the backup is completed """
+
+    with DisableFileSystemRedirection():
+        cmd = 'net start "SQL Server ({0})"'\
+            .format(backup_opt_dict.sql_server_instance)
+        (out, err) = create_subprocess(cmd)
+        if err != '':
+            raise Exception('[*] Error while starting SQL Server'
+                            ', error {0}'.format(err))
+        logging.info('[*] SQL Server back to normal')

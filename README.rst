@@ -97,13 +97,13 @@ Windows
 Install OpenSSL binaries from http://www.openssl.org/related/binaries.html and add
 it to Path:
 
-Swift client and Keystone client:
+Swift client and Keystone client::
 
     > pip install python-swiftclient
     > pip install python-keystoneclient
     > pip install freezer
 
-The basic Swift account configuration is needed to use freezer. Make sure python-swiftclient is installed.
+The basic Swift account configuration is needed to use freezer. Make sure python-swiftclient is installed::
 
     set OS_REGION_NAME=region-a.geo-1
     set OS_TENANT_ID=<account tenant>
@@ -135,7 +135,7 @@ The most simple backup execution is a direct file system backup::
 
     * On windows (need admin rights)*
     > freezerc --action backup --mode fs --backup-name testwindows
-    --path-to-backup "C:\path\to\backup" --volume C:\  --container freezer_windows
+    --path-to-backup "C:\path\to\backup" --container freezer_windows
     --log-file  C:\path\to\log\freezer.log
 
 By default --mode fs is set. The command would generate a compressed tar
@@ -646,4 +646,6 @@ Available options::
                             Set the SQL Server configuration file where freezer
                             retrieve the sql server instance. Following is an
                             example of config file: instance = <db-instance>
-      --volume VOLUME       Create a snapshot of the selected volume
+      --vssadmin VSSADMIN   Create a backup using a snapshot on windows
+                            using vssadmin. Options are: True and False,
+                            default is True
