@@ -83,12 +83,12 @@ setup(
         'python-keystoneclient>=0.7.0',
         'python-cinderclient',
         'python-glanceclient',
-        'python-novaclient',
+        'python-novaclient>=2.21.0',
         'pymysql',
         'pymongo',
         'docutils>=0.8.1'],
     extras_require={
-        'testing': ['pytest', 'flake8'],
+        'testing': ['pytest', 'flake8', 'pylint>=1.3.1'],
     },
     entry_points={
         'console_scripts': [

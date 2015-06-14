@@ -30,7 +30,7 @@ except ImportError:
     import ConfigParser as configparser
 
 import logging
-import distutils.spawn as distspawn
+from distutils import spawn as distspawn
 import utils
 import socket
 

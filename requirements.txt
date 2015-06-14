@@ -2,7 +2,7 @@ python-swiftclient>=1.6.0
 python-keystoneclient>=0.8.0
 python-cinderclient
 python-glanceclient
-python-novaclient
+python-novaclient>=2.21.0
 
 docutils>=0.8.1
 pymysql
