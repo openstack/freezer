@@ -91,15 +91,6 @@ def freezer_main(args={}):
         except Exception as priority_error:
             logging.warning('[*] Priority: {0}'.format(priority_error))
 
-    def fail(exit_code, e, do_log=True):
-        """ Catch the exceptions and write it to log """
-        msg = '[*] Critical Error: {0}\n'.format(e)
-        if not backup_args.quiet:
-            sys.stderr.write(msg)
-        if do_log:
-            logging.critical(msg)
-        sys.exit(exit_code)
-
     # Alternative aruments provision useful to run Freezer without
     # command line e.g. functional testing
     if args:
@@ -127,3 +118,13 @@ def freezer_main(args={}):
     freezer_job.execute()
 
     return backup_args
+
+
+def fail(exit_code, e, do_log=True):
+    """ Catch the exceptions and write it to log """
+    msg = '[*] Critical Error: {0}\n'.format(e)
+    if not backup_args.quiet:
+        sys.stderr.write(msg)
+    if do_log:
+        logging.critical(msg)
+    sys.exit(exit_code)
