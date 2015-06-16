@@ -32,6 +32,7 @@ import hashlib
 import string
 import time
 from copy import copy
+from freezer.utils import segments_name
 
 lib_path = os.path.abspath(os.path.join('..', '..'))
 sys.path.append(lib_path)
@@ -78,7 +79,6 @@ class BackupScenarioFS(unittest.TestCase):
                     handle.close()
                 self.tmp_files.append(file_path)
 
-
     def hashfile(self, filepath):
         """
         Get GIT style sha1 hash for a file
@@ -89,7 +89,6 @@ class BackupScenarioFS(unittest.TestCase):
         with open(filepath, 'rb') as handle:
             hash_obj.update(handle.read())
         return hash_obj.hexdigest()
-
 
     def snap_tmp_tree_sha1(self, file_list):
         """
@@ -102,7 +101,6 @@ class BackupScenarioFS(unittest.TestCase):
             if os.path.isfile(file_name):
                 hash_dict[file_name] = self.hashfile(file_name)
         return hash_dict
-
 
     def damage_tmp_tree(self, tmp_files):
         """
@@ -129,7 +127,6 @@ class BackupScenarioFS(unittest.TestCase):
                 f.close()
                 self.tmp_modified.append(fn)
 
-
     def create_big_file(self, file_path, size):
         """
         Create test text file with random data and
@@ -141,7 +138,6 @@ class BackupScenarioFS(unittest.TestCase):
                 random.shuffle(buf)
                 handle.write('%s' % ''.join(buf))
             handle.close()
-
 
     def setUp(self):
         self.tmp_files = []
@@ -174,7 +170,6 @@ class BackupScenarioFS(unittest.TestCase):
                 self.assertTrue(os.path.isfile(key))
                 self.assertEqual(key + dict_1[key], key + dict_2[key])
 
-
     def test_no_lvm_level0(self):
         """
         Maximum level filesystem backup
@@ -202,7 +197,7 @@ class BackupScenarioFS(unittest.TestCase):
             name_list = [item['name'] for item in ns_backup_args.containers_list]
             retry += 1
         self.assertTrue(ns_backup_args.container in name_list)
-        self.assertTrue(ns_backup_args.container_segments in name_list)
+        self.assertTrue(segments_name(ns_backup_args.container) in name_list)
         fdict_before = self.snap_tmp_tree_sha1(self.tmp_files)
         self.damage_tmp_tree(self.tmp_files)
         # Restore
@@ -220,7 +215,6 @@ class BackupScenarioFS(unittest.TestCase):
         for key in self.tmp_files:
             self.assertTrue(os.path.isfile(key))
             self.assertEqual(key + fdict_before[key], key + fdict_after[key])
-
 
     def test_lvm_level0(self):
         """
@@ -263,7 +257,7 @@ class BackupScenarioFS(unittest.TestCase):
             name_list = [item['name'] for item in ns_backup_args.containers_list]
             retry += 1
         self.assertTrue(ns_backup_args.container in name_list)
-        self.assertTrue(ns_backup_args.container_segments in name_list)
+        self.assertTrue(segments_name(ns_backup_args.container) in name_list)
         # Create a file => SAH1 hash dictionary that will recored file
         # hashes before any files being modified or deleted
         fdict_before = self.snap_tmp_tree_sha1(self.tmp_files)
@@ -297,7 +291,6 @@ class BackupScenarioFS(unittest.TestCase):
             else:
                 self.assertTrue(os.path.isfile(key))
                 self.assertEqual(key + fdict_before[key], key + fdict_after[key])
-
 
     def test_bandwith_limit(self):
         """
@@ -364,7 +357,6 @@ class BackupScenarioFS(unittest.TestCase):
         # Test that time is longer than the theoretical 2 sec
         self.assertTrue(time_low < download_time)
 
-
     def test_lvm_incremental_level5(self):
         """
         Incremental LVM snapshots filesystem backup
@@ -407,9 +399,11 @@ class BackupScenarioFS(unittest.TestCase):
             ns_backup_args = main.freezer_main(backup_args)
             self.damage_tmp_tree(self.tmp_files)
             # time.sleep(2)
-        ns_backup_args = swift.get_container_content(ns_backup_args)
         # Filter only the container names from all other data
-        name_list = [item['name'] for item in ns_backup_args.remote_obj_list]
+        ns_backup_args = swift.get_container_content(
+            ns_backup_args.client_manager,
+            ns_backup_args.container)
+        name_list = [item['name'] for item in ns_backup_args]
         for counter in range(0, max_level):
             found_objects = [obj for obj in name_list if obj.endswith('_%s' % counter)]
             objects_str = ' '.join(found_objects)

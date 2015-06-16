@@ -22,15 +22,13 @@ Hudson (tjh@cryptsoft.com).
 """
 
 from commons import *
-from freezer.tar import (tar_restore, tar_incremental, tar_backup,
-    gen_tar_command, tar_restore_args_valid)
+from freezer.tar import (tar_restore, tar_backup, tar_restore_args_valid)
 from freezer import winutils
 
 import os
 import logging
 import subprocess
 import pytest
-import time
 
 
 class TestTar:
@@ -74,79 +72,6 @@ class TestTar:
 
         monkeypatch.setattr(os, 'chdir', fake_os.chdir2)
         pytest.raises(Exception, tar_restore(backup_opt, fakepipe))
-
-    def test_tar_incremental(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-        (tar_cmd, curr_tar_meta,
-            remote_manifest_meta) = True, True, {}
-        (val1, val2, val3) = tar_incremental(
-            tar_cmd, backup_opt, curr_tar_meta,
-            remote_manifest_meta)
-        assert val1 is not False
-        assert val2 is not False
-        assert val3 is not False
-
-        (tar_cmd, curr_tar_meta,
-            remote_manifest_meta) = False, True, {}
-        pytest.raises(Exception, tar_incremental, tar_cmd, backup_opt, curr_tar_meta, remote_manifest_meta)
-
-    def test_gen_tar_command(self, monkeypatch):
-        expanduser = Os()
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-        (meta_data_backup_file, remote_manifest_meta) = True, {}
-        time_stamp = int(time.time())
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        (val1, val2, val3) = gen_tar_command(backup_opt, meta_data_backup_file, time_stamp,
-        remote_manifest_meta)
-        assert val1 is not False
-        assert val2 is not False
-        assert val3 is not False
-
-        backup_opt.__dict__['dereference_symlink'] = 'soft'
-        (val1, val2, val3) = gen_tar_command(backup_opt, meta_data_backup_file, time_stamp,
-        remote_manifest_meta)
-        assert val1 is not False
-        assert val2 is not False
-        assert val3 is not False
-
-        backup_opt.__dict__['dereference_symlink'] = 'hard'
-        (val1, val2, val3) = gen_tar_command(backup_opt, meta_data_backup_file, time_stamp,
-        remote_manifest_meta)
-        assert val1 is not False
-        assert val2 is not False
-        assert val3 is not False
-
-        backup_opt.__dict__['dereference_symlink'] = 'all'
-        (val1, val2, val3) = gen_tar_command(backup_opt, meta_data_backup_file, time_stamp,
-        remote_manifest_meta)
-        assert val1 is not False
-        assert val2 is not False
-        assert val3 is not False
-        
-        monkeypatch.setattr(os.path, 'exists', expanduser.notexists)
-        
-        with pytest.raises(Exception) as excinfo :
-            gen_tar_command(backup_opt, meta_data_backup_file,
-                            time_stamp, remote_manifest_meta)
-        assert excinfo.value.message == 'Error: path-to-backup does not exist'
-        
-        monkeypatch.setattr(os.path, 'exists', expanduser.exists)
-
-        backup_opt.__dict__['path_to_backup'] = ''
-        with pytest.raises(Exception) as excinfo :
-            gen_tar_command(backup_opt, meta_data_backup_file,
-                            time_stamp, remote_manifest_meta)
-        assert excinfo.value.message == ('Error: Please ALL the '
-                                         'following options: '
-                                         '--path-to-backup, --backup-name')
-
 
     def test_tar_backup(self, monkeypatch):
 

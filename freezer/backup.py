@@ -27,9 +27,8 @@ from os.path import expanduser
 import time
 
 from freezer.lvm import lvm_snap, lvm_snap_remove, get_lvm_info
-from freezer.tar import tar_backup, gen_tar_command
-from freezer.swift import add_object, manifest_upload
-from freezer.utils import gen_manifest_meta, add_host_name_ts_level
+from freezer.tar import tar_backup, TarCommandBuilder
+from freezer.utils import gen_manifest_meta, create_dir
 from freezer.vss import vss_create_shadow_copy
 from freezer.vss import vss_delete_shadow_copy
 from freezer.winutils import start_sql_server
@@ -148,10 +147,9 @@ def backup_mode_mongo(backup_opt_dict, time_stamp, manifest_meta_dict):
 
 class BackupOs:
 
-    def __init__(self, client_manager, container, container_segments):
+    def __init__(self, client_manager, container):
         self.client_manager = client_manager
         self.container = container
-        self.container_segments = container_segments
 
     def backup_nova(self, instance_id, time_stamp):
         """
@@ -182,7 +180,6 @@ class BackupOs:
         headers = {"x-object-meta-name": instance._info['name'],
                    "x-object-meta-tenant_id": instance._info['tenant_id']}
         swift.add_stream(client_manager,
-                         self.container_segments,
                          self.container, stream, package, headers)
         logging.info("[*] Deleting temporary image")
         glance.images.delete(image)
@@ -212,7 +209,6 @@ class BackupOs:
         logging.info("[*] Uploading image to swift")
         headers = {}
         swift.add_stream(self.client_manager,
-                         self.container_segments,
                          self.container, stream, package, headers=headers)
         logging.info("[*] Deleting temporary snapshot")
         client_manager.clean_snapshot(snapshot)
@@ -230,8 +226,7 @@ class BackupOs:
 def backup(backup_opt_dict, time_stamp, manifest_meta_dict):
     backup_media = backup_opt_dict.backup_media
     backup_os = BackupOs(backup_opt_dict.client_manager,
-                         backup_opt_dict.container,
-                         backup_opt_dict.container_segments)
+                         backup_opt_dict.container)
     if backup_media == 'fs':
         backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict)
     elif backup_media == 'nova':
@@ -275,38 +270,94 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
             # Generate the lvm_snap if lvm arguments are available
             lvm_snap(backup_opt_dict)
 
-        # Generate a string hostname, backup name, timestamp and backup level
-        file_name = add_host_name_ts_level(backup_opt_dict, time_stamp)
-        meta_data_backup_file = u'tar_metadata_{0}'.format(file_name)
-        backup_opt_dict.meta_data_file = meta_data_backup_file
+        file_name_f = u'{0}_{1}_{2}_{3}'.format(
+            backup_opt_dict.hostname,
+            backup_opt_dict.backup_name,
+            time_stamp,
+            backup_opt_dict.curr_backup_level)
+        meta_data_backup_file = u'tar_metadata_{0}'.format(file_name_f)
 
         # Initialize a Queue for a maximum of 2 items
         tar_backup_queue = multiprocessing.Queue(maxsize=2)
 
         if is_windows():
             backup_opt_dict.absolute_path = backup_opt_dict.path_to_backup
-            backup_opt_dict.path_to_backup = use_shadow(
-                backup_opt_dict.path_to_backup,
-                backup_opt_dict.volume)
+            if backup_opt_dict.vssadmin:
+                backup_opt_dict.path_to_backup = use_shadow(
+                    backup_opt_dict.path_to_backup,
+                    backup_opt_dict.windows_volume)
 
-        # Execute a tar gzip of the specified directory and return
-        # small chunks (default 128MB), timestamp, backup, filename,
-        # file chunk index and the tar meta-data file
-        (backup_opt_dict, tar_command, manifest_meta_dict) = \
-            gen_tar_command(opt_dict=backup_opt_dict,
-                            time_stamp=time_stamp,
-                            remote_manifest_meta=manifest_meta_dict)
+        path_to_backup = backup_opt_dict.path_to_backup
+        # Change che current working directory to op_dict.path_to_backup
+        os.chdir(os.path.normpath(path_to_backup.strip()))
+
+        logging.info('[*] Changing current working directory to: {0} \
+        '.format(path_to_backup))
+        logging.info('[*] Backup started for: {0}'.format(path_to_backup))
+
+        builder = TarCommandBuilder(backup_opt_dict.tar_path)
+        builder.set_dereference(backup_opt_dict.dereference_symlink)
+        curr_backup_level = manifest_meta_dict.get(
+            'x-object-meta-backup-current-level', '0')
+        tar_meta = manifest_meta_dict.get('x-object-meta-tar-meta-obj-name')
+
+        if not backup_opt_dict.no_incremental:
+            builder.set_level(curr_backup_level)
+            builder.set_work_dir(backup_opt_dict.work_dir)
+            if tar_meta:
+                builder.set_listed_incremental(tar_meta)
+            else:
+                builder.set_listed_incremental(meta_data_backup_file)
+        if backup_opt_dict.exclude:
+            builder.set_exclude(backup_opt_dict.exclude)
+
+        # Incremental backup section
+        if not backup_opt_dict.no_incremental:
+
+            if not os.path.exists(backup_opt_dict.path_to_backup):
+                raise Exception('Error: path-to-backup does not exist')
+            # Write the tar meta data file in ~/.freezer. It will be
+            # removed later on. If ~/.freezer does not exists it will
+            # be created'.
+            create_dir(backup_opt_dict.work_dir)
+
+            if tar_meta:
+                sw_connector = backup_opt_dict.client_manager.get_swift()
+                tar_meta_abs = "{0}/{1}".format(backup_opt_dict.work_dir,
+                                                tar_meta)
+
+                file_name = tar_meta_abs.split('/')[-1]
+                logging.info('[*] Downloading object {0} on {1}'.format(
+                             file_name, tar_meta_abs))
+
+                if os.path.exists(tar_meta_abs):
+                    os.remove(tar_meta_abs)
+
+                with open(tar_meta_abs, 'ab') as obj_fd:
+                    for obj_chunk in sw_connector.get_object(
+                            backup_opt_dict.container, file_name,
+                            resp_chunk_size=16000000)[1]:
+                        obj_fd.write(obj_chunk)
+
+        # Encrypt data if passfile is provided
+        if backup_opt_dict.encrypt_pass_file:
+            builder.set_encryption(
+                backup_opt_dict.openssl_path,
+                backup_opt_dict.encrypt_pass_file)
 
         tar_backup_stream = multiprocessing.Process(
             target=tar_backup, args=(
-                backup_opt_dict, tar_command, tar_backup_queue,))
+                backup_opt_dict, builder.build(), tar_backup_queue,))
 
         tar_backup_stream.daemon = True
         tar_backup_stream.start()
 
+        add_object = backup_opt_dict.storage.add_object
+
         add_object_stream = multiprocessing.Process(
             target=add_object, args=(
-                backup_opt_dict, tar_backup_queue, file_name, time_stamp))
+                backup_opt_dict.max_segment_size, tar_backup_queue,
+                file_name_f, time_stamp))
         add_object_stream.daemon = True
         add_object_stream.start()
 
@@ -322,8 +373,7 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
             tar_meta_prev) = gen_manifest_meta(
                 backup_opt_dict, manifest_meta_dict, meta_data_backup_file)
 
-        manifest_file = u''
-        meta_data_abs_path = os.path.join(backup_opt_dict.workdir,
+        meta_data_abs_path = os.path.join(backup_opt_dict.work_dir,
                                           tar_meta_prev)
 
         client_manager = backup_opt_dict.client_manager
@@ -345,9 +395,8 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
                 logging.info('[*] Removing tar meta data file: {0}'.format(
                     meta_data_abs_path))
                 os.remove(meta_data_abs_path)
-            # Upload manifest to swift
-            manifest_upload(
-                manifest_file, backup_opt_dict, file_name, manifest_meta_dict)
+            backup_opt_dict.storage.upload_manifest(file_name_f,
+                                                    manifest_meta_dict)
 
     finally:
         if is_windows():

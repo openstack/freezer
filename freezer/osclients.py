@@ -1,27 +1,33 @@
-from bandwidth import monkeypatch_bandwidth
-from utils import Bunch
 import logging
 import time
+
+from cinderclient.v1 import client as cclient
+from glanceclient.v1 import client as gclient
+from novaclient.v2 import client as nclient
+import swiftclient
+
+from utils import Bunch
 from utils import ReSizeStream
 
 
 class ClientManager:
+    """
+    :type swift: swiftclient.Connection
+    :type glance: glanceclient.v1.client.Client
+    :type nova: novaclient.v2.client.Client
+    :type cinder: cinderclient.v1.client.Client
+    """
     def __init__(self, options, insecure=True,
-                 download_bytes_per_sec=-1, upload_bytes_per_sec=-1,
                  swift_auth_version=2, dry_run=False):
         """
         Creates manager of connections to swift, nova, glance and cinder
         :param options: OpenstackOptions
         :param insecure:
-        :param download_bytes_per_sec: information about bandwidth throttling
-        :param upload_bytes_per_sec: information about bandwidth throttling
         :param swift_auth_version:
         :param dry_run:
         :return:
         """
         self.options = options
-        self.download_bytes_per_sec = download_bytes_per_sec
-        self.upload_bytes_per_sec = upload_bytes_per_sec
         self.insecure = insecure
         self.swift_auth_version = swift_auth_version
         self.dry_run = dry_run
@@ -30,26 +36,38 @@ class ClientManager:
         self.glance = None
         self.nova = None
 
-    def _monkey_patch(self):
-        monkeypatch_bandwidth(self.download_bytes_per_sec,
-                              self.upload_bytes_per_sec)
-
     def get_cinder(self):
+        """
+        :rtype cinderclient.v1.client.Client
+        :return:
+        """
         if not self.cinder:
             self.create_cinder()
         return self.cinder
 
     def get_swift(self):
+        """
+        :rtype swiftclient.Connection
+        :return: instance of swift client
+        """
         if not self.swift:
             self.create_swift()
         return self.swift
 
     def get_glance(self):
+        """
+        :rtype glanceclient.v1.client.Client
+        :return:
+        """
         if not self.glance:
             self.create_glance()
         return self.glance
 
     def get_nova(self):
+        """
+        :rtype
+        :return:
+        """
         if not self.nova:
             self.create_nova()
         return self.nova
@@ -57,13 +75,12 @@ class ClientManager:
     def create_cinder(self):
         """
         Creates client for cinder and caches it
-        :return:
+        :rtype cinderclient.v1.client.Client
+        :return: instance of cinder client
         """
-        from cinderclient.v1 import client
-        self._monkey_patch()
         options = self.options
         logging.info("[*] Creation of cinder client")
-        self.cinder = client.Client(
+        self.cinder = cclient.Client(
             username=options.user_name,
             api_key=options.password,
             project_id=options.tenant_name,
@@ -76,10 +93,9 @@ class ClientManager:
     def create_swift(self):
         """
         Creates client for swift and caches it
-        :return:
+        :rtype swiftclient.Connection
+        :return: instance of swift client
         """
-        import swiftclient
-        self._monkey_patch()
         options = self.options
         logging.info("[*] Creation of swift client")
 
@@ -98,12 +114,12 @@ class ClientManager:
     def create_glance(self):
         """
         Creates client for glance and caches it
-        :return:
+        :rtype glanceclient.v1.client.Client
+        :return: instance of glance client
         """
-        from glanceclient.v1 import client
+
         from glanceclient.shell import OpenStackImagesShell
 
-        self._monkey_patch()
         options = self.options
 
         logging.info("[*] Creation of glance client")
@@ -116,7 +132,7 @@ class ClientManager:
                   os_region_name=options.region_name,
                   force_auth=False))
 
-        self.glance = client.Client(endpoint=endpoint, token=token)
+        self.glance = gclient.Client(endpoint=endpoint, token=token)
         return self.glance
 
     def create_nova(self):
@@ -124,13 +140,10 @@ class ClientManager:
         Creates client for nova and caches it
         :return:
         """
-        from novaclient.v2 import client
-
-        self._monkey_patch()
         options = self.options
         logging.info("[*] Creation of nova client")
 
-        self.nova = client.Client(
+        self.nova = nclient.Client(
             username=options.user_name,
             api_key=options.password,
             project_id=options.tenant_name,

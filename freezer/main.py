@@ -20,9 +20,12 @@ Hudson (tjh@cryptsoft.com).
 
 Freezer main execution function
 """
+from freezer.bandwidth import monkeypatch_socket_bandwidth
 
 from freezer import job
 from freezer.arguments import backup_arguments
+from freezer.osclients import ClientManager
+from freezer.storages.swiftstorage import SwiftStorage
 from freezer.utils import create_dir
 import os
 import subprocess
@@ -113,6 +116,17 @@ def freezer_main(args={}):
 
     if backup_args.max_priority:
         set_max_process_priority()
+
+    monkeypatch_socket_bandwidth(backup_args)
+
+    backup_args.__dict__['client_manager'] = ClientManager(
+        backup_args.options,
+        backup_args.insecure,
+        backup_args.os_auth_ver,
+        backup_args.dry_run)
+
+    backup_args.__dict__['storage'] = SwiftStorage(backup_args.client_manager,
+                                                   backup_args.container)
 
     freezer_job = job.create_job(backup_args)
     freezer_job.execute()

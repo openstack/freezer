@@ -86,7 +86,7 @@ def lvm_snap_remove(backup_opt_dict):
                                 .format(mount_point, mount_err))
             else:
                 # Change working directory to be able to unmount
-                os.chdir(backup_opt_dict.workdir)
+                os.chdir(backup_opt_dict.work_dir)
                 logging.info('[*] Volume {0} unmounted'.format(
                     mapper_snap_vol))
                 snap_rm_proc = subprocess.Popen(

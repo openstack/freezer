@@ -403,14 +403,10 @@ def backup_arguments(args_dict={}):
 
     # Set additional namespace attributes
     backup_args.__dict__['remote_match_backup'] = []
-    backup_args.__dict__['remote_objects'] = []
     backup_args.__dict__['remote_obj_list'] = []
     backup_args.__dict__['remote_newest_backup'] = u''
     # Set default workdir to ~/.freezer
-    backup_args.__dict__['workdir'] = os.path.join(home, '.freezer')
-    # Create a new namespace attribute for container_segments
-    backup_args.__dict__['container_segments'] = u'{0}_segments'.format(
-        backup_args.container)
+    backup_args.__dict__['work_dir'] = os.path.join(home, '.freezer')
 
     # The containers used by freezer to executed backups needs to have
     # freezer_ prefix in the name. If the user provider container doesn't
@@ -420,8 +416,6 @@ def backup_arguments(args_dict={}):
     if not backup_args.container.startswith('freezer_'):
         backup_args.container = 'freezer_{0}'.format(
             backup_args.container)
-        backup_args.container_segments = 'freezer_{0}'.format(
-            backup_args.container_segments)
 
     # If hostname is not set, hostname of the current node will be used
     if not backup_args.hostname:

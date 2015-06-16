@@ -22,8 +22,7 @@ Hudson (tjh@cryptsoft.com).
 """
 
 from commons import *
-from freezer import (
-    swift, restore, utils, backup)
+from freezer import (swift, restore, backup)
 
 from freezer.job import Job, InfoJob, AdminJob, BackupJob, RestoreJob, create_job
 import logging
@@ -42,7 +41,6 @@ class TestJob:
         monkeypatch.setattr(logging, 'warning', fakelogging.warning)
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
-        monkeypatch.setattr(swift, 'get_containers_list', fakeswift.fake_get_containers_list1)
 
     def test_execute(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
@@ -74,24 +72,13 @@ class TestInfoJob(TestJob):
         job = InfoJob(backup_opt)
         assert job.execute() is True
 
-    def test_execute_container_not_exist(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
-        backup_opt = BackupOpt1()
-        backup_opt.list_objects = True
-        monkeypatch.setattr(swift, 'check_container_existance', self.fakeswift.fake_check_container_existance1)
-        job = InfoJob(backup_opt)
-        assert job.execute() is False
-
 
 class TestBackupJob(TestJob):
 
     def test_execute_backup_fs_incremental(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(swift, 'check_container_existance', self.fakeswift.fake_check_container_existance1)
-        monkeypatch.setattr(swift, 'get_containers_list', self.fakeswift.fake_get_containers_list4)
-        monkeypatch.setattr(utils, 'set_backup_level', self.fakeutils.fake_set_backup_level)
+        monkeypatch.setattr(swift, 'set_backup_level', self.fakeutils.fake_set_backup_level)
         monkeypatch.setattr(backup, 'backup_mode_fs', self.fakebackup.fake_backup_mode_fs)
-        monkeypatch.setattr(swift, 'get_container_content', self.fakeswift.fake_get_container_content)
         backup_opt = BackupOpt1()
         backup_opt.mode = 'fs'
         backup_opt.no_incremental = False
@@ -108,8 +95,7 @@ class TestBackupJob(TestJob):
 
     def test_execute_backup_mongo(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(utils, 'set_backup_level', self.fakeutils.fake_set_backup_level)
-        monkeypatch.setattr(swift, 'get_container_content', self.fakeswift.fake_get_container_content)
+        monkeypatch.setattr(swift, 'set_backup_level', self.fakeutils.fake_set_backup_level)
         monkeypatch.setattr(backup, 'backup_mode_mongo', self.fakebackup.fake_backup_mode_mongo)
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
@@ -119,8 +105,7 @@ class TestBackupJob(TestJob):
 
     def test_execute_backup_mysql(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(utils, 'set_backup_level', self.fakeutils.fake_set_backup_level)
-        monkeypatch.setattr(swift, 'get_container_content', self.fakeswift.fake_get_container_content)
+        monkeypatch.setattr(swift, 'set_backup_level', self.fakeutils.fake_set_backup_level)
         monkeypatch.setattr(backup, 'backup_mode_mysql', self.fakebackup.fake_backup_mode_mysql)
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
@@ -130,8 +115,7 @@ class TestBackupJob(TestJob):
 
     def test_execute_raise(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(utils, 'set_backup_level', self.fakeutils.fake_set_backup_level)
-        monkeypatch.setattr(swift, 'get_container_content', self.fakeswift.fake_get_container_content)
+        monkeypatch.setattr(swift, 'set_backup_level', self.fakeutils.fake_set_backup_level)
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
         backup_opt.mode = None
@@ -141,23 +125,10 @@ class TestBackupJob(TestJob):
 
 class TestRestoreJob(TestJob):
 
-    def test_execute_raise(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(swift, 'check_container_existance', self.fakeswift.fake_check_container_existance1)
-        monkeypatch.setattr(swift, 'get_containers_list', self.fakeswift.fake_get_containers_list3)
-        backup_opt = BackupOpt1()
-        job = RestoreJob(backup_opt)
-        #assert job.execute() is None
-        pytest.raises(Exception, job.execute)
-
-
     def test_execute(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
         fakerestore = FakeRestore()
-        monkeypatch.setattr(swift, 'check_container_existance', self.fakeswift.fake_check_container_existance)
-        monkeypatch.setattr(swift, 'get_containers_list', self.fakeswift.fake_get_containers_list3)
         monkeypatch.setattr(restore, 'restore_fs', fakerestore.fake_restore_fs)
-        monkeypatch.setattr(swift, 'get_container_content', self.fakeswift.fake_get_container_content)
         backup_opt = BackupOpt1()
         job = RestoreJob(backup_opt)
         assert job.execute() is None

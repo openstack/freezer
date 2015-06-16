@@ -98,10 +98,11 @@ def vss_delete_shadow_copy(shadow_id, windows_volume):
                             ', error {1}' .format(shadow_id, err))
 
         try:
-            os.rmdir(os.path.join(windows_volume, 'shadowcopy'))
+            os.rmdir(os.path.join(windows_volume, 'freezer_shadowcopy'))
         except Exception:
             logging.error('Failed to delete shadow copy symlink {0}'.
-                          format(os.path.join(windows_volume, 'shadowcopy')))
+                          format(os.path.join(windows_volume,
+                                              'freezer_shadowcopy')))
 
         logging.info('[*] Deleting shadow copy {0}'.
                      format(shadow_id))
