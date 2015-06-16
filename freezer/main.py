@@ -35,12 +35,6 @@ import sys
 # Initialize backup options
 (backup_args, arg_parse) = backup_arguments()
 
-# Configure logging
-logging.basicConfig(
-    filename=backup_args.log_file,
-    level=logging.INFO,
-    format='%(asctime)s %(name)s %(levelname)s %(message)s')
-
 
 def freezer_main(args={}):
     """Freezer main loop for job execution.
