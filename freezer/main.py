@@ -94,7 +94,7 @@ def freezer_main(args={}):
         except Exception as priority_error:
             logging.warning('[*] Priority: {0}'.format(priority_error))
 
-    # Alternative aruments provision useful to run Freezer without
+    # Alternative arguments provision useful to run Freezer without
     # command line e.g. functional testing
     if args:
         backup_args.__dict__.update(args)

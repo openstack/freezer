@@ -64,7 +64,7 @@ DEFAULT_PARAMS = {
     'restore_abs_path': False, 'log_file': None,
     'upload': True, 'mode': 'fs', 'action': 'backup',
     'vssadmin': True, 'shadow': '', 'shadow_path': '',
-    'windows_volume': ''
+    'windows_volume': '', 'command': None
 }
 
 
@@ -128,11 +128,13 @@ def backup_arguments(args_dict={}):
         parents=[conf_parser])
 
     arg_parser.add_argument(
-        '--action', choices=['backup', 'restore', 'info', 'admin'],
+        '--action', choices=['backup', 'restore', 'info', 'admin',
+                             'exec'],
         help=(
             "Set the action to be taken. backup and restore are"
             " self explanatory, info is used to retrieve info from the"
-            " storage media, while admin is used to delete old backups"
+            " storage media, exec is used to execute a script,"
+            " while admin is used to delete old backups"
             " and other admin actions. Default backup."),
         dest='action', default='backup')
     arg_parser.add_argument(
@@ -396,6 +398,10 @@ def backup_arguments(args_dict={}):
         help='''Create a backup using a snapshot on windows
         using vssadmin. Options are: True and False, default is True''',
         dest='vssadmin', default=True)
+    arg_parser.add_argument(
+        '--command', action='store',
+        help='Command executed by exec action',
+        dest='command', default=None)
 
     arg_parser.set_defaults(**defaults)
     backup_args = arg_parser.parse_args()

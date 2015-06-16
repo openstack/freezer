@@ -22,15 +22,18 @@ Hudson (tjh@cryptsoft.com).
 """
 
 from commons import *
-from freezer import (swift, restore, backup)
-
-from freezer.job import Job, InfoJob, AdminJob, BackupJob, RestoreJob, create_job
+from freezer import (
+    swift, restore, backup, exec_cmd)
+from freezer.job import (
+    Job, InfoJob, AdminJob, BackupJob, RestoreJob, ExecJob, create_job)
 import logging
-
+from mock import patch, Mock
 import pytest
+import unittest
 
 
 class TestJob:
+
 
     def do_monkeypatch(self, monkeypatch):
         fakelogging = FakeLogging()
@@ -143,6 +146,51 @@ class TestAdminJob(TestJob):
         assert job.execute() is None
 
 
+class TestExecJob(TestJob):
+
+    def setUp(self):
+        #init mock_popen
+        self.popen=patch('freezer.exec_cmd.subprocess.Popen')
+        self.mock_popen=self.popen.start()
+        self.mock_popen.return_value = Mock()
+        self.mock_popen.return_value.communicate = Mock()
+        self.mock_popen.return_value.communicate.return_value = ['some stderr']
+
+
+    def tearDown(self):
+        self.popen.stop()
+
+
+    def test_execute_nothing_to_do(self, monkeypatch):
+        self.do_monkeypatch(monkeypatch)
+        backup_opt = BackupOpt1()
+        job = ExecJob(backup_opt)
+        assert job.execute() is False
+
+
+    def test_execute_script(self, monkeypatch):
+        self.setUp()
+        self.do_monkeypatch(monkeypatch)
+        self.mock_popen.return_value.returncode = 0
+        backup_opt = BackupOpt1()
+        backup_opt.command='echo test'
+        job = ExecJob(backup_opt)
+        assert job.execute() is True
+        self.tearDown()
+
+
+    def test_execute_raise(self, monkeypatch):
+        self.setUp()
+        self.do_monkeypatch(monkeypatch)
+        popen=patch('freezer.exec_cmd.subprocess.Popen')
+        self.mock_popen.return_value.returncode = 1
+        backup_opt = BackupOpt1()
+        backup_opt.command='echo test'
+        job = ExecJob(backup_opt)
+        pytest.raises(Exception, job.execute)
+        self.tearDown()
+
+
 def test_create_job():
     backup_opt = BackupOpt1()
     backup_opt.action = None
@@ -164,3 +212,6 @@ def test_create_job():
     job = create_job(backup_opt)
     assert isinstance(job, AdminJob)
 
+    backup_opt.action = 'exec'
+    job = create_job(backup_opt)
+    assert isinstance(job, ExecJob)

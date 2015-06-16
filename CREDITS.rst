@@ -21,6 +21,7 @@ Contributors
 -  Zahari Zahariev
 -  Eldar Nugaev
 -  Saad Zaher Saad
+-  Samuel Bartel
 
 Credits
 =======

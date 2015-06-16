@@ -27,7 +27,6 @@ from commons import BackupOpt1
 
 from freezer.main import freezer_main
 from freezer import job
-
 import pytest
 import sys
 

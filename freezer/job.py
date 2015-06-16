@@ -23,7 +23,7 @@ from freezer import swift
 from freezer import utils
 from freezer import backup
 from freezer import restore
-
+from freezer import exec_cmd
 import logging
 from freezer.restore import RestoreOs
 
@@ -149,6 +149,20 @@ class AdminJob(Job):
         swift.remove_obj_older_than(self.conf)
 
 
+class ExecJob(Job):
+    @Job.executemethod
+    def execute(self):
+        logging.info('[*] exec job....')
+        if self.conf.command:
+            logging.info('[*] Executing exec job....')
+            exec_cmd.execute(self.conf.command)
+        else:
+            logging.warning(
+                '[*] No command info options were set. Exiting.')
+            return False
+        return True
+
+
 def create_job(conf):
     if conf.action == 'backup':
         return BackupJob(conf)
@@ -158,4 +172,6 @@ def create_job(conf):
         return InfoJob(conf)
     if conf.action == 'admin':
         return AdminJob(conf)
+    if conf.action == 'exec':
+        return ExecJob(conf)
     raise Exception('Action "{0}" not supported'.format(conf.action))

@@ -666,7 +666,7 @@ class FakeSwiftClient1:
             pass
 
         class Connection:
-            def __init__(self, key=True, os_options=True, os_auth_ver=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
+            def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
                 pass
 
             def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
@@ -813,6 +813,7 @@ class BackupOpt1:
         nova_client = MagicMock()
 
         self.client_manager.get_nova = Mock(return_value=nova_client)
+        self.command = None
 
 
 class FakeMySQLdb:
