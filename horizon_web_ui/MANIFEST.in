@@ -1,0 +1,10 @@
+recursive-include bin *.js
+recursive-include doc *.py *.rst *.css *.js *.html *.conf *.jpg *.gif *.png *.css_t
+recursive-include tools *.py *.sh
+recursive-include freezer_ui *.py *.html *.js *.scss *.mo *.po *.example *.eot *.svg *.ttf *.woff *.png *.ico *.wsgi *.gif *.csv *.template
+
+include AUTHORS
+include ChangeLog
+include LICENSE
+include manage.py
+include README.rst
