@@ -34,7 +34,7 @@ class TestApi(helpers.TestCase):
         utils.patch_middleware_get_user()
 
     def _setup_request(self):
-        super(helpers.TestCase, self)._setup_request()
+        super(TestApi, self)._setup_request()
         # For some strange reason, Horizon sets the token to the token id
         # rather than the token object. This fixes it.
         self.request.session['token'] = self.token
