@@ -53,8 +53,8 @@ DEFAULT_PARAMS = {
     'restart_always_level': False, 'lvm_dirmount': False,
     'dst_file': False, 'dereference_symlink': 'none',
     'restore_from_host': False, 'config': False, 'mysql_conf': False,
-    'insecure': False, 'lvm_snapname': False, 'max_priority': False,
-    'max_level': False, 'path_to_backup': False,
+    'insecure': False, 'lvm_snapname': False, 'lvm_snapperm': 'ro',
+    'max_priority': False, 'max_level': False, 'path_to_backup': False,
     'encrypt_pass_file': False, 'volume': False, 'proxy': False,
     'cinder_vol_id': '', 'cindernative_vol_id': '',
     'nova_inst_id': '', 'list_containers': False,
@@ -184,6 +184,12 @@ def backup_arguments(args_dict={}):
         help="Set the lvm snapshot name to use. If the snapshot name already\
         exists, the old one will be used a no new one will be created. Default\
         freezer_backup_snap.", dest='lvm_snapname', default=False)
+    arg_parser.add_argument(
+        '--lvm-snap-perm', action='store', choices=['ro', 'rw'],
+        help="Set the lvm snapshot permission to use. If the permission\
+        is set to ro The snapshot will be immutable - read only -.\
+        If the permission is set to rw it will be mutable",
+        dest='lvm_snapperm', default='ro')
     arg_parser.add_argument(
         '--lvm-snapsize', action='store',
         help="Set the lvm snapshot size when creating a new snapshot.\

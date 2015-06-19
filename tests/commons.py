@@ -804,6 +804,7 @@ class BackupOpt1:
         self.cinder_vol_id = ''
         self.cindernative_vol_id = ''
         self.nova_inst_id = ''
+        self.lvm_snapperm = 'ro'
         self.options = OpenstackOptions.create_from_dict(os.environ)
         from freezer.osclients import ClientManager
         from mock import Mock

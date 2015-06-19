@@ -20,6 +20,7 @@ Contributors
 -  Guillermo Ramirez Garcia
 -  Zahari Zahariev
 -  Eldar Nugaev
+-  Saad Zaher Saad
 
 Credits
 =======

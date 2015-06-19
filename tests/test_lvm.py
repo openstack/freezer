@@ -149,3 +149,7 @@ class TestLvm:
         fakere = FakeRe()
         monkeypatch.setattr(re, 'search', fakere.search)
         assert lvm_snap(backup_opt) is True
+
+        backup_opt = BackupOpt1()
+        backup_opt.lvm_snapperm = False
+        pytest.raises(Exception, lvm_snap, backup_opt)

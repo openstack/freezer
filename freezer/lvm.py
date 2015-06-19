@@ -135,11 +135,16 @@ def lvm_snap(backup_opt_dict):
     logging.info('[*] Directory where the lvm snaphost will be mounted on:\
         {0}'.format(backup_opt_dict.lvm_dirmount.strip()))
 
+    if backup_opt_dict.lvm_snapperm not in ('ro', 'rw'):
+        raise ValueError('[*] Error: Please set a valid mount option\
+               for lvm snapshot: {}'.format(backup_opt_dict.lvm_snapperm))
     # Create the snapshot according the values passed from command line
-    lvm_create_snap = '{0} --size {1} --snapshot --permission r --name {2} {3}\
+    lvm_create_snap = '{0} --size {1} --snapshot --permission {2} --name {3} {4}\
     '.format(
         backup_opt_dict.lvcreate_path,
         backup_opt_dict.lvm_snapsize,
+        ('r' if backup_opt_dict.lvm_snapperm == 'ro'
+         else backup_opt_dict.lvm_snapperm),
         backup_opt_dict.lvm_snapname,
         backup_opt_dict.lvm_srcvol)
 
@@ -170,7 +175,7 @@ def lvm_snap(backup_opt_dict):
     # Guess the file system of the provided source volume and st mount
     # options accordingly
     filesys_type = get_vol_fs_type(backup_opt_dict)
-    mount_options = ' -o ro '
+    mount_options = '-o {}'.format(backup_opt_dict.lvm_snapperm)
     if 'xfs' == filesys_type:
         mount_options = ' -onouuid '
     # Mount the newly created snapshot to dir_mount
