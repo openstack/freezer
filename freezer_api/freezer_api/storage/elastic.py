@@ -22,7 +22,7 @@ Hudson (tjh@cryptsoft.com).
 import elasticsearch
 import logging
 from freezer_api.common.utils import BackupMetadataDoc
-from freezer_api.common.utils import ConfigDoc
+from freezer_api.common.utils import JobDoc
 from freezer_api.common import exceptions
 
 
@@ -37,15 +37,19 @@ class TypeManager:
         user_id_filter = {"term": {"user_id": user_id}}
         base_filter = [user_id_filter]
         match_list = [{"match": m} for m in search.get('match', [])]
-        if match_list:
-            base_filter.append({"query": {"bool": {"must": match_list}}})
+        match_not_list = [{"match": m} for m in search.get('match_not', [])]
+        base_filter.append({"query": {"bool": {"must": match_list, "must_not": match_not_list}}})
         return base_filter
 
     @staticmethod
     def get_search_query(user_id, doc_id, search={}):
-        base_filter = TypeManager.get_base_search_filter(user_id, search)
-        query_filter = {"filter": {"bool": {"must": base_filter}}}
-        return {'query': {'filtered': query_filter}}
+        try:
+            base_filter = TypeManager.get_base_search_filter(user_id, search)
+            query_filter = {"filter": {"bool": {"must": base_filter}}}
+            return {'query': {'filtered': query_filter}}
+        except:
+            raise exceptions.StorageEngineError(
+                message='search operation failed: query not valid')
 
     def get(self, user_id, doc_id):
         try:
@@ -53,25 +57,24 @@ class TypeManager:
                               doc_type=self.doc_type,
                               id=doc_id)
             doc = res['_source']
-            if doc['user_id'] != user_id:
-                raise elasticsearch.TransportError()
         except elasticsearch.TransportError:
             raise exceptions.DocumentNotFound(
                 message='No document found with ID {0}'.format(doc_id))
         except Exception as e:
             raise exceptions.StorageEngineError(
                 message='Get operation failed: {0}'.format(e))
+        if doc['user_id'] != user_id:
+            raise exceptions.AccessForbidden("Document access forbidden")
         return doc
 
     def search(self, user_id, doc_id=None, search={}, offset=0, limit=10):
-        try:
-            query_dsl = self.get_search_query(user_id, doc_id, search)
-        except:
-            raise exceptions.StorageEngineError(
-                message='search operation failed: query not valid')
+        query_dsl = self.get_search_query(user_id, doc_id, search)
         try:
             res = self.es.search(index=self.index, doc_type=self.doc_type,
                                  size=limit, from_=offset, body=query_dsl)
+        except elasticsearch.ConnectionError:
+            raise exceptions.StorageEngineError(
+                message='unable to connecto to db server')
         except Exception as e:
             raise exceptions.StorageEngineError(
                 message='search operation failed: {0}'.format(e))
@@ -83,17 +86,14 @@ class TypeManager:
             res = self.es.index(index=self.index, doc_type=self.doc_type,
                                 body=doc, id=doc_id)
             created = res['created']
+            version = res['_version']
         except Exception as e:
             raise exceptions.StorageEngineError(
                 message='index operation failed {0}'.format(e))
-        return created
+        return (created, version)
 
     def delete(self, user_id, doc_id):
-        try:
-            query_dsl = self.get_search_query(user_id, doc_id)
-        except:
-            raise exceptions.StorageEngineError(
-                message='Delete operation failed: query not valid')
+        query_dsl = self.get_search_query(user_id, doc_id)
         try:
             self.es.delete_by_query(index=self.index,
                                     doc_type=self.doc_type,
@@ -140,7 +140,7 @@ class ClientTypeManager(TypeManager):
         return {'query': {'filtered': query_filter}}
 
 
-class ActionTypeManager(TypeManager):
+class JobTypeManager(TypeManager):
     def __init__(self, es, doc_type, index='freezer'):
         TypeManager.__init__(self, es, doc_type, index=index)
 
@@ -148,57 +148,23 @@ class ActionTypeManager(TypeManager):
     def get_search_query(user_id, doc_id, search={}):
         base_filter = TypeManager.get_base_search_filter(user_id, search)
         if doc_id is not None:
-            base_filter.append({"term": {"action_id": doc_id}})
+            base_filter.append({"term": {"job_id": doc_id}})
         query_filter = {"filter": {"bool": {"must": base_filter}}}
         return {'query': {'filtered': query_filter}}
 
-    def update(self, action_id, action_update_doc):
-        update_doc = {"doc": action_update_doc}
+    def update(self, job_id, job_update_doc):
+        update_doc = {"doc": job_update_doc}
         try:
             res = self.es.update(index=self.index, doc_type=self.doc_type,
-                                 id=action_id, body=update_doc)
+                                 id=job_id, body=update_doc)
             version = res['_version']
         except elasticsearch.TransportError:
             raise exceptions.DocumentNotFound(
-                message='Unable to find action to update '
-                        'with ID {0} '.format(action_id))
-        except Exception as e:
+                message='Unable to find job to update '
+                        'with id {0} '.format(job_id))
+        except Exception:
             raise exceptions.StorageEngineError(
-                message='Unable to update action, '
-                        'action ID: {0} '.format(action_id))
-        return version
-
-
-class ConfigTypeManager(TypeManager):
-    def __init__(self, es, doc_type, index='freezer'):
-        TypeManager.__init__(self, es, doc_type, index=index)
-
-    @staticmethod
-    def get_search_query(user_id, doc_id, search={}):
-        base_filter = TypeManager.get_base_search_filter(user_id, search)
-        if doc_id is not None:
-            base_filter.append({"term": {"config_id": doc_id}})
-        query_filter = {"filter": {"bool": {"must": base_filter}}}
-        return {'query': {'filtered': query_filter}}
-
-    def update(self, config_id, config_update_doc):
-        update_doc = {'doc': config_update_doc}
-        try:
-            print config_update_doc
-            res = self.es.update(index=self.index,
-                                 doc_type=self.doc_type,
-                                 id=config_id,
-                                 body=update_doc)
-            print 'here?'
-            version = res['_version']
-        except elasticsearch.TransportError as error:
-            raise exceptions.DocumentNotFound(
-                message='Unable to find configuration file to update '
-                        'with ID {0}'.format(config_id))
-        except Exception as error:
-            raise exceptions.StorageEngineError(
-                message='Unable to update configuration file, '
-                        'config ID {0}'.format(config_id))
+                message='Unable to update job with id {0}'.format(job_id))
         return version
 
 
@@ -210,10 +176,10 @@ class ElasticSearchEngine(object):
         logging.info('Using Elasticsearch host {0}'.format(hosts))
         self.backup_manager = BackupTypeManager(self.es, 'backups')
         self.client_manager = ClientTypeManager(self.es, 'clients')
-        self.action_manager = ActionTypeManager(self.es, 'actions')
-        self.config_manager = ConfigTypeManager(self.es, 'configs')
+        self.job_manager = JobTypeManager(self.es, 'jobs')
 
-    def get_backup(self, user_id, backup_id=None, offset=0, limit=10, search={}):
+    def get_backup(self, user_id, backup_id=None,
+                   offset=0, limit=10, search={}):
         return self.backup_manager.search(user_id,
                                           backup_id,
                                           search=search,
@@ -231,16 +197,14 @@ class ElasticSearchEngine(object):
             raise exceptions.DocumentExists(
                 message='Backup data already existing '
                         'with ID {0}'.format(backup_id))
-        if not self.backup_manager.insert(backup_metadata_doc.serialize()):
-            raise exceptions.StorageEngineError(
-                message='Index operation failed, '
-                        'backup ID: {0}'.format(backup_id))
+        self.backup_manager.insert(backup_metadata_doc.serialize())
         return backup_id
 
     def delete_backup(self, user_id, backup_id):
         return self.backup_manager.delete(user_id, backup_id)
 
-    def get_client(self, user_id, client_id=None, offset=0, limit=10, search={}):
+    def get_client(self, user_id, client_id=None,
+                   offset=0, limit=10, search={}):
         return self.client_manager.search(user_id,
                                           client_id,
                                           search=search,
@@ -254,13 +218,11 @@ class ElasticSearchEngine(object):
         existing = self.client_manager.search(user_id, client_id)
         if existing:    # len(existing) > 0
             raise exceptions.DocumentExists(
-                message='Client already registered with ID {0}'.format(client_id))
+                message=('Client already registered with '
+                         'ID {0}'.format(client_id)))
         client_doc = {'client': doc,
                       'user_id': user_id}
-        if not self.client_manager.insert(client_doc):
-            raise exceptions.StorageEngineError(
-                message='Index operation failed, '
-                        'client ID: {0}'.format(client_id))
+        self.client_manager.insert(client_doc)
         logging.info('Client registered, client_id: {0}'.
                      format(client_id))
         return client_id
@@ -268,86 +230,51 @@ class ElasticSearchEngine(object):
     def delete_client(self, user_id, client_id):
         return self.client_manager.delete(user_id, client_id)
 
-    def get_action(self, user_id, action_id):
-        return self.action_manager.get(user_id, action_id)
+    def get_job(self, user_id, job_id):
+        return self.job_manager.get(user_id, job_id)
 
-    def search_action(self, user_id, offset=0, limit=10, search={}):
-        return self.action_manager.search(user_id,
-                                          search=search,
-                                          offset=offset,
-                                          limit=limit)
+    def search_job(self, user_id, offset=0, limit=10, search={}):
+        return self.job_manager.search(user_id,
+                                       search=search,
+                                       offset=offset,
+                                       limit=limit)
 
-    def add_action(self, user_id, doc):
-        action_id = doc.get('action_id', None)
-        if action_id is None:
-            raise exceptions.BadDataFormat(message='Missing action ID')
-        action_doc = {'action': doc,
-                      'user_id': user_id}
-        if not self.action_manager.insert(action_doc, action_id):
-            raise exceptions.StorageEngineError(
-                message='Index operation failed, '
-                        ' action ID: {0}'.format(action_id))
-        logging.info('Action registered, action ID: {0}'.
-                     format(action_id))
-        return action_id
+    def add_job(self, user_id, doc):
+        jobdoc = JobDoc.create(doc, user_id)
+        job_id = jobdoc['job_id']
+        self.job_manager.insert(jobdoc, job_id)
+        logging.info('Job registered, job id: {0}'.
+                     format(job_id))
+        return job_id
 
-    def delete_action(self, user_id, action_id):
-        return self.action_manager.delete(user_id, action_id)
+    def delete_job(self, user_id, job_id):
+        return self.job_manager.delete(user_id, job_id)
 
-    def update_action(self, user_id, action_id, patch):
-        if 'action_id' in patch:
-            raise exceptions.BadDataFormat(
-                message='Action ID modification is not allowed, '
-                        'action ID: {0}'.format(action_id))
-        action_doc = self.action_manager.get(user_id, action_id)
-        action_doc['action'].update(patch)
-        version = self.action_manager.update(action_id, action_doc)
-        logging.info('Action {0} updated to version {1}'.
-                     format(action_id, version))
+    def update_job(self, user_id, job_id, patch_doc):
+        valid_patch = JobDoc.create_patch(patch_doc)
+
+        # check that document exists
+        assert (self.job_manager.get(user_id, job_id))
+
+        version = self.job_manager.update(job_id, valid_patch)
+        logging.info('Job {0} updated to version {1}'.
+                     format(job_id, version))
         return version
 
-    def add_config(self, user_id, user_name, doc):
-        config_doc = ConfigDoc(user_id, user_name, doc)
-        config_doc = config_doc.serialize()
-        config_id = config_doc['config_id']
+    def replace_job(self, user_id, job_id, doc):
+        # check that no document exists with
+        # same job_id and different user_id
+        try:
+            self.job_manager.get(user_id, job_id)
+        except exceptions.DocumentNotFound:
+            pass
 
-        if config_id is None:
-            raise exceptions.BadDataFormat(message='Missing config ID')
+        valid_doc = JobDoc.update(doc, user_id, job_id)
 
-        if not self.config_manager.insert(config_doc,
-                                          doc_id=config_id):
-            raise exceptions.StorageEngineError(
-                message='Index operation failed, '
-                        ' config ID: {0}'.format(config_id))
-        logging.info('Config registered, config ID: {0}'.
-                     format(config_id))
-        return config_id
-
-    def delete_config(self, user_id, config_id):
-        return self.config_manager.delete(user_id, config_id)
-
-    def get_config(self, user_id, config_id=None,
-                   offset=0, limit=10, search={}):
-        return self.config_manager.search(user_id,
-                                          config_id,
-                                          search=search,
-                                          offset=offset,
-                                          limit=limit)
-
-    def update_config(self, user_id, config_id, patch,
-                      offset=0, limit=10, search={}):
-
-        if 'config_id' in patch:
-            raise exceptions.BadDataFormat(
-                message='Config ID modification is not allowed, '
-                        ' config ID: {0}'.format(config_id))
-        config_doc = self.config_manager.search(user_id,
-                                                config_id,
-                                                search=search,
-                                                offset=offset,
-                                                limit=limit)[0]
-        config_doc['config_file'].update(patch)
-        version = self.config_manager.update(config_id, config_doc)
-        logging.info('Configuration file {0} updated to version {1}'.
-                     format(config_id, version))
+        (created, version) = self.job_manager.insert(valid_doc, job_id)
+        if created:
+            logging.info('Job {0} created'.format(job_id, version))
+        else:
+            logging.info('Job {0} replaced with version {1}'.
+                         format(job_id, version))
         return version

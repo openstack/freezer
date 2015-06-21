@@ -49,6 +49,7 @@ class TestClientMock(unittest.TestCase):
         self.mock_IdentityClientv2 = Mock()
         self.mock_IdentityClientv2.endpoints.list.return_value = mock_enpointlist_ok
         self.mock_IdentityClientv2.services.list.return_value = mock_servicelist_ok
+        self.mock_IdentityClientv2.project_id = 'project_mayhem'
 
     @patch('freezer.apiclient.client.os_client')
     def test_client_create_username(self, mock_os_client):
@@ -69,9 +70,32 @@ class TestClientMock(unittest.TestCase):
         self.assertEqual(c.endpoint, 'http://frezerapiurl:9090')
 
     @patch('freezer.apiclient.client.os_client')
+    def test_client_create_assigns_endpoint(self, mock_os_client):
+        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
+        c = client.Client(username='myname',
+                          password='mypasswd',
+                          tenant_name='mytenant',
+                          endpoint='http://caccadura:9999',
+                          auth_url='http://whatever:35357/v2.0/')
+        self.assertIsInstance(c, client.Client)
+        self.assertEqual(c.endpoint, 'http://caccadura:9999')
+
+    @patch('freezer.apiclient.client.os_client')
+    @patch('freezer.apiclient.client.socket')
+    def test_client_correctly_creates_client_id(self, mock_socket, mock_os_client):
+        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
+        c = client.Client(username='myname',
+                          password='mypasswd',
+                          tenant_name='mytenant',
+                          endpoint='http://caccadura:9999',
+                          auth_url='http://whatever:35357/v2.0/')
+        mock_socket.gethostname.return_value = 'tyler'
+        self.assertEqual(c.client_id, 'project_mayhem_tyler')
+
+    @patch('freezer.apiclient.client.os_client')
     def test_client_error_no_credentials(self, mock_os_client):
         mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        self.assertRaises(exceptions.AuthFailure, client.Client, auth_url='http://whatever:35357/v2.0/')
+        self.assertRaises(exceptions.ApiClientException, client.Client, auth_url='http://whatever:35357/v2.0/')
 
     @patch('freezer.apiclient.client.os_client')
     def test_client_service_not_found(self, mock_os_client):
@@ -79,7 +103,7 @@ class TestClientMock(unittest.TestCase):
                                 self.create_mock_service(name='spanishinquisition', id='idfreak')]
         self.mock_IdentityClientv2.services.list.return_value = mock_servicelist_bad
         mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        self.assertRaises(exceptions.AuthFailure, client.Client, token='mytoken', auth_url='http://whatever:35357/v2.0/')
+        self.assertRaises(exceptions.ApiClientException, client.Client, token='mytoken', auth_url='http://whatever:35357/v2.0/')
 
     @patch('freezer.apiclient.client.os_client')
     def test_client_endpoint_not_found(self, mock_os_client):
@@ -88,7 +112,7 @@ class TestClientMock(unittest.TestCase):
                                self.create_mock_endpoint('blabla')]
         self.mock_IdentityClientv2.endpoints.list.return_value = mock_enpointlist_bad
         mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        self.assertRaises(exceptions.AuthFailure, client.Client, token='mytoken', auth_url='http://whatever:35357/v2.0/')
+        self.assertRaises(exceptions.ApiClientException, client.Client, token='mytoken', auth_url='http://whatever:35357/v2.0/')
 
     @patch('freezer.apiclient.client.os_client')
     def test_client_api_exists(self, mock_os_client):

@@ -103,15 +103,16 @@ GET    /v1/clients/{freezerc_id}     Get client details
 UPDATE /v1/clients/{freezerc_id}     Updates the specified client information
 DELETE /v1/clients/{freezerc_id}     Deletes the specified client information
 
-Freezer actions management
----------------------------
-GET    /v1/actions(?limit,offset)       Lists registered actions
-POST   /v1/actions                      Creates action entry
+Freezer jobs management
+-----------------------
+GET    /v1/jobs(?limit,offset)     Lists registered jobs
+POST   /v1/jobs                    Creates job entry
 
-GET    /v1/actions/{action_id}     Get action details
-UPDATE /v1/actions/{action_id}     Updates the specified action information
-DELETE /v1/actions/{action_id}     Deletes the specified action information
-PATCH  /v1/actions/{action_id}     updates part of the document (such as status information)
+GET    /v1/jobs/{jobs_id}          Get job details
+POST   /v1/jobs/{jobs_id}          creates or replaces a job entry using the specified job_id
+UPDATE /v1/jobs/{jobs_id}          Updates the existing job information
+DELETE /v1/jobs/{jobs_id}          Deletes the specified job information
+PATCH  /v1/jobs/{jobs_id}          Updates part of the document
 
 Data Structures
 ===============
@@ -188,33 +189,120 @@ client_type :=
 }
 
 
-Jobs and Actions
-----------------
+Jobs
+----
+A job describes a single action to be executed by a freezer client, for example a backup, or a restore.
+It contains the necessary information as if they were provided on the command line.
 
-job_info
-{
-  parameters for freezer to execute a specific job.
+A job is stored in the api together with some metadata information such as:
+job_id, user_id, client_id, status, scheduling information etc
+
+Scheduling information enables future/recurrent execution of jobs
+
++---------------------+
+| Job                 |
+|                     |   job_action      +-------------------+
+|  +job_id            +------------------>| job action dict   |
+|  +client_id         |                   +-------------------+
+|  +user_id           |
+|  +description       |  job_schedule
+|                     +---------------+
+|                     |               |   +-------------------+
++---------------------+               +-->| job schedule dict |
+                                          +-------------------+
+
+
+job document structure:
+
+"job": {
+  "job_action":   { parameters for freezer to execute a specific action }
+  "job_schedule": { scheduling information }
+  "job_id":       string
+  "client_id":    string
+  "user_id":      string
+  "description":  string
 }
 
-example backup job_info
+"job_action": {
 {
-  "action" = "backup"
-  "mode" = "fs"
-  "src_file" = /home/tylerdurden/project_mayhem
-  "backup_name" = project_mayhem_backup
-  "container" = my_backup_container
+  "action" :      string
+  "mode" :        string
+  "src_file" :    string
+  "backup_name" : string
+  "container" :   string
+  ...
+}
+
+"job_schedule": {
+  "time_created":    int  (timestamp)
+  "time_started":    int  (timestamp)
+  "time_ended":      int  (timestamp)
+  "status":          string  ["stop", "scheduled", "running", "aborting", "removed"]
+  "event":           string  ["", "stop", "start", "abort", "remove"]
+  "result":          string  ["", "success", "fail", "aborted"]
+
+  SCHEDULING TIME INFORMATION
+}
+
+
+Scheduling Time Information
+---------------------------
+
+Three types of scheduling can be identified:
+  * date - used for single run jobs
+  * interval - periodic jobs, providing an interval value
+  * cron-like jobs
+
+Each type has specific parameters which can be given.
+
+date scheduling
+---------------
+
+  "schedule_date":      : datetime isoformat
+
+interval scheduling
+-------------------
+  "schedule_interval"   : "continuous", "N weeks" / "N days" / "N hours" / "N minutes" / "N seconds"
+
+  "schedule_start_date" : datetime isoformat
+  "schedule_end_date"   : datetime isoformat
+
+cron-like scheduling
+--------------------
+
+  "schedule_year"       : 4 digit year
+  "schedule_month"      : 1-12
+  "schedule_day"        : 1-31
+  "schedule_week"       : 1-53
+  "schedule_day_of_week": 0-6 or string mon,tue,wed,thu,fri,sat,sun
+  "schedule_hour"       : 0-23
+  "schedule_minute"     : 0-59
+  "schedule_second"     : 0-59
+
+  "schedule_start_date" : datetime isoformat
+  "schedule_end_date"   : datetime isoformat
+
+
+
+example backup job_action
+"job_action": {
+  "action" : "backup"
+  "mode" : "fs"
+  "src_file" : "/home/tylerdurden/project_mayhem"
+  "backup_name" : "project_mayhem_backup"
+  "container" : "my_backup_container"
   "max_backup_level" : int
   "always_backup_level": int
   "restart_always_backup": int
   "no_incremental" : bool
-  "encrypt_pass_file" = private_key_file
-  "log_file" = /var/log/freezer.log
-  "hostname" = false
-  "max_cpu_priority" = false
+  "encrypt_pass_file" : private_key_file
+  "log_file" : "/var/log/freezer.log"
+  "hostname" : false
+  "max_cpu_priority" : false
 }
 
-example restore job_info
-{
+example restore job_action
+"job_action": {
   "action": "restore"
   "restore-abs-path": "/home/tylerdurden/project_mayhem"
   "container" : "my_backup_container"
@@ -223,20 +311,129 @@ example restore job_info
   "max_cpu_priority": true
 }
 
-action_info
-{
-  "action_id": string uuid4, not analyzed
-  "job": job_info     list ?
-  "client_id":  string
-  "description": string
-  "time_created": int  (timestamp)
-  "time_started":    int  (timestamp)
-  "time_ended":   int  (timestamp)
-  "status":  string: pending | notified(?) | started | abort_req | aborting | aborted | success | fail
+
+example scheduled backup job
+job will be executed once at the provided datetime
+
+"job": {
+  "job_action": {
+      "action" : "backup",
+      "mode" : "fs",
+      "src_file" : "/home/tylerdurden/project_mayhem",
+      "backup_name" : "project_mayhem_backup",
+      "container" : "my_backup_container",
+  }
+  "job_schedule": {
+    "time_created": 1234,
+    "time_started": 1234,
+    "time_ended":   0,
+    "status":  "scheduled",
+    "schedule_date": "2015-06-02T16:20:00"
+  }
+  "job_id": "blabla",
+  "client_id": "blabla",
+  "user_id": "blabla",
+  "description": "scheduled one shot",
 }
 
-Action document (the actual document stored in elasticsearch)
-{
-  "action": action_info
-  "user_id": string,    # owner of the information (OS X-User-Id, keystone provided, added by api)
+
+new job, in stop status, with pending start request
+job will be executed daily at the provided hour:min:sec
+while year,month,day are ignored, if provided
+
+"job": {
+  "job_action": {
+      "action" : "backup"
+      "mode" : "fs"
+      "src_file" : "/home/tylerdurden/project_mayhem"
+      "backup_name" : "project_mayhem_backup"
+      "container" : "my_backup_container"
+  },
+  "job_schedule": {
+    "time_created": 1234,
+    "time_started": 1234,
+    "time_ended":   0,
+    "status":  "stop",
+    "event": "start"
+    "schedule_period" : "daily"
+    "schedule_time": "2015-06-02T16:20:00"
+  },
+  "job_id": "blabla",
+  "client_id": "blabla",
+  "user_id": "blabla",
+  "description": "daily backup",
 }
+
+
+multiple scheduling choices allowed
+"job": {
+  "job_action": {
+      "action" : "backup"
+      "mode" : "fs"
+      "src_file" : "/home/tylerdurden/project_mayhem"
+      "backup_name" : "project_mayhem_backup"
+      "container" : "my_backup_container"
+  }
+  "job_schedule": {
+    "time_created": 1234,
+    "time_started": 1234,
+    "time_ended":   0,
+    "status":  "scheduled"
+    "schedule_month" : "1-6, 9-12"
+    "schedule_day" : "mon, wed, fri"
+    "schedule_hour": "03"
+    "schedule_minute": "25"
+  }
+  "job_id": "blabla",
+  "client_id": "blabla",
+  "user_id": "blabla",
+  "description": "daily backup",
+}
+
+
+Finished job with result:
+"job": {
+  "job_action": {
+      "action" : "backup"
+      "mode" : "fs"
+      "src_file" : "/home/tylerdurden/project_mayhem"
+      "backup_name" : "project_mayhem_backup"
+      "container" : "my_backup_container"
+  },
+  "job_schedule": {
+    "time_created": 1234,
+    "time_started": 1234,
+    "time_ended":   4321,
+    "status":  "stop",
+    "event": "",
+    "result": "success",
+    "schedule_time": "2015-06-02T16:20:00"
+  },
+  "job_id": "blabla",
+  "client_id": "blabla",
+  "user_id": "blabla",
+  "description": "one shot job",
+}
+
+
+Ini version:
+
+[job]
+job_id = 12344321
+client_id = 12344321
+user_id = qwerty
+description = scheduled one shot
+
+[job_action]
+action = backup
+mode = fs
+src_file = /home/tylerdurden/project_mayhem
+backup_name = project_mayhem_backup
+container = my_backup_container
+
+[job_schedule]
+time_created = 1234
+time_started = 1234
+time_ended =
+status = scheduled
+schedule_time = 2015-06-02T16:20:00

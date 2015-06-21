@@ -22,6 +22,7 @@ Hudson (tjh@cryptsoft.com).
 import falcon
 from freezer_api.common import exceptions
 
+
 class ClientsCollectionResource(object):
     """
     Handler for endpoint: /v1/clients

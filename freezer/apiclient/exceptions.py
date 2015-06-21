@@ -23,60 +23,48 @@ import json
 
 
 class ApiClientException(Exception):
-    def __init__(self, r):
+    @staticmethod
+    def get_message_from_api_response(r):
+        """
+        returns a message based on information from a api-formatted response
+        if available, otherwise None
+        api-formatted response should be:
+            {
+                title: "error title string",
+                description: "error description string"
+            }
+
+        :param r: response object
+        :return: string with error message or None if it fails
+        """
         try:
             body = json.loads(r.text)
             message = "[*] Error {0}: {1}".format(
                 r.status_code,
                 body['description'])
         except:
-            message = r
+            message = None
+        return message
+
+    @staticmethod
+    def get_message_from_response(r):
+        """
+        composes the error message using information eventually present
+        in the response (http error code and the http response body)
+
+        :param r: response object
+        :return: string with error message or None if it fails
+        """
+        try:
+            message = "[*] Error {0}: {1}".format(
+                r.status_code,
+                r.text)
+        except:
+            message = None
+        return message
+
+    def __init__(self, r):
+        message = self.get_message_from_api_response(r) or \
+            self.get_message_from_response(r) or \
+            str(r)
         super(ApiClientException, self).__init__(message)
-
-    def __str__(self):
-        return self.message
-
-
-class MetadataCreationFailure(ApiClientException):
-    def __init__(self, r=''):
-        super(self.__class__, self).__init__(r)
-
-
-class MetadataGetFailure(ApiClientException):
-    def __init__(self, r=''):
-        super(self.__class__, self).__init__(r)
-
-
-class MetadataDeleteFailure(ApiClientException):
-    def __init__(self, r=''):
-        super(self.__class__, self).__init__(r)
-
-
-class AuthFailure(ApiClientException):
-    def __init__(self, r=''):
-        super(self.__class__, self).__init__(r)
-
-
-class MetadataUpdateFailure(ApiClientException):
-    def __init__(self, r=''):
-        super(self.__class__, self).__init__(r)
-
-
-class ConfigCreationFailure(ApiClientException):
-    def __init__(self, r=''):
-        super(self.__class__, self).__init__(r)
-
-
-class ConfigGetFailure(ApiClientException):
-    def __init__(self, r=''):
-        super(self.__class__, self).__init__(r)
-
-
-class ConfigDeleteFailure(ApiClientException):
-    def __init__(self, r=''):
-        super(self.__class__, self).__init__(r)
-
-
-class ConfigUpdateFailure(ApiClientException):
-    def __init__(self, r=''):
-        super(self.__class__, self).__init__(r)

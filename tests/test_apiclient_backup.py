@@ -53,7 +53,7 @@ class TestBackupManager(unittest.TestCase):
         mock_response = Mock()
         mock_response.status_code = 500
         mock_requests.post.return_value = mock_response
-        self.assertRaises(exceptions.MetadataCreationFailure, self.b.create, {'backup': 'metadata'})
+        self.assertRaises(exceptions.ApiClientException, self.b.create, {'backup': 'metadata'})
 
     @patch('freezer.apiclient.backups.requests')
     def test_delete_ok(self, mock_requests):
@@ -68,7 +68,7 @@ class TestBackupManager(unittest.TestCase):
         mock_response = Mock()
         mock_response.status_code = 500
         mock_requests.delete.return_value = mock_response
-        self.assertRaises(exceptions.MetadataDeleteFailure, self.b.delete, 'test_backup_id')
+        self.assertRaises(exceptions.ApiClientException, self.b.delete, 'test_backup_id')
 
     @patch('freezer.apiclient.backups.requests')
     def test_get_ok(self, mock_requests):
@@ -92,7 +92,7 @@ class TestBackupManager(unittest.TestCase):
         mock_response = Mock()
         mock_response.status_code = 403
         mock_requests.get.return_value = mock_response
-        self.assertRaises(exceptions.MetadataGetFailure,
+        self.assertRaises(exceptions.ApiClientException,
                           self.b.get, 'test_backup_id')
 
     @patch('freezer.apiclient.backups.requests')
@@ -130,4 +130,4 @@ class TestBackupManager(unittest.TestCase):
         backup_list = [{'backup_id_0': 'qwerqwer'}, {'backup_id_1': 'asdfasdf'}]
         mock_response.json.return_value = {'backups': backup_list}
         mock_requests.get.return_value = mock_response
-        self.assertRaises(exceptions.MetadataGetFailure, self.b.list)
+        self.assertRaises(exceptions.ApiClientException, self.b.list)

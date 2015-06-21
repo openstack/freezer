@@ -21,7 +21,6 @@ Hudson (tjh@cryptsoft.com).
 
 import falcon
 from freezer_api.common import exceptions
-import logging
 
 
 class BackupsCollectionResource(object):

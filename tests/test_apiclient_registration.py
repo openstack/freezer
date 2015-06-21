@@ -53,7 +53,7 @@ class TestRegistrationManager(unittest.TestCase):
         mock_response = Mock()
         mock_response.status_code = 500
         mock_requests.post.return_value = mock_response
-        self.assertRaises(exceptions.MetadataCreationFailure, self.r.create, {'client': 'metadata'})
+        self.assertRaises(exceptions.ApiClientException, self.r.create, {'client': 'metadata'})
 
     @patch('freezer.apiclient.registration.requests')
     def test_delete_ok(self, mock_requests):
@@ -68,7 +68,7 @@ class TestRegistrationManager(unittest.TestCase):
         mock_response = Mock()
         mock_response.status_code = 500
         mock_requests.delete.return_value = mock_response
-        self.assertRaises(exceptions.MetadataDeleteFailure, self.r.delete, 'test_client_id')
+        self.assertRaises(exceptions.ApiClientException, self.r.delete, 'test_client_id')
 
     @patch('freezer.apiclient.registration.requests')
     def test_get_ok(self, mock_requests):
@@ -104,5 +104,5 @@ class TestRegistrationManager(unittest.TestCase):
         client_list = [{'client_id_0': 'qwerqwer'}, {'client_id_1': 'asdfasdf'}]
         mock_response.json.return_value = {'clients': client_list}
         mock_requests.get.return_value = mock_response
-        self.assertRaises(exceptions.MetadataGetFailure, self.r.list)
+        self.assertRaises(exceptions.ApiClientException, self.r.list)
 

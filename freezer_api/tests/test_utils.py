@@ -20,10 +20,13 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-
 import unittest
+from mock import Mock, patch
+
 from freezer_api.common import utils
 
+from freezer_api.common.exceptions import *
+from common import *
 
 DATA_backup_metadata = {
     "container": "freezer_container",
@@ -109,3 +112,75 @@ class TestBackupMetadataDoc(unittest.TestCase):
         self.assertEqual(self.backup_metadata.backup_id, DATA_backup_id)
         self.backup_metadata.data['container'] = 'different'
         self.assertNotEqual(self.backup_metadata.backup_id, DATA_backup_id)
+
+
+class TestJobDoc(unittest.TestCase):
+
+    def test_validate_ok_when_data_ok(self):
+        job_doc = get_fake_job_0()
+        res = utils.JobDoc.validate(job_doc)
+        self.assertIsNone(res)
+
+    def test_validate_raises_BadDataFormat_when_doc_has_no_jobid(self):
+        job_doc = get_fake_job_0()
+        job_doc.pop('job_id')
+        self.assertRaises(BadDataFormat, utils.JobDoc.validate, job_doc)
+
+    def test_validate_raises_BadDataFormat_when_doc_has_no_userid(self):
+        job_doc = get_fake_job_0()
+        job_doc.pop('job_id')
+        self.assertRaises(BadDataFormat, utils.JobDoc.validate, job_doc)
+
+    def test_validate_raises_BadDataFormat_when_doc_has_invalid_state(self):
+        job_doc = get_fake_job_0()
+        job_doc['job_schedule']['status'] = 'not_valid'
+        self.assertRaises(BadDataFormat, utils.JobDoc.validate, job_doc)
+
+    def test_validate_patch_raises_when_doc_has_invalid_state(self):
+        job_doc = get_fake_job_0()
+        job_doc['job_schedule']['status'] = 'value_no_allowed'
+        self.assertRaises(BadDataFormat, utils.JobDoc.validate_patch, job_doc)
+
+    def test_createpatch_pops_jobid_and_userid(self):
+        job_doc = get_fake_job_0()
+        res_doc = utils.JobDoc.create_patch(job_doc)
+        self.assertFalse('job_id' in res_doc)
+        self.assertFalse('user_id' in res_doc)
+
+    def test_createpatch_raises_BadDataFormat_when_patch_has_invalid_state(self):
+        job_doc = get_fake_job_0()
+        job_doc['job_schedule']['status'] = 'value_no_allowed'
+        self.assertRaises(BadDataFormat, utils.JobDoc.create_patch, job_doc)
+
+    def test_createpatch_raises_BadDataFormat_when_patch_has_invalid_event(self):
+        job_doc = get_fake_job_0()
+        job_doc['job_schedule']['event'] = 'value_no_allowed'
+        self.assertRaises(BadDataFormat, utils.JobDoc.create_patch, job_doc)
+
+    @patch('freezer_api.common.utils.uuid')
+    @patch('freezer_api.common.utils.time')
+    def test_create_inserts_correct_uuid_timecreated_status(self, mock_time, mock_uuid):
+        mock_time.time.return_value = 1433611337
+        mock_uuid.uuid4.return_value = mock_uuid
+        mock_uuid.hex = 'hotforteacher'
+        job_doc = get_fake_job_0()
+        job_doc['job_schedule']['status'] = 'stop'
+        res_doc = utils.JobDoc.create(job_doc, 'dude')
+        self.assertEqual(res_doc['job_schedule']['time_created'], 1433611337)
+        self.assertEqual(res_doc['job_schedule']['time_started'], -1)
+        self.assertEqual(res_doc['job_schedule']['time_ended'], -1)
+        self.assertEqual(res_doc['job_schedule']['status'], 'stop')
+        self.assertEqual(res_doc['user_id'], 'dude')
+        self.assertEqual(res_doc['job_id'], 'hotforteacher')
+
+    @patch('freezer_api.common.utils.uuid')
+    @patch('freezer_api.common.utils.time')
+    def test_create_raises_BadDataFormat_when_isvalid_fails(self, mock_time, mock_uuid):
+        mock_time.time.return_value = 1433611337
+        mock_uuid.uuid4.return_value = mock_uuid
+        mock_uuid.hex = 'hotforteacher'
+        job_doc = get_fake_job_0()
+        job_doc['job_schedule']['event'] = 'not_valid'
+        self.assertRaises(BadDataFormat, utils.JobDoc.create, job_doc, 'dude')
+
+

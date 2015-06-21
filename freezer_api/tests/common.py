@@ -22,7 +22,7 @@ Hudson (tjh@cryptsoft.com).
 
 
 import io
-
+import copy
 
 fake_data_0_backup_id = 'freezer_container_alpha_important_data_backup_8475903425_0'
 fake_data_0_user_id = 'qwerty1234'
@@ -170,73 +170,99 @@ fake_data_0_elasticsearch_miss = {
     "took": 1
 }
 
-fake_action_0_user_id = "f4db4da085f043059441565720b217c7"
-fake_action_0_action_id = "e7181e5e-2c75-43f8-92c0-c037ae5f11e4"
+fake_job_0_user_id = "f4db4da085f043059441565720b217c7"
+fake_job_0_job_id = "e7181e5e-2c75-43f8-92c0-c037ae5f11e4"
 
-fake_action_0_elasticsearch_not_found = {
+fake_job_0_elasticsearch_not_found = {
     "_id": "e7181e5e-2c75-43f8-92c0-c037ae5f11e43",
     "_index": "freezer",
-    "_type": "actions",
+    "_type": "job",
     "found": False
 }
 
-fake_action_0 = {
-            "action_id": "e7181e5e-2c75-43f8-92c0-c037ae5f11e4",
-            "client_id": "mytenantid_myhostname",
-            "description": "test action 4",
-            "job": {
-                "action": "restore",
-                "backup-name": "project_mayhem_backup",
-                "container": "my_backup_container",
-                "max_cpu_priority": True,
-                "restore-abs-path": "/home/tylerdurden/project_mayhem",
-                "restore-from-host": "another_host"
-            },
-            "status": "pending",
-            "time_created": 1431100962,
-            "time_end": 0,
-            "time_start": 0
+fake_job_0 = {
+  "job_action": {
+      "action": "backup",
+      "mode": "fs",
+      "src_file": "/home/tylerdurden/project_mayhem",
+      "backup_name": "project_mayhem_backup",
+      "container": "my_backup_container"
+  },
+  "job_schedule": {
+    "time_created": 1234,
+    "time_started": 1234,
+    "time_ended": 1234,
+    "status": "stop",
+    "schedule_date": "2015-06-02T16:20:00",
+    "schedule_interval": "2 days"
+  },
+  "job_id": "e7181e5e-2c75-43f8-92c0-c037ae5f11e4",
+  "client_id": "mytenantid_myhostname",
+  "user_id": "f4db4da085f043059441565720b217c7",
+  "description": "test action 4"
 }
 
-fake_action_0_doc = {
-        "action": fake_action_0,
-        "user_id": "f4db4da085f043059441565720b217c7"
-    }
+def get_fake_job_0():
+    return copy.deepcopy(fake_job_0)
 
-fake_action_0_elasticsearch_found = {
+def get_fake_job_1():
+    return copy.deepcopy(fake_job_1)
+
+fake_job_0_elasticsearch_found = {
     "_id": "e7181e5e-2c75-43f8-92c0-c037ae5f11e4",
     "_index": "freezer",
-    "_source": fake_action_0_doc,
+    "_source": fake_job_0,
     "_type": "actions",
     "_version": 1,
     "found": True
 }
 
 
-fake_action_1 = {
-            "action_id": "1b05e367-7832-42df-850e-bc48eabee04e",
-            "client_id": "mytenantid_myhostname",
-            "description": "test action 4",
-            "job": {
-                "action": "restore",
-                "backup-name": "project_mayhem_backup",
-                "container": "my_backup_container",
-                "max_cpu_priority": True,
-                "restore-abs-path": "/home/tylerdurden/project_mayhem",
-                "restore-from-host": "another_host"
-            },
-            "status": "pending",
-            "time_created": 1431100962,
-            "time_end": 0,
-            "time_start": 0
+fake_job_1 = {
+  "job_action": {
+      "action": "backup",
+      "mode": "fs",
+      "src_file": "/home/tylerdurden/project_mayhem",
+      "backup_name": "project_mayhem_backup",
+      "container": "my_backup_container",
+  },
+  "job_schedule": {
+    "time_created": 1234,
+    "time_started": 1234,
+    "time_ended": 0,
+    "status": "invalid",
+    "schedule_time": "2015-06-02T16:20:00"
+  },
+  "job_id": "1b05e367-7832-42df-850e-bc48eabee04e",
+  "client_id": "mytenantid_myhostname",
+  "user_id": "f4db4da085f043059441565720b217c7",
+  "description": "test action 4"
 }
 
-fake_action_1_doc = {
-        "action": fake_action_1,
-        "user_id": "f4db4da085f043059441565720b217c7"
-    }
-
-
+# fake_action_1 = {
+#             "action_id": "1b05e367-7832-42df-850e-bc48eabee04e",
+#             "client_id": "mytenantid_myhostname",
+#             "description": "test action 4",
+#             "job": {
+#                 "action": "restore",
+#                 "backup-name": "project_mayhem_backup",
+#                 "container": "my_backup_container",
+#                 "max_cpu_priority": True,
+#                 "restore-abs-path": "/home/tylerdurden/project_mayhem",
+#                 "restore-from-host": "another_host"
+#             },
+#             "status": "pending",
+#             "time_created": 1431100962,
+#             "time_end": 0,
+#             "time_start": 0
+# }
+#
+# fake_action_1_doc = {
+#         "action": fake_action_1,
+#         "user_id": "f4db4da085f043059441565720b217c7"
+#     }
+#
+#
 fake_data_1_wrapped_backup_metadata = {
     'backup_id': 'freezer_container_alpha_important_data_backup_125235431_1',
     'user_id': 'qwerty1234',

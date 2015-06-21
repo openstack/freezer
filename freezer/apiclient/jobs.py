@@ -1,5 +1,5 @@
 """
-Copyright 2014 Hewlett-Packard
+Copyright 2015 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,63 +22,76 @@ Hudson (tjh@cryptsoft.com).
 import json
 import requests
 
-from freezer.apiclient import exceptions
+import exceptions
 
 
-class ConfigsManager(object):
+class JobManager(object):
 
     def __init__(self, client):
         self.client = client
-        self.endpoint = self.client.endpoint + '/v1/configs/'
+        self.endpoint = self.client.endpoint + '/v1/jobs/'
 
     @property
     def headers(self):
         return {'X-Auth-Token': self.client.auth_token}
 
-    def create(self, config_file):
-        r = requests.post(self.endpoint,
-                          data=json.dumps(config_file),
+    def create(self, doc, job_id=''):
+        job_id = job_id or doc.get('job_id', '')
+        endpoint = self.endpoint + job_id
+        doc['client_id'] = doc.get('client_id', '') or self.client.client_id
+        r = requests.post(endpoint,
+                          data=json.dumps(doc),
                           headers=self.headers)
         if r.status_code != 201:
-            raise exceptions.ConfigCreationFailure(
-                "[*] Error {0}".format(r.status_code))
-        config_id = r.json()['config_id']
-        return config_id
+            raise exceptions.ApiClientException(r)
+        job_id = r.json()['job_id']
+        return job_id
 
-    def delete(self, config_id):
-        endpoint = self.endpoint + config_id
+    def delete(self, job_id):
+        endpoint = self.endpoint + job_id
         r = requests.delete(endpoint, headers=self.headers)
         if r.status_code != 204:
-            raise exceptions.ConfigDeleteFailure(
-                "[*] Error {0}".format(r.status_code))
+            raise exceptions.ApiClientException(r)
 
-    def list(self, limit=10, offset=0, search=None):
+    def list_all(self, limit=10, offset=0, search=None):
         data = json.dumps(search) if search else None
         query = {'limit': int(limit), 'offset': int(offset)}
         r = requests.get(self.endpoint, headers=self.headers,
                          params=query, data=data)
         if r.status_code != 200:
-            raise exceptions.ConfigGetFailure(
-                "[*] Error {0}".format(r.status_code))
+            raise exceptions.ApiClientException(r)
+        return r.json()['jobs']
 
-        return r.json()['configs']
+    def list(self, limit=10, offset=0, search={}, client_id=None):
+        client_id = client_id or self.client.client_id
+        new_search = search.copy()
+        new_search['match'] = search.get('match', [])
+        new_search['match'].append({'client_id': client_id})
+        return self.list_all(limit, offset, new_search)
 
-    def get(self, config_id):
-        endpoint = self.endpoint + config_id
+    def get(self, job_id):
+        endpoint = self.endpoint + job_id
         r = requests.get(endpoint, headers=self.headers)
         if r.status_code == 200:
             return r.json()
         if r.status_code == 404:
             return None
-        raise exceptions.ConfigGetFailure(
-            "[*] Error {0}".format(r.status_code))
+        raise exceptions.ApiClientException(r)
 
-    def update(self, config_id, update_doc):
-        endpoint = self.endpoint + config_id
+    def update(self, job_id, update_doc):
+        endpoint = self.endpoint + job_id
         r = requests.patch(endpoint,
                            headers=self.headers,
                            data=json.dumps(update_doc))
         if r.status_code != 200:
-            raise exceptions.ConfigUpdateFailure(
-                "[*] Error {0}: {1}".format(r.status_code, r.text))
+            raise exceptions.ApiClientException(r)
         return r.json()['version']
+
+    def start_job(self, job_id):
+        return self.update(job_id, {'job_schedule': {'event': 'start'}})
+
+    def stop_job(self, job_id):
+        return self.update(job_id, {'job_schedule': {'event': 'stop'}})
+
+    def abort_job(self, job_id):
+        return self.update(job_id, {'job_schedule': {'event': 'abort'}})
