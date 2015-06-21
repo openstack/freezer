@@ -68,18 +68,27 @@ class TestRestore:
 
     def test_restore_fs_sort_obj(self, monkeypatch):
 
-        backup_opt = BackupOpt1()
         fakelogging = FakeLogging()
-
+        # TEST 1
+        backup_opt = BackupOpt1()
+        fakemultiprocessing = FakeMultiProcessing()
         monkeypatch.setattr(logging, 'critical', fakelogging.critical)
         monkeypatch.setattr(logging, 'warning', fakelogging.warning)
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
-
+        monkeypatch.setattr(multiprocessing, 'Process', fakemultiprocessing.Process)
         assert restore_fs_sort_obj(backup_opt) is None
 
+        # TEST 2
         backup_opt = BackupOpt1()
         backup_opt.backup_name = 'abcdtest'
+        monkeypatch.setattr(multiprocessing, 'Process', fakemultiprocessing.Process)
+        pytest.raises(Exception, restore_fs_sort_obj, backup_opt)
+
+        # TEST 3
+        backup_opt = BackupOpt1()
+        fakemultiprocessing = FakeMultiProcessing1()
+        monkeypatch.setattr(multiprocessing, 'Process', fakemultiprocessing.Process)
         pytest.raises(Exception, restore_fs_sort_obj, backup_opt)
 
     def test_restore_cinder_by_glance(self):

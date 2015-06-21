@@ -205,7 +205,8 @@ class FakeBackup:
 
 
 class FakeMultiProcessing:
-    def __init__(self, *args, **kwargs):
+
+    def __init__(self):
         return None
 
     class Queue:
@@ -252,8 +253,9 @@ class FakeMultiProcessing:
 
     class Process:
         def __init__(self, target=True, args=True):
+            self.target = target
+            self.args = args
             self.exitcode = 0
-            return None
 
         def start(self):
             return True
@@ -317,8 +319,9 @@ class FakeMultiProcessing1:
 
     class Process:
         def __init__(self, target=True, args=True):
+            self.target = target
+            self.args = args
             self.exitcode = 1
-            return None
 
         def start(self):
             return True
@@ -762,12 +765,12 @@ class BackupOpt1:
             'test-hostname_test-backup-name_1234567_0',
             'test-hostname_test-backup-name_1234568_1',
             'test-hostname_test-backup-name_1234569_2',
-            'test-hostname_test-backup-name_1234569_3',
-            'test-hostname_test-backup-name_1234569_4',
-            'test-hostname_test-backup-name_1234569_5',
-            'tar_metadata_test-hostname_test-backup-name_1234569_5',
-            'tar_metadata_test-hostname_test-backup-name_1234569_4',
-            'tar_metadata_test-hostname_test-backup-name_1234569_3',
+            'test-hostname_test-backup-name_1234570_3',
+            'test-hostname_test-backup-name_1234571_4',
+            'test-hostname_test-backup-name_1234572_5',
+            'tar_metadata_test-hostname_test-backup-name_1234572_5',
+            'tar_metadata_test-hostname_test-backup-name_1234571_4',
+            'tar_metadata_test-hostname_test-backup-name_1234570_3',
             'tar_metadata_test-hostname_test-backup-name_1234569_2',
             'tar_metadata_test-hostname_test-backup-name_1234568_1',
             'tar_metadata_test-hostname_test-backup-name_1234567_0']
