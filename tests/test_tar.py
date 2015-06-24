@@ -93,7 +93,7 @@ class TestTar:
         pytest.raises(Exception, tar_incremental, tar_cmd, backup_opt, curr_tar_meta, remote_manifest_meta)
 
     def test_gen_tar_command(self, monkeypatch):
-
+        expanduser = Os()
         backup_opt = BackupOpt1()
         fakelogging = FakeLogging()
         (meta_data_backup_file, remote_manifest_meta) = True, {}
@@ -129,11 +129,23 @@ class TestTar:
         assert val1 is not False
         assert val2 is not False
         assert val3 is not False
+        
+        monkeypatch.setattr(os.path, 'exists', expanduser.notexists)
+        
+        with pytest.raises(Exception) as excinfo :
+            gen_tar_command(backup_opt, meta_data_backup_file,
+                            time_stamp, remote_manifest_meta)
+        assert excinfo.value.message == 'Error: path-to-backup does not exist'
+        
+        monkeypatch.setattr(os.path, 'exists', expanduser.exists)
 
         backup_opt.__dict__['path_to_backup'] = ''
-        pytest.raises(Exception, gen_tar_command,
-                      backup_opt, meta_data_backup_file, time_stamp,
-                      remote_manifest_meta)
+        with pytest.raises(Exception) as excinfo :
+            gen_tar_command(backup_opt, meta_data_backup_file,
+                            time_stamp, remote_manifest_meta)
+        assert excinfo.value.message == ('Error: Please ALL the '
+                                         'following options: '
+                                         '--path-to-backup, --backup-name')
 
 
     def test_tar_backup(self, monkeypatch):

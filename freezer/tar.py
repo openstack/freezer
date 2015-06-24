@@ -161,12 +161,13 @@ def gen_tar_command(
 
     required_list = [
         opt_dict.backup_name,
-        opt_dict.path_to_backup,
-        os.path.exists(opt_dict.path_to_backup)]
+        opt_dict.path_to_backup]
 
     if not validate_all_args(required_list):
         raise Exception('Error: Please ALL the following options: '
                         '--path-to-backup, --backup-name')
+    if not os.path.exists(opt_dict.path_to_backup):
+        raise Exception('Error: path-to-backup does not exist')
 
     # Change che current working directory to op_dict.path_to_backup
     os.chdir(os.path.normpath(opt_dict.path_to_backup.strip()))

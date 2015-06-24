@@ -946,6 +946,10 @@ class Os:
     @classmethod
     def exists(cls, directory=True):
         return True
+    
+    @classmethod
+    def notexists(cls, directory=True):
+        return False
 
     @classmethod
     def isabs(cls, directory=True):
