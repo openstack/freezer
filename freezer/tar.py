@@ -38,6 +38,7 @@ class TarCommandBuilder:
     def __init__(self, path):
         self.dereference = ''
         self.path = path
+        self.filepath = '.'
         self.level = 0
         self.exclude = None
         self.dereference_mode = {
@@ -51,6 +52,9 @@ class TarCommandBuilder:
         self.exclude = ''
         self.openssl_path = None
         self.encrypt_pass_file = None
+
+    def set_filepath(self, path):
+        self.filepath = path
 
     def set_level(self, level):
         self.level = level
@@ -105,7 +109,7 @@ class TarCommandBuilder:
                         file=self.encrypt_pass_file)
             tar_command = '{0} | {1} '.format(tar_command, openssl_cmd)
 
-        return ' {0} . '.format(tar_command)
+        return ' {0} {1} '.format(tar_command, self.filepath)
 
 
 def tar_restore_args_valid(backup_opt_dict):

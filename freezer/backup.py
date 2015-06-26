@@ -287,16 +287,24 @@ def backup_mode_fs(backup_opt_dict, time_stamp, manifest_meta_dict):
                     backup_opt_dict.path_to_backup,
                     backup_opt_dict.windows_volume)
 
-        path_to_backup = backup_opt_dict.path_to_backup
+        filepath = '.'
+        chdir_path = os.path.expanduser(
+            os.path.normpath(backup_opt_dict.path_to_backup.strip()))
+        if not os.path.isdir(chdir_path):
+            filepath = os.path.basename(chdir_path)
+            chdir_path = os.path.dirname(chdir_path)
+        os.chdir(chdir_path)
+
         # Change che current working directory to op_dict.path_to_backup
-        os.chdir(os.path.normpath(path_to_backup.strip()))
 
         logging.info('[*] Changing current working directory to: {0} \
-        '.format(path_to_backup))
-        logging.info('[*] Backup started for: {0}'.format(path_to_backup))
+        '.format(chdir_path))
+        logging.info('[*] Backup started for: {0}'.format(
+            backup_opt_dict.path_to_backup))
 
         builder = TarCommandBuilder(backup_opt_dict.tar_path)
         builder.set_dereference(backup_opt_dict.dereference_symlink)
+        builder.set_filepath(filepath)
         curr_backup_level = manifest_meta_dict.get(
             'x-object-meta-backup-current-level', '0')
         tar_meta = manifest_meta_dict.get('x-object-meta-tar-meta-obj-name')
