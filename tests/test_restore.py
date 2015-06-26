@@ -24,10 +24,10 @@ Hudson (tjh@cryptsoft.com).
 from commons import *
 from freezer.restore import (
     restore_fs, restore_fs_sort_obj, RestoreOs)
+from freezer import swift
 import freezer
 import logging
 import pytest
-import swiftclient
 
 
 class TestRestore:
@@ -43,11 +43,6 @@ class TestRestore:
         monkeypatch.setattr(logging, 'error', fakelogging.error)
         monkeypatch.setattr(
             freezer.restore, 'restore_fs_sort_obj', fake_restore_fs_sort_obj)
-
-        fakeclient = FakeSwiftClient()
-        fakeconnector = fakeclient.client
-        monkeypatch.setattr(swiftclient, 'client', fakeconnector)
-
         assert restore_fs(backup_opt) is None
 
         backup_opt = BackupOpt1()
@@ -57,14 +52,6 @@ class TestRestore:
         backup_opt = BackupOpt1()
         backup_opt.restore_from_date = None
         assert restore_fs(backup_opt) is None
-
-        monkeypatch.setattr(
-            freezer.utils, 'get_match_backup', fake_get_match_backup)
-        backup_opt = BackupOpt1()
-        backup_opt.remote_obj_list = [{'name': 'tsdfgsdfs',
-            'last_modified': 'testdate'}]
-        backup_opt.remote_match_backup = []
-        pytest.raises(ValueError, restore_fs, backup_opt)
 
     def test_restore_fs_sort_obj(self, monkeypatch):
 

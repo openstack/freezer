@@ -20,53 +20,24 @@ Hudson (tjh@cryptsoft.com).
 
 Freezer functions to interact with OpenStack Swift client and server
 """
+from freezer.storages.swiftstorage import SwiftStorage
 
-from freezer.utils import (
-    validate_all_args, get_match_backup,
-    sort_backup_list, DateTime)
-import os
+from freezer.utils import (sort_backup_list, DateTime, segments_name)
 import json
 import re
-from copy import deepcopy
 import time
 import logging
-import sys
 
 RESP_CHUNK_SIZE = 65536
 
 
-def create_containers(backup_opt):
-    """Create backup containers
-    The function is used to create object and segments
-    containers
-
-    :param backup_opt:
-    :return: True if both containers are successfully created
-    """
-
-    # Create backup container
-    logging.warning(
-        "[*] Creating container {0}".format(backup_opt.container))
-    sw_connector = backup_opt.client_manager.get_swift()
-    sw_connector.put_container(backup_opt.container)
-
-    # Create segments container
-    logging.warning(
-        "[*] Creating container segments: {0}".format(
-            backup_opt.container_segments))
-    sw_connector.put_container(backup_opt.container_segments)
-
-
-def show_containers(backup_opt_dict):
+def show_containers(containers_list):
     """
     Print remote containers in sorted order
     """
 
-    if not backup_opt_dict.list_containers:
-        return False
-
     ordered_container = {}
-    for container in backup_opt_dict.containers_list:
+    for container in containers_list:
         ordered_container['container_name'] = container['name']
         size = '{0}'.format((int(container['bytes']) / 1024) / 1024)
         if size == '0':
@@ -76,7 +47,6 @@ def show_containers(backup_opt_dict):
         print json.dumps(
             ordered_container, indent=4,
             separators=(',', ': '), sort_keys=True)
-    return True
 
 
 def show_objects(backup_opt_dict):
@@ -88,14 +58,10 @@ def show_objects(backup_opt_dict):
     if not backup_opt_dict.list_objects:
         return False
 
-    required_list = [
-        backup_opt_dict.remote_obj_list]
-
-    if not validate_all_args(required_list):
-        raise Exception('Remote Object list not avaiblale')
-
     ordered_objects = {}
-    remote_obj = backup_opt_dict.remote_obj_list
+    remote_obj = get_container_content(
+        backup_opt_dict.client_manager,
+        backup_opt_dict.container)
 
     for obj in remote_obj:
         ordered_objects['object_name'] = obj['name']
@@ -154,7 +120,11 @@ def remove_obj_older_than(backup_opt_dict):
     older than the specified days or timestamp
     """
 
-    if not backup_opt_dict.remote_obj_list:
+    remote_obj_list = get_container_content(
+        backup_opt_dict.client_manager,
+        backup_opt_dict.container)
+
+    if not remote_obj_list:
         logging.warning('[*] No remote objects will be removed')
         return
 
@@ -174,8 +144,11 @@ def remove_obj_older_than(backup_opt_dict):
 
     backup_name = backup_opt_dict.backup_name
     hostname = backup_opt_dict.hostname
-    backup_opt_dict = get_match_backup(backup_opt_dict)
-    sorted_remote_list = sort_backup_list(backup_opt_dict)
+    backup_opt_dict.remote_match_backup = \
+        get_match_backup(backup_opt_dict.backup_name,
+                         backup_opt_dict.hostname,
+                         remote_obj_list)
+    sorted_remote_list = sort_backup_list(backup_opt_dict.remote_match_backup)
 
     tar_meta_incremental_dep_flag = False
     incremental_dep_flag = False
@@ -213,103 +186,28 @@ def remove_obj_older_than(backup_opt_dict):
                             incremental_dep_flag = False
 
 
-def get_container_content(backup_opt_dict):
+def get_container_content(client_manager, container):
     """
     Download the list of object of the provided container
     and print them out as container meta-data and container object list
     """
 
-    if not backup_opt_dict.container:
-        raise Exception('please provide a valid container name')
-
-    sw_connector = backup_opt_dict.client_manager.get_swift()
+    sw_connector = client_manager.get_swift()
     try:
-        backup_opt_dict.remote_obj_list = \
-            sw_connector.get_container(backup_opt_dict.container)[1]
-        return backup_opt_dict
+        return sw_connector.get_container(container)[1]
     except Exception as error:
         raise Exception('[*] Error: get_object_list: {0}'.format(error))
 
 
-def check_container_existance(backup_opt_dict):
-    """
-    Check if the provided container is already available on Swift.
-    The verification is done by exact matching between the provided container
-    name and the whole list of container available for the swift account.
-    """
-
-    required_list = [
-        backup_opt_dict.container_segments,
-        backup_opt_dict.container]
-
-    if not validate_all_args(required_list):
-        raise Exception('please provide the following arg: --container')
-
-    logging.info(
-        "[*] Retrieving container {0}".format(backup_opt_dict.container))
-    sw_connector = backup_opt_dict.client_manager.get_swift()
-    containers_list = sw_connector.get_account()[1]
-
-    match_container = [
-        container_object['name'] for container_object in containers_list
-        if container_object['name'] == backup_opt_dict.container]
-    match_container_seg = [
-        container_object['name'] for container_object in containers_list
-        if container_object['name'] == backup_opt_dict.container_segments]
-
-    # Initialize container dict
-    containers = {'main_container': False, 'container_segments': False}
-
-    if not match_container:
-        logging.warning("[*] No such container {0} available... ".format(
-            backup_opt_dict.container))
-    else:
-        logging.info(
-            "[*] Container {0} found!".format(backup_opt_dict.container))
-        containers['main_container'] = True
-
-    if not match_container_seg:
-        logging.warning(
-            "[*] No segments container {0} available...".format(
-                backup_opt_dict.container_segments))
-    else:
-        logging.info("[*] Container Segments {0} found!".format(
-            backup_opt_dict.container_segments))
-        containers['container_segments'] = True
-
-    return containers
-
-
-def manifest_upload(
-        manifest_file, backup_opt_dict, file_prefix, manifest_meta_dict):
-    """
-    Upload Manifest to manage segments in Swift
-    """
-
-    if not manifest_meta_dict:
-        raise Exception('Manifest Meta dictionary not available')
-
-    sw_connector = backup_opt_dict.client_manager.get_swift()
-    tmp_manifest_meta = dict()
-    for key, value in manifest_meta_dict.items():
-        if key.startswith('x-object-meta'):
-            tmp_manifest_meta[key] = value
-    manifest_meta_dict = deepcopy(tmp_manifest_meta)
-    header = manifest_meta_dict
-    manifest_meta_dict['x-object-manifest'] = u'{0}/{1}'.format(
-        backup_opt_dict.container_segments.strip(), file_prefix.strip())
-    logging.info('[*] Uploading Swift Manifest: {0}'.format(header))
-    sw_connector.put_object(
-        backup_opt_dict.container, file_prefix, manifest_file, headers=header)
-    logging.info('[*] Manifest successfully uploaded!')
-
-
-def add_stream(client_manager, container_segments, container, stream,
+def add_stream(client_manager, container, stream,
                package_name, headers=None):
     i = 0
+    container_segments = segments_name(container)
+    swift_storage = SwiftStorage(client_manager, container)
+
     for el in stream:
-        add_chunk(client_manager, container_segments,
-                  "{0}/{1}".format(package_name, "%08d" % i), el)
+        swift_storage.upload_chunk("{0}/{1}".format(package_name, "%08d" % i),
+                                   el)
         i += 1
     if not headers:
         headers = {}
@@ -321,128 +219,13 @@ def add_stream(client_manager, container_segments, container, stream,
     swift.put_object(container, package_name, "", headers=headers)
 
 
-def add_chunk(client_manager, container_segments, package_name, content):
-    # If for some reason the swift client object is not available anymore
-    # an exception is generated and a new client object is initialized/
-    # If the exception happens for 10 consecutive times for a total of
-    # 1 hour, then the program will exit with an Exception.
-    count = 0
-    while True:
-        try:
-            logging.info(
-                '[*] Uploading file chunk index: {0}'.format(
-                    package_name))
-            client_manager.get_swift().put_object(
-                container_segments,
-                package_name, content,
-                content_type='application/octet-stream',
-                content_length=len(content))
-            logging.info('[*] Data successfully uploaded!')
-            print '[*] Data successfully uploaded!'
-            break
-        except Exception as error:
-            logging.info('[*] Retrying to upload file chunk index: {0}'.format(
-                package_name))
-            time.sleep(60)
-            client_manager.create_swift()
-            count += 1
-            if count == 10:
-                logging.critical('[*] Error: add_object: {0}'
-                                 .format(error))
-                sys.exit(1)
-
-
-def add_object(
-        backup_opt_dict, backup_queue, absolute_file_path=None,
-        time_stamp=None):
-    """
-    Upload object on the remote swift server
-    """
-
-    if not backup_opt_dict.container:
-        err_msg = ('[*] Error: Please specify the container '
-                   'name with -C or --container option')
-        logging.exception(err_msg)
-        sys.exit(1)
-
-    if absolute_file_path is None and backup_queue is None:
-        err_msg = ('[*] Error: Please specify the file or fs path '
-                   'you want to upload on swift with -d or --dst-file')
-        logging.exception(err_msg)
-        sys.exit(1)
-
-    while True:
-        package_name = absolute_file_path.split('/')[-1]
-        file_chunk_index, file_chunk = backup_queue.get().popitem()
-        if not file_chunk_index and not file_chunk:
-            break
-        package_name = u'{0}/{1}/{2}/{3}'.format(
-            package_name, time_stamp,
-            backup_opt_dict.max_segment_size, file_chunk_index)
-        add_chunk(backup_opt_dict.client_manager,
-                  backup_opt_dict.container_segments,
-                  package_name, file_chunk)
-
-
-def get_containers_list(backup_opt_dict):
-    """
-    Get a list and information of all the available containers
-    """
-
-    try:
-        sw_connector = backup_opt_dict.client_manager.get_swift()
-        backup_opt_dict.containers_list = sw_connector.get_account()[1]
-        return backup_opt_dict
-    except Exception as error:
-        raise Exception('Get containers list error: {0}'.format(error))
-
-
-def object_to_file(backup_opt_dict, file_name_abs_path):
-    """
-    Take a payload downloaded from Swift
-    and save it to the disk as file_name
-    """
-
-    required_list = [
-        backup_opt_dict.container,
-        file_name_abs_path]
-
-    if not validate_all_args(required_list):
-        raise ValueError('Error in object_to_file(): Please provide ALL the '
-                         'following arguments: --container file_name_abs_path')
-
-    sw_connector = backup_opt_dict.client_manager.get_swift()
-    file_name = file_name_abs_path.split('/')[-1]
-    logging.info('[*] Downloading object {0} on {1}'.format(
-        file_name, file_name_abs_path))
-
-    # As the file is download by chunks and each chunk will be appened
-    # to file_name_abs_path, we make sure file_name_abs_path does not
-    # exists by removing it before
-    if os.path.exists(file_name_abs_path):
-        os.remove(file_name_abs_path)
-
-    with open(file_name_abs_path, 'ab') as obj_fd:
-        for obj_chunk in sw_connector.get_object(
-                backup_opt_dict.container, file_name,
-                resp_chunk_size=16000000)[1]:
-            obj_fd.write(obj_chunk)
-
-
-def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):
+def object_to_stream(container, client_manager, write_pipe, read_pipe,
+                     obj_name):
     """
     Take a payload downloaded from Swift
     and generate a stream to be consumed from other processes
     """
-
-    required_list = [
-        backup_opt_dict.container]
-
-    if not validate_all_args(required_list):
-        raise ValueError('Error in object_to_stream(): Please provide '
-                         'ALL the following argument: --container')
-
-    sw_connector = backup_opt_dict.client_manager.get_swift()
+    sw_connector = client_manager.get_swift()
     logging.info('[*] Downloading data stream...')
 
     # Close the read pipe in this child as it is unneeded
@@ -451,14 +234,234 @@ def object_to_stream(backup_opt_dict, write_pipe, read_pipe, obj_name):
     # pipe
     read_pipe.close()
     for obj_chunk in sw_connector.get_object(
-            backup_opt_dict.container, obj_name,
-            resp_chunk_size=RESP_CHUNK_SIZE)[1]:
+            container, obj_name, resp_chunk_size=RESP_CHUNK_SIZE)[1]:
         write_pipe.send_bytes(obj_chunk)
 
     # Closing the pipe after checking no data
-    # is still vailable in the pipe.
+    # is still available in the pipe.
     while True:
         if not write_pipe.poll():
             write_pipe.close()
             break
         time.sleep(1)
+
+
+def get_match_backup(backup_name, hostname, remote_obj_list):
+    """
+    Return a dictionary containing a list of remote matching backups from
+    backup_opt_dict.remote_obj_list.
+    Backup have to exactly match against backup name and hostname of the
+    node where freezer is executed. The matching objects are stored and
+    available in backup_opt_dict.remote_match_backup
+    """
+
+    backup_name = backup_name.lower()
+    remote_match_backup = []
+
+    for container_object in remote_obj_list:
+        object_name = container_object.get('name', None)
+        if object_name:
+            obj_name_match = re.search(r'{0}_({1})_\d+?_\d+?$'.format(
+                hostname, backup_name), object_name.lower(), re.I)
+            if obj_name_match:
+                remote_match_backup.append(object_name)
+
+    return remote_match_backup
+
+
+def get_rel_oldest_backup(hostname, backup_name, remote_obj_list):
+    """
+    Return from swift, the relative oldest backup matching the provided
+    backup name and hostname of the node where freezer is executed.
+    The relative oldest backup correspond the oldest backup from the
+    last level 0 backup.
+    """
+    first_backup_name = ''
+    first_backup_ts = 0
+    for container_object in remote_obj_list:
+        object_name = container_object.get('name', None)
+        if not object_name:
+            continue
+        obj_name_match = re.search(r'{0}_({1})_(\d+)_(\d+?)$'.format(
+            hostname, backup_name), object_name, re.I)
+        if not obj_name_match:
+            continue
+        remote_obj_timestamp = int(obj_name_match.group(2))
+        remote_obj_level = int(obj_name_match.group(3))
+        if remote_obj_level == 0 and (remote_obj_timestamp > first_backup_ts):
+            first_backup_name = object_name
+            first_backup_ts = remote_obj_timestamp
+
+    return first_backup_name
+
+
+def eval_restart_backup(backup_opt_dict):
+    """
+    Restart backup level if the first backup execute with always_level
+    is older then restart_always_level
+    """
+
+    if not backup_opt_dict.restart_always_level:
+        logging.info('[*] No need to set Backup {0} to level 0.'.format(
+            backup_opt_dict.backup_name))
+        return False
+
+    logging.info('[*] Checking always backup level timestamp...')
+    # Compute the amount of seconds to be compared with
+    # the remote backup timestamp
+    max_time = int(float(backup_opt_dict.restart_always_level) * 86400)
+    current_timestamp = backup_opt_dict.time_stamp
+    backup_name = backup_opt_dict.backup_name
+    hostname = backup_opt_dict.hostname
+    # Get relative oldest backup by calling get_rel_oldes_backup()
+
+    remote_obj_list = get_container_content(
+        backup_opt_dict.client_manager,
+        backup_opt_dict.container)
+    backup_opt_dict.remote_rel_oldest =\
+        get_rel_oldest_backup(hostname, backup_name, remote_obj_list)
+    if not backup_opt_dict.remote_rel_oldest:
+        logging.info('[*] Relative oldest backup for backup name {0} on \
+            host {1} not available. The backup level is NOT restarted'.format(
+            backup_name, hostname))
+        return False
+
+    obj_name_match = re.search(r'{0}_({1})_(\d+)_(\d+?)$'.format(
+        hostname, backup_name), backup_opt_dict.remote_rel_oldest, re.I)
+    if not obj_name_match:
+        err = ('[*] No backup match available for backup {0} '
+               'and host {1}'.format(backup_name, hostname))
+        logging.info(err)
+        return Exception(err)
+
+    first_backup_ts = int(obj_name_match.group(2))
+    if (current_timestamp - first_backup_ts) > max_time:
+        logging.info(
+            '[*] Backup {0} older then {1} days. Backup level set to 0'.format(
+                backup_name, backup_opt_dict.restart_always_level))
+
+        return True
+    else:
+        logging.info('[*] No need to set level 0 for Backup {0}.'.format(
+            backup_name))
+
+    return False
+
+
+def set_backup_level(backup_opt_dict, manifest_meta_dict):
+    """
+    Set the backup level params in backup_opt_dict and the swift
+    manifest. This is a fundamental part of the incremental backup
+    """
+
+    if manifest_meta_dict.get('x-object-meta-backup-name'):
+        backup_opt_dict.curr_backup_level = int(
+            manifest_meta_dict.get('x-object-meta-backup-current-level'))
+        max_level = manifest_meta_dict.get(
+            'x-object-meta-maximum-backup-level')
+        always_level = manifest_meta_dict.get(
+            'x-object-meta-always-backup-level')
+        restart_always_level = manifest_meta_dict.get(
+            'x-object-meta-restart-always-backup')
+        if max_level:
+            max_level = int(max_level)
+            if backup_opt_dict.curr_backup_level < max_level:
+                backup_opt_dict.curr_backup_level += 1
+                manifest_meta_dict['x-object-meta-backup-current-level'] = \
+                    str(backup_opt_dict.curr_backup_level)
+            else:
+                manifest_meta_dict['x-object-meta-backup-current-level'] = \
+                    backup_opt_dict.curr_backup_level = '0'
+        elif always_level:
+            always_level = int(always_level)
+            if backup_opt_dict.curr_backup_level < always_level:
+                backup_opt_dict.curr_backup_level += 1
+                manifest_meta_dict['x-object-meta-backup-current-level'] = \
+                    str(backup_opt_dict.curr_backup_level)
+            # If restart_always_level is set, the backup_age will be computed
+            # and if the backup age in days is >= restart_always_level, then
+            # backup-current-level will be set to 0
+            if restart_always_level:
+                backup_opt_dict.restart_always_level = restart_always_level
+                if eval_restart_backup(backup_opt_dict):
+                    backup_opt_dict.curr_backup_level = '0'
+                    manifest_meta_dict['x-object-meta-backup-current-level'] \
+                        = '0'
+    else:
+        backup_opt_dict.curr_backup_level = \
+            manifest_meta_dict['x-object-meta-backup-current-level'] = '0'
+
+    return backup_opt_dict, manifest_meta_dict
+
+
+def check_backup_and_tar_meta_existence(backup_opt_dict):
+    """
+    Check if any backup is already available on Swift.
+    The verification is done by backup_name, which needs to be unique
+    in Swift. This function will return an empty dict if no backup are
+    found or the Manifest metadata if the backup_name is available
+    """
+
+    if not backup_opt_dict.backup_name or not backup_opt_dict.container:
+        logging.warning(
+            ('[*] A valid Swift container, or backup name or container '
+             'content not available. Level 0 backup is being executed '))
+        return dict()
+
+    logging.info("[*] Retrieving backup name {0} on container \
+    {1}".format(
+        backup_opt_dict.backup_name.lower(), backup_opt_dict.container))
+
+    remote_obj_list = get_container_content(
+        backup_opt_dict.client_manager,
+        backup_opt_dict.container)
+    remote_match_backup = \
+        get_match_backup(backup_opt_dict.backup_name,
+                         backup_opt_dict.hostname,
+                         remote_obj_list)
+    try:
+        remote_newest_backup = get_newest_backup(backup_opt_dict.hostname,
+                                                 backup_opt_dict.backup_name,
+                                                 remote_match_backup)
+        swift = backup_opt_dict.client_manager.get_swift()
+        logging.info("[*] Backup {0} found!".format(
+            backup_opt_dict.backup_name))
+        backup_match = swift.head_object(
+            backup_opt_dict.container, remote_newest_backup)
+
+        return backup_match
+    except Exception:
+        logging.warning("[*] No such backup {0} available... Executing \
+            level 0 backup".format(backup_opt_dict.backup_name))
+        return dict()
+
+
+def get_newest_backup(hostname, backup_name, remote_match_backup):
+    """
+    Return from backup_opt_dict.remote_match_backup, the newest backup
+    matching the provided backup name and hostname of the node where
+    freezer is executed. It correspond to the previous backup executed.
+    NOTE: If backup has no tar_metadata, no newest backup is returned.
+    """
+
+    # Sort remote backup list using timestamp in reverse order,
+    # that is from the newest to the oldest executed backup
+
+    if not remote_match_backup:
+        raise Exception("remote match backups are empty")
+    sorted_backups_list = sort_backup_list(remote_match_backup)
+
+    print sorted_backups_list
+
+    for remote_obj in sorted_backups_list:
+        obj_name_match = re.search(r'^{0}_({1})_(\d+)_\d+?$'.format(
+            hostname, backup_name), remote_obj, re.I)
+        print obj_name_match
+        if not obj_name_match:
+            continue
+        tar_metadata_obj = 'tar_metadata_{0}'.format(remote_obj)
+        if tar_metadata_obj in sorted_backups_list:
+            return remote_obj
+        raise Exception("no tar file")
+
+    raise Exception('not backup found')

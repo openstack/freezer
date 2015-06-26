@@ -2,17 +2,16 @@
 
 from freezer.utils import (
     gen_manifest_meta, validate_all_args,
-    sort_backup_list, create_dir, get_match_backup,
-    get_newest_backup, get_rel_oldest_backup,
-    eval_restart_backup, set_backup_level,
-    get_vol_fs_type, check_backup_and_tar_meta_existence,
-    add_host_name_ts_level, get_mount_from_path, human2bytes, DateTime,
-    date_to_timestamp)
+    sort_backup_list, create_dir, get_vol_fs_type,
+    get_mount_from_path, human2bytes, DateTime, date_to_timestamp)
 
-from freezer import utils
+from freezer.swift import (get_match_backup,
+                           get_newest_backup,get_rel_oldest_backup,
+                           eval_restart_backup, set_backup_level,
+                           check_backup_and_tar_meta_existence)
+from freezer import swift
 import pytest
 import datetime
-import time
 from commons import *
 
 
@@ -52,7 +51,7 @@ class TestUtils:
 
     def test_sort_backup_list(self):
 
-        sorted_backups = sort_backup_list(BackupOpt1())
+        sorted_backups = sort_backup_list(BackupOpt1().remote_match_backup)
 
         sort_params = map(
             lambda x: map(lambda y: int(y), x.rsplit('_', 2)[-2:]),
@@ -85,37 +84,33 @@ class TestUtils:
 
         backup_opt = BackupOpt1()
 
-        backup_opt = get_match_backup(backup_opt)
-        assert len(backup_opt.remote_match_backup) > 0
+        assert len(get_match_backup(backup_opt.backup_name,
+                                    backup_opt.hostname,
+                                    [{'name': 'test-hostname_test-backup-name_1234567_0'}])) > 0
 
-        backup_opt.__dict__['backup_name'] = ''
-        pytest.raises(Exception, get_match_backup, backup_opt)
+    def test_get_newest_backup(self):
 
-    def test_get_newest_backup(self, monkeypatch):
+        # no backups
+        pytest.raises(Exception, get_newest_backup, "hostname", "backup", [])
 
-        backup_opt = BackupOpt1()
-        backup_opt = get_newest_backup(backup_opt)
-        assert len(backup_opt.remote_newest_backup) > 0
+        # different hostname
+        pytest.raises(Exception, get_newest_backup, "hostname", "backup",
+                      ["notthesamename_backup_1234_12",
+                       "tar_metadata_hostname_backup_1234_2"])
 
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['remote_match_backup'] = ''
-        backup_opt = get_newest_backup(backup_opt)
-        assert backup_opt.remote_match_backup is not True
+        # no tar file
+        pytest.raises(Exception, get_newest_backup, "hostname", "backup",
+                      ["hostname_backup_1234_2"])
 
-        backup_opt = BackupOpt1()
-        fakere2 = FakeRe2()
-        monkeypatch.setattr(re, 'search', fakere2.search)
-        backup_opt = get_newest_backup(backup_opt)
-        assert backup_opt.remote_match_backup is not True
+        assert get_newest_backup("hostname", "backup",
+                                 ["hostname_backup_1234_2", "tar_metadata_hostname_backup_1234_2"]) == \
+               "hostname_backup_1234_2"
 
     def test_get_rel_oldest_backup(self):
-
-        backup_opt = BackupOpt1()
-        backup_opt = get_rel_oldest_backup(backup_opt)
-        assert len(backup_opt.remote_rel_oldest) > 0
-
-        backup_opt.__dict__['backup_name'] = ''
-        pytest.raises(Exception, get_rel_oldest_backup, backup_opt)
+        remote_rel_oldest = get_rel_oldest_backup("test-hostname",
+                                                  "test-backup-name",
+                                                  [{"name": "test-hostname_test-backup-name_1234569_0"}])
+        assert len(remote_rel_oldest) > 0
 
     def test_eval_restart_backup(self, monkeypatch):
 
@@ -126,13 +121,9 @@ class TestUtils:
         assert eval_restart_backup(backup_opt) is False
 
         backup_opt = BackupOpt1()
-        fake_get_rel_oldest_backup = Fakeget_rel_oldest_backup()
-        monkeypatch.setattr(utils, 'get_rel_oldest_backup', fake_get_rel_oldest_backup)
         assert eval_restart_backup(backup_opt) is False
 
         backup_opt = BackupOpt1()
-        fake_get_rel_oldest_backup2 = Fakeget_rel_oldest_backup2()
-        monkeypatch.setattr(utils, 'get_rel_oldest_backup', fake_get_rel_oldest_backup2)
         fakere2 = FakeRe2()
         monkeypatch.setattr(re, 'search', fakere2.search)
         assert eval_restart_backup(backup_opt) is not None
@@ -204,25 +195,14 @@ class TestUtils:
         backup_opt.__dict__['backup_name'] = None
         assert type(check_backup_and_tar_meta_existence(backup_opt)) is dict
 
-        fakeswiftclient = FakeSwiftClient()
         backup_opt = BackupOpt1()
         assert type(check_backup_and_tar_meta_existence(backup_opt)) is dict
 
         fake_get_newest_backup = Fakeget_newest_backup()
-        monkeypatch.setattr(utils, 'get_newest_backup', fake_get_newest_backup)
+        monkeypatch.setattr(swift, 'get_newest_backup', fake_get_newest_backup)
         assert type(check_backup_and_tar_meta_existence(backup_opt)) is dict
 
-    def test_add_host_name_ts_level(self):
-
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['backup_name'] = False
-        pytest.raises(Exception, add_host_name_ts_level, backup_opt)
-
-        backup_opt = BackupOpt1()
-        assert type(add_host_name_ts_level(backup_opt)) is unicode
-
     def test_get_mount_from_path(self):
-
         dir1 = '/tmp'
         dir2 = '/tmp/nonexistentpathasdf'
         assert type(get_mount_from_path(dir1)) is str
@@ -238,7 +218,7 @@ class TestUtils:
         assert human2bytes('1 k') == 1024
         pytest.raises(ValueError, human2bytes, '12 foo')
 
-    def test_OpenstackOptions_creation_success(self, monkeypatch):
+    def test_OpenstackOptions_creation_success(self):
         env_dict = dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl',
                         OS_PASSWORD='testpassword', OS_REGION_NAME='testregion', OS_TENANT_ID='0123456789')
         options = OpenstackOptions.create_from_dict(env_dict)
@@ -259,7 +239,7 @@ class TestUtils:
         assert options.region_name is None
         assert options.tenant_id is None
 
-    def test_OpenstackOption_creation_error_for_missing_parameter(self, monkeypatch):
+    def test_OpenstackOption_creation_error_for_missing_parameter(self):
         env_dict = dict(OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl', OS_PASSWORD='testpassword')
         pytest.raises(Exception, OpenstackOptions.create_from_dict, env_dict)
 

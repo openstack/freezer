@@ -1,4 +1,4 @@
-'''
+"""
 Copyright 2014 Hewlett-Packard
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 
 Freezer restore modes related functions
-'''
+"""
 
 import multiprocessing
 import os
@@ -28,13 +28,13 @@ import re
 import datetime
 
 from freezer.tar import tar_restore
-from freezer.swift import object_to_stream
-from freezer.utils import (validate_all_args, get_match_backup,
-                           sort_backup_list, date_to_timestamp, ReSizeStream)
+from freezer import swift
+from freezer.utils import (validate_all_args, sort_backup_list,
+                           date_to_timestamp, ReSizeStream)
 
 
 def restore_fs(backup_opt_dict):
-    '''
+    """
     Restore data from swift server to your local node. Data will be restored
     in the directory specified in backup_opt_dict.restore_abs_path. The
     object specified with the --get-object option will be downloaded from
@@ -46,12 +46,11 @@ def restore_fs(backup_opt_dict):
     the full restore will be executed. Please remember to stop any service
     that require access to the data before to start the restore execution
     and to start the service at the end of the restore execution
-    '''
+    """
 
     # List of mandatory values
     required_list = [
         os.path.exists(backup_opt_dict.restore_abs_path),
-        backup_opt_dict.remote_obj_list,
         backup_opt_dict.container,
         backup_opt_dict.backup_name
     ]
@@ -76,31 +75,33 @@ def restore_fs(backup_opt_dict):
         backup_opt_dict.hostname = backup_opt_dict.restore_from_host
 
     # Check if there's a backup matching. If not raise Exception
-    backup_opt_dict = get_match_backup(backup_opt_dict)
-    if not backup_opt_dict.remote_match_backup:
-        raise ValueError('No backup found matching for '
-                         'backup name: {0}, hostname: {1}'
-                         .format(backup_opt_dict.backup_name,
-                                 backup_opt_dict.hostname))
+    remote_obj_list = swift.get_container_content(
+        backup_opt_dict.client_manager,
+        backup_opt_dict.container)
+
+    backup_opt_dict.remote_match_backup = \
+        swift.get_match_backup(backup_opt_dict.backup_name,
+                               backup_opt_dict.hostname,
+                               remote_obj_list)
     restore_fs_sort_obj(backup_opt_dict)
 
 
 def restore_fs_sort_obj(backup_opt_dict):
-    '''
+    """
     Take options dict as argument and sort/remove duplicate elements from
     backup_opt_dict.remote_match_backup and find the closes backup to the
     provided from backup_opt_dict.restore_from_date. Once the objects are
     looped backwards and the level 0 backup is found, along with the other
     level 1,2,n, is download the object from swift and untar them locally
     starting from level 0 to level N.
-    '''
+    """
 
     # Convert backup_opt_dict.restore_from_date to timestamp
     opt_backup_timestamp = date_to_timestamp(backup_opt_dict.restore_from_date)
 
     # Sort remote backup list using timestamp in reverse order,
     # that is from the newest to the oldest executed backup
-    sorted_backups_list = sort_backup_list(backup_opt_dict)
+    sorted_backups_list = sort_backup_list(backup_opt_dict.remote_match_backup)
     # Get the closest earlier backup to date set in
     # backup_opt_dict.restore_from_date
     closest_backup_list = []
@@ -132,8 +133,9 @@ def restore_fs_sort_obj(backup_opt_dict):
     for backup in closest_backup_list[::-1]:
         write_pipe, read_pipe = multiprocessing.Pipe()
         process_stream = multiprocessing.Process(
-            target=object_to_stream, args=(
-                backup_opt_dict, write_pipe, read_pipe, backup,))
+            target=swift.object_to_stream, args=(
+                backup_opt_dict.container, backup_opt_dict.client_manager,
+                write_pipe, read_pipe, backup,))
         process_stream.daemon = True
         process_stream.start()
 

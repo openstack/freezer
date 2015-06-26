@@ -28,6 +28,6 @@ $s2 = gwmi Win32_ShadowCopy | ? { $_.ID -eq $s1.ShadowID }
 $d  = $s2.DeviceObject + "\"
 
 # create a symlink for the shadow path
-cmd /c mklink /d $volume\shadowcopy "$d"
+cmd /c mklink /d $volume\freezer_shadowcopy "$d"
 
 echo "shadow id:" $s2

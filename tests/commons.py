@@ -13,6 +13,7 @@ import pymongo
 import re
 from collections import OrderedDict
 from glanceclient.common.utils import IterableWithLength
+from freezer.storages.swiftstorage import SwiftStorage
 from freezer.utils import OpenstackOptions
 
 os.environ['OS_REGION_NAME'] = 'testregion'
@@ -606,7 +607,9 @@ class FakeSwiftClient:
             def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
                 self.num_try = 0
 
-            def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
+            def put_object(self, container, obj, contents, content_length=None,
+                   etag=None, chunk_size=None, content_type=None,
+                   headers=None, query_string=None, response_dict=None):
                 return True
 
             def head_object(self, container_name='', object_name=''):
@@ -640,7 +643,12 @@ class FakeSwiftClient:
                     return [{}, []]
 
             def get_account(self, *args, **kwargs):
-                return True, [{'name': 'test-container'}, {'name': 'test-container-segments'}]
+                return True, [{'name': 'test-container',
+                               'bytes': 200000,
+                               'count': 1000},
+                              {'name': 'test-container-segments',
+                               'bytes': 300000,
+                               'count': 656}]
 
             def get_object(self, *args, **kwargs):
                 return [{'x-object-meta-length': "123",
@@ -720,6 +728,7 @@ class BackupOpt1:
         fakeclient = FakeSwiftClient()
         fakeconnector = fakeclient.client()
         fakeswclient = fakeconnector.Connection()
+        self.dereference_symlink = 'none'
         self.mysql_conf = '/tmp/freezer-test-conf-file'
         self.backup_media = 'fs'
         self.mysql_db_inst = FakeMySQLdb()
@@ -741,7 +750,6 @@ class BackupOpt1:
         self.curr_backup_level = 0
         self.path_to_backup = '/tmp'
         self.tar_path = 'true'
-        self.dereference_symlink = 'true'
         self.no_incremental = 'true'
         self.exclude = 'true'
         self.encrypt_pass_file = 'true'
@@ -751,9 +759,8 @@ class BackupOpt1:
         self.remove_older_than = '0'
         self.max_segment_size = '0'
         self.time_stamp = 123456789
-        self.container_segments = 'test-container-segments'
         self.container = 'test-container'
-        self.workdir = '/tmp'
+        self.work_dir = '/tmp'
         self.upload = 'true'
         self.sw_connector = fakeswclient
         self.max_level = '20'
@@ -774,18 +781,6 @@ class BackupOpt1:
             'tar_metadata_test-hostname_test-backup-name_1234569_2',
             'tar_metadata_test-hostname_test-backup-name_1234568_1',
             'tar_metadata_test-hostname_test-backup-name_1234567_0']
-        self.remote_obj_list = [
-            {'name': 'test-hostname_test-backup-name_1234567_0',
-                'last_modified': 'testdate'},
-            {'name': 'test-hostname_test-backup-name_1234567_1',
-                'last_modified': 'testdate'},
-            {'name': 'test-hostname_test-backup-name_1234567_2',
-                'last_modified': 'testdate'},
-            {'name': 'tar_metadata_test-hostname_test-backup-name_1234567_2',
-                'last_modified': 'testdate'},
-            {'name': 'test-hostname-test-backup-name-asdfa-asdfasdf',
-                'last_modified': 'testdate'}]
-        self.remote_objects = []
         self.restore_abs_path = '/tmp'
         self.containers_list = [
             {'name' : 'testcontainer1', 'bytes' : 123423, 'count' : 10}
@@ -808,10 +803,11 @@ class BackupOpt1:
         self.options = OpenstackOptions.create_from_dict(os.environ)
         from freezer.osclients import ClientManager
         from mock import Mock
-        self.client_manager = ClientManager(None, False, -1, -1, 2, False)
+        self.client_manager = ClientManager(None, False, 2, False)
         self.client_manager.get_swift = Mock(
             return_value=FakeSwiftClient().client.Connection())
         self.client_manager.create_swift = self.client_manager.get_swift
+        self.storage = SwiftStorage(self.client_manager, self.container)
         self.client_manager.get_glance = Mock(return_value=FakeGlanceClient())
         self.client_manager.get_cinder = Mock(return_value=FakeCinderClient())
         nova_client = MagicMock()
@@ -1030,18 +1026,7 @@ def fake_restore_fs_sort_obj(*args, **kwargs):
 class FakeSwift:
 
     def __init__(self):
-        return None
-
-    def fake_get_containers_list(self, backup_opt):
-        return backup_opt
-
-    def fake_get_containers_list1(self, backup_opt):
-        return backup_opt
-
-    def fake_get_containers_list2(self, backup_opt):
-        backup_opt.list_containers = None
-        backup_opt.list_objects = None
-        return backup_opt
+        pass
 
     def fake_show_containers(self, backup_opt):
         return True
@@ -1054,13 +1039,6 @@ class FakeSwift:
 
     def fake_check_container_existance1(self, *args, **kwargs):
         return {'main_container': False, 'container_segments': False}
-
-    def fake_get_containers_list3(self, backup_opt):
-        return backup_opt
-
-    def fake_get_containers_list4(self, backup_opt):
-        backup_opt.containers_list = []
-        return backup_opt
 
     def fake_get_container_content(self, backup_opt):
         return backup_opt

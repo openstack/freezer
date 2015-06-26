@@ -21,16 +21,91 @@ Hudson (tjh@cryptsoft.com).
 Freezer Tar related functions
 """
 
-from freezer.utils import (
-    validate_all_args, add_host_name_ts_level, create_dir)
-from freezer.swift import object_to_file
+from freezer.utils import validate_all_args
 from freezer.winutils import is_windows
 
 import os
 import logging
 import subprocess
-import time
 import sys
+
+
+class TarCommandBuilder:
+    """
+    Building a tar cmd command. To build command invoke method build.
+    """
+
+    def __init__(self, path):
+        self.dereference = ''
+        self.path = path
+        self.level = 0
+        self.exclude = None
+        self.dereference_mode = {
+            'soft': '--dereference',
+            'hard': '--hard-dereference',
+            'all': '--hard-dereference --dereference',
+            'none': ''
+        }
+        self.listed_incremental = None
+        self.work_dir = None
+        self.exclude = ''
+        self.openssl_path = None
+        self.encrypt_pass_file = None
+
+    def set_level(self, level):
+        self.level = level
+
+    def set_work_dir(self, work_dir):
+        self.work_dir = work_dir
+
+    def set_listed_incremental(self, path):
+        self.listed_incremental = path
+
+    def set_exclude(self, exclude):
+        self.exclude = exclude
+
+    def set_dereference(self, mode):
+        """
+        Dereference hard and soft links according option choices.
+            'soft' dereference soft links,
+            'hard' dereference hardlinks,
+            'all' dereference both.
+            Default 'none'.
+        """
+        if mode not in self.dereference_mode:
+            raise Exception("unknown dereference mode: %s" % mode)
+        self.dereference = mode
+
+    def set_encryption(self, openssl_path, encrypt_pass_file):
+        self.openssl_path = openssl_path
+        self.encrypt_pass_file = encrypt_pass_file
+
+    def build(self):
+        tar_command = ' {path} --create -z --warning=none --no-check-device \
+            --one-file-system --preserve-permissions --same-owner --seek \
+            --ignore-failed-read {dereference}'.format(
+            path=self.path,
+            dereference=self.dereference_mode[self.dereference])
+        if self.listed_incremental:
+            tar_command = '{tar_command} --level={level} \
+            --listed-incremental={work_dir}/{listed_incremental}'.format(
+                tar_command=tar_command,
+                level=self.level,
+                work_dir=self.work_dir,
+                listed_incremental=self.listed_incremental)
+
+        if self.exclude:
+            tar_command = ' {tar_command} --exclude="{exclude}" '.format(
+                tar_command=tar_command,
+                exclude=self.exclude)
+
+        if self.encrypt_pass_file:
+            openssl_cmd = "{openssl_path} enc -aes-256-cfb -pass file:{file}"\
+                .format(openssl_path=self.openssl_path,
+                        file=self.encrypt_pass_file)
+            tar_command = '{0} | {1} '.format(tar_command, openssl_cmd)
+
+        return ' {0} . '.format(tar_command)
 
 
 def tar_restore_args_valid(backup_opt_dict):
@@ -98,128 +173,6 @@ def tar_restore(backup_opt_dict, read_pipe):
     if 'error' in tar_err.lower():
         logging.exception('[*] Restore error: {0}'.format(tar_err))
         sys.exit(1)
-
-
-def tar_incremental(
-        tar_cmd, backup_opt_dict, curr_tar_meta, remote_manifest_meta=None):
-    """
-    Check if the backup already exist in swift. If the backup already
-    exists, the related meta data and the tar incremental meta file will be
-    downloaded. According to the meta data content, new options will be
-    provided for the next meta data upload to swift and the existing tar meta
-    file will be used in the current incremental backup. Also the level
-    options will be checked and updated respectively
-    """
-
-    if not tar_cmd or not backup_opt_dict:
-        logging.error(('[*] Error: tar_incremental, please provide tar_cmd '
-                       'and backup options'))
-        raise ValueError
-
-    if not remote_manifest_meta:
-        remote_manifest_meta = dict()
-    # If returned object from check_backup is not a dict, the backup
-    # is considered at first run, so a backup level 0 will be executed
-    curr_backup_level = remote_manifest_meta.get(
-        'x-object-meta-backup-current-level', '0')
-    tar_meta = remote_manifest_meta.get(
-        'x-object-meta-tar-meta-obj-name')
-    tar_cmd_level = '--level={0} '.format(curr_backup_level)
-    # Write the tar meta data file in ~/.freezer. It will be
-    # removed later on. If ~/.freezer does not exists it will be created'.
-    create_dir(backup_opt_dict.workdir)
-
-    curr_tar_meta = '{0}/{1}'.format(
-        backup_opt_dict.workdir, curr_tar_meta)
-    tar_cmd_incr = ' --listed-incremental={0} '.format(curr_tar_meta)
-    if tar_meta:
-        # If tar meta data file is available, download it and use it
-        # as for tar incremental backup. Afte this, the
-        # remote_manifest_meta['x-object-meta-tar-meta-obj-name'] will be
-        # update with the current tar meta data name and uploaded again
-        tar_cmd_incr = ' --listed-incremental={0}/{1} '.format(
-            backup_opt_dict.workdir, tar_meta)
-        tar_meta_abs = "{0}/{1}".format(backup_opt_dict.workdir, tar_meta)
-        try:
-            object_to_file(
-                backup_opt_dict, tar_meta_abs)
-        except Exception:
-            logging.warning(
-                '[*] Tar metadata {0} not found. Executing level 0 backup\
-                    '.format(tar_meta))
-
-    tar_cmd = ' {0} {1} {2} '.format(tar_cmd, tar_cmd_level, tar_cmd_incr)
-    return tar_cmd, backup_opt_dict, remote_manifest_meta
-
-
-def gen_tar_command(
-        opt_dict, meta_data_backup_file=False, time_stamp=int(time.time()),
-        remote_manifest_meta=False):
-    """
-    Generate tar command options.
-    """
-
-    required_list = [
-        opt_dict.backup_name,
-        opt_dict.path_to_backup]
-
-    if not validate_all_args(required_list):
-        raise Exception('Error: Please ALL the following options: '
-                        '--path-to-backup, --backup-name')
-    if not os.path.exists(opt_dict.path_to_backup):
-        raise Exception('Error: path-to-backup does not exist')
-
-    # Change che current working directory to op_dict.path_to_backup
-    os.chdir(os.path.normpath(opt_dict.path_to_backup.strip()))
-
-    logging.info('[*] Changing current working directory to: {0} \
-    '.format(opt_dict.path_to_backup))
-    logging.info('[*] Backup started for: {0} \
-    '.format(opt_dict.path_to_backup))
-
-    # Tar option for default behavior. Please refer to man tar to have
-    # a better options explanation
-    tar_command = ' {0} --create -z --warning=none \
-        --no-check-device --one-file-system \
-        --preserve-permissions --same-owner --seek \
-        --ignore-failed-read '.format(opt_dict.tar_path)
-
-    # Dereference hard and soft links according option choices.
-    # 'soft' dereference soft links, 'hard' dereference hardlinks,
-    # 'all' dereference both. Defaul 'none'.
-    if opt_dict.dereference_symlink == 'soft':
-        tar_command = ' {0} --dereference '.format(
-            tar_command)
-    if opt_dict.dereference_symlink == 'hard':
-        tar_command = ' {0} --hard-dereference '.format(
-            tar_command)
-    if opt_dict.dereference_symlink == 'all':
-        tar_command = ' {0} --hard-dereference --dereference '.format(
-            tar_command)
-
-    file_name = add_host_name_ts_level(opt_dict, time_stamp)
-    meta_data_backup_file = u'tar_metadata_{0}'.format(file_name)
-    # Incremental backup section
-    if not opt_dict.no_incremental:
-        (tar_command, opt_dict, remote_manifest_meta) = tar_incremental(
-            tar_command, opt_dict, meta_data_backup_file,
-            remote_manifest_meta)
-
-    # End incremental backup section
-    if opt_dict.exclude:
-        tar_command = ' {0} --exclude="{1}" '.format(
-            tar_command,
-            opt_dict.exclude)
-
-    tar_command = ' {0} . '.format(tar_command)
-
-    # Encrypt data if passfile is provided
-    if opt_dict.encrypt_pass_file:
-        openssl_cmd = "{0} enc -aes-256-cfb -pass file:{1}".format(
-            opt_dict.openssl_path, opt_dict.encrypt_pass_file)
-        tar_command = '{0} | {1} '.format(tar_command, openssl_cmd)
-
-    return opt_dict, tar_command, remote_manifest_meta
 
 
 def tar_backup(opt_dict, tar_command, backup_queue):

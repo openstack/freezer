@@ -147,7 +147,7 @@ def gen_manifest_meta(
         # in Swift, matching with hostname and backup name
         # the last existing file can be extracted from the timestamp
         manifest_meta_dict['x-object-meta-container-segments'] = \
-            backup_opt_dict.container_segments
+            segments_name(backup_opt_dict.container)
 
         # Set the restart_always_level value to n days. According
         # to the following option, when the always_level is set
@@ -180,14 +180,14 @@ def validate_all_args(required_list):
     return True
 
 
-def sort_backup_list(backup_opt_dict):
+def sort_backup_list(remote_match_backup):
     """
     Sort the backups by timestamp. The provided list contains strings in the
     format hostname_backupname_timestamp_level
     """
 
     # Remove duplicates objects
-    backups_list = list(set(backup_opt_dict.remote_match_backup))
+    backups_list = list(set(remote_match_backup))
 
     backups_list.sort(
         key=lambda x: map(lambda y: int(y), x.rsplit('_', 2)[-2:]),
@@ -217,154 +217,6 @@ def create_dir(directory, do_log=True):
         raise Exception(err)
 
 
-def get_match_backup(backup_opt_dict):
-    '''
-    Return a dictionary containing a list of remote matching backups from
-    backup_opt_dict.remote_obj_list.
-    Backup have to exactly match against backup name and hostname of the
-    node where freezer is executed. The matching objects are stored and
-    available in backup_opt_dict.remote_match_backup
-    '''
-
-    if not backup_opt_dict.backup_name or not backup_opt_dict.container \
-            or not backup_opt_dict.remote_obj_list:
-        raise Exception("[*] Error: please provide a valid Swift container,\
-            backup name and the container contents")
-
-    backup_name = backup_opt_dict.backup_name.lower()
-    if backup_opt_dict.remote_obj_list:
-        hostname = backup_opt_dict.hostname
-        for container_object in backup_opt_dict.remote_obj_list:
-            object_name = container_object.get('name', None)
-            if object_name:
-                obj_name_match = re.search(r'{0}_({1})_\d+?_\d+?$'.format(
-                    hostname, backup_name), object_name.lower(), re.I)
-                if obj_name_match:
-                    backup_opt_dict.remote_match_backup.append(
-                        object_name)
-                    backup_opt_dict.remote_objects.append(container_object)
-
-    return backup_opt_dict
-
-
-def get_newest_backup(backup_opt_dict):
-    '''
-    Return from backup_opt_dict.remote_match_backup, the newest backup
-    matching the provided backup name and hostname of the node where
-    freezer is executed. It correspond to the previous backup executed.
-    NOTE: If backup has no tar_metadata, no newest backup is returned.
-    '''
-
-    if not backup_opt_dict.remote_match_backup:
-        return backup_opt_dict
-
-    backup_timestamp = 0
-    hostname = backup_opt_dict.hostname
-    # Sort remote backup list using timestamp in reverse order,
-    # that is from the newest to the oldest executed backup
-    sorted_backups_list = sort_backup_list(backup_opt_dict)
-    for remote_obj in sorted_backups_list:
-        obj_name_match = re.search(r'^{0}_({1})_(\d+)_\d+?$'.format(
-            hostname, backup_opt_dict.backup_name), remote_obj, re.I)
-        if not obj_name_match:
-            continue
-        remote_obj_timestamp = int(obj_name_match.group(2))
-        if remote_obj_timestamp > backup_timestamp:
-            backup_timestamp = remote_obj_timestamp
-            break
-
-    tar_metadata_obj = 'tar_metadata_{0}'.format(remote_obj)
-    if tar_metadata_obj in sorted_backups_list:
-        backup_opt_dict.remote_newest_backup = remote_obj
-
-    return backup_opt_dict
-
-
-def get_rel_oldest_backup(backup_opt_dict):
-    '''
-    Return from swift, the relative oldest backup matching the provided
-    backup name and hostname of the node where freezer is executed.
-    The relative oldest backup correspond the oldest backup from the
-    last level 0 backup.
-    '''
-
-    if not backup_opt_dict.backup_name:
-        err = "[*] Error: please provide a valid backup name in \
-            backup_opt_dict.backup_name"
-        logging.exception(err)
-        raise Exception(err)
-
-    backup_opt_dict.remote_rel_oldest = u''
-    backup_name = backup_opt_dict.backup_name
-    hostname = backup_opt_dict.hostname
-    first_backup_name = False
-    first_backup_ts = 0
-    for container_object in backup_opt_dict.remote_obj_list:
-        object_name = container_object.get('name', None)
-        if not object_name:
-            continue
-        obj_name_match = re.search(r'{0}_({1})_(\d+)_(\d+?)$'.format(
-            hostname, backup_name), object_name, re.I)
-        if not obj_name_match:
-            continue
-        remote_obj_timestamp = int(obj_name_match.group(2))
-        remote_obj_level = int(obj_name_match.group(3))
-        if remote_obj_level == 0 and (remote_obj_timestamp > first_backup_ts):
-            first_backup_name = object_name
-            first_backup_ts = remote_obj_timestamp
-
-    backup_opt_dict.remote_rel_oldest = first_backup_name
-    return backup_opt_dict
-
-
-def eval_restart_backup(backup_opt_dict):
-    '''
-    Restart backup level if the first backup execute with always_level
-    is older then restart_always_level
-    '''
-
-    if not backup_opt_dict.restart_always_level:
-        logging.info('[*] No need to set Backup {0} to level 0.'.format(
-            backup_opt_dict.backup_name))
-        return False
-
-    logging.info('[*] Checking always backup level timestamp...')
-    # Compute the amount of seconds to be compared with
-    # the remote backup timestamp
-    max_time = int(float(backup_opt_dict.restart_always_level) * 86400)
-    current_timestamp = backup_opt_dict.time_stamp
-    backup_name = backup_opt_dict.backup_name
-    hostname = backup_opt_dict.hostname
-    # Get relative oldest backup by calling get_rel_oldes_backup()
-    backup_opt_dict = get_rel_oldest_backup(backup_opt_dict)
-    if not backup_opt_dict.remote_rel_oldest:
-        logging.info('[*] Relative oldest backup for backup name {0} on \
-            host {1} not available. The backup level is NOT restarted'.format(
-            backup_name, hostname))
-        return False
-
-    obj_name_match = re.search(r'{0}_({1})_(\d+)_(\d+?)$'.format(
-        hostname, backup_name), backup_opt_dict.remote_rel_oldest, re.I)
-    if not obj_name_match:
-        err = ('[*] No backup match available for backup {0} '
-               'and host {1}'.format(backup_name, hostname))
-        logging.info(err)
-        return Exception(err)
-
-    first_backup_ts = int(obj_name_match.group(2))
-    if (current_timestamp - first_backup_ts) > max_time:
-        logging.info(
-            '[*] Backup {0} older then {1} days. Backup level set to 0'.format(
-                backup_name, backup_opt_dict.restart_always_level))
-
-        return True
-    else:
-        logging.info('[*] No need to set level 0 for Backup {0}.'.format(
-            backup_name))
-
-    return False
-
-
 class DateTime(object):
     def __init__(self, value):
         if isinstance(value, int):
@@ -392,52 +244,6 @@ class DateTime(object):
     @staticmethod
     def now():
         return DateTime(datetime.datetime.now())
-
-
-def set_backup_level(backup_opt_dict, manifest_meta_dict):
-    '''
-    Set the backup level params in backup_opt_dict and the swift
-    manifest. This is a fundamental part of the incremental backup
-    '''
-
-    if manifest_meta_dict.get('x-object-meta-backup-name'):
-        backup_opt_dict.curr_backup_level = int(
-            manifest_meta_dict.get('x-object-meta-backup-current-level'))
-        max_level = manifest_meta_dict.get(
-            'x-object-meta-maximum-backup-level')
-        always_level = manifest_meta_dict.get(
-            'x-object-meta-always-backup-level')
-        restart_always_level = manifest_meta_dict.get(
-            'x-object-meta-restart-always-backup')
-        if max_level:
-            max_level = int(max_level)
-            if backup_opt_dict.curr_backup_level < max_level:
-                backup_opt_dict.curr_backup_level += 1
-                manifest_meta_dict['x-object-meta-backup-current-level'] = \
-                    str(backup_opt_dict.curr_backup_level)
-            else:
-                manifest_meta_dict['x-object-meta-backup-current-level'] = \
-                    backup_opt_dict.curr_backup_level = '0'
-        elif always_level:
-            always_level = int(always_level)
-            if backup_opt_dict.curr_backup_level < always_level:
-                backup_opt_dict.curr_backup_level += 1
-                manifest_meta_dict['x-object-meta-backup-current-level'] = \
-                    str(backup_opt_dict.curr_backup_level)
-            # If restart_always_level is set, the backup_age will be computed
-            # and if the backup age in days is >= restart_always_level, then
-            # backup-current-level will be set to 0
-            if restart_always_level:
-                backup_opt_dict.restart_always_level = restart_always_level
-                if eval_restart_backup(backup_opt_dict):
-                    backup_opt_dict.curr_backup_level = '0'
-                    manifest_meta_dict['x-object-meta-backup-current-level'] \
-                        = '0'
-    else:
-        backup_opt_dict.curr_backup_level = \
-            manifest_meta_dict['x-object-meta-backup-current-level'] = '0'
-
-    return backup_opt_dict, manifest_meta_dict
 
 
 def get_vol_fs_type(backup_opt_dict):
@@ -470,61 +276,6 @@ def get_vol_fs_type(backup_opt_dict):
         logging.info('[*] File system {0} found for volume {1}'.format(
             filesys_type, vol_name))
         return filesys_type.lower().strip()
-
-
-def check_backup_and_tar_meta_existence(backup_opt_dict):
-    '''
-    Check if any backup is already available on Swift.
-    The verification is done by backup_name, which needs to be unique
-    in Swift. This function will return an empty dict if no backup are
-    found or the Manifest metadata if the backup_name is available
-    '''
-
-    if not backup_opt_dict.backup_name or not backup_opt_dict.container or \
-            not backup_opt_dict.remote_obj_list:
-        logging.warning(
-            ('[*] A valid Swift container, or backup name or container '
-             'content not available. Level 0 backup is being executed '))
-        return dict()
-
-    logging.info("[*] Retrieving backup name {0} on container \
-    {1}".format(
-        backup_opt_dict.backup_name.lower(), backup_opt_dict.container))
-    backup_opt_dict = get_match_backup(backup_opt_dict)
-    backup_opt_dict = get_newest_backup(backup_opt_dict)
-
-    if backup_opt_dict.remote_newest_backup:
-        swift = backup_opt_dict.client_manager.get_swift()
-        logging.info("[*] Backup {0} found!".format(
-            backup_opt_dict.backup_name))
-        backup_match = swift.head_object(
-            backup_opt_dict.container, backup_opt_dict.remote_newest_backup)
-
-        return backup_match
-    else:
-        logging.warning("[*] No such backup {0} available... Executing \
-            level 0 backup".format(backup_opt_dict.backup_name))
-        return dict()
-
-
-def add_host_name_ts_level(backup_opt_dict, time_stamp=int(time.time())):
-    '''
-    Create the object name as:
-    hostname_backupname_timestamp_backup_level
-    '''
-
-    if backup_opt_dict.backup_name is False:
-        err = ('[*] Error: Please specify the backup name with '
-               '--backup-name option')
-        logging.exception(err)
-        raise Exception(err)
-
-    backup_name = u'{0}_{1}_{2}_{3}'.format(
-        backup_opt_dict.hostname,
-        backup_opt_dict.backup_name,
-        time_stamp, backup_opt_dict.curr_backup_level)
-
-    return backup_name
 
 
 def get_mount_from_path(path):
@@ -608,6 +359,14 @@ def date_to_timestamp(date):
     fmt = '%Y-%m-%dT%H:%M:%S'
     opt_backup_date = datetime.datetime.strptime(date, fmt)
     return int(time.mktime(opt_backup_date.timetuple()))
+
+
+def segments_name(container):
+    """
+    Create a new namespace attribute for container_segments
+    :param container: name of swift container
+    """
+    return u'{0}_segments'.format(container)
 
 
 class Bunch:

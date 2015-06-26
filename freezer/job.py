@@ -23,7 +23,6 @@ from freezer import swift
 from freezer import utils
 from freezer import backup
 from freezer import restore
-from freezer.osclients import ClientManager
 
 import logging
 from freezer.restore import RestoreOs
@@ -44,16 +43,12 @@ class Job:
             logging.info('[*] Job execution Started at: {0}'.
                          format(self.start_time))
 
-            if not hasattr(self.conf, 'client_manager'):
-                self.conf.client_manager = ClientManager(
-                    self.conf.options,
-                    self.conf.insecure,
-                    self.conf.download_limit,
-                    self.conf.upload_limit,
-                    self.conf.os_auth_ver,
-                    self.conf.dry_run
-                )
-            self.conf = swift.get_containers_list(self.conf)
+            try:
+                sw_connector = self.conf.client_manager.get_swift()
+                self.conf.containers_list = sw_connector.get_account()[1]
+            except Exception as error:
+                raise Exception('Get containers list error: {0}'.format(error))
+
             retval = func(self)
 
             end_time = utils.DateTime.now()
@@ -69,15 +64,13 @@ class InfoJob(Job):
     @Job.executemethod
     def execute(self):
         if self.conf.list_containers:
-            swift.show_containers(self.conf)
+            swift.show_containers(self.conf.containers_list)
         elif self.conf.list_objects:
-            containers = swift.check_container_existance(self.conf)
-            if containers['main_container'] is not True:
+            if not self.conf.storage.ready():
                 logging.critical(
                     '[*] Container {0} not available'.format(
                         self.conf.container))
                 return False
-            self.conf = swift.get_container_content(self.conf)
             swift.show_objects(self.conf)
         else:
             logging.warning(
@@ -89,11 +82,7 @@ class InfoJob(Job):
 class BackupJob(Job):
     @Job.executemethod
     def execute(self):
-        containers = swift.check_container_existance(self.conf)
-
-        if containers['main_container'] is not True:
-            swift.create_containers(self.conf)
-
+        self.conf.storage.prepare()
         if self.conf.no_incremental:
             if self.conf.max_level or \
                self.conf.always_level:
@@ -102,16 +91,12 @@ class BackupJob(Job):
                     'with backup level options')
             manifest_meta_dict = {}
         else:
-            # Get the object list of the remote containers
-            # and store it in self.conf.remote_obj_list
-            self.conf = swift.get_container_content(self.conf)
-
             # Check if a backup exist in swift with same name.
             # If not, set backup level to 0
             manifest_meta_dict =\
-                utils.check_backup_and_tar_meta_existence(self.conf)
+                swift.check_backup_and_tar_meta_existence(self.conf)
 
-        (self.conf, manifest_meta_dict) = utils.set_backup_level(
+        (self.conf, manifest_meta_dict) = swift.set_backup_level(
             self.conf, manifest_meta_dict)
 
         self.conf.manifest_meta_dict = manifest_meta_dict
@@ -136,16 +121,13 @@ class RestoreJob(Job):
     def execute(self):
         logging.info('[*] Executing FS restore...')
 
-        # Check if the provided container already exists in swift.
-        containers = swift.check_container_existance(self.conf)
-        if containers['main_container'] is not True:
+        if not self.conf.storage.ready():
             raise ValueError('Container: {0} not found. Please provide an '
                              'existing container.'
                              .format(self.conf.container))
 
         # Get the object list of the remote containers and store it in the
         # same dict passes as argument under the dict.remote_obj_list namespace
-        self.conf = swift.get_container_content(self.conf)
         res = RestoreOs(self.conf.client_manager, self.conf.container)
         restore_from_date = self.conf.restore_from_date
         backup_media = self.conf.backup_media
@@ -164,7 +146,6 @@ class RestoreJob(Job):
 class AdminJob(Job):
     @Job.executemethod
     def execute(self):
-        self.conf = swift.get_container_content(self.conf)
         swift.remove_obj_older_than(self.conf)
 
 

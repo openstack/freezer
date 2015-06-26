@@ -22,30 +22,16 @@ Hudson (tjh@cryptsoft.com).
 """
 
 from commons import *
-from freezer.swift import (create_containers, show_containers,
-    show_objects, remove_obj_older_than, get_container_content,
-    check_container_existance,
-    manifest_upload, add_object, get_containers_list,
-    object_to_file, object_to_stream, _remove_object, remove_object)
-import os
+from freezer.storages.swiftstorage import SwiftStorage
+from freezer.swift import (
+    show_containers, show_objects, remove_obj_older_than,
+    get_container_content, object_to_stream, _remove_object, remove_object)
 import logging
 import pytest
 import time
 
 
 class TestSwift:
-
-    def test_create_containers(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        create_containers(backup_opt)
 
     def test_show_containers(self, monkeypatch):
 
@@ -58,10 +44,7 @@ class TestSwift:
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
         backup_opt.__dict__['list_containers'] = True
-        assert show_containers(backup_opt) is True
-
-        backup_opt.__dict__['list_containers'] = False
-        assert show_containers(backup_opt) is False
+        show_containers(backup_opt.containers_list)
 
     def test_show_objects(self, monkeypatch):
 
@@ -75,9 +58,6 @@ class TestSwift:
 
         backup_opt.__dict__['list_objects'] = True
         assert show_objects(backup_opt) is True
-
-        backup_opt.__dict__['remote_obj_list'] = None
-        pytest.raises(Exception, show_objects, backup_opt)
 
         backup_opt.__dict__['list_objects'] = False
         assert show_objects(backup_opt) is False
@@ -122,7 +102,6 @@ class TestSwift:
 
         assert remove_object(fakeswclient, 'freezer_segments', 'has_segments') is None
 
-
     def test_remove_obj_older_than(self, monkeypatch):
 
         backup_opt = BackupOpt1()
@@ -138,15 +117,6 @@ class TestSwift:
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
         monkeypatch.setattr(time, 'sleep', faketime.sleep)
-
-        backup_opt.__dict__['remove_older_than'] = None
-        backup_opt.__dict__['remove_from_date'] = None
-        pytest.raises(Exception, remove_obj_older_than, backup_opt)
-
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['remove_older_than'] = 0
-        backup_opt.__dict__['remove_from_date'] = '2014-12-03T23:23:23'
-        pytest.raises(Exception, remove_obj_older_than, backup_opt)
 
         backup_opt = BackupOpt1()
         backup_opt.__dict__['remove_older_than'] = None
@@ -172,33 +142,10 @@ class TestSwift:
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
-        assert get_container_content(backup_opt) is not False
-        assert get_container_content(backup_opt) is not None
-
-        backup_opt = BackupOpt1()
-        backup_opt.container = False
-        pytest.raises(Exception, get_container_content, backup_opt)
-
-    def test_check_container_existance(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        assert type(check_container_existance(backup_opt)) is dict
-
-        backup_opt = BackupOpt1()
-        backup_opt.container_segments = None
-        pytest.raises(Exception, check_container_existance, backup_opt)
-
-        backup_opt = BackupOpt1()
-        backup_opt.container = 'test-abcd'
-        backup_opt.container_segments = 'test-abcd-segments'
-        assert type(check_container_existance(backup_opt)) is dict
+        assert get_container_content(backup_opt.client_manager,
+                                     backup_opt.container) is not False
+        assert get_container_content(backup_opt.client_manager,
+                                     backup_opt.container) is not None
 
     def test_manifest_upload(self, monkeypatch):
 
@@ -210,72 +157,16 @@ class TestSwift:
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
-        manifest_file = 'test-manifest-file'
         file_prefix = '000000'
         manifest_meta_dict = {'x-object-manifest': 'test-x-object'}
+        storage = SwiftStorage(backup_opt.client_manager, backup_opt.container)
 
-        assert manifest_upload(
-            manifest_file, backup_opt,
-            file_prefix, manifest_meta_dict) is None
+        assert storage.upload_manifest(file_prefix, manifest_meta_dict) is None
 
         manifest_meta_dict = {}
         pytest.raises(
-            Exception, manifest_upload, manifest_file, backup_opt,
+            Exception, storage.upload_manifest,
             file_prefix, manifest_meta_dict)
-
-    def test_add_object(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-        fakemultiprocessing = FakeMultiProcessing()
-        backup_queue = fakemultiprocessing.Queue()
-
-        time_stamp = int(time.time())
-        faketime = FakeTime()
-        monkeypatch.setattr(time, 'sleep', faketime.sleep)
-        absolute_file_path = '/tmp/test-abs-file-path'
-
-        backup_opt = BackupOpt1()
-        backup_opt.container = None
-
-        pytest.raises(SystemExit, add_object, backup_opt, backup_queue,
-                      absolute_file_path, time_stamp)
-
-    def test_get_containers_list(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        assert isinstance(get_containers_list(backup_opt), BackupOpt1) is True
-
-    def test_object_to_file(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        file_name_abs_path = '/tmp/test-abs-file-path'
-        object_to_file(backup_opt, file_name_abs_path)
-
-        backup_opt = BackupOpt1()
-        backup_opt.container = None
-        pytest.raises(Exception, object_to_file, backup_opt, file_name_abs_path)
-
-        os.unlink(file_name_abs_path)
 
     def test_object_to_stream(self, monkeypatch):
 
@@ -291,10 +182,6 @@ class TestSwift:
         fakemultiprocessing = FakeMultiProcessing1()
         backup_pipe_read = backup_pipe_write = fakemultiprocessing.Pipe()
 
-        backup_opt.container = None
-        pytest.raises(Exception, object_to_stream,
-            backup_opt, backup_pipe_write, backup_pipe_read, obj_name)
-
-        backup_opt = BackupOpt1()
         assert object_to_stream(
-            backup_opt, backup_pipe_write, backup_pipe_read, obj_name) is None
+            backup_opt.container, backup_opt.client_manager,
+            backup_pipe_write, backup_pipe_read, obj_name) is None

@@ -193,14 +193,12 @@ class TestBackUP:
         backup_opt = BackupOpt1()
         backup_opt.volume_id = 34
         BackupOs(backup_opt.client_manager,
-                 backup_opt.container,
-                 backup_opt.container_segments).backup_cinder_by_glance(
+                 backup_opt.container).backup_cinder_by_glance(
             backup_opt, 1417649003)
 
     def test_backup_cinder(self):
         backup_opt = BackupOpt1()
         backup_opt.volume_id = 34
         BackupOs(backup_opt.client_manager,
-                 backup_opt.container,
-                 backup_opt.container_segments).backup_cinder(
+                 backup_opt.container).backup_cinder(
             backup_opt, 1417649003)
