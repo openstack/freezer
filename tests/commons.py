@@ -1093,6 +1093,12 @@ class FakeUtils:
         backup_opt.mode = None
         return backup_opt, manifest_meta
 
+    def fake_create_subprocess_err(self, cmd):
+        return ['','some err']
+
+    def fake_create_subprocess_raise(self, cmd):
+        raise Exception('')
+
 
 class FakeSocket:
     def __init__(self):

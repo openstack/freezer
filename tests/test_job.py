@@ -136,6 +136,23 @@ class TestRestoreJob(TestJob):
         job = RestoreJob(backup_opt)
         assert job.execute() is None
 
+    def test_execute_backup_with_sync_failed(self, monkeypatch):
+        self.do_monkeypatch(monkeypatch)
+        monkeypatch.setattr(swift, 'set_backup_level', self.fakeutils.fake_set_backup_level)
+        monkeypatch.setattr(backup, 'backup_mode_fs', self.fakebackup.fake_backup_mode_fs)
+        backup_opt = BackupOpt1()
+        backup_opt.mode = 'fs'
+        backup_opt.no_incremental = False
+        job = BackupJob(backup_opt)
+        fakeutils = FakeUtils()
+        monkeypatch.setattr(freezer.utils, 'create_subprocess',
+                            fakeutils.fake_create_subprocess_err)
+        assert job.execute() is None
+
+        monkeypatch.setattr(freezer.utils, 'create_subprocess',
+                            fakeutils.fake_create_subprocess_raise)
+        assert job.execute() is None
+
 
 class TestAdminJob(TestJob):
     def test_execute(self, monkeypatch):

@@ -32,6 +32,7 @@ Requirements
 -  pymongo
 -  PyMySQL
 -  libmysqlclient-dev
+-  sync
 -  At least 128 MB of memory reserved for Freezer
 
 Installation & Env Setup
@@ -96,6 +97,9 @@ Windows
 
 Install OpenSSL binaries from http://www.openssl.org/related/binaries.html and add
 it to Path:
+
+Install sync binaries from https://technet.microsoft.com/en-us/sysinternals/bb897438 and add
+it to Path
 
 Swift client and Keystone client::
 

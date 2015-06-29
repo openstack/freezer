@@ -87,6 +87,12 @@ class InfoJob(Job):
 class BackupJob(Job):
     @Job.executemethod
     def execute(self):
+        try:
+            (out, err) = utils.create_subprocess('sync')
+            if err:
+                logging.error('Error while sync exec: {0}'.format(err))
+        except Exception as error:
+            logging.error('Error while sync exec: {0}'.format(error))
         self.conf.storage.prepare()
         if self.conf.no_incremental:
             if self.conf.max_level or \
