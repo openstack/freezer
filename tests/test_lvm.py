@@ -74,7 +74,6 @@ class TestLvm:
         backup_opt.lvm_snapname = False
         pytest.raises(Exception, lvm_snap, backup_opt)
 
-
         backup_opt = BackupOpt1()
         fakeos = Os()
         fakesubprocess = FakeSubProcess()

@@ -22,7 +22,7 @@ Freezer LVM related functions
 """
 
 from freezer.utils import (
-    create_dir, get_vol_fs_type, validate_all_args, get_mount_from_path)
+    create_dir, get_vol_fs_type, get_mount_from_path)
 
 import re
 import os
@@ -40,14 +40,17 @@ def lvm_eval(backup_opt_dict):
     must be set accordingly
     """
 
-    required_list = [
-        backup_opt_dict.lvm_volgroup,
-        backup_opt_dict.lvm_srcvol,
-        backup_opt_dict.lvm_dirmount]
-
-    if not validate_all_args(required_list):
-        logging.warning('[*] Required lvm options not set. The backup will \
-            execute without lvm snapshot.')
+    if not backup_opt_dict.lvm_volgroup:
+        logging.warning('[*] Required lvm_volgroup not set. The backup will '
+                        'execute without lvm snapshot.')
+        return False
+    if not backup_opt_dict.lvm_srcvol:
+        logging.warning('[*] Required lvm_srcvol not set. The backup will '
+                        'execute without lvm snapshot.')
+        return False
+    if not backup_opt_dict.lvm_dirmount:
+        logging.warning('[*] Required lvm_dirmount not set. The backup will '
+                        'execute without lvm snapshot.')
         return False
 
     # Create lvm_dirmount dir if it doesn't exists and write action in logs
@@ -109,7 +112,6 @@ def lvm_snap(backup_opt_dict):
     Implement checks on lvm volumes availability. According to these checks
     we might create an lvm snapshot and mount it or use an existing one
     """
-
     if lvm_eval(backup_opt_dict) is not True:
         return True
     # Setting lvm snapsize to 5G is not set
@@ -233,6 +235,7 @@ def get_lvm_info(backup_opt_dict):
                 backup_opt_dict.__dict__['lvm_srcvol'] = \
                     u'/dev/{0}/{1}'.format(
                     backup_opt_dict.lvm_volgroup, lvm_srcvol)
-                break
+                return backup_opt_dict
 
-    return backup_opt_dict
+    raise Exception("Cannot find {0} in {1}".format(
+        mount_point_path, mount_points))

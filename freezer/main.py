@@ -21,11 +21,11 @@ Hudson (tjh@cryptsoft.com).
 Freezer main execution function
 """
 from freezer.bandwidth import monkeypatch_socket_bandwidth
-
 from freezer import job
 from freezer.arguments import backup_arguments
 from freezer.osclients import ClientManager
-from freezer.storages.swiftstorage import SwiftStorage
+from freezer.swift import SwiftStorage
+from freezer.local import LocalStorage
 from freezer.utils import create_dir
 import os
 import subprocess
@@ -33,6 +33,8 @@ import logging
 import sys
 import json
 # Initialize backup options
+from freezer.validator import Validator
+
 (backup_args, arg_parse) = backup_arguments()
 
 
@@ -113,14 +115,29 @@ def freezer_main(args={}):
 
     monkeypatch_socket_bandwidth(backup_args)
 
+    backup_args.__dict__['hostname_backup_name'] = "{0}_{1}".format(
+        backup_args.hostname, backup_args.backup_name)
+
     backup_args.__dict__['client_manager'] = ClientManager(
         backup_args.options,
         backup_args.insecure,
         backup_args.os_auth_ver,
         backup_args.dry_run)
 
-    backup_args.__dict__['storage'] = SwiftStorage(backup_args.client_manager,
-                                                   backup_args.container)
+    if backup_args.storage == "swift":
+        backup_args.__dict__['storage'] = SwiftStorage(
+            backup_args.client_manager,
+            backup_args.container,
+            backup_args.work_dir,
+            backup_args.max_segment_size)
+    elif backup_args.storage == "local":
+        backup_args.__dict__['storage'] = LocalStorage(
+            backup_args.container,
+            backup_args.work_dir)
+    else:
+        raise Exception("Not storage found for name " + backup_args.storage)
+
+    Validator.validate(backup_args)
 
     freezer_job = job.create_job(backup_args)
     freezer_job.execute()

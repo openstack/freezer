@@ -1,187 +1,80 @@
-"""Freezer swift.py related tests
-
-Copyright 2014 Hewlett-Packard
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-This product includes cryptographic software written by Eric Young
-(eay@cryptsoft.com). This product includes software written by Tim
-Hudson (tjh@cryptsoft.com).
-========================================================================
-
-"""
-
-from commons import *
-from freezer.storages.swiftstorage import SwiftStorage
-from freezer.swift import (
-    show_containers, show_objects, remove_obj_older_than,
-    get_container_content, object_to_stream, _remove_object, remove_object)
-import logging
-import pytest
-import time
+import unittest
+from freezer import osclients
+from freezer import utils
+from freezer import swift
+from freezer import storage
 
 
-class TestSwift:
+class TestSwiftStorage(unittest.TestCase):
 
-    def test_show_containers(self, monkeypatch):
+    def setUp(self):
 
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
+        self.storage = swift.SwiftStorage(
+            osclients.ClientManager(
+                utils.OpenstackOptions.create_from_env()
+            ),
+            "freezer_ops-aw1ops1-gerrit0001.aw1.hpcloud.net",
+            "/tmp/",
+            100
+        )
 
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
+        self.files = [
+            "tar_metadata_hostname_backup_1000_0",
+            "hostname_backup_1000_0",
+        ]
 
-        backup_opt.__dict__['list_containers'] = True
-        show_containers(backup_opt.containers_list)
+        self.increments = [
+            "tar_metadata_hostname_backup_1000_0",
+            "hostname_backup_1000_0",
+            "tar_metadata_hostname_backup_2000_1",
+            "hostname_backup_2000_1",
+        ]
 
-    def test_show_objects(self, monkeypatch):
+        self.cycles_increments = [
+            "tar_metadata_hostname_backup_1000_0",
+            "hostname_backup_1000_0",
+            "tar_metadata_hostname_backup_2000_1",
+            "hostname_backup_2000_1",
+            "tar_metadata_hostname_backup_3000_0",
+            "hostname_backup_3000_0",
+            "tar_metadata_hostname_backup_4000_1",
+            "hostname_backup_4000_1",
+        ]
 
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
+        self.backup = storage.Backup("hostname_backup", 1000, 0, True)
+        self.backup_2 = storage.Backup("hostname_backup", 3000, 0, True)
+        self.increment = storage.Backup("hostname_backup", 2000, 1, True)
+        self.increment_2 = storage.Backup("hostname_backup", 4000, 1, True)
 
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
+    def test__get_backups(self):
+        backups = swift.SwiftStorage._get_backups(self.files)
+        self.assertEqual(len(backups), 1)
+        backup = backups[0]
+        self.assertEqual(backup, self.backup)
 
-        backup_opt.__dict__['list_objects'] = True
-        assert show_objects(backup_opt) is True
+    def test__get_backups_with_tar_only(self):
+        backups = swift.SwiftStorage._get_backups(
+            ["tar_metadata_hostname_backup_1000_0"])
+        self.assertEqual(len(backups), 0)
 
-        backup_opt.__dict__['list_objects'] = False
-        assert show_objects(backup_opt) is False
+    def test__get_backups_without_tar(self):
+        backups = swift.SwiftStorage._get_backups(["hostname_backup_1000_0"])
+        self.assertEqual(len(backups), 1)
+        self.backup.tar_meta = False
+        backup = backups[0]
+        self.assertEqual(backup, self.backup)
 
-    def test__remove_object(self, monkeypatch):
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-        fakeclient = FakeSwiftClient()
-        fakeconnector = fakeclient.client()
-        fakeswclient = fakeconnector.Connection()
-        backup_opt.sw_connector = fakeswclient
-        faketime = FakeTime()
+    def test__get_backups_increment(self):
+        backups = swift.SwiftStorage._get_backups(self.increments)
+        self.assertEqual(len(backups), 1)
+        self.backup.add_increment(self.increment)
+        backup = backups[0]
+        self.assertEqual(backup, self.backup)
 
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-        monkeypatch.setattr(time, 'sleep', faketime.sleep)
-
-        assert _remove_object(fakeswclient, 'container', 'obj_name') is None
-
-        fakeswclient.num_try = 59
-        assert _remove_object(fakeswclient, 'container', 'obj_name') is None
-
-        fakeswclient.num_try = 60
-        pytest.raises(Exception, _remove_object, fakeclient, 'container', 'obj_name')
-
-    def test_remove_object(self, monkeypatch):
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-        fakeclient = FakeSwiftClient()
-        fakeconnector = fakeclient.client()
-        fakeswclient = fakeconnector.Connection()
-        backup_opt.sw_connector = fakeswclient
-        faketime = FakeTime()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-        monkeypatch.setattr(time, 'sleep', faketime.sleep)
-
-        assert remove_object(fakeswclient, 'freezer_segments', 'has_segments') is None
-
-    def test_remove_obj_older_than(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-        fakeclient = FakeSwiftClient1()
-        fakeconnector = fakeclient.client()
-        fakeswclient = fakeconnector.Connection()
-        backup_opt.sw_connector = fakeswclient
-        faketime = FakeTime()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-        monkeypatch.setattr(time, 'sleep', faketime.sleep)
-
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['remove_older_than'] = None
-        backup_opt.__dict__['remove_from_date'] = '2014-12-03T23:23:23'
-        assert remove_obj_older_than(backup_opt) is None
-
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['remove_older_than'] = 0
-        backup_opt.__dict__['remove_from_date'] = None
-        assert remove_obj_older_than(backup_opt) is None
-
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['remote_obj_list'] = []
-        assert remove_obj_older_than(backup_opt) is None
-
-    def test_get_container_content(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        assert get_container_content(backup_opt.client_manager,
-                                     backup_opt.container) is not False
-        assert get_container_content(backup_opt.client_manager,
-                                     backup_opt.container) is not None
-
-    def test_manifest_upload(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        file_prefix = '000000'
-        manifest_meta_dict = {'x-object-manifest': 'test-x-object'}
-        storage = SwiftStorage(backup_opt.client_manager, backup_opt.container)
-
-        assert storage.upload_manifest(file_prefix, manifest_meta_dict) is None
-
-        manifest_meta_dict = {}
-        pytest.raises(
-            Exception, storage.upload_manifest,
-            file_prefix, manifest_meta_dict)
-
-    def test_object_to_stream(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        obj_name = 'test-obj-name'
-        fakemultiprocessing = FakeMultiProcessing1()
-        backup_pipe_read = backup_pipe_write = fakemultiprocessing.Pipe()
-
-        assert object_to_stream(
-            backup_opt.container, backup_opt.client_manager,
-            backup_pipe_write, backup_pipe_read, obj_name) is None
+    def test__get_backups_increments(self):
+        backups = swift.SwiftStorage._get_backups(self.cycles_increments)
+        self.assertEqual(len(backups), 2)
+        self.backup.add_increment(self.increment)
+        self.backup_2.add_increment(self.increment_2)
+        self.assertEqual(backups[0], self.backup)
+        self.assertEqual(backups[1], self.backup_2)

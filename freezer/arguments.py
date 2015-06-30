@@ -64,7 +64,8 @@ DEFAULT_PARAMS = {
     'restore_abs_path': False, 'log_file': None,
     'upload': True, 'mode': 'fs', 'action': 'backup',
     'vssadmin': True, 'shadow': '', 'shadow_path': '',
-    'windows_volume': '', 'command': None, 'metadata_out': False
+    'windows_volume': '', 'command': None, 'metadata_out': False,
+    'storage': 'swift'
 }
 
 
@@ -153,7 +154,8 @@ def backup_arguments(args_dict={}):
         default='fs')
     arg_parser.add_argument(
         '-C', '--container', action='store',
-        help="The Swift container used to upload files to",
+        help="The Swift container (or path to local storage) "
+             "used to upload files to",
         dest='container', default='freezer_backups')
     arg_parser.add_argument(
         '-L', '--list-containers', action='store_true',
@@ -330,7 +332,7 @@ def backup_arguments(args_dict={}):
         help='''Set the absolute path where you want your data restored.
         Please provide datetime in format "YYYY-MM-DDThh:mm:ss"
         i.e. "1979-10-03T23:23:23". Make sure the "T" is between date and time
-        Default False.''', dest='restore_from_date', default=False)
+        Default None.''', dest='restore_from_date', default=None)
     arg_parser.add_argument(
         '--max-priority', action='store_true',
         help='''Set the cpu process to the highest priority (i.e. -20 on Linux)
@@ -409,6 +411,14 @@ def backup_arguments(args_dict={}):
         help='Command executed by exec action',
         dest='command', default=None)
 
+    arg_parser.add_argument(
+        '--storage', action='store',
+        choices=['local', 'swift'],
+        help="Storage for backups. Can be Swift or Local now. Swift is default"
+             "storage now. Local stores backups on the same defined path and"
+             "swift will store files in container.",
+        dest='storage', default='swift')
+
     arg_parser.set_defaults(**defaults)
     backup_args = arg_parser.parse_args()
 
@@ -431,7 +441,8 @@ def backup_arguments(args_dict={}):
     # have the prefix, it is automatically added also to the container
     # segments name. This is done to quickly identify the containers
     # that contain freezer generated backups
-    if not backup_args.container.startswith('freezer_'):
+    if not backup_args.container.startswith('freezer_') and \
+            backup_args.storage != 'local':
         backup_args.container = 'freezer_{0}'.format(
             backup_args.container)
 
@@ -452,6 +463,9 @@ def backup_arguments(args_dict={}):
         if distspawn.find_executable('gtar'):
             backup_args.__dict__['tar_path'] = \
                 distspawn.find_executable('gtar')
+        elif distspawn.find_executable('gnutar'):
+            backup_args.__dict__['tar_path'] = \
+                distspawn.find_executable('gnutar')
         else:
             raise Exception('Please install gnu tar (gtar) as it is a '
                             'mandatory requirement to use freezer.')

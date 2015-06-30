@@ -240,6 +240,12 @@ Execute a mysql backup with nova::
 
 All the freezerc activities are logged into /var/log/freezer.log.
 
+Local storage backup execution:
+
+   $ sudo freezerc --file-to-backup /data/dir/to/backup
+      --container /my_backup_path/ --backup-name my-backup-name
+      --storage local
+
 Restore
 -------
 
@@ -314,6 +320,15 @@ Execute a nova restore::
 
     $ freezerc --action restore --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
+Local storage restore execution:
+
+    $ sudo freezerc --action restore --container /local_backup_storage/
+    --backup-name adminui.git
+    --restore-from-host git-HP-DL380-host-001 --restore-abs-path
+    /home/git/repositories/adminui.git/
+    --restore-from-date "2014-05-23T23:23:23"
+    --storage local
+
 Architecture
 ============
 
@@ -323,7 +338,7 @@ Freezer architecture is simple. The components are:
 -  freezer client running on the node you want to execute the backups or
    restore
 
-Frezeer use GNU Tar under the hood to execute incremental backup and
+Freezer use GNU Tar under the hood to execute incremental backup and
 restore. When a key is provided, it uses OpenSSL to encrypt data
 (AES-256-CFB)
 
@@ -374,26 +389,6 @@ following basic logic happens when Freezer execute:
    important as the Manifest file contains the information of the
    previous Freezer execution.
 
-The following is what the Swift Manifest looks like::
-
-    {
-        'X-Object-Meta-Encrypt-Data': 'Yes',
-        'X-Object-Meta-Segments-Size-Bytes': '134217728',
-        'X-Object-Meta-Backup-Created-Timestamp': '1395734461',
-        'X-Object-Meta-Remove-Backup-Older-Than-Days': '',
-        'X-Object-Meta-Src-File-To-Backup': '/var/lib/snapshot-backup/mongod_dev-mongo-s1',
-        'X-Object-Meta-Maximum-Backup-level': '0',
-        'X-Object-Meta-Always-Backup-Level': '',
-        'X-Object-Manifest': u'socorro-backup-dev_segments/dev-mongo-s1-r1_mongod_dev-mongo-s1_1395734461_0',
-        'X-Object-Meta-Providers-List': 'HP',
-        'X-Object-Meta-Backup-Current-Level': '0',
-        'X-Object-Meta-Abs-File-Path': '',
-        'X-Object-Meta-Backup-Name': 'mongod_dev-mongo-s1',
-        'X-Object-Meta-Tar-Meta-Obj-Name': 'tar_metadata_dev-mongo-s1-r1_mongod_dev-mongo-s1_1395734461_0',
-        'X-Object-Meta-Hostname': 'dev-mongo-s1-r1',
-        'X-Object-Meta-Container-Segments': 'socorro-backup-dev_segments'
-    }
-
 3) The most relevant data taken in consideration for incremental are:
 
 -  'X-Object-Meta-Maximum-Backup-level': '7'
@@ -426,19 +421,11 @@ Through this meta data, we can identify the exact Manifest name of the
 provided backup name. The syntax is:
 container\_name/hostname\_backup\_name\_timestamp\_initiallevel
 
--  'X-Object-Meta-Providers-List': 'HP'
-
-This option is NOT implemented yet The idea of Freezer is to support
-every Cloud provider that provide Object Storage service using OpenStack
-Swift. The meta data allows you to specify multiple provider and
-therefore store your data in different Geographic location.
 
 -  'X-Object-Meta-Backup-Current-Level': '0'
 
 Record the current backup level. This is important as the value is
 incremented by 1 in the next freezer execution.
-
--  'X-Object-Meta-Backup-Name': 'mongod\_dev-mongo-s1'
 
 Value set by the option: -N BACKUP\_NAME, --backup-name BACKUP\_NAME The
 option is used to identify the backup. It is a mandatory option and

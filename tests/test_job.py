@@ -22,10 +22,12 @@ Hudson (tjh@cryptsoft.com).
 """
 
 from commons import *
-from freezer import (
-    swift, restore, backup, exec_cmd)
+from freezer import (restore, backup, exec_cmd)
 from freezer.job import (
     Job, InfoJob, AdminJob, BackupJob, RestoreJob, ExecJob, create_job)
+from freezer import (restore, backup)
+
+from freezer.job import Job, InfoJob, AdminJob, BackupJob, RestoreJob, create_job
 import logging
 from mock import patch, Mock
 import pytest
@@ -47,7 +49,7 @@ class TestJob:
 
     def test_execute(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
-        job = Job({})
+        job = Job(BackupOpt1())
         assert job.execute() is None
 
 
@@ -57,36 +59,17 @@ class TestInfoJob(TestJob):
         self.do_monkeypatch(monkeypatch)
         backup_opt = BackupOpt1()
         job = InfoJob(backup_opt)
-        assert job.execute() is False
+        job.execute()
 
     def test_execute_list_containers(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
         backup_opt = BackupOpt1()
         backup_opt.list_containers = True
         job = InfoJob(backup_opt)
-        assert job.execute() is True
-
-    def test_execute_list_objects(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(swift, 'show_containers', self.fakeswift.fake_show_containers)
-        monkeypatch.setattr(swift, 'show_objects', self.fakeswift.fake_show_objects)
-        backup_opt = BackupOpt1()
-        backup_opt.list_objects = True
-        job = InfoJob(backup_opt)
-        assert job.execute() is True
+        job.execute()
 
 
 class TestBackupJob(TestJob):
-
-    def test_execute_backup_fs_incremental(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(swift, 'set_backup_level', self.fakeutils.fake_set_backup_level)
-        monkeypatch.setattr(backup, 'backup_mode_fs', self.fakebackup.fake_backup_mode_fs)
-        backup_opt = BackupOpt1()
-        backup_opt.mode = 'fs'
-        backup_opt.no_incremental = False
-        job = BackupJob(backup_opt)
-        assert job.execute() is None
 
     def test_execute_backup_fs_no_incremental_and_backup_level_raise(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
@@ -98,7 +81,6 @@ class TestBackupJob(TestJob):
 
     def test_execute_backup_mongo(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(swift, 'set_backup_level', self.fakeutils.fake_set_backup_level)
         monkeypatch.setattr(backup, 'backup_mode_mongo', self.fakebackup.fake_backup_mode_mongo)
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
@@ -108,7 +90,6 @@ class TestBackupJob(TestJob):
 
     def test_execute_backup_mysql(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(swift, 'set_backup_level', self.fakeutils.fake_set_backup_level)
         monkeypatch.setattr(backup, 'backup_mode_mysql', self.fakebackup.fake_backup_mode_mysql)
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
@@ -118,7 +99,6 @@ class TestBackupJob(TestJob):
 
     def test_execute_raise(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(swift, 'set_backup_level', self.fakeutils.fake_set_backup_level)
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
         backup_opt.mode = None
@@ -126,38 +106,9 @@ class TestBackupJob(TestJob):
         pytest.raises(ValueError, job.execute)
 
 
-class TestRestoreJob(TestJob):
-
-    def test_execute(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
-        fakerestore = FakeRestore()
-        monkeypatch.setattr(restore, 'restore_fs', fakerestore.fake_restore_fs)
-        backup_opt = BackupOpt1()
-        job = RestoreJob(backup_opt)
-        assert job.execute() is None
-
-    def test_execute_backup_with_sync_failed(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(swift, 'set_backup_level', self.fakeutils.fake_set_backup_level)
-        monkeypatch.setattr(backup, 'backup_mode_fs', self.fakebackup.fake_backup_mode_fs)
-        backup_opt = BackupOpt1()
-        backup_opt.mode = 'fs'
-        backup_opt.no_incremental = False
-        job = BackupJob(backup_opt)
-        fakeutils = FakeUtils()
-        monkeypatch.setattr(freezer.utils, 'create_subprocess',
-                            fakeutils.fake_create_subprocess_err)
-        assert job.execute() is None
-
-        monkeypatch.setattr(freezer.utils, 'create_subprocess',
-                            fakeutils.fake_create_subprocess_raise)
-        assert job.execute() is None
-
-
 class TestAdminJob(TestJob):
     def test_execute(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(swift, 'remove_obj_older_than', self.fakeswift.remove_obj_older_than)
         backup_opt = BackupOpt1()
         job = AdminJob(backup_opt)
         assert job.execute() is None

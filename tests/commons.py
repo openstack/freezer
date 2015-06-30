@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 from mock import MagicMock
+import sys
 
-from freezer.backup import backup_mode_mysql, backup_mode_fs, backup_mode_mongo
+from freezer.backup import backup_mode_mysql, backup_mode_mongo
 import freezer
 import swiftclient
 import multiprocessing
@@ -13,7 +14,7 @@ import pymongo
 import re
 from collections import OrderedDict
 from glanceclient.common.utils import IterableWithLength
-from freezer.storages.swiftstorage import SwiftStorage
+from freezer import swift
 from freezer.utils import OpenstackOptions
 
 os.environ['OS_REGION_NAME'] = 'testregion'
@@ -528,6 +529,7 @@ class FakeCinderClient:
         self.volumes = FakeCinderClient.Volumes()
         self.volume_snapshots = FakeCinderClient.VolumeSnapshot
         self.backups = FakeCinderClient.Backups()
+        self.restores = FakeCinderClient.Restores()
 
     class Backups:
         def __init__(self):
@@ -570,6 +572,14 @@ class FakeCinderClient:
 
         @staticmethod
         def delete(snapshot):
+            pass
+
+    class Restores:
+        def __init__(self):
+            pass
+
+        @staticmethod
+        def restore(backup_id):
             pass
 
 
@@ -643,7 +653,8 @@ class FakeSwiftClient:
                     return [{}, []]
 
             def get_account(self, *args, **kwargs):
-                return True, [{'name': 'test-container',
+                return [{'count': 0, 'bytes': 0, 'name': '1234'}, {'count': 4, 'bytes': 156095, 'name': 'a1'}], \
+                       [{'name': 'test-container',
                                'bytes': 200000,
                                'count': 1000},
                               {'name': 'test-container-segments',
@@ -756,6 +767,7 @@ class BackupOpt1:
         self.openssl_path = 'true'
         self.always_level = '0'
         self.max_level = '0'
+        self.hostname_backup_name = "hostname_backup_name"
         self.remove_older_than = '0'
         self.max_segment_size = '0'
         self.time_stamp = 123456789
@@ -790,6 +802,8 @@ class BackupOpt1:
         self.restore_from_date = '2014-12-03T23:23:23'
         self.restore_from_host = 'test-hostname'
         self.action = 'info'
+        self.shadow = ''
+        self.windows_volume = ''
         self.insecure = True
         self.os_auth_ver = 2
         self.dry_run = False
@@ -807,7 +821,10 @@ class BackupOpt1:
         self.client_manager.get_swift = Mock(
             return_value=FakeSwiftClient().client.Connection())
         self.client_manager.create_swift = self.client_manager.get_swift
-        self.storage = SwiftStorage(self.client_manager, self.container)
+        self.storage = swift.SwiftStorage(self.client_manager,
+                                          self.container,
+                                          self.work_dir,
+                                          self.max_segment_size)
         self.client_manager.get_glance = Mock(return_value=FakeGlanceClient())
         self.client_manager.get_cinder = Mock(return_value=FakeCinderClient())
         nova_client = MagicMock()
@@ -1171,6 +1188,8 @@ def fake_create_subprocess(cmd):
 def fake_create_subprocess2(cmd):
     return True, 'Error'
 
+def tar_path():
+    return "gnutar" if sys.__dict__['platform'] == 'darwin' else "tar"
 
 class FakeSys:
 

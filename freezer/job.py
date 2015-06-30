@@ -21,18 +21,25 @@ Hudson (tjh@cryptsoft.com).
 
 import sys
 
-from freezer import swift
 from freezer import utils
 from freezer import backup
-from freezer import restore
 from freezer import exec_cmd
+from freezer import restore
+from freezer import tar
+from freezer import winutils
+import os
+
 import logging
-from freezer.restore import RestoreOs
 
 
 class Job:
+    """
+    :type storage: freezer.storage.Storage
+    """
+
     def __init__(self, conf_dict):
         self.conf = conf_dict
+        self.storage = conf_dict.storage
 
     def execute(self):
         logging.info('[*] Action not implemented')
@@ -44,15 +51,8 @@ class Job:
     def executemethod(func):
         def wrapper(self):
             self.start_time = utils.DateTime.now()
-            self.conf.time_stamp = self.start_time.timestamp
             logging.info('[*] Job execution Started at: {0}'.
                          format(self.start_time))
-
-            try:
-                sw_connector = self.conf.client_manager.get_swift()
-                self.conf.containers_list = sw_connector.get_account()[1]
-            except Exception as error:
-                raise Exception('Get containers list error: {0}'.format(error))
 
             retval = func(self)
 
@@ -68,20 +68,7 @@ class Job:
 class InfoJob(Job):
     @Job.executemethod
     def execute(self):
-        if self.conf.list_containers:
-            swift.show_containers(self.conf.containers_list)
-        elif self.conf.list_objects:
-            if not self.conf.storage.ready():
-                logging.critical(
-                    '[*] Container {0} not available'.format(
-                        self.conf.container))
-                return False
-            swift.show_objects(self.conf)
-        else:
-            logging.warning(
-                '[*] No retrieving info options were set. Exiting.')
-            return False
-        return True
+        self.storage.info()
 
 
 class BackupJob(Job):
@@ -94,35 +81,15 @@ class BackupJob(Job):
         except Exception as error:
             logging.error('Error while sync exec: {0}'.format(error))
         self.conf.storage.prepare()
-        if self.conf.no_incremental:
-            if self.conf.max_level or \
-               self.conf.always_level:
-                raise Exception(
-                    'no-incremental option is not compatible '
-                    'with backup level options')
-            manifest_meta_dict = {}
-        else:
-            # Check if a backup exist in swift with same name.
-            # If not, set backup level to 0
-            manifest_meta_dict =\
-                swift.check_backup_and_tar_meta_existence(self.conf)
 
-        (self.conf, manifest_meta_dict) = swift.set_backup_level(
-            self.conf, manifest_meta_dict)
-
-        self.conf.manifest_meta_dict = manifest_meta_dict
         if self.conf.mode == 'fs':
-            backup.backup(
-                self.conf, self.start_time.timestamp, manifest_meta_dict)
+            backup.backup(self.conf, self.storage)
         elif self.conf.mode == 'mongo':
-            backup.backup_mode_mongo(
-                self.conf, self.start_time.timestamp, manifest_meta_dict)
+            backup.backup_mode_mongo(self.conf)
         elif self.conf.mode == 'mysql':
-            backup.backup_mode_mysql(
-                self.conf, self.start_time.timestamp, manifest_meta_dict)
+            backup.backup_mode_mysql(self.conf)
         elif self.conf.mode == 'sqlserver':
-            backup.backup_mode_sql_server(
-                self.conf, self.time_stamp, manifest_meta_dict)
+            backup.backup_mode_sql_server(self.conf)
         else:
             raise ValueError('Please provide a valid backup mode')
 
@@ -149,34 +116,47 @@ class BackupJob(Job):
 class RestoreJob(Job):
     @Job.executemethod
     def execute(self):
+        conf = self.conf
         logging.info('[*] Executing FS restore...')
+        restore_timestamp = None
+        if conf.restore_from_date:
+            restore_timestamp = utils.date_to_timestamp(conf.restore_from_date)
+        restore_abs_path = conf.restore_abs_path
+        if conf.backup_media == 'fs':
+            builder = tar.TarCommandRestoreBuilder(conf.tar_path,
+                                                   restore_abs_path)
+            if conf.dry_run:
+                builder.set_dry_run()
+            if winutils.is_windows():
+                builder.set_windows()
+                os.chdir(conf.restore_abs_path)
+            if conf.encrypt_pass_file:
+                builder.set_encryption(conf.openssl_path,
+                                       conf.encrypt_pass_file)
 
-        if not self.conf.storage.ready():
-            raise ValueError('Container: {0} not found. Please provide an '
-                             'existing container.'
-                             .format(self.conf.container))
+            conf.storage.restore_from_date(conf.hostname_backup_name,
+                                           restore_abs_path,
+                                           builder,
+                                           restore_timestamp)
+            return
 
-        # Get the object list of the remote containers and store it in the
-        # same dict passes as argument under the dict.remote_obj_list namespace
-        res = RestoreOs(self.conf.client_manager, self.conf.container)
-        restore_from_date = self.conf.restore_from_date
-        backup_media = self.conf.backup_media
-        if backup_media == 'fs':
-            restore.restore_fs(self.conf)
-        elif backup_media == 'nova':
-            res.restore_nova(restore_from_date, self.conf.nova_inst_id)
-        elif backup_media == 'cinder':
-            res.restore_cinder_by_glance(restore_from_date, self.conf.cinder)
-        elif backup_media == 'cindernative':
-            res.restore_cinder(restore_from_date, self.conf.cinder_vol_id)
+        res = restore.RestoreOs(conf.client_manager, conf.container)
+        if conf.backup_media == 'nova':
+            res.restore_nova(conf.nova_inst_id, restore_timestamp)
+        elif conf.backup_media == 'cinder':
+            res.restore_cinder_by_glance(conf.cinder, restore_timestamp)
+        elif conf.backup_media == 'cindernative':
+            res.restore_cinder(conf.cinder_vol_id, restore_timestamp)
         else:
-            raise Exception("unknown backup type: %s" % backup_media)
+            raise Exception("unknown backup type: %s" % conf.backup_media)
 
 
 class AdminJob(Job):
     @Job.executemethod
     def execute(self):
-        swift.remove_obj_older_than(self.conf)
+        timestamp = utils.date_to_timestamp(self.conf.remove_from_date)
+        self.storage.remove_older_than(timestamp,
+                                       self.conf.hostname_backup_name)
 
 
 class ExecJob(Job):

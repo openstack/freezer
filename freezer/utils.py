@@ -67,10 +67,10 @@ class OpenstackOptions:
     def create_from_dict(src_dict):
         try:
             return OpenstackOptions(
-                user_name=src_dict['OS_USERNAME'],
-                tenant_name=src_dict['OS_TENANT_NAME'],
-                auth_url=src_dict['OS_AUTH_URL'],
-                password=src_dict['OS_PASSWORD'],
+                user_name=src_dict.get('OS_USERNAME', None),
+                tenant_name=src_dict.get('OS_TENANT_NAME', None),
+                auth_url=src_dict.get('OS_AUTH_URL', None),
+                password=src_dict.get('OS_PASSWORD', None),
                 tenant_id=src_dict.get('OS_TENANT_ID', None),
                 region_name=src_dict.get('OS_REGION_NAME', None),
                 endpoint_type=src_dict.get('OS_ENDPOINT_TYPE', None)
@@ -78,92 +78,6 @@ class OpenstackOptions:
         except Exception as e:
             raise Exception('Missing Openstack connection parameter: {0}'
                             .format(e))
-
-
-def gen_manifest_meta(
-        backup_opt_dict, manifest_meta_dict, meta_data_backup_file):
-    ''' This function is used to load backup metadata information on Swift.
-     this is used to keep information between consecutive backup
-     executions.
-     If the manifest_meta_dict is available, most probably this is not
-     the first backup run for the provided backup name and host.
-     In this case we remove all the conflictive keys -> values from
-     the dictionary.
-     '''
-
-    if manifest_meta_dict.get('x-object-meta-tar-prev-meta-obj-name'):
-        tar_meta_prev = \
-            manifest_meta_dict['x-object-meta-tar-prev-meta-obj-name']
-        tar_meta_to_upload = \
-            manifest_meta_dict['x-object-meta-tar-meta-obj-name'] = \
-            manifest_meta_dict['x-object-meta-tar-prev-meta-obj-name'] = \
-            meta_data_backup_file
-    else:
-        manifest_meta_dict['x-object-meta-tar-prev-meta-obj-name'] = \
-            meta_data_backup_file
-        manifest_meta_dict['x-object-meta-backup-name'] = \
-            backup_opt_dict.backup_name
-        manifest_meta_dict['x-object-meta-src-file-to-backup'] = \
-            backup_opt_dict.path_to_backup
-        manifest_meta_dict['x-object-meta-abs-file-path'] = ''
-
-        # Set manifest meta if encrypt_pass_file is provided
-        # The file will contain a plain password that will be used
-        # to encrypt and decrypt tasks
-        manifest_meta_dict['x-object-meta-encrypt-data'] = 'Yes'
-        if backup_opt_dict.encrypt_pass_file is False:
-            manifest_meta_dict['x-object-meta-encrypt-data'] = ''
-        manifest_meta_dict['x-object-meta-always-backup-level'] = ''
-        if backup_opt_dict.always_level:
-            manifest_meta_dict['x-object-meta-always-backup-level'] = \
-                backup_opt_dict.always_level
-
-        # Set manifest meta if max_level argument is provided
-        # Once the incremental backup arrive to max_level, it will
-        # restart from level 0
-        manifest_meta_dict['x-object-meta-maximum-backup-level'] = ''
-        if backup_opt_dict.max_level is not False:
-            manifest_meta_dict['x-object-meta-maximum-backup-level'] = \
-                str(backup_opt_dict.max_level)
-
-        # At the end of the execution, checks the objects ages for the
-        # specified swift container. If there are object older then the
-        # specified days they'll be removed.
-        # Unit is int and every int and 5 == five days.
-        manifest_meta_dict['x-object-meta-remove-backup-older-than-days'] = ''
-        if backup_opt_dict.remove_older_than is not False:
-            manifest_meta_dict['x-object-meta-remove-backup-older-than-days'] \
-                = '{0}'.format(backup_opt_dict.remove_older_than)
-        manifest_meta_dict['x-object-meta-hostname'] = backup_opt_dict.hostname
-        manifest_meta_dict['x-object-meta-segments-size-bytes'] = \
-            str(backup_opt_dict.max_segment_size)
-        manifest_meta_dict['x-object-meta-backup-created-timestamp'] = \
-            str(backup_opt_dict.time_stamp)
-        manifest_meta_dict['x-object-meta-providers-list'] = 'HP'
-        manifest_meta_dict['x-object-meta-tar-meta-obj-name'] = \
-            meta_data_backup_file
-        tar_meta_to_upload = tar_meta_prev = \
-            manifest_meta_dict['x-object-meta-tar-meta-obj-name'] = \
-            manifest_meta_dict['x-object-meta-tar-prev-meta-obj-name']
-
-        # Need to be processed from the last existing backup file found
-        # in Swift, matching with hostname and backup name
-        # the last existing file can be extracted from the timestamp
-        manifest_meta_dict['x-object-meta-container-segments'] = \
-            segments_name(backup_opt_dict.container)
-
-        # Set the restart_always_level value to n days. According
-        # to the following option, when the always_level is set
-        # the backup will be reset to level 0 if the current backup
-        # times tamp is older then the days in x-object-meta-container-segments
-        manifest_meta_dict['x-object-meta-restart-always-backup'] = ''
-        if backup_opt_dict.restart_always_level is not False:
-            manifest_meta_dict['x-object-meta-restart-always-backup'] = \
-                backup_opt_dict.restart_always_level
-
-    return (
-        backup_opt_dict, manifest_meta_dict,
-        tar_meta_to_upload, tar_meta_prev)
 
 
 def validate_all_args(required_list):
@@ -181,21 +95,6 @@ def validate_all_args(required_list):
                         .format(required_list, error))
 
     return True
-
-
-def sort_backup_list(remote_match_backup):
-    """
-    Sort the backups by timestamp. The provided list contains strings in the
-    format hostname_backupname_timestamp_level
-    """
-
-    # Remove duplicates objects
-    backups_list = list(set(remote_match_backup))
-
-    backups_list.sort(
-        key=lambda x: map(lambda y: int(y), x.rsplit('_', 2)[-2:]),
-        reverse=True)
-    return backups_list
 
 
 def create_dir(directory, do_log=True):
@@ -291,13 +190,14 @@ def get_mount_from_path(path):
     """
 
     if not os.path.exists(path):
-        logging.critical('[*] Error: provided path does not exist')
+        logging.critical('[*] Error: provided path does not exist: {0}'
+                         .format(path))
         raise IOError
 
     mount_point_path = os.path.abspath(path)
+
     while not os.path.ismount(mount_point_path):
         mount_point_path = os.path.dirname(mount_point_path)
-
     return mount_point_path
 
 

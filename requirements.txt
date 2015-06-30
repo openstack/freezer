@@ -3,6 +3,7 @@ python-keystoneclient>=0.8.0
 python-cinderclient>=1.2.1
 python-glanceclient
 python-novaclient>=2.21.0
+python-openstackclient
 
 docutils>=0.8.1
 pymysql
