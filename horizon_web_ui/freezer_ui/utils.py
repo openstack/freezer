@@ -1,4 +1,4 @@
-#  Licensed under the Apache License, Version 2.0 (the "License"); you may
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
 #  not use this file except in compliance with the License. You may obtain
 #  a copy of the License at
 #
@@ -10,22 +10,10 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-from django.utils.translation import ugettext_lazy as _
 
-import horizon
-
-
-class FreezerDR(horizon.PanelGroup):
-    slug = "freezerdr"
-    name = _("Backup and Restore")
-    panels = ('jobs',)
-
-
-class Freezer(horizon.Dashboard):
-    name = _("Disaster Recovery")
-    slug = "freezer_ui"
-    panels = (FreezerDR,)
-    default_panel = 'jobs'
-
-
-horizon.register(Freezer)
+def create_dict_action(**kwargs):
+    """
+    Create a dict only with values that exists so we avoid send keys with
+    None values
+    """
+    return {k: v for k, v in kwargs.items() if v}

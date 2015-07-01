@@ -1,0 +1,21 @@
+{% load i18n horizon humanize %}
+
+{% block help_message %}
+<h4>{% blocktrans %}Start and End Date Time{% endblocktrans %}</h4>
+<p>{% blocktrans %}Set a start date and time to execute jobs in ISO format:{% endblocktrans %}</p>
+    <ul>
+        <li>YYYY-MM-DDThh:mm:ss</li>
+    </ul>
+
+<h4>{% blocktrans %}Interval{% endblocktrans %}</h4>
+<p>{% blocktrans %}Set the interval in the following format:{% endblocktrans %}</p>
+    <ul>
+        <li>continuous</li>
+        <li>N weeks</li>
+        <li>N days</li>
+        <li>N hours</li>
+        <li>N minutes</li>
+        <li>N seconds</li>
+    </ul>
+
+{% endblock %}

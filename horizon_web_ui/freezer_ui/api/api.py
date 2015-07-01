@@ -17,8 +17,8 @@
 from django.conf import settings
 import warnings
 import freezer.apiclient.client
+from horizon_web_ui.freezer_ui.utils import create_dict_action
 
-from horizon.utils import functions as utils
 from horizon.utils.memoized import memoized  # noqa
 
 
@@ -51,19 +51,19 @@ class Dict2Object(object):
 
 
 class Action(Dict2Object):
-    nested_dict = 'job'
+    nested_dict = 'job_action'
 
     @property
     def id(self):
-        return self.action_id
+        return self.job_id
 
 
-class Configuration(Dict2Object):
-    nested_dict = 'config_file'
+class Job(Dict2Object):
+    nested_dict = 'job_actions'
 
     @property
     def id(self):
-        return self.config_id
+        return self.job_id
 
 
 class Backup(Dict2Object):
@@ -81,17 +81,13 @@ class Client(Dict2Object):
     def id(self):
         return self.client_id
 
-    @property
-    def name(self):
-        return self.client_id
 
-
-class ConfigClient(object):
-
-    def __init__(self, name, last_backup):
-        self.id = name
-        self.name = name
-        self.last_backup = last_backup
+class ActionJob(object):
+    def __init__(self, job_id, action_id, action, backup_name):
+        self.job_id = job_id
+        self.action_id = action_id
+        self.action = action
+        self.backup_name = backup_name
 
 
 @memoized
@@ -125,188 +121,145 @@ def _freezerclient(request):
         endpoint=api_url)
 
 
-def configuration_create(request, name=None, container_name=None,
-                         src_file=None, levels=None, optimize=None,
-                         compression=None, encryption_password=None,
-                         clients=[], start_datetime=None, interval=None,
-                         exclude=None, log_file=None, proxy=None,
-                         max_priority=False):
-    """Create a new configuration file """
-
-    data = {
-        "name": name,
-        "container_name": container_name,
-        "src_file": src_file,
-        "levels": levels,
-        "optimize": optimize,
-        "compression": compression,
-        "encryption_password": encryption_password,
-        "clients": clients,
-        "start_datetime": start_datetime,
-        "interval": interval,
-        "exclude": exclude,
-        "log_file": log_file,
-        "proxy": proxy,
-        "max_priority": max_priority
+def job_create(request, context):
+    """Create a new job file """
+    job = create_dict_action(**context)
+    job['description'] = job.pop('description', None)
+    job['client_id'] = job.pop('client_id', None)
+    schedule = {
+        'end_datetime': job.pop('end_datetime', None),
+        'interval': job.pop('interval', None),
+        'start_datetime': job.pop('start_datetime', None),
     }
-    return _freezerclient(request).configs.create(data)
+    job['job_schedule'] = schedule
+    job['job_actions'] = []
+    return _freezerclient(request).jobs.create(job)
 
 
-def configuration_update(request, config_id=None, name=None,
-                         src_file=None, levels=None, optimize=None,
-                         compression=None, encryption_password=None,
-                         clients=[], start_datetime=None, interval=None,
-                         exclude=None, log_file=None, proxy=None,
-                         max_priority=False, container_name=None,):
-
-    """Update a new configuration file """
-    data = {
-        "name": name,
-        "container_name": container_name,
-        "src_file": src_file,
-        "levels": levels,
-        "optimize": optimize,
-        "compression": compression,
-        "encryption_password": encryption_password,
-        "clients": clients,
-        "start_datetime": start_datetime,
-        "interval": interval,
-        "exclude": exclude,
-        "log_file": log_file,
-        "proxy": proxy,
-        "max_priority": max_priority
+def job_edit(request, context):
+    """Edit an existing job file, but leave the actions to actions_edit"""
+    job = create_dict_action(**context)
+    job['description'] = job.pop('description', None)
+    job['client_id'] = job.pop('client_id', None)
+    schedule = {
+        'end_datetime': job.pop('end_datetime', None),
+        'interval': job.pop('interval', None),
+        'start_datetime': job.pop('start_datetime', None),
     }
-    return _freezerclient(request).configs.update(config_id, data)
+    job['job_schedule'] = schedule
+    job_id = job.pop('original_name', None)
+    return _freezerclient(request).jobs.update(job_id, job)
 
 
-def configuration_delete(request, obj_id):
-    return _freezerclient(request).configs.delete(obj_id)
+def job_delete(request, obj_id):
+    return _freezerclient(request).jobs.delete(obj_id)
 
 
-def configuration_clone(request, config_id):
-    config_file = _freezerclient(request).configs.get(config_id)
-    data = config_file[0]['config_file']
-    data['name'] = '{0}_clone'.format(data['name'])
-    return _freezerclient(request).configs.create(data)
+def job_clone(request, job_id):
+    job_file = _freezerclient(request).jobs.get(job_id)
+    job_file['description'] = \
+        '{0}_clone'.format(job_file['description'])
+    job_file.pop('job_id', None)
+    job_file.pop('_version', None)
+    return _freezerclient(request).jobs.create(job_file)
 
 
-def configuration_get(request, config_id):
-    config_file = _freezerclient(request).configs.get(config_id)
-    if config_file:
-        return [Configuration(data) for data in config_file]
+def job_get(request, job_id):
+    job_file = _freezerclient(request).jobs.get(job_id)
+    if job_file:
+        job_item = [job_file]
+        job = [Job(data) for data in job_item]
+        return job
     return []
 
 
-def configuration_list(request):
-    configurations = _freezerclient(request).configs.list()
-    configurations = [Configuration(data) for data in configurations]
-    return configurations
+def job_list(request):
+    jobs = _freezerclient(request).jobs.list_all()
+    jobs = [Job(data) for data in jobs]
+    return jobs
 
 
-def clients_in_config(request, config_id):
-    configuration = configuration_get(request, config_id)
-    clients = []
-    last_backup = None
-    clients_dict = [c.get_dict() for c in configuration]
-    for client in clients_dict:
-        for client_id in client['config_file']['clients']:
-            backups, has_more = backups_list(request, text_match=client_id)
-            backups = [Backup(data) for data in backups]
-            backups = [b.get_dict() for b in backups]
-            for backup in backups:
-                last_backup = backup.data_dict['backup_metadata']['timestamp']
-            clients.append(ConfigClient(client_id, last_backup))
-    return clients
+def action_create(request, context):
+    """Create a new action for a job """
+    action = {}
+
+    if context['max_retries']:
+        action['max_retries'] = context.pop('max_retries')
+    if context['max_retries_interval']:
+        action['max_retries_interval'] = context.pop('max_retries_interval')
+    if context['mandatory']:
+        action['mandatory'] = context.pop('mandatory')
+
+    job_id = context.pop('original_name')
+    job_action = create_dict_action(**context)
+    action['freezer_action'] = job_action
+    action_id = _freezerclient(request).actions.create(action)
+    action['action_id'] = action_id
+    job = _freezerclient(request).jobs.get(job_id)
+    job['job_actions'].append(action)
+    return _freezerclient(request).jobs.update(job_id, job)
 
 
-def client_list(request, limit=20):
-    clients = _freezerclient(request).registration.list(limit=limit)
+def action_list(request):
+    actions = _freezerclient(request).actions.list()
+    actions = [Action(data) for data in actions]
+    return actions
+
+
+def actions_in_job(request, job_id):
+    job = _freezerclient(request).jobs.get(job_id)
+    actions = []
+    try:
+        job_id = job['job_id']
+        actions = [ActionJob(job_id,
+                             action['action_id'],
+                             action['freezer_action']['action'],
+                             action['freezer_action']['backup_name'])
+                   for action in job['job_actions']]
+    except Exception:
+        warnings.warn('No more actions in your job')
+    return actions
+
+
+def action_get(request, action_id):
+    action = _freezerclient(request).actions.get(action_id)
+    return action
+
+
+def action_update(request, context):
+    job_id = context.pop('original_name')
+    action_id = context.pop('action_id')
+
+    job = _freezerclient(request).jobs.get(job_id)
+
+    for a in job['job_actions']:
+        if a['action_id'] == action_id:
+
+            if context['max_retries']:
+                a['max_retries'] = context.pop('max_retries')
+            if context['max_retries_interval']:
+                a['max_retries_interval'] = \
+                    context.pop('max_retries_interval')
+            if context['mandatory']:
+                a['mandatory'] = context.pop('mandatory')
+
+            updated_action = create_dict_action(**context)
+
+            a['freezer_action'].update(updated_action)
+
+    return _freezerclient(request).jobs.update(job_id, job)
+
+
+def action_delete(request, ids):
+    action_id, job_id = ids.split('===')
+    job = _freezerclient(request).jobs.get(job_id)
+    for action in job['job_actions']:
+        if action['action_id'] == action_id:
+            job['job_actions'].remove(action)
+    return _freezerclient(request).jobs.update(job_id, job)
+
+
+def client_list(request):
+    clients = _freezerclient(request).registration.list()
     clients = [Client(client) for client in clients]
     return clients
-
-
-def backups_list(request, offset=0, time_after=None, time_before=None,
-                 text_match=None):
-    page_size = utils.get_page_size(request)
-
-    search = {}
-
-    if time_after:
-        search['time_after'] = time_after
-    if time_before:
-        search['time_before'] = time_before
-
-    if text_match:
-        search['match'] = [
-            {
-                "_all": text_match,
-            }
-        ]
-
-    backups = _freezerclient(request).backups.list(
-        limit=page_size + 1,
-        offset=offset,
-        search=search)
-
-    if len(backups) > page_size:
-        backups.pop()
-        has_more = True
-    else:
-        has_more = False
-
-    # Wrap data in object for easier handling
-    backups = [Backup(data) for data in backups]
-
-    return backups, has_more
-
-
-def backup_get(request, backup_id):
-    data = _freezerclient(request).backups.get(backup_id)
-    if data:
-        return Backup(data[0])
-
-
-def restore_action_create(request,
-                          backup_id,
-                          destination_client_id,
-                          destination_path,
-                          description=None,
-                          dry_run=False,
-                          max_prio=False):
-    c = _freezerclient(request)
-    backup = c.backups.get(backup_id)[0]
-
-    action = {
-        "job": {
-            "action": "restore",
-            "container_name": backup['backup_metadata']['container'],
-            "restore-abs-path": destination_path,
-            "backup-name": backup['backup_metadata']['backup_name'],
-            "restore-from-host": backup['backup_metadata']['host_name'],
-            "max_cpu_priority": max_prio,
-            "dry_run": dry_run
-        },
-        "description": description,
-        "client_id": destination_client_id
-    }
-
-    c.actions.create(action)
-
-
-def actions_list(request, offset=0):
-    page_size = utils.get_page_size(request)
-
-    actions = _freezerclient(request).actions.list(
-        limit=page_size + 1,
-        offset=offset)
-
-    if len(actions) > page_size:
-        actions.pop()
-        has_more = True
-    else:
-        has_more = False
-
-    # Wrap data in object for easier handling
-    actions = [Action(data['action']) for data in actions]
-
-    return actions, has_more
