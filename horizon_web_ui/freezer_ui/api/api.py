@@ -16,7 +16,6 @@
 
 from django.conf import settings
 import warnings
-
 import freezer.apiclient.client
 
 from horizon.utils import functions as utils
@@ -96,14 +95,34 @@ class ConfigClient(object):
 
 
 @memoized
+def get_service_url(request):
+    """ Get Freezer API url from keystone catalog.
+    if Freezer is not set in keystone, the fallback will be
+    'FREEZER_API_URL' in local_settings.py
+    """
+    url = None
+
+    catalog = (getattr(request.user, "service_catalog", None))
+    if not catalog:
+        warnings.warn('Using hardcoded FREEZER_API_URL at {0}'
+                      .format(settings.FREEZER_API_URL))
+        return getattr(settings, 'FREEZER_API_URL', None)
+
+    for c in catalog:
+        if c['name'] == 'Freezer':
+            for e in c['endpoints']:
+                url = e['publicURL']
+    return url
+
+
+@memoized
 def _freezerclient(request):
-    warnings.warn('Endpoint discovery not implemented yet. Using hard-coded: {'
-                  '}'.format(settings.FREEZER_API_URL))
+    api_url = get_service_url(request)
 
     return freezer.apiclient.client.Client(
         token=request.user.token.id,
         auth_url=getattr(settings, 'OPENSTACK_KEYSTONE_URL'),
-        endpoint=settings.FREEZER_API_URL)
+        endpoint=api_url)
 
 
 def configuration_create(request, name=None, container_name=None,

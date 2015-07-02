@@ -21,18 +21,35 @@ To install the horizon web ui you need to do the following::
 
     # /opt/stack/horizon/tools/with_venv.sh pip install parsedatetime
 
-    # In horizons local_settings.py add the variable FREEZER_API_URL and set it
-      to the url of the freezer api server. Example:
-
-        FREEZER_API_URL = 'http://127.0.0.1:9090'
-
     # cd /opt/stack/horizon/
 
     # ./run_tests.sh --runserver 0.0.0.0:8000
 
 
-Now a new Tab is available in the dashboard lists on the left, called "Backup
-Restore DR".
+Now a new Tab is available in the dashboard lists on the left, called "Disaster Recovery".
+
+API registration
+================
+keystone user-create --name freezer --pass <pass>
+keystone user-role-add --user freezer --tenant service --role admin
+
+keystone service-create --name Freezer \
+  --type "Disaster Recovery" \
+  --description "Disaster Recovery"
+
+keystone endpoint-create \
+  --service-id <service-id> \
+  --publicurl <api-url> \
+  --internalurl <api-url> \
+  --adminurl <api-url> \
+  --region regionOne
+
+If keystone service-create and endpoint-create are not available you can set as a fallback the following on::
+
+    # vim /opt/stack/horizon/openstack_dashboard/local/local_settings.py
+
+    # add FREEZER_API_URL = http://<api_url>:<port>
+
 
 Running the unit tests
 ======================
