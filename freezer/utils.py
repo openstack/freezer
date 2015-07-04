@@ -38,13 +38,14 @@ class OpenstackOptions:
     >> create_from_dict(dict)
     """
     def __init__(self, user_name, tenant_name, auth_url, password,
-                 tenant_id=None, region_name=None):
+                 tenant_id=None, region_name=None, endpoint_type=None):
         self.user_name = user_name
         self.tenant_name = tenant_name
         self.auth_url = auth_url
         self.password = password
         self.tenant_id = tenant_id
         self.region_name = region_name
+        self.endpoint_type = endpoint_type
 
     @property
     def os_options(self):
@@ -55,7 +56,8 @@ class OpenstackOptions:
         """
         return {'tenant_id': self.tenant_id,
                 'tenant_name': self.tenant_name,
-                'region_name': self.region_name}
+                'region_name': self.region_name,
+                'endpoint_type': self.endpoint_type}
 
     @staticmethod
     def create_from_env():
@@ -70,7 +72,8 @@ class OpenstackOptions:
                 auth_url=src_dict['OS_AUTH_URL'],
                 password=src_dict['OS_PASSWORD'],
                 tenant_id=src_dict.get('OS_TENANT_ID', None),
-                region_name=src_dict.get('OS_REGION_NAME', None)
+                region_name=src_dict.get('OS_REGION_NAME', None),
+                endpoint_type=src_dict.get('OS_ENDPOINT_TYPE', None)
             )
         except Exception as e:
             raise Exception('Missing Openstack connection parameter: {0}'

@@ -87,6 +87,7 @@ class ClientManager:
             auth_url=options.auth_url,
             region_name=options.region_name,
             insecure=self.insecure,
+            endpoint_type=options.endpoint_type,
             service_type="volume")
         return self.cinder
 
@@ -130,6 +131,7 @@ class ClientManager:
                   os_tenant_name=options.tenant_name,
                   os_auth_url=options.auth_url,
                   os_region_name=options.region_name,
+                  endpoint_type=options.endpoint_type,
                   force_auth=False))
 
         self.glance = gclient.Client(endpoint=endpoint, token=token)
@@ -149,6 +151,7 @@ class ClientManager:
             project_id=options.tenant_name,
             auth_url=options.auth_url,
             region_name=options.region_name,
+            endpoint_type=options.endpoint_type,
             insecure=self.insecure)
 
         return self.nova
