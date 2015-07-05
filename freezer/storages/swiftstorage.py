@@ -110,8 +110,8 @@ class SwiftStorage(AbstractStorage):
         file_chunk_index, file_chunk = backup_queue.get().popitem()
         package_name = absolute_file_path.split('/')[-1]
         while file_chunk_index or file_chunk:
-            package_name = u'{0}/{1}/{2}/{3}'.format(
+            package_name_segment = u'{0}/{1}/{2}/{3}'.format(
                 package_name, time_stamp,
                 max_segment_size, file_chunk_index)
-            self.upload_chunk(file_chunk, package_name)
+            self.upload_chunk(file_chunk, package_name_segment)
             file_chunk_index, file_chunk = backup_queue.get().popitem()
