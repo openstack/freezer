@@ -47,6 +47,20 @@ def format_last_backup(last_backup):
         'en="true"></span> {}</span>'.format(colour, icon, text))
 
 
+class AttachJobToSession(tables.LinkAction):
+    name = "attach_job_to_session"
+    verbose_name = _("Attach To Session")
+    classes = ("ajax-modal")
+    url = "horizon:freezer_ui:sessions:attach"
+
+    def allowed(self, request, instance):
+        return True
+
+    def get_link_url(self, datum):
+        return reverse("horizon:freezer_ui:sessions:attach",
+                       kwargs={'job_id': datum.job_id})
+
+
 class Restore(tables.Action):
     name = "restore"
     verbose_name = _("Restore")
@@ -149,6 +163,7 @@ class JobsTable(tables.DataTable):
         multi_select = False
         row_actions = (CreateAction,
                        EditJob,
+                       AttachJobToSession,
                        CloneJob,
                        DeleteJob,)
 

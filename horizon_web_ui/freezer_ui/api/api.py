@@ -90,6 +90,18 @@ class ActionJob(object):
         self.backup_name = backup_name
 
 
+class Session(object):
+    def __init__(self, session_id, description, status, jobs,
+                 start_datetime, interval, end_datetime):
+        self.session_id = session_id
+        self.description = description
+        self.status = status
+        self.jobs = jobs
+        self.start_datetime = start_datetime
+        self.interval = interval
+        self.end_datetime = end_datetime
+
+
 @memoized
 def get_service_url(request):
     """ Get Freezer API url from keystone catalog.
@@ -263,3 +275,74 @@ def client_list(request):
     clients = _freezerclient(request).registration.list()
     clients = [Client(client) for client in clients]
     return clients
+
+
+def add_job_to_session(request, session_id, job_id):
+    """This function will add a job to a session and the API will handle the
+    copy of job information to the session """
+    return _freezerclient(request).sessions.add_job(session_id, job_id)
+
+
+def remove_job_from_session(request, session_id, job_id):
+    """Remove a job from a session will delete the job information but not the
+    job itself """
+    return _freezerclient(request).sessions.remove_job(session_id, job_id)
+
+
+def session_create(request, context):
+    """A session is a group of jobs who share the same scheduling time. """
+    session = create_dict_action(**context)
+    session['description'] = session.pop('description', None)
+    schedule = {
+        'end_datetime': session.pop('end_datetime', None),
+        'interval': session.pop('interval', None),
+        'start_datetime': session.pop('start_datetime', None),
+    }
+    session['schedule'] = schedule
+    return _freezerclient(request).sessions.create(session)
+
+
+def session_update(request, context):
+    """Update session information """
+    session = create_dict_action(**context)
+    session_id = session.pop('session_id', None)
+    session['description'] = session.pop('description', None)
+    schedule = {
+        'end_datetime': session.pop('end_datetime', None),
+        'interval': session.pop('interval', None),
+        'start_datetime': session.pop('start_datetime', None),
+    }
+    session['schedule'] = schedule
+    return _freezerclient(request).sessions.update(session_id, session)
+
+
+def session_delete(request, session_id):
+    """Delete session from API """
+    return _freezerclient(request).sessions.delete(session_id)
+
+
+def session_list(request):
+    """List all sessions """
+    sessions = _freezerclient(request).sessions.list_all()
+    sessions = [Session(s['session_id'],
+                        s['description'],
+                        s['status'],
+                        s['jobs'],
+                        s['schedule']['start_datetime'],
+                        s['schedule']['interval'],
+                        s['schedule']['end_datetime'])
+                for s in sessions]
+    return sessions
+
+
+def session_get(request, session_id):
+    """Get a single session """
+    session = _freezerclient(request).sessions.get(session_id)
+    session = Session(session['session_id'],
+                      session['description'],
+                      session['status'],
+                      session['jobs'],
+                      session['schedule']['start_datetime'],
+                      session['schedule']['interval'],
+                      session['schedule']['end_datetime'])
+    return session

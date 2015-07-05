@@ -10,18 +10,15 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+from django.utils.translation import ugettext_lazy as _
 
-def create_dict_action(**kwargs):
-    """
-    Create a dict only with values that exists so we avoid send keys with
-    None values
-    """
-    return {k: v for k, v in kwargs.items() if v}
+import horizon
+from horizon_web_ui.freezer_ui import dashboard
 
 
-class SessionJob(object):
-    def __init__(self, job_id, session_id, client_id, status):
-        self.job_id = job_id
-        self.session_id = session_id
-        self.client_id = client_id
-        self.status = status
+class SessionsPanel(horizon.Panel):
+    name = _("Sessions")
+    slug = "sessions"
+
+
+dashboard.Freezer.register(SessionsPanel)
