@@ -978,6 +978,10 @@ class Os:
         return 'testdir'
 
     @classmethod
+    def isfile(cls, directory=True):
+        return True
+
+    @classmethod
     def split(cls, directory=True):
         return ['/tmp', '']
 

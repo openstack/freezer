@@ -52,6 +52,7 @@ class TestBackUP:
         monkeypatch.setattr(os.path, 'expanduser', expanduser.expanduser)
         monkeypatch.setattr(os.path, 'isdir', expanduser.isdir)
         monkeypatch.setattr(os, 'makedirs', expanduser.makedirs)
+        monkeypatch.setattr(os, 'chdir', expanduser.makedirs)
         monkeypatch.setattr(os.path, 'exists', expanduser.exists)
         monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
 
