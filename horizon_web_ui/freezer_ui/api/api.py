@@ -74,12 +74,10 @@ class Backup(Dict2Object):
         return self.backup_id
 
 
-class Client(Dict2Object):
-    nested_dict = 'client'
-
-    @property
-    def id(self):
-        return self.client_id
+class Client(object):
+    def __init__(self, client, hostname):
+        self.client = client
+        self.hostname = hostname
 
 
 class ActionJob(object):
@@ -136,8 +134,9 @@ def _freezerclient(request):
 def job_create(request, context):
     """Create a new job file """
     job = create_dict_action(**context)
+    client_id = job.pop('client_id', None)
     job['description'] = job.pop('description', None)
-    job['client_id'] = job.pop('client_id', None)
+
     schedule = {
         'end_datetime': job.pop('end_datetime', None),
         'interval': job.pop('interval', None),
@@ -145,6 +144,7 @@ def job_create(request, context):
     }
     job['job_schedule'] = schedule
     job['job_actions'] = []
+    job['client_id'] = client_id
     return _freezerclient(request).jobs.create(job)
 
 
@@ -273,7 +273,8 @@ def action_delete(request, ids):
 
 def client_list(request):
     clients = _freezerclient(request).registration.list()
-    clients = [Client(client) for client in clients]
+    clients = [Client(c['uuid'], c['client']['hostname'])
+               for c in clients]
     return clients
 
 

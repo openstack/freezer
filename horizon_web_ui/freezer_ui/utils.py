@@ -12,14 +12,14 @@
 
 
 def create_dict_action(**kwargs):
-    """
-    Create a dict only with values that exists so we avoid send keys with
+    """Create a dict only with values that exists so we avoid send keys with
     None values
     """
     return {k: v for k, v in kwargs.items() if v}
 
 
 class SessionJob(object):
+    """Create a session object """
     def __init__(self, job_id, session_id, client_id, status):
         self.job_id = job_id
         self.session_id = session_id

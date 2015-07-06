@@ -21,6 +21,7 @@ Hudson (tjh@cryptsoft.com).
 
 import elasticsearch
 import logging
+import uuid
 from freezer_api.common.utils import BackupMetadataDoc
 from freezer_api.common.utils import JobDoc
 from freezer_api.common.utils import ActionDoc
@@ -314,7 +315,8 @@ class ElasticSearchEngine(object):
                 message=('Client already registered with '
                          'ID {0}'.format(client_id)))
         client_doc = {'client': doc,
-                      'user_id': user_id}
+                      'user_id': user_id,
+                      'uuid': uuid.uuid4().hex}
         self.client_manager.insert(client_doc)
         logging.info('Client registered, client_id: {0}'.
                      format(client_id))

@@ -10,6 +10,7 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+import logging
 from django.utils.translation import ugettext_lazy as _
 import datetime
 from horizon import exceptions
@@ -19,111 +20,56 @@ from horizon import workflows
 import horizon_web_ui.freezer_ui.api.api as freezer_api
 
 
-class ClientsConfigurationAction(workflows.Action):
-
-    client_id = forms.ChoiceField(
-        help_text=_("Set the client for this job"),
-        required=True)
-
-    def populate_client_id_choices(self, request, context):
-        clients = []
-        try:
-            clients = freezer_api.client_list(request)
-        except Exception:
-            exceptions.handle(request, _('Error getting client list'))
-
-        client_id = [(c.client_id, c.hostname) for c in clients]
-        client_id.insert(0, ('', _('Select A Client')))
-        return client_id
-
-    class Meta(object):
-        name = _("Clients")
-        slug = "clients"
+LOG = logging.getLogger(__name__)
 
 
-class ClientsConfiguration(workflows.Step):
-    action_class = ClientsConfigurationAction
-    contributes = ('client_id',)
-
-
-class ActionsConfigurationAction(workflows.MembershipAction):
+class ClientsConfigurationAction(workflows.MembershipAction):
     def __init__(self, request, *args, **kwargs):
-        super(ActionsConfigurationAction, self).__init__(request,
+        super(ClientsConfigurationAction, self).__init__(request,
                                                          *args,
                                                          **kwargs)
+        err_msg = _('Unable to retrieve client list.')
 
         original_name = args[0].get('original_name', None)
 
-        err_msg = _('Unable to retrieve list of actions.')
+        default_role_name = self.get_default_role_field_name()
+        self.fields[default_role_name] = forms.CharField(required=False)
+        self.fields[default_role_name].initial = 'member'
 
-        if original_name:
-            default_role_field_name = self.get_default_role_field_name()
-            self.fields[default_role_field_name] = \
-                forms.CharField(required=False,
-                                widget=forms.HiddenInput())
-            self.fields[default_role_field_name].initial = 'member'
-
-            actions = self.get_member_field_name('member')
-            self.fields[actions] = \
-                forms.MultipleChoiceField(required=False,
-                                          widget=forms.HiddenInput())
-        else:
-            default_role_field_name = self.get_default_role_field_name()
-            self.fields[default_role_field_name] = \
-                forms.CharField(required=False)
-            self.fields[default_role_field_name].initial = 'member'
-
-            actions = self.get_member_field_name('member')
-            self.fields[actions] = forms.MultipleChoiceField(required=False)
-
-        all_actions = []
+        all_clients = []
         try:
-            all_actions = freezer_api.action_list(request)
+            all_clients = freezer_api.client_list(request)
         except Exception:
             exceptions.handle(request, err_msg)
+        client_list = [(c.client, c.hostname)
+                       for c in all_clients]
 
-        all_actions = [(a.action_id, a.freezer_action['backup_name'])
-                       for a in all_actions]
+        field_name = self.get_member_field_name('member')
+        if not original_name:
+            self.fields[field_name] = forms.MultipleChoiceField(required=False)
+            self.fields[field_name].choices = client_list
 
-        self.fields[actions].choices = all_actions
-
-        initial_actions = []
-
-        if request.method == 'POST':
-            return
-
-        try:
-            if original_name:
-                configured_actions = \
-                    freezer_api.actions_in_job(request, original_name)
-                initial_actions = [a.action_id for a in configured_actions]
-        except Exception:
-            exceptions.handle(request, err_msg)
-
-        self.fields[actions].initial = initial_actions
-
-    class Meta(object):
-        name = _("Actions")
-        slug = "selected_actions"
-        help_text_template = "freezer_ui/jobs" \
-                             "/_actions.html"
+    class Meta:
+        name = _("Clients")
+        slug = 'selected_clients'
 
 
-class ActionsConfiguration(workflows.UpdateMembersStep):
-    action_class = ActionsConfigurationAction
-    help_text = _(
-        "Select the clients that will be backed up using this configuration.")
-    available_list_title = _("All Actions")
-    members_list_title = _("Selected Actions")
-    no_available_text = _("No actions found.")
-    no_members_text = _("No actions selected.")
+class ClientsConfiguration(workflows.UpdateMembersStep):
+    action_class = ClientsConfigurationAction
+    help_text = _("From here you can add and remove clients to "
+                  "this job from the list of available clients")
+    available_list_title = _("All Clients")
+    members_list_title = _("Available clients")
+    no_available_text = _("No clients found.")
+    no_members_text = _("No clients selected.")
     show_roles = False
-    contributes = ("actions",)
+    contributes = ("clients",)
 
     def contribute(self, data, context):
+        request = self.workflow.request
         if data:
-            member_field_name = self.get_member_field_name('member')
-            context['actions'] = data.get(member_field_name, [])
+            field_name = self.get_member_field_name('member')
+            context["clients"] = request.POST.getlist(field_name)
         return context
 
 
@@ -185,7 +131,7 @@ class SchedulingConfiguration(workflows.Step):
     action_class = SchedulingConfigurationAction
     contributes = ('start_datetime',
                    'interval',
-                   'end_datetime')
+                   'end_datetime',)
 
 
 class InfoConfigurationAction(workflows.Action):
@@ -206,15 +152,15 @@ class InfoConfigurationAction(workflows.Action):
 class InfoConfiguration(workflows.Step):
     action_class = InfoConfigurationAction
     contributes = ('description',
-                   'original_name')
+                   'original_name',)
 
 
 class ConfigureJob(workflows.Workflow):
     slug = "job"
     name = _("Job Configuration")
     finalize_button_name = _("Save")
-    success_message = _('Job file saved correctly.')
-    failure_message = _('Unable to save job file.')
+    success_message = _('Job created correctly.')
+    failure_message = _('Unable to created job.')
     success_url = "horizon:freezer_ui:jobs:index"
     default_steps = (InfoConfiguration,
                      ClientsConfiguration,
@@ -223,9 +169,12 @@ class ConfigureJob(workflows.Workflow):
     def handle(self, request, context):
         try:
             if context['original_name'] == '':
-                return freezer_api.job_create(request, context)
+                for client in context['clients']:
+                    context['client_id'] = client
+                    freezer_api.job_create(request, context)
             else:
                 return freezer_api.job_edit(request, context)
+            return True
         except Exception:
             exceptions.handle(request)
             return False
