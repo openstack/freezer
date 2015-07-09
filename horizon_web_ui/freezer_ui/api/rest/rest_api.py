@@ -1,7 +1,8 @@
 import functools
 
+from django.http import HttpResponse
 from django.views import generic
-
+import json
 from openstack_dashboard.api.rest import utils as rest_utils
 from openstack_dashboard.api.rest.utils import JSONResponse
 
@@ -31,7 +32,34 @@ class Clients(generic.View):
 
         # we don't have a "get all clients" api (probably for good reason) so
         # we need to resort to getting a very high number.
-        clients = freezer_api.client_list(request, limit=9999)
+        clients = freezer_api.client_list(request)
         clients = [c.get_dict() for c in clients]
 
         return clients
+
+
+class Actions(generic.View):
+    """API for clients"""
+
+    @prevent_json_hijacking
+    @rest_utils.ajax()
+    def get(self, request):
+        """Get all registered freezer actions"""
+        actions = freezer_api.action_list_json(request)
+        actions = json.dumps(actions)
+        return HttpResponse(actions,
+                            content_type="application/json")
+
+
+class ActionsInJob(generic.View):
+    """API for actions in a job"""
+
+    @prevent_json_hijacking
+    @rest_utils.ajax()
+    def get(self, request, job_id=None):
+        """Get all registered freezer actions"""
+        actions = freezer_api.actions_in_job_json(request, job_id)
+        actions = json.dumps(actions)
+        return HttpResponse(actions,
+                            content_type="application/json")
+
