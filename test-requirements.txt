@@ -1,0 +1,5 @@
+pytest
+flake8>=2.2.4,<=2.4.1
+mock>=1.1,!=1.1.4;python_version!='2.6'
+mock==1.0.1;python_version=='2.6'
+

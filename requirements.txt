@@ -1,18 +1,14 @@
-python-swiftclient>=1.6.0
-python-keystoneclient>=0.8.0
-python-cinderclient>=1.2.1
-python-glanceclient
-python-novaclient>=2.21.0
-python-openstackclient
+python-swiftclient>=2.2.0,<2.5.0
+python-swiftclient>=2.2.0
+python-keystoneclient>=1.2.0,<1.4.0
+python-cinderclient>=1.1.0,<1.2.0
+python-glanceclient>=0.15.0,<0.18.0
+python-novaclient>=2.22.0,<2.24.0python-openstackclient>=1.0.3,<1.1.0
+paramiko>=1.13.0
 
-docutils>=0.8.1
-paramiko
-pymysql
-pymongo
+PyMySQL>=0.6.2  # MIT License
+pymongo>=3.0.2
+# Not in global-requirements
 apscheduler
+# Not in global-requirements
 pep3143daemon
-
-[testing]
-pytest
-flake8
-mock

@@ -1,8 +1,10 @@
 -e git+https://github.com/openstack/horizon.git#egg=horizon
-django-nose
+django-nose>=1.2
 nose-exclude
-mock
-python-openstackclient
-mox
+mock>=1.1,!=1.1.4;python_version!='2.6'
+mock==1.0.1;python_version=='2.6'
+python-openstackclient>=1.5.0
+mox>=0.5.3
+# Not in global-requirements
 parsedatetime
 coverage>=3.6
