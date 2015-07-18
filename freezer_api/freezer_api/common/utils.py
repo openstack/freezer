@@ -19,12 +19,12 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
+import jsonschema
 import time
 import uuid
-import jsonschema
 
-import json_schemas
-from freezer_api.common import exceptions
+import freezer_api.common.json_schemas
+from freezer_api.common import exceptions as freezer_api_exc
 
 
 class BackupMetadataDoc:
@@ -79,14 +79,14 @@ class JobDoc:
         try:
             JobDoc.job_doc_validator.validate(doc)
         except Exception as e:
-            raise exceptions.BadDataFormat(str(e).splitlines()[0])
+            raise freezer_api_exc.BadDataFormat(str(e).splitlines()[0])
 
     @staticmethod
     def validate_patch(doc):
         try:
             JobDoc.job_patch_validator.validate(doc)
         except Exception as e:
-            raise exceptions.BadDataFormat(str(e).splitlines()[0])
+            raise freezer_api_exc.BadDataFormat(str(e).splitlines()[0])
 
     @staticmethod
     def create_patch(doc):
@@ -133,14 +133,14 @@ class ActionDoc:
         try:
             ActionDoc.action_doc_validator.validate(doc)
         except Exception as e:
-            raise exceptions.BadDataFormat(str(e).splitlines()[0])
+            raise freezer_api_exc.BadDataFormat(str(e).splitlines()[0])
 
     @staticmethod
     def validate_patch(doc):
         try:
             ActionDoc.action_patch_validator.validate(doc)
         except Exception as e:
-            raise exceptions.BadDataFormat(str(e).splitlines()[0])
+            raise freezer_api_exc.BadDataFormat(str(e).splitlines()[0])
 
     @staticmethod
     def create_patch(doc):
@@ -180,14 +180,14 @@ class SessionDoc:
         try:
             SessionDoc.session_doc_validator.validate(doc)
         except Exception as e:
-            raise exceptions.BadDataFormat(str(e).splitlines()[0])
+            raise freezer_api_exc.BadDataFormat(str(e).splitlines()[0])
 
     @staticmethod
     def validate_patch(doc):
         try:
             SessionDoc.session_patch_validator.validate(doc)
         except Exception as e:
-            raise exceptions.BadDataFormat(str(e).splitlines()[0])
+            raise freezer_api_exc.BadDataFormat(str(e).splitlines()[0])
 
     @staticmethod
     def create_patch(doc):

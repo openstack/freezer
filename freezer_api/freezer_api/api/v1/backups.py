@@ -20,7 +20,6 @@ Hudson (tjh@cryptsoft.com).
 """
 
 import falcon
-from freezer_api.common import exceptions
 
 
 class BackupsCollectionResource(object):
@@ -45,7 +44,7 @@ class BackupsCollectionResource(object):
         try:
             doc = req.context['doc']
         except KeyError:
-            raise exceptions.BadDataFormat(
+            raise freezer_api_exc.BadDataFormat(
                 message='Missing request body')
         user_name = req.get_header('X-User-Name')
         user_id = req.get_header('X-User-ID')

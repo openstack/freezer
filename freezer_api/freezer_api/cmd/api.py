@@ -22,27 +22,30 @@ Hudson (tjh@cryptsoft.com).
 import logging
 import os
 import sys
-from wsgiref import simple_server
+
 import falcon
 from keystonemiddleware import auth_token
 from oslo_config import cfg
+from wsgiref import simple_server
+
+from freezer_api.api.common import middleware
+from freezer_api.api import v1
+from freezer_api.api import versions
+from freezer_api.common import config
+from freezer_api.common import log
+from freezer_api.common import exceptions as freezer_api_exc
+from freezer_api.storage import driver
 
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
                                    os.pardir, os.pardir, os.pardir))
 if os.path.exists(os.path.join(possible_topdir, 'freezer_api', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
-from freezer_api.common import config, log, exceptions
-from freezer_api.api import v1
-from freezer_api.api import versions
-from freezer_api.api.common import middleware
-from freezer_api.storage import driver
-
 
 def get_application(db):
     app = falcon.API(middleware=[middleware.JSONTranslator()])
 
-    for exception_class in exceptions.exception_handlers_catalog:
+    for exception_class in freezer_api_exc.exception_handlers_catalog:
         app.add_error_handler(exception_class, exception_class.handle)
 
     endpoint_catalog = [
