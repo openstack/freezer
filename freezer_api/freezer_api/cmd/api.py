@@ -19,7 +19,6 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-import logging
 import os
 import sys
 
@@ -35,6 +34,11 @@ from freezer_api.common import config
 from freezer_api.common import log
 from freezer_api.common import exceptions as freezer_api_exc
 from freezer_api.storage import driver
+
+from oslo_log import log as logging
+import olso_i18n
+_LI = oslo_i18n._LI
+_LW = oslo_i18n._LW
 
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
                                    os.pardir, os.pardir, os.pardir))
@@ -59,21 +63,21 @@ def get_application(db):
     if 'keystone_authtoken' in config.CONF:
         app = auth_token.AuthProtocol(app, {})
     else:
-        logging.warning("keystone authentication disabled")
+        logging.warning(_LW("keystone authentication disabled"))
     return app
 
 config_file = '/etc/freezer-api.conf'
 config_files_list = [config_file] if os.path.isfile(config_file) else []
 config.parse_args(args=[], default_config_files=config_files_list)
 log.setup()
-logging.info("Freezer API starting")
-logging.info("Freezer config file(s) used: {0}".format(
-    ', '.join(cfg.CONF.config_file)))
+logging.info(_LI("Freezer API starting"))
+logging.info(_LI("Freezer config file(s) used: %s")
+             % ', '.join(cfg.CONF.config_file))
 try:
     db = driver.get_db()
     application = get_application(db)
 except Exception as err:
-    message = 'Unable to start server: {0}'.format(err)
+    message = _('Unable to start server: %s ') % err
     print message
     logging.fatal(message)
     sys.exit(1)
@@ -87,13 +91,14 @@ def main():
         if ':' in ip:
             ip, port = ip.split(':')
     httpd = simple_server.make_server(ip, int(port), application)
-    message = 'Server listening on {0}:{1}'.format(ip, port)
+    message = _('Server listening on %(ip)s:%(port)s')
+                % {'ip':ip, 'port':port}
     print message
     logging.info(message)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        print "\nThanks, Bye"
+        print _("\nThanks, Bye")
         sys.exit(0)
 
 

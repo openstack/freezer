@@ -19,9 +19,10 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-import logging
-
 from oslo_config import cfg
+from oslo_log import log as logging
+import olso_i18n
+_LI = olso_i18n._LI
 
 from freezer_api.storage import elastic
 
@@ -47,8 +48,8 @@ def get_db():
     db_engine = CONF.storage.db
     if db_engine == 'elasticsearch':
         endpoint = CONF.storage.endpoint
-        logging.info('Storage backend: Elasticsearch at {0}'.format(endpoint))
+        logging.info(_LI('Storage backend: Elasticsearch at %s') % endpoint)
         db = elastic.ElasticSearchEngine(endpoint)
     else:
-        raise Exception('Database Engine {0} not supported'.format(db_engine))
+        raise Exception(_('Database Engine %s not supported') % db_engine)
     return db
