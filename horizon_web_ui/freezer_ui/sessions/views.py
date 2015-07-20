@@ -103,9 +103,9 @@ class CreateSessionWorkflow(workflows.WorkflowView):
             initial.update({
                 'description': session.description,
                 'session_id': session.session_id,
-                'start_datetime': session.start_datetime,
-                'interval': session.interval,
-                'end_datetime': session.end_datetime
+                'schedule_start_date': session.start_datetime,
+                'schedule_interval': session.interval,
+                'schedule_end_date': session.end_datetime
             })
         return initial
 

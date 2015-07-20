@@ -42,17 +42,17 @@ class SessionConfiguration(workflows.Step):
 
 
 class SchedulingConfigurationAction(workflows.Action):
-    start_datetime = forms.CharField(
+    schedule_start_date = forms.CharField(
         label=_("Start Date and Time"),
         required=False,
         help_text=_(""))
 
-    interval = forms.CharField(
+    schedule_interval = forms.CharField(
         label=_("Interval"),
         required=False,
         help_text=_(""))
 
-    end_datetime = forms.CharField(
+    schedule_end_date = forms.CharField(
         label=_("End Date and Time"),
         required=False,
         help_text=_(""))
@@ -78,15 +78,17 @@ class SchedulingConfigurationAction(workflows.Action):
 
     def _check_start_datetime(self, cleaned_data):
         if cleaned_data.get('start_datetime') and not \
-                self._validate_iso_format(cleaned_data.get('start_datetime')):
+                self._validate_iso_format(
+                    cleaned_data.get('schedule_start_date')):
             msg = _("Start date time is not in ISO format.")
-            self._errors['start_datetime'] = self.error_class([msg])
+            self._errors['schedule_start_date'] = self.error_class([msg])
 
     def _check_end_datetime(self, cleaned_data):
         if cleaned_data.get('end_datetime') and not \
-                self._validate_iso_format(cleaned_data.get('end_datetime')):
+                self._validate_iso_format(
+                    cleaned_data.get('schedule_end_date')):
             msg = _("End date time is not in ISO format.")
-            self._errors['end_datetime'] = self.error_class([msg])
+            self._errors['schedule_end_date'] = self.error_class([msg])
 
     class Meta(object):
         name = _("Scheduling")
@@ -97,9 +99,9 @@ class SchedulingConfigurationAction(workflows.Action):
 
 class SchedulingConfiguration(workflows.Step):
     action_class = SchedulingConfigurationAction
-    contributes = ('start_datetime',
-                   'interval',
-                   'end_datetime')
+    contributes = ('schedule_start_date',
+                   'schedule_interval',
+                   'schedule_end_date')
 
 
 class CreateSession(workflows.Workflow):
