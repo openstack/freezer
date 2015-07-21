@@ -32,6 +32,8 @@ from freezer_api.common import db_mappings
 
 
 DEFAULT_CONF_PATH = '/etc/freezer-api.conf'
+DEFAULT_ES_SERVER_PORT = 9200
+DEFAULT_INDEX = 'freezer'
 
 
 class ElastichsearchEngine(object):
@@ -47,11 +49,20 @@ class ElastichsearchEngine(object):
             print(message)
 
     def put_mappings(self, mappings):
+        self.check_index_exists()
         for es_type, mapping in mappings.iteritems():
             if self.mapping_match(es_type, mapping):
                 print '{0}/{1} MATCHES'.format(self.es_index, es_type)
             else:
                 self.askput_mapping(es_type, mapping)
+
+    def check_index_exists(self):
+        url = '{0}/{1}'.format(self.es_url, self.es_index)
+        r = requests.post(url)
+        if r.status_code not in [requests.codes.OK,
+                                 requests.codes.BAD_REQUEST]:
+            raise Exception('Unable to check/create index {0}. '
+                            'ERROR {1}'.format(url, r.status_code))
 
     def mapping_match(self, es_type, mapping):
         url = '{0}/{1}/_mapping/{2}'.format(self.es_url,
@@ -60,12 +71,12 @@ class ElastichsearchEngine(object):
         self.verbose_print("Getting mappings: http GET {0}".format(url))
         r = requests.get(url)
         self.verbose_print("response: {0}".format(r))
-        if r.status_code == 404:    # no index found
+        if r.status_code == requests.codes.NOT_FOUND:
             return False
-        if r.status_code != 200:
+        if r.status_code != requests.codes.OK:
             raise Exception("ERROR {0}: {1}".format(r.status_code, r.text))
-        current_mappings = json.loads(r.text)[str(self.es_index)]['mappings']
-        return mapping == current_mappings[es_type]
+        current_mappings = r.json().get(self.es_index, {}).get('mappings', {})
+        return mapping == current_mappings.get(es_type, {})
 
     def askput_mapping(self, es_type, mapping):
         if self.test_only:
@@ -84,9 +95,7 @@ class ElastichsearchEngine(object):
         self.verbose_print("DELETE {0}".format(url))
         r = requests.delete(url)
         self.verbose_print("response: {0}".format(r))
-        if r.status_code == 200:
-            print 'Type {0} DELETED'.format(url)
-        else:
+        if r.status_code not in [requests.codes.OK, requests.codes.NOT_FOUND]:
             raise Exception('Type removal error {0}: '
                             '{1}'.format(r.status_code, r.text))
 
@@ -97,7 +106,7 @@ class ElastichsearchEngine(object):
         self.verbose_print('PUT {0}'.format(url))
         r = requests.put(url, data=json.dumps(mapping))
         self.verbose_print("response: {0}".format(r))
-        if r.status_code == 200:
+        if r.status_code == requests.codes.OK:
             print "Type {0} mapping created".format(url)
         else:
             raise Exception('Type mapping creation error {0}: '
@@ -121,11 +130,12 @@ def get_args():
         help='The DB host address[:port], default "localhost"')
     arg_parser.add_argument(
         '-p', '--port', action='store', type=int,
-        help="The DB server port (default 9200)",
+        help=('The DB server port '
+              '(default: {0})'.format(DEFAULT_ES_SERVER_PORT)),
         dest='port', default=0)
     arg_parser.add_argument(
         '-i', '--index', action='store',
-        help='The DB index (default "freezer")',
+        help='The DB index (default "{0}")'.format(DEFAULT_INDEX),
         dest='index')
     arg_parser.add_argument(
         '-y',  '--yes', action='store_true',
@@ -210,21 +220,21 @@ def get_db_params(args):
     #   1) port arg
     #   2) host arg (after ':')
     #   3) config file provided
-    #   4) 9200
+    #   4) DEFAULT_ES_SERVER_PORT
     match_port = None
-    match = re.search(r'(?:)(\d+)$', args.host)
+    match = re.search(r':(\d+)$', args.host)
     if match:
-        match_port = match.group()
+        match_port = match.groups()[0]
 
-    port = args.port or match_port or conf_port or 9200
+    port = args.port or match_port or conf_port or DEFAULT_ES_SERVER_PORT
 
     elasticsearch_url = 'http://{0}:{1}'.format(host, port)
 
     # index lookup
     # 1) index args
     # 2) config file
-    # 3) string 'freezer'
-    elasticsearch_index = args.index or conf_db_index or 'freezer'
+    # 3) string DEFAULT_INDEX
+    elasticsearch_index = args.index or conf_db_index or DEFAULT_INDEX
 
     return elasticsearch_url, elasticsearch_index
 

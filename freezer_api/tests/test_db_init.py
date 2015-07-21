@@ -23,6 +23,8 @@ import os
 import unittest
 from mock import Mock, patch
 
+import requests
+
 from freezer_api.cmd.db_init import (ElastichsearchEngine,
                                      get_args,
                                      find_config_file,
@@ -52,15 +54,17 @@ class TestElasticsearchEngine(unittest.TestCase):
     def test_new(self):
         self.assertIsInstance(self.es_manager, ElastichsearchEngine)
 
+    @patch.object(ElastichsearchEngine, 'check_index_exists')
     @patch.object(ElastichsearchEngine, 'mapping_match')
     @patch.object(ElastichsearchEngine, 'askput_mapping')
-    def test_put_mappings_does_nothing_when_mappings_match(self, mock_askput_mapping, mock_mapping_match):
+    def test_put_mappings_does_nothing_when_mappings_match(self, mock_askput_mapping, mock_mapping_match, mock_check_index_exists):
         self.es_manager.put_mappings(self.test_mappings)
         self.assertEquals(mock_askput_mapping.call_count, 0)
 
+    @patch.object(ElastichsearchEngine, 'check_index_exists')
     @patch.object(ElastichsearchEngine, 'mapping_match')
     @patch.object(ElastichsearchEngine, 'askput_mapping')
-    def test_put_mappings_calls_askput_when_mappings_match_not(self, mock_askput_mapping, mock_mapping_match):
+    def test_put_mappings_calls_askput_when_mappings_match_not(self, mock_askput_mapping, mock_mapping_match, mock_check_index_exists):
         mock_mapping_match.return_value = False
         self.es_manager.put_mappings(self.test_mappings)
         self.assertEquals(mock_askput_mapping.call_count, 3)
@@ -86,6 +90,8 @@ class TestElasticsearchEngine(unittest.TestCase):
     @patch('freezer_api.cmd.db_init.requests')
     def test_mapping_match_not_found_returns_false(self, mock_requests):
         self.mock_resp.status_code = 404
+        mock_requests.codes.OK = 200
+        mock_requests.codes.NOT_FOUND = 404
         mock_requests.get.return_value = self.mock_resp
         res = self.es_manager.mapping_match('jobs', self.test_mappings['jobs'])
         self.assertFalse(res)
@@ -94,14 +100,18 @@ class TestElasticsearchEngine(unittest.TestCase):
     def test_mapping_match_raises_Exception_on_response_not_in_200_404(self, mock_requests):
         self.mock_resp.status_code = 500
         mock_requests.get.return_value = self.mock_resp
+        mock_requests.codes.OK = 200
+        mock_requests.codes.NOT_FOUND = 404
         self.assertRaises(Exception, self.es_manager.mapping_match,
                           'jobs', self.test_mappings['jobs'])
 
     @patch('freezer_api.cmd.db_init.requests')
     def test_mapping_match_return_true_when_mapping_matches(self, mock_requests):
         self.mock_resp.status_code = 200
-        self.mock_resp.text = '{"freezerindex": {"mappings": {"jobs":{"properties": {"job_id": {"type": "string"}}}}}}'
+        self.mock_resp.json.return_value = {"freezerindex": {"mappings": {"jobs": {"properties": {"job_id": {"type": "string"}}}}}}
         mock_requests.get.return_value = self.mock_resp
+        mock_requests.codes.OK = 200
+        mock_requests.codes.NOT_FOUND = 404
         res = self.es_manager.mapping_match('jobs', self.test_mappings['jobs'])
         self.assertTrue(res)
 
@@ -110,26 +120,35 @@ class TestElasticsearchEngine(unittest.TestCase):
         self.mock_resp.status_code = 200
         self.mock_resp.text = '{"freezerindex": {"mappings": {"jobs":{"properties": {"job_id": {"type": "balloon"}}}}}}'
         mock_requests.get.return_value = self.mock_resp
+        mock_requests.codes.OK = 200
+        mock_requests.codes.NOT_FOUND = 404
         res = self.es_manager.mapping_match('jobs', self.test_mappings['jobs'])
         self.assertFalse(res)
 
     @patch('freezer_api.cmd.db_init.requests')
     def test_delete_type_returns_none_on_success(self, mock_requests):
         self.mock_resp.status_code = 200
+        mock_requests.codes.OK = 200
+        mock_requests.codes.NOT_FOUND = 404
         mock_requests.delete.return_value = self.mock_resp
         res = self.es_manager.delete_type('jobs')
         self.assertIsNone(res)
 
     @patch('freezer_api.cmd.db_init.requests')
     def test_delete_type_raises_Exception_on_response_code_not_200(self, mock_requests):
-        self.mock_resp.status_code = 400
+        self.mock_resp.status_code = requests.codes.BAD_REQUEST
         mock_requests.delete.return_value = self.mock_resp
+        mock_requests.codes.OK = 200
+        mock_requests.codes.BAD_REQUEST = 400
+        mock_requests.codes.NOT_FOUND = 404
         self.assertRaises(Exception, self.es_manager.delete_type, 'jobs')
 
     @patch('freezer_api.cmd.db_init.requests')
     def test_put_mapping_returns_none_on_success(self, mock_requests):
         self.mock_resp.status_code = 200
         mock_requests.put.return_value = self.mock_resp
+        mock_requests.codes.OK = 200
+        mock_requests.codes.NOT_FOUND = 404
         res = self.es_manager.put_mapping('jobs', self.test_mappings['jobs'])
         self.assertIsNone(res)
         url = 'http://test:9333/freezerindex/_mapping/jobs'
@@ -140,6 +159,8 @@ class TestElasticsearchEngine(unittest.TestCase):
     def test_put_mapping_raises_Exception_on_response_code_not_200(self, mock_requests):
         self.mock_resp.status_code = 500
         mock_requests.put.return_value = self.mock_resp
+        mock_requests.codes.OK = 200
+        mock_requests.codes.NOT_FOUND = 404
         self.assertRaises(Exception, self.es_manager.put_mapping, 'jobs', self.test_mappings['jobs'])
 
     def test_proceed_returns_true_on_user_y(self):
@@ -158,6 +179,33 @@ class TestElasticsearchEngine(unittest.TestCase):
         self.es_manager.always_yes = True
         res = self.es_manager.proceed('ask me not')
         self.assertTrue(res)
+
+    @patch('freezer_api.cmd.db_init.requests')
+    def test_check_index_exists_ok_when_index_exists(self, mock_requests):
+        self.mock_resp.status_code = 200
+        mock_requests.post.return_value = self.mock_resp
+        mock_requests.codes.OK = 200
+        mock_requests.codes.BAD_REQUEST = 400
+        res = self.es_manager.check_index_exists()
+        self.assertEquals(res, None)
+
+    @patch('freezer_api.cmd.db_init.requests')
+    def test_check_index_exists_ok_when_index_not_exists(self, mock_requests):
+        self.mock_resp.status_code = 400
+        mock_requests.post.return_value = self.mock_resp
+        mock_requests.codes.OK = 200
+        mock_requests.codes.BAD_REQUEST = 400
+        res = self.es_manager.check_index_exists()
+        self.assertEquals(res, None)
+
+
+    @patch('freezer_api.cmd.db_init.requests')
+    def test_check_index_raises_Exception_when_return_code_not_in_OK_BADREQ(self, mock_requests):
+        self.mock_resp.status_code = 500
+        mock_requests.post.return_value = self.mock_resp
+        mock_requests.codes.OK = 200
+        mock_requests.codes.BAD_REQUEST = 400
+        self.assertRaises(Exception, self.es_manager.check_index_exists)
 
 
 class TestDbInit(unittest.TestCase):
