@@ -1,9 +1,9 @@
 import logging
 import time
 
-from cinderclient.v1 import client as cclient
-from glanceclient.v1 import client as gclient
-from novaclient.v2 import client as nclient
+from cinderclient import client as cclient
+from glanceclient import client as gclient
+from novaclient import client as nclient
 import swiftclient
 
 from utils import Bunch
@@ -81,6 +81,7 @@ class ClientManager:
         options = self.options
         logging.info("[*] Creation of cinder client")
         self.cinder = cclient.Client(
+            version="1",
             username=options.user_name,
             api_key=options.password,
             project_id=options.tenant_name,
@@ -146,6 +147,7 @@ class ClientManager:
         logging.info("[*] Creation of nova client")
 
         self.nova = nclient.Client(
+            version='2',
             username=options.user_name,
             api_key=options.password,
             project_id=options.tenant_name,
