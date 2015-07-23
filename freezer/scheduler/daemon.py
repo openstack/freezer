@@ -22,11 +22,13 @@ Hudson (tjh@cryptsoft.com).
 import logging
 import os
 import signal
+import traceback
+
 from tempfile import gettempdir
 from time import sleep
 
-from pep3143daemon import DaemonContext, PidFile
 
+from pep3143daemon import DaemonContext, PidFile
 from freezer.utils import create_dir
 
 
@@ -122,7 +124,7 @@ class Daemon:
     def no_api(self):
         return False
 
-    def start(self, log_file=None):
+    def start(self, log_file=None, dump_stack_trace=False):
         pidfile = PidFile(self.pid_fname)
         with DaemonContext(pidfile=pidfile, signal_map=self.signal_map):
             self.setup_logging(log_file)
@@ -133,6 +135,8 @@ class Daemon:
                     self.daemonizable.start()
                     Daemon.exit_flag = True
                 except Exception as e:
+                    if dump_stack_trace:
+                        logging.error(traceback.format_exc(e))
                     logging.error('[*] Restarting daemonized procedure '
                                   'after Fatal Error: {0}'.format(e))
                     sleep(10)
