@@ -1,66 +1,78 @@
+===
 FAQ
 ===
 
-1)  What is freezer? Is a tool to automate data backup and restore
-    process using OpenStack Swift.
+1)  **What is freezer**?
+    Is a tool to automate data backup and restore
+    process using OpenStack Swift and/or other media storage
 
-2)  Does freezer support incremental backup? Yes. Incremental backup are
-    done using GNU tar incremental features
+2)  **Does freezer support incremental backup?**
+    Yes. Incremental backup are done using GNU tar incremental features
 
-3)  Does freezer check the file contents to establish if a file was
-    modified or not? No. Freezer check for changes at mtime and ctime in
+3)  **Does freezer check the file contents to establish if a file was modified?**
+    Freezer check for changes at mtime and ctime in
     every file inode to evaluate if a file changed or not.
 
-4)  Why GNU tar rather then rsync? Both approaches are good. Rsync check
+4)  **Why GNU tar rather then rsync?**
+    Both approaches are good. Rsync check
     the file content, while tar check the file inode. In our
-    environment, we need to backup directories with size > 300GB and
-    tens of thousands of files. Rsync approach is effective but slow.
+    environment, we need to backup directories with size > 400GB and
+    hundreds of thousands of files. Rsync approach is effective but slow.
     Tar is fast as it needs to check only the file inodes, rather then
-    the full file content.
+    the full file content. Rsync backup type will be added pretty soon
 
-5)  Does feezer support encrypted backup? Yes. Freezer encrypt data
-    using OpenSSL (AES-256-CFB).
+5)  *Does freezer support encrypted backup?*
+    Yes. Freezer encrypt data using OpenSSL (AES-256-CFB).
 
-6)  Does freezer execute point-in-time backup? Yes. For point in time
-    backup LVM snapshot feature used.
+6)  **Does freezer execute point-in-time backup?**
+    Yes. For point in time backup LVM snapshot feature used.
 
-7)  Can I use freezer on OSX or other OS where GNU Tar is not installed
-    by default? Yes. For OSX and \*BSD, just install gtar and freezer
+7)  **Can I use freezer on OSX or other OS where GNU Tar is not installed
+    by default?**
+    Yes. For OSX and \*BSD, just install gtar and freezer
     automatically will use gtar to execute backup. OS other then Linux,
     OSX and \*BSD are currently not supported.
 
-8)  What Application backup does freezer support currently? MongoDB and
-    File system.
+8)  **What Application backup does freezer support currently?**
+    MongoDB, MySQL to have a higher level of data consistency, while
+    any appplication is supported for crash consistent data integrity.
 
-9)  How does the MongoDB backup happens? Freezer required journal
-    enabled in mongo and lvm volume to execute backup. It checks if the
-    mongo instance is the master and create lvm snapshot to have
+9)  **How does the MongoDB backup happens?**
+    Freezer required journal enabled in Mongo and lvm volume to execute backup.
+    It checks if the Mongo instance is the master and create lvm snapshot to have
     consistent data.
 
-10) Does freezer manage sparse files efficiently? Yes. Zeroed/null data
-    is not backed up. So less space and bandwidth will be used.
+10) **Does freezer manage sparse files efficiently?**
+    Yes. Zeroed/null data is not backed up. So less space and bandwidth will be used.
 
-11) Does freezer remove automatically backup after some time? Yes. From
-    command line the --remove-older-then option (days) can be used to
+11) **Does freezer remove automatically backup after some time?**
+    Yes. From command line the option --remove-older-then (days) can be used to
     remove objects older then (days).
 
-12) Does freezer support MySQL Backup? MySQL and MariaDB support soon
-    will be included.
+12) **Does freezer support MySQL Backup?**
+    Yes.
 
-13) Is there any other storage media supported? Not currently. There's a
-    plan to add:
+13) **What storage media are currently supported?**
+    Current support media storage are:
+    a. Swift
+    b. Store files on a remote host file system using ssh
+    c. Directory in the local host (i.e. NFS/CIFS mounted volumes)
 
--  Amazon S3
--  Store files on a remote host file system
--  MongoDB object storage.
--  Other directory in the local host (NFS mounted volumes)
+14) **Does freezer has any Web UI or API?**
+    Yes. Freezer has REST API and a Web UI integrated with Horizon
 
-14) Does freezer has any UI or API? Not currently. The UI in OpenStack
-    Horizon is being currently developed as REST API too.
+15) **Does Freezer detect removed files between incremental executions?**
+    Yes.
 
-15) Tar is not capable to detect deleted files between different backup
-    levels. Is freezer capable of doing that? Not currently. We are
-    writing a set of tar extensions in python to overcome tar
-    limitations like this and others.
+16) **Will Freezer be included as official project in OpenStack?**
+    We hope so, as soon as we can.
 
+17) **Does freezer support Windows?**
+    Yes. The freezer agent and scheduler can be executed on Windows
+
+18) **What is being used on Windows to execute file system snapshots?**
+    Curretnly VSS are used to support point in time snapshots
+
+19) **What applications are supported in Windows for  consisten backups?**
+    SQL Server (--mode sqlserver)
 
