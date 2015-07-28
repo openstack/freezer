@@ -89,12 +89,11 @@ def stop_sql_server(backup_opt_dict):
                             ', error {0}'.format(err))
 
 
-def start_sql_server(backup_opt_dict):
+def start_sql_server(sql_server_instance):
     """ Start the SQL Server instance after the backup is completed """
 
     with DisableFileSystemRedirection():
-        cmd = 'net start "SQL Server ({0})"'\
-            .format(backup_opt_dict.sql_server_instance)
+        cmd = 'net start "SQL Server ({0})"'.format(sql_server_instance)
         (out, err) = create_subprocess(cmd)
         if err != '':
             raise Exception('[*] Error while starting SQL Server'

@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-from freezer.backup import backup_mode_mysql, backup_mode_fs, backup_mode_mongo
+from freezer.backup import backup_mode_mysql, backup_mode_mongo
 from freezer.backup import BackupOs
+from freezer import tar
+from freezer import local
 import freezer
 import swiftclient
 import multiprocessing
@@ -17,10 +19,10 @@ from commons import *
 
 class TestBackUP:
 
-    def test_backup_mode_mysql(self, monkeypatch):
+    def test_backup_mode_mysql(self, monkeypatch, tmpdir):
 
-        test_meta = dict()
         backup_opt = BackupOpt1()
+        backup_opt.__dict__['storage'] = local.LocalStorage(tmpdir.strpath, tmpdir.strpath)
         fakemysql = FakeMySQLdb()
         expanduser = Os()
         fakere = FakeRe()
@@ -52,30 +54,28 @@ class TestBackUP:
         monkeypatch.setattr(os.path, 'expanduser', expanduser.expanduser)
         monkeypatch.setattr(os.path, 'isdir', expanduser.isdir)
         monkeypatch.setattr(os, 'makedirs', expanduser.makedirs)
-        monkeypatch.setattr(os, 'chdir', expanduser.makedirs)
         monkeypatch.setattr(os.path, 'exists', expanduser.exists)
+        monkeypatch.setattr(os, 'chdir', lambda x: x)
         monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
 
         mysql_conf = backup_opt.mysql_conf
         backup_opt.__dict__['mysql_conf'] = None
-        pytest.raises(Exception, backup_mode_mysql, backup_opt, 123456789, test_meta)
+        pytest.raises(Exception, backup_mode_mysql, backup_opt)
 
         # Generate mysql conf test file
         backup_opt.__dict__['mysql_conf'] = mysql_conf
         with open(backup_opt.mysql_conf, 'w') as mysql_conf_fd:
             mysql_conf_fd.write('host=abcd\nport=1234\nuser=abcd\npassword=abcd\n')
-        assert backup_mode_mysql(
-            backup_opt, 123456789, test_meta) is None
+        assert backup_mode_mysql(backup_opt) is None
 
         fakemysql2 = FakeMySQLdb2()
         monkeypatch.setattr(MySQLdb, 'connect', fakemysql2.connect)
-        pytest.raises(Exception, backup_mode_mysql, backup_opt, 123456789, test_meta)
+        pytest.raises(Exception, backup_mode_mysql)
         os.unlink(backup_opt.mysql_conf)
 
-    def test_backup_mode_fs(self, monkeypatch):
+    def test_backup_mode_fs(self, monkeypatch, tmpdir):
 
         # Class and other settings initialization
-        test_meta = dict()
         backup_opt = BackupOpt1()
         backup_opt.mode = 'fs'
         expanduser = Os()
@@ -100,61 +100,27 @@ class TestBackUP:
         monkeypatch.setattr(re, 'search', fakere.search)
         monkeypatch.setattr(os.path, 'exists', expanduser.exists)
 
-        assert backup_mode_fs(
-            backup_opt, 123456789, test_meta) is None
+        storage = local.LocalStorage(tmpdir.strpath, tmpdir.strpath)
+
+        assert storage.backup(
+            "/tmp/", "hostname_backup_name",
+            tar.TarCommandBuilder(tar_path(), ".")) is None
 
         backup_opt.__dict__['no_incremental'] = False
         with open(
                 '/tmp/tar_metadata_test-hostname_test-backup-name_123456789_0', 'w') as fd:
             fd.write('testcontent\n')
-        assert backup_mode_fs(
-            backup_opt, 123456789, test_meta) is None
+        assert storage.backup(
+            "/tmp/", "hostname_backup_name",
+            tar.TarCommandBuilder(tar_path(), ".")) is None
 
-    def test_backup_mode_fs_dry_run(self, monkeypatch):
-
-        # Class and other settings initialization
-        test_meta = dict()
-        backup_opt = BackupOpt1()
-        backup_opt.mode = 'fs'
-        backup_opt.dry_run = True
-
-        expanduser = Os()
-        fakere = FakeRe()
-        fakeswiftclient = FakeSwiftClient()
-        fakelvm = Lvm()
-        fakemultiprocessing = FakeMultiProcessing()
-        fakemultiprocessingqueue = fakemultiprocessing.Queue()
-        fakemultiprocessingpipe = fakemultiprocessing.Pipe()
-        fakemultiprocessinginit = fakemultiprocessing.__init__()
-
-        # Monkey patch
-        monkeypatch.setattr(
-            multiprocessing, 'Queue', fakemultiprocessingqueue)
-        monkeypatch.setattr(multiprocessing, 'Pipe', fakemultiprocessingpipe)
-        monkeypatch.setattr(
-            multiprocessing, 'Process', fakemultiprocessing.Process)
-        monkeypatch.setattr(
-            multiprocessing, '__init__', fakemultiprocessinginit)
-        monkeypatch.setattr(freezer.lvm, 'lvm_eval', fakelvm.lvm_eval)
-        monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
-        monkeypatch.setattr(re, 'search', fakere.search)
-        monkeypatch.setattr(os.path, 'exists', expanduser.exists)
-
-        assert backup_mode_fs(
-            backup_opt, 123456789, test_meta) is None
-
-        backup_opt.__dict__['no_incremental'] = False
-        with open(
-                '/tmp/tar_metadata_test-hostname_test-backup-name_123456789_0', 'w') as fd:
-            fd.write('testcontent\n')
-        assert backup_mode_fs(
-            backup_opt, 123456789, test_meta) is None
-
-    def test_backup_mode_mongo(self, monkeypatch):
+    def test_backup_mode_mongo(self, monkeypatch, tmpdir):
 
         # Class and other settings initialization
         test_meta = dict()
         backup_opt = BackupOpt1()
+        backup_opt.__dict__['storage'] = local.LocalStorage(tmpdir.strpath, tmpdir.strpath)
+
         fakemongo = FakeMongoDB()
         backup_opt.mode = 'mongo'
         fakeos = Os()
@@ -182,24 +148,19 @@ class TestBackUP:
         monkeypatch.setattr(swiftclient, 'client', fakeswiftclient.client)
         #monkeypatch.setattr(__builtin__, 'open', fakeopen.open)
 
-        assert backup_mode_mongo(
-            backup_opt, 123456789, test_meta) is None
+        assert backup_mode_mongo(backup_opt) is None
 
         fakemongo2 = FakeMongoDB2()
         monkeypatch.setattr(pymongo, 'MongoClient', fakemongo2)
-        assert backup_mode_mongo(
-            backup_opt, 123456789, test_meta) is True
+        assert backup_mode_mongo(backup_opt) is True
 
     def test_backup_cinder_by_glance(self):
         backup_opt = BackupOpt1()
-        backup_opt.volume_id = 34
         BackupOs(backup_opt.client_manager,
-                 backup_opt.container).backup_cinder_by_glance(
-            backup_opt, 1417649003)
+                 backup_opt.container,
+                 backup_opt.storage).backup_cinder_by_glance(34)
 
     def test_backup_cinder(self):
         backup_opt = BackupOpt1()
-        backup_opt.volume_id = 34
         BackupOs(backup_opt.client_manager,
-                 backup_opt.container).backup_cinder(
-            backup_opt, 1417649003)
+                 backup_opt.container, backup_opt.storage).backup_cinder(34)

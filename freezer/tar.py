@@ -35,35 +35,34 @@ class TarCommandBuilder:
     Building a tar cmd command. To build command invoke method build.
     """
 
-    def __init__(self, path):
-        self.dereference = ''
-        self.path = path
-        self.filepath = '.'
-        self.level = 0
+    COMMAND_TEMPLATE = "{gnutar_path} --create -z --warning=none " \
+        "--no-check-device --one-file-system --preserve-permissions " \
+        "--same-owner --seek --ignore-failed-read"
+
+    LISTED_TEMPLATE = "{tar_command} --listed-incremental={listed_incremental}"
+
+    DEREFERENCE_MODE = {'soft': '--dereference',
+                        'hard': '--hard-dereference',
+                        'all': '--hard-dereference --dereference',
+                        'none': ''}
+
+    def __init__(self, gnutar_path, filepath):
+        self.dereference = 'none'
+        self.gnutar_path = gnutar_path
         self.exclude = None
-        self.dereference_mode = {
-            'soft': '--dereference',
-            'hard': '--hard-dereference',
-            'all': '--hard-dereference --dereference',
-            'none': ''
-        }
+        self.dereference = ''
         self.listed_incremental = None
-        self.work_dir = None
         self.exclude = ''
         self.openssl_path = None
         self.encrypt_pass_file = None
+        self.output_file = None
+        self.filepath = filepath
 
-    def set_filepath(self, path):
-        self.filepath = path
+    def set_output_file(self, output_file):
+        self.output_file = output_file
 
-    def set_level(self, level):
-        self.level = level
-
-    def set_work_dir(self, work_dir):
-        self.work_dir = work_dir
-
-    def set_listed_incremental(self, path):
-        self.listed_incremental = path
+    def set_listed_incremental(self, absolute_path):
+        self.listed_incremental = absolute_path
 
     def set_exclude(self, exclude):
         self.exclude = exclude
@@ -76,40 +75,90 @@ class TarCommandBuilder:
             'all' dereference both.
             Default 'none'.
         """
-        if mode not in self.dereference_mode:
-            raise Exception("unknown dereference mode: %s" % mode)
-        self.dereference = mode
+        self.dereference = self.DEREFERENCE_MODE[mode]
 
     def set_encryption(self, openssl_path, encrypt_pass_file):
         self.openssl_path = openssl_path
         self.encrypt_pass_file = encrypt_pass_file
 
     def build(self):
-        tar_command = ' {path} --create -z --warning=none --no-check-device \
-            --one-file-system --preserve-permissions --same-owner --seek \
-            --ignore-failed-read {dereference}'.format(
-            path=self.path,
-            dereference=self.dereference_mode[self.dereference])
+        tar_command = self.COMMAND_TEMPLATE.format(
+            gnutar_path=self.gnutar_path, dereference=self.dereference)
+        if self.dereference:
+            "{0} {1}".format(tar_command, self.dereference)
         if self.listed_incremental:
-            tar_command = '{tar_command} --level={level} \
-            --listed-incremental={work_dir}/{listed_incremental}'.format(
+            tar_command = self.LISTED_TEMPLATE.format(
                 tar_command=tar_command,
-                level=self.level,
-                work_dir=self.work_dir,
                 listed_incremental=self.listed_incremental)
 
+        if self.output_file:
+            tar_command = "{0} --file={1}".format(tar_command,
+                                                  self.output_file)
+
         if self.exclude:
-            tar_command = ' {tar_command} --exclude="{exclude}" '.format(
-                tar_command=tar_command,
-                exclude=self.exclude)
+            tar_command = '{tar_command} --exclude="{exclude}"'.format(
+                tar_command=tar_command, exclude=self.exclude)
+
+        tar_command = '{0} {1}'.format(tar_command, self.filepath)
 
         if self.encrypt_pass_file:
             openssl_cmd = "{openssl_path} enc -aes-256-cfb -pass file:{file}"\
                 .format(openssl_path=self.openssl_path,
                         file=self.encrypt_pass_file)
-            tar_command = '{0} | {1} '.format(tar_command, openssl_cmd)
+            tar_command = '{0} | {1}'.format(tar_command, openssl_cmd)
 
-        return ' {0} {1} '.format(tar_command, self.filepath)
+        return tar_command
+
+
+class TarCommandRestoreBuilder:
+    WINDOWS_TEMPLATE = '{0} -x -z --incremental --unlink-first ' \
+        '--ignore-zeros -f - '
+    DRY_RUN_TEMPLATE = '{0} -z --incremental --list ' \
+        '--ignore-zeros --warning=none'
+    NORMAL_TEMPLATE = '{0} -z --incremental --extract --unlink-first ' \
+        '--ignore-zeros --warning=none --overwrite --directory {1}'
+
+    def __init__(self, tar_path, restore_path):
+        self.dry_run = False
+        self.is_windows = False
+        self.openssl_path = None
+        self.encrypt_pass_file = None
+        self.tar_path = tar_path
+        self.restore_path = restore_path
+        self.archive = None
+
+    def set_dry_run(self):
+        self.dry_run = True
+
+    def set_windows(self):
+        self.is_windows = True
+
+    def set_encryption(self, openssl_path, encrypt_pass_file):
+        self.openssl_path = openssl_path
+        self.encrypt_pass_file = encrypt_pass_file
+
+    def set_archive(self, archive):
+        self.archive = archive
+
+    def build(self):
+        if self.is_windows:
+            tar_command = self.NORMAL_TEMPLATE.format(self.tar_path)
+        elif self.dry_run:
+            tar_command = self.DRY_RUN_TEMPLATE.format(self.tar_path)
+        else:
+            tar_command = self.NORMAL_TEMPLATE.format(self.tar_path,
+                                                      self.restore_path)
+
+        if self.archive:
+            tar_command = tar_command + " --file " + self.archive
+        # Check if encryption file is provided and set the openssl decrypt
+        # command accordingly
+        if self.encrypt_pass_file:
+            openssl_cmd = "{openssl_path} enc -aes-256-cfb -pass file:{file}"\
+                .format(openssl_path=self.openssl_path,
+                        file=self.encrypt_pass_file)
+            tar_command = '{0} | {1} '.format(openssl_cmd, tar_command)
+        return tar_command
 
 
 def tar_restore_args_valid(backup_opt_dict):
@@ -126,41 +175,18 @@ def tar_restore_args_valid(backup_opt_dict):
     return valid_args
 
 
-def tar_restore(backup_opt_dict, read_pipe):
+def tar_restore(restore_abs_path, tar_command, read_pipe):
     """
     Restore the provided file into backup_opt_dict.restore_abs_path
     Decrypt the file if backup_opt_dict.encrypt_pass_file key is provided
     """
 
-    if not tar_restore_args_valid(backup_opt_dict):
-        sys.exit(1)
-
-    if backup_opt_dict.dry_run:
-        tar_cmd = ' {0} -z --incremental --list  \
-            --ignore-zeros --warning=none'.format(
-            backup_opt_dict.tar_path)
-    else:
-        tar_cmd = ' {0} -z --incremental --extract  \
-            --unlink-first --ignore-zeros --warning=none --overwrite \
-            --directory {1} '.format(
-            backup_opt_dict.tar_path, backup_opt_dict.restore_abs_path)
-
     if is_windows():
         # on windows, chdir to restore path.
-        os.chdir(backup_opt_dict.restore_abs_path)
-        tar_cmd = '{0} -x -z --incremental --unlink-first ' \
-                  '--ignore-zeros -f - '.format(backup_opt_dict.tar_path)
-
-    # Check if encryption file is provided and set the openssl decrypt
-    # command accordingly
-    if backup_opt_dict.encrypt_pass_file:
-        openssl_cmd = " {0} enc -d -aes-256-cfb -pass file:{1}".format(
-            backup_opt_dict.openssl_path,
-            backup_opt_dict.encrypt_pass_file)
-        tar_cmd = '{0} | {1} '.format(openssl_cmd, tar_cmd)
+        os.chdir(restore_abs_path)
 
     tar_cmd_proc = subprocess.Popen(
-        tar_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        tar_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, shell=True)
     # Start loop reading the pipe and pass the data to the tar std input.
     # If EOFError exception is raised, the loop end the std err will be
@@ -179,7 +205,7 @@ def tar_restore(backup_opt_dict, read_pipe):
         sys.exit(1)
 
 
-def tar_backup(opt_dict, tar_command, backup_queue):
+def tar_backup(path_to_backup, max_segment_size, tar_command, backup_queue):
     """
     Execute an incremental backup using tar options, specified as
     function arguments
@@ -189,8 +215,7 @@ def tar_backup(opt_dict, tar_command, backup_queue):
     file_chunk_index = 00000000
     tar_chunk = b''
     logging.info(
-        '[*] Archiving and compressing files from {0}'.format(
-            opt_dict.path_to_backup))
+        '[*] Archiving and compressing files from {0}'.format(path_to_backup))
 
     tar_process = subprocess.Popen(
         tar_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -200,7 +225,7 @@ def tar_backup(opt_dict, tar_command, backup_queue):
     for file_block in tar_process.stdout:
         tar_chunk += file_block
         file_read_limit += len(file_block)
-        if file_read_limit >= opt_dict.max_segment_size:
+        if file_read_limit >= max_segment_size:
             backup_queue.put(
                 ({("%08d" % file_chunk_index): tar_chunk}))
             file_chunk_index += 1
@@ -208,6 +233,6 @@ def tar_backup(opt_dict, tar_command, backup_queue):
             file_read_limit = 0
 
     # Upload segments smaller then opt_dict.max_segment_size
-    if len(tar_chunk) < opt_dict.max_segment_size:
+    if len(tar_chunk) < max_segment_size:
         backup_queue.put(
             ({("%08d" % file_chunk_index): tar_chunk}))
