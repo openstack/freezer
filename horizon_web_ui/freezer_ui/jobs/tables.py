@@ -21,7 +21,7 @@ from horizon import tables
 from horizon.utils.urlresolvers import reverse
 
 import horizon_web_ui.freezer_ui.api.api as freezer_api
-from horizon_web_ui.freezer_ui.django_utils import timestamp_to_string
+from horizon_web_ui.freezer_ui.utils import timestamp_to_string
 
 
 def format_last_backup(last_backup):

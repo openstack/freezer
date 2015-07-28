@@ -1,0 +1,32 @@
+<script type='text/javascript' src='{{ STATIC_URL }}freezer/js/freezer.restore.js'></script>
+
+<noscript><h3>{{ step }}</h3></noscript>
+<div class="row">
+    <div class="col-sm-12">
+        <table class="table table-bordered table-striped">
+            <thead>
+
+                <tr>
+                    <th class="multi_select_column"></th>
+                    <th>Hostname</th>
+                </tr>
+            </thead>
+            <tbody id="available_clients">
+
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" data-column="0">
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <div class="col-sm-6">
+        {% include "horizon/common/_form_fields.html" %}
+        {{ table.render }}
+    </div>
+    <div class="col-sm-12">
+        {{ step.get_help_text }}
+    </div>
+</div>
