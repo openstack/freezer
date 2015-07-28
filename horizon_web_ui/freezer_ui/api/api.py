@@ -138,9 +138,9 @@ def job_create(request, context):
     job['description'] = job.pop('description', None)
 
     schedule = {
-        'end_datetime': job.pop('end_datetime', None),
-        'interval': job.pop('interval', None),
-        'start_datetime': job.pop('start_datetime', None),
+        'schedule_end_date': job.pop('schedule_end_date', None),
+        'schedule_interval': job.pop('schedule_interval', None),
+        'schedule_start_date': job.pop('schedule_start_date', None),
     }
     job['job_schedule'] = schedule
     job['job_actions'] = []
@@ -154,9 +154,9 @@ def job_edit(request, context):
     job['description'] = job.pop('description', None)
     job['client_id'] = job.pop('client_id', None)
     schedule = {
-        'end_datetime': job.pop('end_datetime', None),
-        'interval': job.pop('interval', None),
-        'start_datetime': job.pop('start_datetime', None),
+        'schedule_end_date': job.pop('schedule_end_date', None),
+        'schedule_interval': job.pop('schedule_interval', None),
+        'schedule_start_date': job.pop('schedule_start_date', None),
     }
     job['job_schedule'] = schedule
     job_id = job.pop('original_name', None)
@@ -281,13 +281,19 @@ def client_list(request):
 def add_job_to_session(request, session_id, job_id):
     """This function will add a job to a session and the API will handle the
     copy of job information to the session """
-    return _freezerclient(request).sessions.add_job(session_id, job_id)
+    try:
+        return _freezerclient(request).sessions.add_job(session_id, job_id)
+    except Exception:
+        return False
 
 
 def remove_job_from_session(request, session_id, job_id):
     """Remove a job from a session will delete the job information but not the
     job itself """
-    return _freezerclient(request).sessions.remove_job(session_id, job_id)
+    try:
+        return _freezerclient(request).sessions.remove_job(session_id, job_id)
+    except Exception:
+        return False
 
 
 def session_create(request, context):
@@ -295,9 +301,9 @@ def session_create(request, context):
     session = create_dict_action(**context)
     session['description'] = session.pop('description', None)
     schedule = {
-        'end_datetime': session.pop('end_datetime', None),
-        'interval': session.pop('interval', None),
-        'start_datetime': session.pop('start_datetime', None),
+        'schedule_end_date': session.pop('schedule_end_date', None),
+        'schedule_interval': session.pop('schedule_interval', None),
+        'schedule_start_date': session.pop('schedule_start_date', None),
     }
     session['schedule'] = schedule
     return _freezerclient(request).sessions.create(session)
@@ -309,9 +315,9 @@ def session_update(request, context):
     session_id = session.pop('session_id', None)
     session['description'] = session.pop('description', None)
     schedule = {
-        'end_datetime': session.pop('end_datetime', None),
-        'interval': session.pop('interval', None),
-        'start_datetime': session.pop('start_datetime', None),
+        'schedule_end_date': session.pop('schedule_end_date', None),
+        'schedule_interval': session.pop('schedule_interval', None),
+        'schedule_start_date': session.pop('schedule_start_date', None),
     }
     session['schedule'] = schedule
     return _freezerclient(request).sessions.update(session_id, session)
@@ -329,9 +335,9 @@ def session_list(request):
                         s['description'],
                         s['status'],
                         s['jobs'],
-                        s['schedule']['start_datetime'],
-                        s['schedule']['interval'],
-                        s['schedule']['end_datetime'])
+                        s['schedule']['schedule_start_date'],
+                        s['schedule']['schedule_interval'],
+                        s['schedule']['schedule_end_date'])
                 for s in sessions]
     return sessions
 
@@ -343,7 +349,7 @@ def session_get(request, session_id):
                       session['description'],
                       session['status'],
                       session['jobs'],
-                      session['schedule']['start_datetime'],
-                      session['schedule']['interval'],
-                      session['schedule']['end_datetime'])
+                      session['schedule']['schedule_start_date'],
+                      session['schedule']['schedule_interval'],
+                      session['schedule']['schedule_end_date'])
     return session
