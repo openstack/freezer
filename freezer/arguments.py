@@ -35,7 +35,6 @@ from distutils import spawn as distspawn
 import utils
 import socket
 
-from freezer.utils import OpenstackOptions
 from freezer.winutils import is_windows
 from os.path import expanduser
 
@@ -65,8 +64,7 @@ DEFAULT_PARAMS = {
     'upload': True, 'mode': 'fs', 'action': 'backup',
     'vssadmin': True, 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
-    'storage': 'swift'
-}
+    'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': ''}
 
 
 def alter_proxy(args_dict):
@@ -413,11 +411,23 @@ def backup_arguments(args_dict={}):
 
     arg_parser.add_argument(
         '--storage', action='store',
-        choices=['local', 'swift'],
+        choices=['local', 'swift', 'ssh'],
         help="Storage for backups. Can be Swift or Local now. Swift is default"
              "storage now. Local stores backups on the same defined path and"
              "swift will store files in container.",
         dest='storage', default='swift')
+    arg_parser.add_argument(
+        '--ssh-key', action='store',
+        help="Path ot ssh-key for ssh storage only",
+        dest='ssh_key', default=DEFAULT_PARAMS['ssh_key'])
+    arg_parser.add_argument(
+        '--ssh-username', action='store',
+        help="Remote username for ssh storage only",
+        dest='ssh_username', default=DEFAULT_PARAMS['ssh_username'])
+    arg_parser.add_argument(
+        '--ssh-host', action='store',
+        help="Remote host for ssh storage only",
+        dest='ssh_host', default=DEFAULT_PARAMS['ssh_host'])
 
     arg_parser.set_defaults(**defaults)
     backup_args = arg_parser.parse_args()
@@ -442,7 +452,7 @@ def backup_arguments(args_dict={}):
     # segments name. This is done to quickly identify the containers
     # that contain freezer generated backups
     if not backup_args.container.startswith('freezer_') and \
-            backup_args.storage != 'local':
+            backup_args.storage == 'swift':
         backup_args.container = 'freezer_{0}'.format(
             backup_args.container)
 
@@ -514,8 +524,6 @@ def backup_arguments(args_dict={}):
 
     # Freezer version
     backup_args.__dict__['__version__'] = '1.1.3'
-
-    backup_args.__dict__['options'] = OpenstackOptions.create_from_env()
 
     # todo(enugaev) move it to new command line param backup_media
     backup_media = 'fs'

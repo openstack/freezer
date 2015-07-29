@@ -30,6 +30,19 @@ import subprocess
 import sys
 
 
+class SshCommandBuilder(object):
+
+    @staticmethod
+    def ssh_command(ssh_key, ssh_user, ssh_ip, command):
+        """
+        returns something like
+        ssh -o Compression=no -i mytestpair.pem ubuntu@15.126.199.52
+            "cat > file.tar.gz"
+        """
+        return 'ssh -o Compression=no -i {0} {1}@{2} "{3}"'.format(
+            ssh_key, ssh_user, ssh_ip, command)
+
+
 class TarCommandBuilder:
     """
     Building a tar cmd command. To build command invoke method build.
@@ -57,6 +70,9 @@ class TarCommandBuilder:
         self.encrypt_pass_file = None
         self.output_file = None
         self.filepath = filepath
+        self.ssh_key = None
+        self.ssh_user = None
+        self.ssh_ip = None
 
     def set_output_file(self, output_file):
         self.output_file = output_file
@@ -66,6 +82,11 @@ class TarCommandBuilder:
 
     def set_exclude(self, exclude):
         self.exclude = exclude
+
+    def set_ssh(self, key_path, remote_user, remote_ip):
+        self.ssh_key = key_path
+        self.ssh_ip = remote_ip
+        self.ssh_user = remote_user
 
     def set_dereference(self, mode):
         """
@@ -81,6 +102,18 @@ class TarCommandBuilder:
         self.openssl_path = openssl_path
         self.encrypt_pass_file = encrypt_pass_file
 
+    def _create_ssh_command(self):
+        """
+        returns something like that:
+        ssh -o Compression=no -i mytestpair.pem ubuntu@15.126.199.52
+            "cat > file.tar.gz"
+        """
+        return SshCommandBuilder.ssh_command(
+            self.ssh_key,
+            self.ssh_user,
+            self.ssh_ip,
+            "cat > {0}".format(self.output_file))
+
     def build(self):
         tar_command = self.COMMAND_TEMPLATE.format(
             gnutar_path=self.gnutar_path, dereference=self.dereference)
@@ -91,7 +124,7 @@ class TarCommandBuilder:
                 tar_command=tar_command,
                 listed_incremental=self.listed_incremental)
 
-        if self.output_file:
+        if self.output_file and not self.ssh_key:
             tar_command = "{0} --file={1}".format(tar_command,
                                                   self.output_file)
 
@@ -106,6 +139,10 @@ class TarCommandBuilder:
                 .format(openssl_path=self.openssl_path,
                         file=self.encrypt_pass_file)
             tar_command = '{0} | {1}'.format(tar_command, openssl_cmd)
+
+        if self.ssh_key:
+            ssh_command = self._create_ssh_command()
+            tar_command = '{0} | {1}'.format(tar_command, ssh_command)
 
         return tar_command
 
@@ -126,6 +163,9 @@ class TarCommandRestoreBuilder:
         self.tar_path = tar_path
         self.restore_path = restore_path
         self.archive = None
+        self.ssh_key = None
+        self.ssh_user = None
+        self.ssh_ip = None
 
     def set_dry_run(self):
         self.dry_run = True
@@ -140,6 +180,11 @@ class TarCommandRestoreBuilder:
     def set_archive(self, archive):
         self.archive = archive
 
+    def set_ssh(self, key_path, remote_user, remote_ip):
+        self.ssh_key = key_path
+        self.ssh_ip = remote_ip
+        self.ssh_user = remote_user
+
     def build(self):
         if self.is_windows:
             tar_command = self.NORMAL_TEMPLATE.format(self.tar_path)
@@ -149,7 +194,7 @@ class TarCommandRestoreBuilder:
             tar_command = self.NORMAL_TEMPLATE.format(self.tar_path,
                                                       self.restore_path)
 
-        if self.archive:
+        if self.archive and not self.ssh_key:
             tar_command = tar_command + " --file " + self.archive
         # Check if encryption file is provided and set the openssl decrypt
         # command accordingly
@@ -158,6 +203,13 @@ class TarCommandRestoreBuilder:
                 .format(openssl_path=self.openssl_path,
                         file=self.encrypt_pass_file)
             tar_command = '{0} | {1} '.format(openssl_cmd, tar_command)
+        if self.ssh_key:
+            ssh_command = SshCommandBuilder.ssh_command(
+                self.ssh_key,
+                self.ssh_user,
+                self.ssh_ip,
+                "cat < {0}".format(self.archive))
+            tar_command = '{0} | {1} '.format(ssh_command, tar_command)
         return tar_command
 
 

@@ -79,6 +79,7 @@ setup(
         'Topic :: System :: Archiving',
     ],
     install_requires=[
+        'paramiko',
         'python-swiftclient>=1.6.0',
         'python-keystoneclient>=0.7.0',
         'python-cinderclient>=1.2.1',
