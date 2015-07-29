@@ -14,12 +14,14 @@
    from horizon.
 """
 
-from django.conf import settings
 import warnings
+
+from django.conf import settings
+from horizon.utils.memoized import memoized  # noqa
+
 import freezer.apiclient.client
 from horizon_web_ui.freezer_ui.utils import create_dict_action
-
-from horizon.utils.memoized import memoized  # noqa
+from horizon_web_ui.freezer_ui.utils import create_dummy_id
 
 
 class Dict2Object(object):
@@ -64,6 +66,17 @@ class Job(Dict2Object):
     @property
     def id(self):
         return self.job_id
+
+
+class JobList(object):
+    """Create an object to be passed to horizon tables that handles
+    nested values
+    """
+    def __init__(self, description, result, job_id):
+        self.description = description
+        self.result = result
+        self.id = job_id
+        self.job_id = job_id
 
 
 class Backup(Dict2Object):
@@ -115,9 +128,14 @@ def get_service_url(request):
         return getattr(settings, 'FREEZER_API_URL', None)
 
     for c in catalog:
-        if c['name'] == 'Freezer':
+        if c['name'] == 'freezer':
             for e in c['endpoints']:
                 url = e['publicURL']
+        else:
+            warnings.warn('Using hardcoded FREEZER_API_URL at {0}'
+                          .format(settings.FREEZER_API_URL))
+            return getattr(settings, 'FREEZER_API_URL', None)
+
     return url
 
 
@@ -133,15 +151,22 @@ def _freezerclient(request):
 
 def job_create(request, context):
     """Create a new job file """
+    schedule = {}
+    if context['schedule_end_date']:
+        schedule['schedule_end_date'] = context.pop('schedule_end_date')
+
+    if context['schedule_interval']:
+        schedule['schedule_interval'] = context.pop('schedule_interval')
+
+    if context['schedule_start_date']:
+        schedule['schedule_start_date'] = context.pop('schedule_start_date')
+
     job = create_dict_action(**context)
     client_id = job.pop('client_id', None)
     job['description'] = job.pop('description', None)
 
-    schedule = {
-        'schedule_end_date': job.pop('schedule_end_date', None),
-        'schedule_interval': job.pop('schedule_interval', None),
-        'schedule_start_date': job.pop('schedule_start_date', None),
-    }
+    job.pop('clients', None)
+
     job['job_schedule'] = schedule
     job['job_actions'] = []
     job['client_id'] = client_id
@@ -150,14 +175,19 @@ def job_create(request, context):
 
 def job_edit(request, context):
     """Edit an existing job file, but leave the actions to actions_edit"""
+    schedule = {}
+    if context['schedule_end_date']:
+        schedule['schedule_end_date'] = context.pop('schedule_end_date')
+
+    if context['schedule_interval']:
+        schedule['schedule_interval'] = context.pop('schedule_interval')
+
+    if context['schedule_start_date']:
+        schedule['schedule_start_date'] = context.pop('schedule_start_date')
+
     job = create_dict_action(**context)
     job['description'] = job.pop('description', None)
-    job['client_id'] = job.pop('client_id', None)
-    schedule = {
-        'schedule_end_date': job.pop('schedule_end_date', None),
-        'schedule_interval': job.pop('schedule_interval', None),
-        'schedule_start_date': job.pop('schedule_start_date', None),
-    }
+    # job['client_id'] = job.pop('client_id', None)
     job['job_schedule'] = schedule
     job_id = job.pop('original_name', None)
     return _freezerclient(request).jobs.update(job_id, job)
@@ -187,8 +217,16 @@ def job_get(request, job_id):
 
 def job_list(request):
     jobs = _freezerclient(request).jobs.list_all()
-    jobs = [Job(data) for data in jobs]
-    return jobs
+    job_list = []
+    for j in jobs:
+        description = j['description']
+        job_id = j['job_id']
+        try:
+            result = j['job_schedule']['result']
+        except KeyError:
+            result = 'pending'
+        job_list.append(JobList(description, result, job_id))
+    return job_list
 
 
 def action_create(request, context):
@@ -221,15 +259,24 @@ def action_list(request):
 def actions_in_job(request, job_id):
     job = _freezerclient(request).jobs.get(job_id)
     actions = []
-    try:
-        job_id = job['job_id']
-        actions = [ActionJob(job_id,
-                             action['action_id'],
-                             action['freezer_action']['action'],
-                             action['freezer_action']['backup_name'])
-                   for action in job['job_actions']]
-    except Exception:
-        warnings.warn('No more actions in your job')
+    for a in job['job_actions']:
+        try:
+            action_id = a['action_id']
+        except KeyError:
+            action_id = create_dummy_id()
+
+        try:
+            action = a['freezer_action']['action']
+        except KeyError:
+            action = "backup"
+
+        try:
+            backup_name = a['freezer_action']['backup_name']
+        except KeyError:
+            backup_name = "NO BACKUP NAME AVAILABLE"
+
+        actions.append(ActionJob(job_id, action_id, action, backup_name))
+
     return actions
 
 
