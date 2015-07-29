@@ -25,7 +25,7 @@ import sys
 from wsgiref import simple_server
 import falcon
 from keystonemiddleware import auth_token
-from oslo.config import cfg
+from oslo_config import cfg
 
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
                                    os.pardir, os.pardir, os.pardir))

@@ -24,7 +24,7 @@ Hudson (tjh@cryptsoft.com).
 import unittest
 from mock import patch
 
-from oslo.config import cfg
+from oslo_config import cfg
 
 from freezer_api.common.exceptions import *
 from freezer_api.storage import driver, elastic

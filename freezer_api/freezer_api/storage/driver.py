@@ -19,7 +19,7 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-from oslo.config import cfg
+from oslo_config import cfg
 import logging
 
 from freezer_api.storage import elastic
