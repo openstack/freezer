@@ -10,18 +10,14 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-import datetime
-from django import shortcuts
-from django.utils import safestring
+
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
 
-from horizon import messages
 from horizon import tables
 from horizon.utils.urlresolvers import reverse
 
 import horizon_web_ui.freezer_ui.api.api as freezer_api
-from horizon_web_ui.freezer_ui.django_utils import timestamp_to_string
 
 
 def get_link(session):

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+{% block title %}{% trans "Backups" %}{% endblock %}
+
+{% block page_header %}
+  {% include "horizon/common/_page_header.html" with title=_("Backups") %}
+{% endblock page_header %}
+
+{% block main %}
+    <div class="row">
+   <div class="col-sm-12">
+       <pre>{{ data }}</pre>
+   </div>
+    </div>
+
+{% endblock %}
