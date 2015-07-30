@@ -10,7 +10,6 @@ import os
 
 @pytest.mark.incremental
 class TestLocalStorage(object):
-    WORK_DIR_PREFIX = "freezer_test_work_dir"
     BACKUP_DIR_PREFIX = "freezer_test_backup_dir"
     FILES_DIR_PREFIX = "freezer_test_files_dir"
     HELLO = "Hello World!\n"
@@ -24,21 +23,17 @@ class TestLocalStorage(object):
     def create_dirs(self, tmpdir):
         tmpdir = tmpdir.strpath
         if self.temp:
-            work_dir = tempfile.mkdtemp(
-                dir=tmpdir, prefix=self.WORK_DIR_PREFIX)
             backup_dir = tempfile.mkdtemp(
                 dir=tmpdir, prefix=self.BACKUP_DIR_PREFIX)
             files_dir = tempfile.mkdtemp(
                 dir=tmpdir, prefix=self.FILES_DIR_PREFIX)
         else:
-            work_dir = tmpdir + self.WORK_DIR_PREFIX
             backup_dir = tmpdir + self.BACKUP_DIR_PREFIX
             files_dir = tmpdir + self.FILES_DIR_PREFIX
-            utils.create_dir(work_dir)
             utils.create_dir(backup_dir)
             utils.create_dir(files_dir)
         self.create_content(files_dir)
-        return work_dir, backup_dir, files_dir
+        return backup_dir, files_dir
 
     def remove_dirs(self, work_dir, files_dir, backup_dir):
         if self.temp:
@@ -50,20 +45,20 @@ class TestLocalStorage(object):
         shutil.rmtree(backup_dir)
 
     def test(self, tmpdir):
-        work_dir, backup_dir, files_dir = self.create_dirs(tmpdir)
-        storage = local.LocalStorage(backup_dir, work_dir)
+        backup_dir, files_dir = self.create_dirs(tmpdir)
+        storage = local.LocalStorage(backup_dir)
         builder = tar.TarCommandBuilder(commons.tar_path(), ".")
         storage.backup(files_dir, "file_backup", builder)
         storage.get_backups()
 
     def test_is_ready(self, tmpdir):
-        work_dir, backup_dir, files_dir = self.create_dirs(tmpdir)
-        storage = local.LocalStorage(backup_dir, work_dir)
+        backup_dir, files_dir = self.create_dirs(tmpdir)
+        storage = local.LocalStorage(backup_dir)
         assert storage.is_ready()
 
     def test_prepare(self, tmpdir):
-        work_dir, backup_dir, files_dir = self.create_dirs(tmpdir)
-        storage = local.LocalStorage(backup_dir, work_dir)
+        backup_dir, files_dir = self.create_dirs(tmpdir)
+        storage = local.LocalStorage(backup_dir)
         assert storage.is_ready()
         self.remove_storage(backup_dir)
         assert not storage.is_ready()
@@ -71,16 +66,16 @@ class TestLocalStorage(object):
         assert storage.is_ready()
 
     def test_get_backups(self, tmpdir):
-        work_dir, backup_dir, files_dir = self.create_dirs(tmpdir)
-        storage = local.LocalStorage(backup_dir, work_dir)
+        backup_dir, files_dir = self.create_dirs(tmpdir)
+        storage = local.LocalStorage(backup_dir)
         builder = tar.TarCommandBuilder(commons.tar_path(), ".")
         storage.backup(files_dir, "file_backup", builder)
         backups = storage.get_backups()
         assert len(backups) == 1
 
     def test_incremental_backup(self, tmpdir):
-        work_dir, backup_dir, files_dir = self.create_dirs(tmpdir)
-        storage = local.LocalStorage(backup_dir, work_dir)
+        backup_dir, files_dir = self.create_dirs(tmpdir)
+        storage = local.LocalStorage(backup_dir)
         builder = tar.TarCommandBuilder(commons.tar_path(), ".")
         storage.backup(files_dir, "file_backup", builder)
         backups = storage.get_backups()
@@ -90,8 +85,8 @@ class TestLocalStorage(object):
         storage.backup(files_dir, "file_backup", builder, backup)
 
     def test_incremental_restore(self, tmpdir):
-        work_dir, backup_dir, files_dir = self.create_dirs(tmpdir)
-        storage = local.LocalStorage(backup_dir, work_dir)
+        backup_dir, files_dir = self.create_dirs(tmpdir)
+        storage = local.LocalStorage(backup_dir)
         builder = tar.TarCommandBuilder(commons.tar_path(), ".")
         os.chdir(files_dir)
         storage.backup(files_dir, "file_backup", builder)
@@ -115,8 +110,8 @@ class TestLocalStorage(object):
             assert "foo\n" == file_2.read()
 
     def test_backup_file(self, tmpdir):
-        work_dir, backup_dir, files_dir = self.create_dirs(tmpdir)
-        storage = local.LocalStorage(backup_dir, work_dir)
+        backup_dir, files_dir = self.create_dirs(tmpdir)
+        storage = local.LocalStorage(backup_dir)
         builder = tar.TarCommandBuilder(commons.tar_path(), "file_1")
         os.chdir(files_dir)
         storage.backup(files_dir + "/file_1", "file_backup", builder)

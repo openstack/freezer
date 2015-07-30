@@ -21,35 +21,53 @@ Hudson (tjh@cryptsoft.com).
 import subprocess
 import logging
 import os
-import shutil
+import stat
+import paramiko
+
 
 from freezer import storage
-from freezer import utils
 
 
-class LocalStorage(storage.Storage):
-
-    def prepare(self):
-        utils.create_dir(self.storage_directory)
-
-    def get_backups(self):
-        backup_names = os.listdir(self.storage_directory)
-        backups = []
-        for backup_name in backup_names:
-            backup_dir = self.storage_directory + "/" + backup_name
-            timestamps = os.listdir(backup_dir)
-            for timestamp in timestamps:
-                increments = os.listdir(backup_dir + "/" + timestamp)
-                backups.extend(self._get_backups(increments))
-        return backups
-
-    def __init__(self, storage_directory):
+class SshStorage(storage.Storage):
+    """
+    :type ssh: paramiko.SSHClient
+    :type ftp: paramiko.SFTPClient
+    """
+    def __init__(self, storage_directory, work_dir,
+                 ssh_key_path, remote_username, remote_ip):
         """
         :param storage_directory: directory of storage
         :type storage_directory: str
         :return:
         """
+        self.ssh_key_path = ssh_key_path
+        self.remote_username = remote_username
+        self.remote_ip = remote_ip
         self.storage_directory = storage_directory
+        self.work_dir = work_dir
+        ssh = paramiko.SSHClient()
+        # automatically add keys without requiring human intervention
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        ssh.connect(remote_ip, username=remote_username,
+                    key_filename=ssh_key_path)
+        self.ssh = ssh
+        self.ftp = ssh.open_sftp()
+
+    def prepare(self):
+        if not self.is_ready():
+            self.mkdir_p(self.storage_directory)
+
+    def get_backups(self):
+        backup_names = self.ftp.listdir(self.storage_directory)
+        backups = []
+        for backup_name in backup_names:
+            backup_dir = self.storage_directory + "/" + backup_name
+            timestamps = self.ftp.listdir(backup_dir)
+            for timestamp in timestamps:
+                increments = self.ftp.listdir(backup_dir + "/" + timestamp)
+                backups.extend(self._get_backups(increments))
+        return backups
 
     def info(self):
         pass
@@ -86,21 +104,19 @@ class LocalStorage(storage.Storage):
         """
         new_backup = self._create_backup(hostname_backup_name, parent_backup)
 
-        host_backups = self._backup_dir(new_backup)
-        utils.create_dir(host_backups)
-
         if parent_backup:
             zero_backup = self._zero_backup_dir(parent_backup.parent)
         else:
             zero_backup = self._zero_backup_dir(new_backup)
-        utils.create_dir(zero_backup)
-        tar_builder.set_output_file("{0}/{1}".format(zero_backup,
-                                                     new_backup.repr()))
-
-        tar_incremental = "{0}/{1}".format(zero_backup, new_backup.tar())
+        self.mkdir_p(zero_backup)
+        output_file = "{0}/{1}".format(zero_backup, new_backup.repr())
+        tar_builder.set_output_file(output_file)
+        tar_builder.set_ssh(self.ssh_key_path, self.remote_username,
+                            self.remote_ip)
+        tar_incremental = "{0}/{1}".format(self.work_dir, new_backup.tar())
         if parent_backup:
-            shutil.copyfile("{0}/{1}".format(
-                zero_backup, parent_backup.tar()), tar_incremental)
+            self.ftp.get(zero_backup + "/" + parent_backup.tar(),
+                         tar_incremental)
 
         tar_builder.set_listed_incremental(tar_incremental)
 
@@ -109,9 +125,35 @@ class LocalStorage(storage.Storage):
         logging.info('[*] Backup started for: {0}'.format(path))
 
         subprocess.check_output(tar_builder.build(), shell=True)
+        self.ftp.put(tar_incremental, zero_backup + "/" + new_backup.tar())
+
+    def _is_dir(self, check_dir):
+        return stat.S_IFMT(self.ftp.stat(check_dir).st_mode) == stat.S_IFDIR
 
     def is_ready(self):
-        return os.path.isdir(self.storage_directory)
+        try:
+            return self._is_dir(self.storage_directory)
+        except IOError:
+            return False
+
+    def mkdir_p(self, remote_directory):
+        """Change to this directory, recursively making new folders if needed.
+        Returns True if any folders were created."""
+        if remote_directory == '/':
+            # absolute path so change directory to root
+            self.ftp.chdir('/')
+            return
+        if remote_directory == '':
+            # top-level relative directory must exist
+            return
+        try:
+            self.ftp.chdir(remote_directory)  # sub-directory exists
+        except IOError:
+            dirname, basename = os.path.split(remote_directory.rstrip('/'))
+            self.mkdir_p(dirname)  # make parent directories
+            self.ftp.mkdir(basename)  # sub-directory missing, so created it
+            self.ftp.chdir(basename)
+            return True
 
     def remove_older_than(self, remove_older_timestamp, hostname_backup_name):
         pass
@@ -129,4 +171,7 @@ class LocalStorage(storage.Storage):
         for level in range(0, level + 1):
             c_backup = backup.increments[level]
             tar_builder.set_archive(zero_dir + "/" + c_backup.repr())
+            tar_builder.set_ssh(self.ssh_key_path,
+                                self.remote_username,
+                                self.remote_ip)
             subprocess.check_output(tar_builder.build(), shell=True)
