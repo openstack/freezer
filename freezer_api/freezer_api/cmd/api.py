@@ -57,6 +57,9 @@ def get_application(db):
         app = auth_token.AuthProtocol(app, {})
     else:
         logging.warning(_LW("keystone authentication disabled"))
+
+    app = middleware.HealthApp(app=app, path='/v1/health')
+
     return app
 
 config_file = '/etc/freezer-api.conf'

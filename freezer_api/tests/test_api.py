@@ -23,16 +23,12 @@ Hudson (tjh@cryptsoft.com).
 import unittest
 from mock import Mock, patch
 
-from common import *
-from freezer_api.common.exceptions import *
-from keystonemiddleware import auth_token
-
 from freezer_api.cmd import api
-
+from freezer_api.api.common import middleware
 
 class TestAPI(unittest.TestCase):
 
     @patch('freezer_api.storage.elastic.logging')
     def test_auth_install(self, mock_logging):
         app = api.get_application(None)
-        assert isinstance(app, auth_token.AuthProtocol)
+        assert isinstance(app, middleware.HealthApp)

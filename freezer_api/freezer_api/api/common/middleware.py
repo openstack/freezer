@@ -47,3 +47,20 @@ class JSONTranslator(object):
             return
 
         resp.body = json.dumps(req.context['result'])
+
+
+class HealthApp(object):
+    """
+    Simple WSGI app to support HAProxy polling.
+    If the requested url matches the configured path it replies
+    with a 200 otherwise passes the request to the inner app
+    """
+    def __init__(self, app, path):
+        self.app = app
+        self.path = path
+
+    def __call__(self, environ, start_response):
+        if environ.get('PATH_INFO') == self.path:
+            start_response('200 OK', [])
+            return []
+        return self.app(environ, start_response)
