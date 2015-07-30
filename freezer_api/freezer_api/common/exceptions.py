@@ -20,9 +20,9 @@ Hudson (tjh@cryptsoft.com).
 
 """
 
-import logging
-
 import falcon
+from oslo_log import log as logging
+import oslo_i18n
 
 
 class FreezerAPIException(falcon.HTTPError):
@@ -33,14 +33,14 @@ class FreezerAPIException(falcon.HTTPError):
 
     def __init__(self, message=''):
         if message:
-            self.message = str(message)
+            self.message = _(str(message))
         logging.error(message)
         Exception.__init__(self, message)
 
     @staticmethod
     def handle(ex, req, resp, params):
-        raise falcon.HTTPError('500 unknown server error',
-                               title="Internal Server Error",
+        raise falcon.HTTPError(_('500 unknown server error'),
+                               title=_("Internal Server Error"),
                                description=FreezerAPIException.message)
 
 
@@ -48,7 +48,7 @@ class BadDataFormat(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
         raise falcon.HTTPBadRequest(
-            title="Bad request format",
+            title=_("Bad request format"),
             description=ex.message)
 
 
@@ -56,7 +56,7 @@ class DocumentExists(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
         raise falcon.HTTPConflict(
-            title="Document already existing",
+            title=_("Document already existing"),
             description=ex.message)
 
 
@@ -64,7 +64,7 @@ class StorageEngineError(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
         raise falcon.HTTPInternalServerError(
-            title="Internal Storage Error",
+            title=_("Internal Storage Error"),
             description=ex.message)
 
 
@@ -72,7 +72,7 @@ class DocumentNotFound(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
         raise falcon.HTTPNotFound(
-            title="Not Found",
+            title=_("Not Found"),
             description=ex.message)
 
 
@@ -80,7 +80,7 @@ class AccessForbidden(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
         raise falcon.HTTPForbidden(
-            title="Access Forbidden",
+            title=_("Access Forbidden"),
             description=ex.message)
 
 
@@ -88,7 +88,7 @@ class MethodNotImplemented(FreezerAPIException):
     @staticmethod
     def handle(ex, req, resp, params):
         raise falcon.HTTPMethodNotAllowed(
-            title="Bad Method",
+            title=_("Bad Method"),
             description=ex.message)
 
 

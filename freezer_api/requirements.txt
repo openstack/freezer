@@ -1,5 +1,6 @@
 oslo.config
 oslo.i18n
+oslo.log>=1.6.0  # Apache-2.0
 keystonemiddleware
 jsonschema
 elasticsearch
