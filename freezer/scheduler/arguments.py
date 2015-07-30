@@ -84,11 +84,11 @@ def get_args(choices):
     arg_parser.add_argument(
         '-j', '--job', action='store',
         help=('name or ID of the job'),
-        dest='job', default=None)
+        dest='job_id', default=None)
     arg_parser.add_argument(
         '-s', '--session', action='store',
         help=('name or ID of the session'),
-        dest='session', default=None)
+        dest='session_id', default=None)
     arg_parser.add_argument(
         '--file', action='store',
         help=('Local file that contains the resource '

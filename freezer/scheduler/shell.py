@@ -40,9 +40,9 @@ def do_session_remove_job(client, args):
     """
     if not args.session_id:
         raise Exception("Parameter --session required")
-    if not args.job:
+    if not args.job_id:
         raise Exception("Parameter --job required")
-    client.sessions.remove_job(args.session_id, args.job)
+    client.sessions.remove_job(args.session_id, args.job_id)
 
 
 def do_session_add_job(client, args):
@@ -51,9 +51,9 @@ def do_session_add_job(client, args):
     """
     if not args.session_id:
         raise Exception("Parameter --session required")
-    if not args.job:
+    if not args.job_id:
         raise Exception("Parameter --job required")
-    for job_id in args.job.split(','):
+    for job_id in args.job_id.split(','):
         try:
             client.sessions.add_job(args.session_id, job_id)
         except Exception as e:
@@ -145,15 +145,15 @@ def do_job_create(client, args):
 
 
 def do_job_delete(client, args):
-    if not args.job:
+    if not args.job_id:
         raise Exception("Parameter --job required")
-    client.jobs.delete(args.job)
+    client.jobs.delete(args.job_id)
 
 
 def do_job_get(client, args):
-    if not args.job:
+    if not args.job_id:
         raise Exception("Parameter --job required")
-    job_doc = client.jobs.get(args.job)
+    job_doc = client.jobs.get(args.job_id)
     if args.fname:
         args.save_doc_to_file(job_doc, args.fname)
     else:
@@ -161,17 +161,17 @@ def do_job_get(client, args):
 
 
 def do_job_start(client, args):
-    if not args.job:
+    if not args.job_id:
         raise Exception("Parameter --job required")
-    client.jobs.start_job(args.job)
-    print "Job {0} started".format(args.job)
+    client.jobs.start_job(args.job_id)
+    print "Job {0} started".format(args.job_id)
 
 
 def do_job_stop(client, args):
-    if not args.job:
+    if not args.job_id:
         raise Exception("Parameter --job required")
-    client.jobs.stop_job(args.job)
-    print "Job {0} stopped".format(args.job)
+    client.jobs.stop_job(args.job_id)
+    print "Job {0} stopped".format(args.job_id)
 
 
 def do_job_download(client, args):
