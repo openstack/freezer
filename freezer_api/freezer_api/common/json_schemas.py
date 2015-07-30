@@ -193,6 +193,20 @@ job_schema = {
             "pattern": "^[\w-]+$",
             "type": "string"
         },
+        "session_id": {
+            "id": "session_id",
+            "pattern": "^[\w-]+$",
+            "type": "string"
+        },
+        "session_tag": {
+            "id": "session_tag",
+            "pattern": "^[\w-]+$",
+            "type": "integer"
+        },
+        "session_name": {
+            "id": "session_name",
+            "type": "string"
+        },
         "user_id": {
             "id": "user_id",
             "pattern": "^[\w-]+$",
@@ -266,6 +280,20 @@ job_patch_schema = {
         "client_id": {
             "id": "client_id",
             "pattern": "^[\w-]+$",
+            "type": "string"
+        },
+        "session_id": {
+            "id": "session_id",
+            "pattern": "^[\w-]+$",
+            "type": "string"
+        },
+        "session_tag": {
+            "id": "session_tag",
+            "pattern": "^[\w-]+$",
+            "type": "integer"
+        },
+        "session_name": {
+            "id": "session_name",
             "type": "string"
         },
         "user_id": {
