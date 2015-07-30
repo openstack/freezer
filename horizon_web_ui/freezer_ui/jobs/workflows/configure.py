@@ -10,13 +10,30 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-from django.utils.translation import ugettext_lazy as _
 import datetime
+
+from django.utils.translation import ugettext_lazy as _
+
 from horizon import exceptions
 from horizon import forms
 from horizon import workflows
 
 import horizon_web_ui.freezer_ui.api.api as freezer_api
+from horizon_web_ui.freezer_ui.utils import actions_in_job
+
+
+class ActionsConfigurationAction(workflows.Action):
+    pass
+
+    class Meta(object):
+        name = _("Actions")
+        slug = "actions"
+        help_text_template = "freezer_ui/jobs" \
+                             "/_actions.html"
+
+class ActionsConfiguration(workflows.Step):
+    action_class = ActionsConfigurationAction
+    contributes = ('actions',)
 
 
 class ClientsConfigurationAction(workflows.MembershipAction):
@@ -133,6 +150,10 @@ class SchedulingConfiguration(workflows.Step):
 
 
 class InfoConfigurationAction(workflows.Action):
+    actions = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False)
+
     description = forms.CharField(
         label=_("Job Name"),
         help_text=_("Set a short description for this job"),
@@ -150,7 +171,8 @@ class InfoConfigurationAction(workflows.Action):
 class InfoConfiguration(workflows.Step):
     action_class = InfoConfigurationAction
     contributes = ('description',
-                   'original_name',)
+                   'original_name',
+                   'actions')
 
 
 class ConfigureJob(workflows.Workflow):
@@ -162,15 +184,49 @@ class ConfigureJob(workflows.Workflow):
     success_url = "horizon:freezer_ui:jobs:index"
     default_steps = (InfoConfiguration,
                      ClientsConfiguration,
-                     SchedulingConfiguration)
+                     SchedulingConfiguration,
+                     ActionsConfiguration)
 
     def handle(self, request, context):
         try:
             if context['original_name'] == '':
+
+                # for each action_id get the action object and append it
+                # to context['job_actions']
+                actions = actions_in_job(context.pop('actions', []))
+                actions_for_job = []
+                for action in actions:
+                    a = freezer_api.action_get(request, action)
+                    a = {
+                        'action_id': a['action_id'],
+                        'freezer_action': a['freezer_action']
+                    }
+                    actions_for_job.append(a)
+
+                context['job_actions'] = actions_for_job
+
                 for client in context['clients']:
                     context['client_id'] = client
                     freezer_api.job_create(request, context)
             else:
+                actions = actions_in_job(context.pop('actions', []))
+                actions_for_job = []
+
+                job_id = context['original_name']
+                job = freezer_api.job_get(request, job_id)
+
+                del job[0].data_dict['job_actions']
+
+                for action in actions:
+                    a = freezer_api.action_get(request, action)
+                    a = {
+                        'action_id': a['action_id'],
+                        'freezer_action': a['freezer_action']
+                    }
+                    actions_for_job.append(a)
+
+                context['job_actions'] = actions_for_job
+
                 return freezer_api.job_edit(request, context)
             return True
         except Exception:

@@ -35,5 +35,11 @@ def create_dummy_id():
     This is needed when the scheduler creates jobs with actions attached
     directly, those actions are not registered in the db.
     """
-
     return uuid.uuid4().hex
+
+
+def actions_in_job(ids):
+    """Return an ordered list of actions for a new job
+    """
+    ids = ids.split('===')
+    return [i for i in ids if i]

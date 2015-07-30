@@ -164,11 +164,21 @@ def job_create(request, context):
     job = create_dict_action(**context)
     client_id = job.pop('client_id', None)
     job['description'] = job.pop('description', None)
+    actions = job.pop('job_actions', None)
+    job.pop('clients', None)
+
+    schedule = {}
+    if context['schedule_end_date']:
+        schedule['schedule_end_date'] = context.pop('schedule_end_date')
+    if context['schedule_interval']:
+        schedule['schedule_interval'] = context.pop('schedule_interval')
+    if context['schedule_start_date']:
+        schedule['schedule_start_date'] = context.pop('schedule_start_date')
 
     job.pop('clients', None)
 
     job['job_schedule'] = schedule
-    job['job_actions'] = []
+    job['job_actions'] = actions
     job['client_id'] = client_id
     return _freezerclient(request).jobs.create(job)
 
@@ -187,8 +197,11 @@ def job_edit(request, context):
 
     job = create_dict_action(**context)
     job['description'] = job.pop('description', None)
-    # job['client_id'] = job.pop('client_id', None)
+    actions = job.pop('job_actions', None)
+    job.pop('clients', None)
+
     job['job_schedule'] = schedule
+    job['job_actions'] = actions
     job_id = job.pop('original_name', None)
     return _freezerclient(request).jobs.update(job_id, job)
 
@@ -254,6 +267,22 @@ def action_list(request):
     actions = _freezerclient(request).actions.list()
     actions = [Action(data) for data in actions]
     return actions
+
+
+def action_list_json(request):
+    return _freezerclient(request).actions.list()
+
+
+def actions_in_job_json(request, job_id):
+    job = _freezerclient(request).jobs.get(job_id)
+    action_list = []
+    for action in job['job_actions']:
+        a = {
+            "action_id": action['action_id'],
+            "freezer_action": action['freezer_action']
+        }
+        action_list.append(a)
+    return action_list
 
 
 def actions_in_job(request, job_id):
