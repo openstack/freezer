@@ -351,7 +351,7 @@ Freezer architectural components are the following:
 Freezer use GNU Tar under the hood to execute incremental backup and
 restore. When a key is provided, it uses OpenSSL to encrypt data
 (AES-256-CFB)
-=======
+=============
 Freezer architecture is composed by the following components:
 
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -430,7 +430,6 @@ The following diagrams can help to better understand the solution:
 **How to scale**
 
 .. image:: specs/freezer_scheduler_api.png
->>>>>>> Added architecture information to README, updated FAQ
 
 Low resources requirement
 -------------------------
@@ -498,7 +497,6 @@ The following is what the Swift Manifest looks like::
         'X-Object-Meta-Container-Segments': 'socorro-backup-dev_segments'
     }
 
->>>>>>> Added architecture information to README, updated FAQ
 3) The most relevant data taken in consideration for incremental are:
 
 -  'X-Object-Meta-Maximum-Backup-level': '7'
