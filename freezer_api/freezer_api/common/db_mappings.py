@@ -50,6 +50,7 @@ clients_mapping = {
 backups_mapping = {
     u'properties': {
         u'backup_id': {
+            u'index': u'not_analyzed',
             u'type': u'string',
         },
         u'backup_metadata': {
