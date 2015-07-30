@@ -20,8 +20,9 @@ Hudson (tjh@cryptsoft.com).
 
 """
 
-import falcon
 import logging
+
+import falcon
 
 
 class FreezerAPIException(falcon.HTTPError):

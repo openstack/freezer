@@ -20,6 +20,7 @@ Hudson (tjh@cryptsoft.com).
 """
 
 import json
+
 import falcon
 
 from freezer_api.api import v1

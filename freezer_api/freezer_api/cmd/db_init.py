@@ -21,12 +21,13 @@ Hudson (tjh@cryptsoft.com).
 """
 
 import argparse
-import os
-import json
-import re
-import requests
-import sys
 import ConfigParser
+import json
+import os
+import re
+import sys
+
+import requests
 
 from freezer_api.common import db_mappings
 

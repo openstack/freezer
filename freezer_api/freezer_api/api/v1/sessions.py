@@ -23,8 +23,6 @@ import time
 
 import falcon
 
-from freezer_api.common import exceptions
-
 
 class SessionsCollectionResource(object):
     """
@@ -48,7 +46,7 @@ class SessionsCollectionResource(object):
         try:
             doc = req.context['doc']
         except KeyError:
-            raise exceptions.BadDataFormat(
+            raise freezer_api_exc.BadDataFormat(
                 message='Missing request body')
 
         user_id = req.get_header('X-User-ID')
@@ -122,7 +120,7 @@ class SessionsAction(object):
         try:
             action, params = next(doc.iteritems())
         except:
-            raise exceptions.BadDataFormat("Bad action request format")
+            raise freezer_api_exc.BadDataFormat("Bad action request format")
 
         session_doc = self.db.get_session(user_id=user_id,
                                           session_id=session_id)
@@ -162,19 +160,19 @@ class Session(object):
         if action == 'start':
             try:
                 self.start(params['job_id'], params['current_tag'])
-            except exceptions.BadDataFormat:
+            except freezer_api_exc.BadDataFormat:
                 raise
             except Exception as e:
-                raise exceptions.FreezerAPIException(e)
+                raise freezer_api_exc.FreezerAPIException(e)
         elif action == 'end':
             try:
                 self.end(params['job_id'], params['result'])
-            except exceptions.BadDataFormat:
+            except freezer_api_exc.BadDataFormat:
                 raise
             except Exception as e:
-                raise exceptions.FreezerAPIException(e)
+                raise freezer_api_exc.FreezerAPIException(e)
         else:
-            raise exceptions.MethodNotImplemented("Bad Action Method")
+            raise freezer_api_exc.MethodNotImplemented("Bad Action Method")
 
     def end(self, job_id, result):
         """
@@ -205,7 +203,7 @@ class Session(object):
         time_since_last_start = now - self.doc.get('time_start', 0)
 
         if job_tag > self.session_tag:
-            raise exceptions.BadDataFormat('requested tag value too high')
+            raise freezer_api_exc.BadDataFormat('requested tag value too high')
 
         if time_since_last_start <= self.doc.get('hold_off', 60):
             # session has been started not so long ago
@@ -248,7 +246,7 @@ class Session(object):
         try:
             job = self.doc['jobs'][job_id]
         except:
-            raise exceptions.BadDataFormat('job_id not found in session')
+            raise freezer_api_exc.BadDataFormat('job_id not found in session')
         job['status'] = 'completed'
         job['result'] = result
         job['time_ended'] = timestamp
@@ -257,7 +255,7 @@ class Session(object):
         try:
             job = self.doc['jobs'][job_id]
         except:
-            raise exceptions.BadDataFormat('job_id not found in session')
+            raise freezer_api_exc.BadDataFormat('job_id not found in session')
         job['status'] = 'running'
         job['result'] = ''
         job['time_started'] = timestamp

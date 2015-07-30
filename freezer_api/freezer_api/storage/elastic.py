@@ -19,14 +19,16 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-import elasticsearch
 import logging
 import uuid
+
+import elasticsearch
+
 from freezer_api.common.utils import BackupMetadataDoc
 from freezer_api.common.utils import JobDoc
 from freezer_api.common.utils import ActionDoc
 from freezer_api.common.utils import SessionDoc
-from freezer_api.common import exceptions
+from freezer_api.common import exceptions as freezer_api_exc
 
 
 class TypeManager:
@@ -54,7 +56,7 @@ class TypeManager:
             query_filter = {"filter": {"bool": {"must": base_filter}}}
             return {'query': {'filtered': query_filter}}
         except:
-            raise exceptions.StorageEngineError(
+            raise freezer_api_exc.StorageEngineError(
                 message='search operation failed: query not valid')
 
     def get(self, user_id, doc_id):
@@ -64,13 +66,13 @@ class TypeManager:
                               id=doc_id)
             doc = res['_source']
         except elasticsearch.TransportError:
-            raise exceptions.DocumentNotFound(
+            raise freezer_api_exc.DocumentNotFound(
                 message='No document found with ID {0}'.format(doc_id))
         except Exception as e:
-            raise exceptions.StorageEngineError(
+            raise freezer_api_exc.StorageEngineError(
                 message='Get operation failed: {0}'.format(e))
         if doc['user_id'] != user_id:
-            raise exceptions.AccessForbidden("Document access forbidden")
+            raise freezer_api_exc.AccessForbidden("Document access forbidden")
         if '_version' in res:
             doc['_version'] = res['_version']
         return doc
@@ -82,10 +84,10 @@ class TypeManager:
             res = self.es.search(index=self.index, doc_type=self.doc_type,
                                  size=limit, from_=offset, body=query_dsl)
         except elasticsearch.ConnectionError:
-            raise exceptions.StorageEngineError(
+            raise freezer_api_exc.StorageEngineError(
                 message='unable to connect to db server')
         except Exception as e:
-            raise exceptions.StorageEngineError(
+            raise freezer_api_exc.StorageEngineError(
                 message='search operation failed: {0}'.format(e))
         hit_list = res['hits']['hits']
         return [x['_source'] for x in hit_list]
@@ -99,11 +101,11 @@ class TypeManager:
             version = res['_version']
         except elasticsearch.TransportError as e:
             if e.status_code == 409:
-                raise exceptions.DocumentExists(message=e.error)
-            raise exceptions.StorageEngineError(
+                raise freezer_api_exc.DocumentExists(message=e.error)
+            raise freezer_api_exc.StorageEngineError(
                 message='index operation failed {0}'.format(e))
         except Exception as e:
-            raise exceptions.StorageEngineError(
+            raise freezer_api_exc.StorageEngineError(
                 message='index operation failed {0}'.format(e))
         return (created, version)
 
@@ -114,7 +116,7 @@ class TypeManager:
                                     doc_type=self.doc_type,
                                     body=query_dsl)
         except Exception as e:
-            raise exceptions.StorageEngineError(
+            raise freezer_api_exc.StorageEngineError(
                 message='Delete operation failed: {0}'.format(e))
         return doc_id
 
@@ -179,12 +181,12 @@ class JobTypeManager(TypeManager):
             version = res['_version']
         except elasticsearch.TransportError as e:
             if e.status_code == 409:
-                raise exceptions.DocumentExists(message=e.error)
-            raise exceptions.DocumentNotFound(
+                raise freezer_api_exc.DocumentExists(message=e.error)
+            raise freezer_api_exc.DocumentNotFound(
                 message='Unable to find job to update '
                         'with id {0}. {1}'.format(job_id, e))
         except Exception:
-            raise exceptions.StorageEngineError(
+            raise freezer_api_exc.StorageEngineError(
                 message='Unable to update job with id {0}'.format(job_id))
         return version
 
@@ -212,12 +214,12 @@ class ActionTypeManager(TypeManager):
             version = res['_version']
         except elasticsearch.TransportError as e:
             if e.status_code == 409:
-                raise exceptions.DocumentExists(message=e.error)
-            raise exceptions.DocumentNotFound(
+                raise freezer_api_exc.DocumentExists(message=e.error)
+            raise freezer_api_exc.DocumentNotFound(
                 message='Unable to find action to update '
                         'with id {0} '.format(action_id))
         except Exception:
-            raise exceptions.StorageEngineError(
+            raise freezer_api_exc.StorageEngineError(
                 message='Unable to update action with'
                         ' id {0}'.format(action_id))
         return version
@@ -246,13 +248,13 @@ class SessionTypeManager(TypeManager):
             version = res['_version']
         except elasticsearch.TransportError as e:
             if e.status_code == 409:
-                raise exceptions.DocumentExists(message=e.error)
-            raise exceptions.DocumentNotFound(
+                raise freezer_api_exc.DocumentExists(message=e.error)
+            raise freezer_api_exc.DocumentNotFound(
                 message='Unable to update session {0}. '
                         '{1}'.format(session_id, e))
 
         except Exception:
-            raise exceptions.StorageEngineError(
+            raise freezer_api_exc.StorageEngineError(
                 message='Unable to update session with '
                         'id {0}'.format(session_id))
         return version
@@ -283,11 +285,11 @@ class ElasticSearchEngine(object):
         # raises if data is malformed (HTTP_400) or already present (HTTP_409)
         backup_metadata_doc = BackupMetadataDoc(user_id, user_name, doc)
         if not backup_metadata_doc.is_valid():
-            raise exceptions.BadDataFormat(message='Bad Data Format')
+            raise freezer_api_exc.BadDataFormat(message='Bad Data Format')
         backup_id = backup_metadata_doc.backup_id
         existing = self.backup_manager.search(user_id, backup_id)
         if existing:    # len(existing) > 0
-            raise exceptions.DocumentExists(
+            raise freezer_api_exc.DocumentExists(
                 message='Backup data already existing '
                         'with ID {0}'.format(backup_id))
         self.backup_manager.insert(backup_metadata_doc.serialize())
@@ -308,10 +310,10 @@ class ElasticSearchEngine(object):
     def add_client(self, user_id, doc):
         client_id = doc.get('client_id', None)
         if client_id is None:
-            raise exceptions.BadDataFormat(message='Missing client ID')
+            raise freezer_api_exc.BadDataFormat(message='Missing client ID')
         existing = self.client_manager.search(user_id, client_id)
         if existing:    # len(existing) > 0
-            raise exceptions.DocumentExists(
+            raise freezer_api_exc.DocumentExists(
                 message=('Client already registered with '
                          'ID {0}'.format(client_id)))
         client_doc = {'client': doc,
@@ -362,7 +364,7 @@ class ElasticSearchEngine(object):
         # same job_id and different user_id
         try:
             self.job_manager.get(user_id, job_id)
-        except exceptions.DocumentNotFound:
+        except freezer_api_exc.DocumentNotFound:
             pass
 
         valid_doc = JobDoc.update(doc, user_id, job_id)
@@ -412,7 +414,7 @@ class ElasticSearchEngine(object):
         # same action_id and different user_id
         try:
             self.action_manager.get(user_id, action_id)
-        except exceptions.DocumentNotFound:
+        except freezer_api_exc.DocumentNotFound:
             pass
 
         valid_doc = ActionDoc.update(doc, user_id, action_id)
@@ -462,7 +464,7 @@ class ElasticSearchEngine(object):
         # same session_id and different user_id
         try:
             self.session_manager.get(user_id, session_id)
-        except exceptions.DocumentNotFound:
+        except freezer_api_exc.DocumentNotFound:
             pass
 
         valid_doc = SessionDoc.update(doc, user_id, session_id)
