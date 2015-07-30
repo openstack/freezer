@@ -22,7 +22,7 @@ class TestBackUP:
     def test_backup_mode_mysql(self, monkeypatch, tmpdir):
 
         backup_opt = BackupOpt1()
-        backup_opt.__dict__['storage'] = local.LocalStorage(tmpdir.strpath, tmpdir.strpath)
+        backup_opt.__dict__['storage'] = local.LocalStorage(tmpdir.strpath)
         fakemysql = FakeMySQLdb()
         expanduser = Os()
         fakere = FakeRe()
@@ -100,7 +100,7 @@ class TestBackUP:
         monkeypatch.setattr(re, 'search', fakere.search)
         monkeypatch.setattr(os.path, 'exists', expanduser.exists)
 
-        storage = local.LocalStorage(tmpdir.strpath, tmpdir.strpath)
+        storage = local.LocalStorage(tmpdir.strpath)
 
         assert storage.backup(
             "/tmp/", "hostname_backup_name",
@@ -119,7 +119,7 @@ class TestBackUP:
         # Class and other settings initialization
         test_meta = dict()
         backup_opt = BackupOpt1()
-        backup_opt.__dict__['storage'] = local.LocalStorage(tmpdir.strpath, tmpdir.strpath)
+        backup_opt.__dict__['storage'] = local.LocalStorage(tmpdir.strpath)
 
         fakemongo = FakeMongoDB()
         backup_opt.mode = 'mongo'

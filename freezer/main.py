@@ -24,8 +24,10 @@ from freezer.bandwidth import monkeypatch_socket_bandwidth
 from freezer import job
 from freezer.arguments import backup_arguments
 from freezer.osclients import ClientManager
-from freezer.swift import SwiftStorage
-from freezer.local import LocalStorage
+from freezer import swift
+from freezer import local
+from freezer import ssh
+from freezer import utils
 from freezer.utils import create_dir
 import os
 import subprocess
@@ -118,26 +120,38 @@ def freezer_main(args={}):
     backup_args.__dict__['hostname_backup_name'] = "{0}_{1}".format(
         backup_args.hostname, backup_args.backup_name)
 
-    backup_args.__dict__['client_manager'] = ClientManager(
-        backup_args.options,
-        backup_args.insecure,
-        backup_args.os_auth_ver,
-        backup_args.dry_run)
+    Validator.validate(backup_args)
 
     if backup_args.storage == "swift":
-        backup_args.__dict__['storage'] = SwiftStorage(
-            backup_args.client_manager,
+        options = utils.OpenstackOptions.create_from_env()
+        Validator.validate_env(options)
+        client_manager = ClientManager(
+            options,
+            backup_args.insecure,
+            backup_args.os_auth_ver,
+            backup_args.dry_run)
+
+        backup_args.__dict__['storage'] = swift.SwiftStorage(
+            client_manager,
             backup_args.container,
             backup_args.work_dir,
             backup_args.max_segment_size)
     elif backup_args.storage == "local":
-        backup_args.__dict__['storage'] = LocalStorage(
-            backup_args.container,
-            backup_args.work_dir)
+        backup_args.__dict__['storage'] = \
+            local.LocalStorage(backup_args.container)
+    elif backup_args.storage == "ssh":
+        if not (backup_args.ssh_key and backup_args.ssh_username
+                and backup_args.ssh_host):
+            raise Exception("Please provide ssh_key, "
+                            "ssh_username and ssh_host")
+        backup_args.__dict__['storage'] = \
+            ssh.SshStorage(backup_args.container,
+                           backup_args.work_dir,
+                           backup_args.ssh_key,
+                           backup_args.ssh_username,
+                           backup_args.ssh_host)
     else:
         raise Exception("Not storage found for name " + backup_args.storage)
-
-    Validator.validate(backup_args)
 
     freezer_job = job.create_job(backup_args)
     freezer_job.execute()
