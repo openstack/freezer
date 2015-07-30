@@ -14,15 +14,17 @@ from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse_lazy
 
-from horizon import workflows
-
 from horizon import browsers
 from horizon import exceptions
+from horizon import messages
+from horizon import workflows
+
 import horizon_web_ui.freezer_ui.api.api as freezer_api
 import horizon_web_ui.freezer_ui.jobs.browsers as project_browsers
+from horizon_web_ui.freezer_ui.utils import create_dict_action
 import workflows.configure as configure_workflow
 import workflows.action as action_workflow
-from horizon_web_ui.freezer_ui.utils import create_dict_action
+
 
 
 class JobWorkflowView(workflows.WorkflowView):
@@ -122,12 +124,18 @@ class ActionWorkflowView(workflows.WorkflowView):
             job = self.get_object()[0]
             d = job.get_dict()
             for action in d['job_actions']:
-                if action['action_id'] == action_id:
-                    actions = create_dict_action(**action)
-                    rules = {k: v for k, v in action.items()
-                             if not k == 'freezer_action'}
-                    initial.update(**actions['freezer_action'])
-                    initial.update(**rules)
+                try:
+                    if action['action_id'] == action_id:
+                        actions = create_dict_action(**action)
+                        rules = {k: v for k, v in action.items()
+                                 if not k == 'freezer_action'}
+                        initial.update(**actions['freezer_action'])
+                        initial.update(**rules)
+                except KeyError:
+                    messages.warning(self.request, _("Cannot edit an action "
+                                                     "created by the scheduler"))
+                    exceptions.handle(self.request, "")
+
             initial.update({'original_name': job.id})
         return initial
 
