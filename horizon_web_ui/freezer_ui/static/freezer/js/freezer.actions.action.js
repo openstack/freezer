@@ -3,6 +3,7 @@ function hideEverything() {
     $("#id_backup_name").closest(".form-group").hide();
     $("#id_container").closest(".form-group").hide();
     $("#id_path_to_backup").closest(".form-group").hide();
+    $("#id_storage").closest(".form-group").hide();
 
     // Backup specific controls
     $("#id_mysql_conf").closest(".form-group").hide();
@@ -21,6 +22,12 @@ function hideEverything() {
     $("#id_remove_from_date").closest(".form-group").hide();
     $("#id_get_object").closest(".form-group").hide();
     $("#id_dst_file").closest(".form-group").hide();
+
+    // SSH specific controls
+    $("#id_ssh_key").closest(".form-group").hide();
+    $("#id_ssh_username").closest(".form-group").hide();
+    $("#id_ssh_host").closest(".form-group").hide();
+
 }
 
 function showAdminOptions() {
@@ -36,6 +43,7 @@ function showBackupOptions() {
     $("#id_container").closest(".form-group").show();
     $("#id_path_to_backup").closest(".form-group").show();
     $("#id_backup_name").closest(".form-group").show();
+    $("#id_storage").closest(".form-group").show();
 }
 
 function showRestoreOptions() {
@@ -44,6 +52,7 @@ function showRestoreOptions() {
     $("#id_restore_abs_path").closest(".form-group").show();
     $("#id_restore_from_host").closest(".form-group").show();
     $("#id_restore_from_date").closest(".form-group").show();
+    $("#id_storage").closest(".form-group").show();
 }
 
 function showNovaOptions() {
@@ -58,6 +67,12 @@ function showCinderOptions() {
     $("#id_cinder_vol_id").closest(".form-group").show();
     $("#id_backup_name").closest(".form-group").show();
     $("#id_container").closest(".form-group").show();
+}
+
+function showSSHOptions(){
+    $("#id_ssh_key").closest(".form-group").show();
+    $("#id_ssh_username").closest(".form-group").show();
+    $("#id_ssh_host").closest(".form-group").show();
 }
 
 hideEverything();
@@ -76,6 +91,31 @@ $("#id_action").change(function() {
     else if ($("#id_action").val() == 'admin') {
         hideEverything();
         showAdminOptions();
+    }
+    else  {
+        hideEverything();
+    }
+});
+
+
+$("#id_storage").change(function() {
+    // Update the inputs according freezer action
+
+    if ($("#id_storage").val() == 'swift') {
+        hideEverything();
+        showBackupOptions();
+        $("#id_mode").closest(".form-group").hide();
+    }
+    else if ($("#id_storage").val() == 'ssh') {
+        hideEverything();
+        showBackupOptions();
+        $("#id_mode").closest(".form-group").hide();
+        showSSHOptions();
+    }
+    else if ($("#id_storage").val() == 'local') {
+        hideEverything();
+        showBackupOptions();
+        $("#id_mode").closest(".form-group").hide();
     }
     else  {
         hideEverything();

@@ -34,6 +34,10 @@ class ActionConfigurationAction(workflows.Action):
         widget=forms.HiddenInput(),
         required=False)
 
+    storage = forms.ChoiceField(
+        help_text=_("Set storage backend for a backup"),
+        required=True)
+
     backup_name = forms.CharField(
         label=_("Backup Name"),
         required=False)
@@ -56,7 +60,9 @@ class ActionConfigurationAction(workflows.Action):
         required=False)
 
     container = forms.CharField(
-        label=_("Swift Container Name"),
+        label=_("Container Name or Path"),
+        help_text=_("Swift container for swift backend or "
+                    "path for ssh or local backend"),
         required=False)
 
     restore_abs_path = forms.CharField(
@@ -128,6 +134,21 @@ class ActionConfigurationAction(workflows.Action):
                     "'T' is between date and time "),
         required=False)
 
+    ssh_key = forms.CharField(
+        label=_("SSH Private Key"),
+        help_text=_("Path for ssh private key"),
+        required=False)
+
+    ssh_username = forms.CharField(
+        label=_("SSH Username"),
+        help_text=_("Path for ssh private key"),
+        required=False)
+
+    ssh_host = forms.CharField(
+        label=_("SSH Host"),
+        help_text=_("IP address or dns name of host to connect through ssh"),
+        required=False)
+
     def clean(self):
         cleaned_data = super(ActionConfigurationAction, self).clean()
 
@@ -179,6 +200,13 @@ class ActionConfigurationAction(workflows.Action):
             ('backup', _("Backup")),
             ('restore', _("Restore")),
             ('admin', _("Admin")),
+        ]
+
+    def populate_storage_choices(self, request, context):
+        return [
+            ('swift', _("Swift")),
+            ('local', _("Local Path")),
+            ('ssh', _("SSH")),
         ]
 
     def __init__(self, request, context, *args, **kwargs):
