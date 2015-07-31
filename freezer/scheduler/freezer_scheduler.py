@@ -184,12 +184,11 @@ def main():
         print "No action"
         sys.exit(1)
 
-    os_options = arguments.OpenstackOptions(args, os.environ)
-    if args.debug:
-        print os_options
-
     apiclient = None
     if args.no_api is False:
+        os_options = arguments.OpenstackOptions(args, os.environ)
+        if args.debug:
+            print os_options
         apiclient = client.Client(username=os_options.username,
                                   password=os_options.password,
                                   tenant_name=os_options.tenant_name,
@@ -198,14 +197,14 @@ def main():
         if args.client_id:
             apiclient.client_id = args.client_id
 
-    create_dir(args.jobs_dir, do_log=False)
-
     if args.action in doers:
         try:
             return doers[args.action](apiclient, args)
         except Exception as e:
             print ('ERROR {0}'.format(e))
             return 1
+
+    create_dir(args.jobs_dir, do_log=False)
 
     freezer_scheduler = FreezerScheduler(apiclient=apiclient,
                                          interval=int(args.interval),

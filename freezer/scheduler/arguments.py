@@ -152,7 +152,7 @@ def get_args(choices):
         help='Filter only active jobs/session',
         dest='active_only', default=False)
     arg_parser.add_argument(
-        '-d', '--dir', action='store',
+        '-f', '--conf', action='store',
         help=('Used to store/retrieve files on local storage, including '
               'those exchanged with the api service. '
               'Default value is {0}'.format(SCHEDULER_CONF_D)),
