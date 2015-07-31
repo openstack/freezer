@@ -19,11 +19,12 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-import logging
-import subprocess
-import tempfile
 import datetime
 import json
+import logging
+import os
+import subprocess
+import tempfile
 import time
 
 from ConfigParser import ConfigParser
@@ -286,11 +287,12 @@ class Job(object):
             with tempfile.NamedTemporaryFile() as config_file:
                 self.save_action_to_file(freezer_action, config_file)
 
-                freezer_command = 'python {0} --metadata-out - --config {1}'.\
+                freezer_command = '{0} --metadata-out - --config {1}'.\
                     format(self.executable, config_file.name)
                 self.process = subprocess.Popen(freezer_command.split(),
                                                 stdout=subprocess.PIPE,
-                                                stderr=subprocess.PIPE)
+                                                stderr=subprocess.PIPE,
+                                                env=os.environ.copy())
                 output, error = self.process.communicate()
 
             if error:
