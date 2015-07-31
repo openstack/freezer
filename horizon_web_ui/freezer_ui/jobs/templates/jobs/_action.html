@@ -1,6 +1,15 @@
 {% load i18n horizon humanize %}
 
 {% block help_message %}
+
+<h4>{% blocktrans %}Action{% endblocktrans %}</h4>
+
+<p>{% blocktrans %}Specify the details for this action.{% endblocktrans %}</p>
+
+<p>{% blocktrans %}An action is the simplest execution within a job, it could be a backup or a restore
+    and it contains rules that the action must follow (max retries, interval between intervals, etc)
+    .{% endblocktrans %}</p>
+
 {% endblock %}
 
 <script type='text/javascript' src='{{ STATIC_URL }}freezer/js/freezer.actions.action.js'></script>

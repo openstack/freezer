@@ -154,7 +154,7 @@ class JobsTable(tables.DataTable):
                              verbose_name=_("Job Name"))
 
     result = tables.Column("result",
-                           verbose_name=_("Last Result"))
+                           verbose_name=_("Job Result"))
 
     def get_object_id(self, backup_config):
         return backup_config.id
@@ -225,7 +225,7 @@ class ObjectFilterAction(tables.FilterAction):
 
 class ActionsTable(tables.DataTable):
     action_name = tables.Column('action',
-                                verbose_name=_("Action"))
+                                verbose_name=_("Action Type"))
 
     backup_name = tables.Column('backup_name',
                                 verbose_name=_("Action Name"))
