@@ -1203,3 +1203,19 @@ class FakeSys:
     # @staticmethod
     def fake_sys_exit(self, status_code):
         raise SystemExit(status_code)
+
+
+class ReturnBool:
+
+    @staticmethod
+    def return_true():
+        return True
+
+    @staticmethod
+    def return_false():
+        return False
+
+    @staticmethod
+    def return_none():
+        return None
+

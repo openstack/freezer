@@ -21,8 +21,8 @@ Hudson (tjh@cryptsoft.com).
 Freezer Tar related functions
 """
 
-from freezer.utils import validate_all_args
-from freezer.winutils import is_windows
+from freezer import utils
+from freezer import winutils
 
 import os
 import logging
@@ -35,12 +35,22 @@ class SshCommandBuilder(object):
     @staticmethod
     def ssh_command(ssh_key, ssh_user, ssh_ip, command):
         """
+        Use no compression because the data is already compressed.
+        To prevent asking to add a key, two more options are provided:
+        UserKnownHostsFile and StrictHostKeyChecking
+
         returns something like
-        ssh -o Compression=no -i mytestpair.pem ubuntu@15.126.199.52
+        ssh -o Compression=no -o StrictHostKeyChecking=no -o
+        UserKnownHostsFile=/dev/null -i mytestpair.pem ubuntu@15.126.199.52
             "cat > file.tar.gz"
         """
-        return 'ssh -o Compression=no -i {0} {1}@{2} "{3}"'.format(
-            ssh_key, ssh_user, ssh_ip, command)
+        devnull = "/dev/null"
+        if winutils.is_windows():
+            devnull = "NUL"
+
+        return ('ssh -o Compression=no -o StrictHostKeyChecking=no -o '
+                'UserKnownHostsFile={0} -i {1} {2}@{3} "{4}"'.format(
+                    devnull, ssh_key, ssh_user, ssh_ip, command))
 
 
 class TarCommandBuilder:
@@ -48,9 +58,10 @@ class TarCommandBuilder:
     Building a tar cmd command. To build command invoke method build.
     """
 
-    COMMAND_TEMPLATE = "{gnutar_path} --create -z --warning=none " \
-        "--no-check-device --one-file-system --preserve-permissions " \
-        "--same-owner --seek --ignore-failed-read"
+    COMMAND_TEMPLATE = (
+        "{gnutar_path} --create -z --warning=none --no-check-device "
+        "--one-file-system --preserve-permissions --same-owner "
+        "--seek --ignore-failed-read")
 
     LISTED_TEMPLATE = "{tar_command} --listed-incremental={listed_incremental}"
 
@@ -217,7 +228,7 @@ def tar_restore_args_valid(backup_opt_dict):
     required_list = [
         os.path.exists(backup_opt_dict.restore_abs_path)]
     try:
-        valid_args = validate_all_args(required_list)   # might raise
+        valid_args = utils.validate_all_args(required_list)   # might raise
         if not valid_args:
             raise Exception(('please provide ALL of the following '
                              'argument: --restore-abs-path'))
@@ -233,7 +244,7 @@ def tar_restore(restore_abs_path, tar_command, read_pipe):
     Decrypt the file if backup_opt_dict.encrypt_pass_file key is provided
     """
 
-    if is_windows():
+    if winutils.is_windows():
         # on windows, chdir to restore path.
         os.chdir(restore_abs_path)
 

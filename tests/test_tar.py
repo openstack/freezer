@@ -64,13 +64,13 @@ class TestTar:
         assert tar_restore("", "", fakepipe) is None
 
         # expected_tar_cmd = 'gzip -dc | tar -xf - --unlink-first --ignore-zeros'
-        monkeypatch.setattr(winutils, 'is_windows', True)
+        monkeypatch.setattr(winutils, 'is_windows', ReturnBool.return_true)
         fake_os = Os()
         monkeypatch.setattr(os, 'chdir', fake_os.chdir)
         assert tar_restore("", "", fakepipe) is None
 
         monkeypatch.setattr(os, 'chdir', fake_os.chdir2)
-        pytest.raises(Exception, tar_restore(backup_opt, "", fakepipe))
+        pytest.raises(Exception, tar_restore, backup_opt, "", fakepipe)
 
     def test_tar_backup(self, monkeypatch):
 
