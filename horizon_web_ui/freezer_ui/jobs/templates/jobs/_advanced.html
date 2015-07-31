@@ -1,6 +1,11 @@
 {% load i18n horizon humanize %}
 
 {% block help_message %}
+
+<h4>{% blocktrans %}Advanced configuration{% endblocktrans %}</h4>
+
+<p>{% blocktrans %}Define extra information for the action to execute in the client.{% endblocktrans %}</p>
+
 {% endblock %}
 
 <script type='text/javascript' src='{{ STATIC_URL }}freezer/js/freezer.actions.advanced.js'></script>

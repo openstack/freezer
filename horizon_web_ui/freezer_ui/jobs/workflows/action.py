@@ -565,6 +565,8 @@ class RulesConfigurationAction(workflows.Action):
 
     class Meta(object):
         name = _("Rules")
+        help_text_template = "freezer_ui/jobs" \
+                             "/_rules.html"
 
 
 class RulesConfiguration(workflows.Step):

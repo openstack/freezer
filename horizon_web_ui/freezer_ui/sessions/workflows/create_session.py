@@ -34,6 +34,8 @@ class SessionConfigurationAction(workflows.Action):
     class Meta:
         name = _("Session Information")
         slug = "sessions"
+        help_text_template = "freezer_ui/sessions" \
+                             "/_info.html"
 
 
 class SessionConfiguration(workflows.Step):

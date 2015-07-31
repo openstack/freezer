@@ -166,6 +166,8 @@ class InfoConfigurationAction(workflows.Action):
     class Meta(object):
         name = _("Job Info")
         slug = "info"
+        help_text_template = "freezer_ui/jobs" \
+                             "/_info.html"
 
 
 class InfoConfiguration(workflows.Step):

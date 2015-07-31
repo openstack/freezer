@@ -1,6 +1,12 @@
 {% load i18n horizon humanize %}
 
 {% block help_message %}
+
+<h4>{% blocktrans %}Action{% endblocktrans %}</h4>
+
+<p>{% blocktrans %}Specify weather this action should execute a snapshot on the client file system.
+    In Linux and it's distros it will use LVM and in Windows it will use Volume Shadow Copy{% endblocktrans %}</p>
+
 {% endblock %}
 
 <script type='text/javascript' src='{{ STATIC_URL }}freezer/js/freezer.actions.snapshot.js'></script>
