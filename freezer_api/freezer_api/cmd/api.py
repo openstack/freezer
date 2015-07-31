@@ -19,6 +19,7 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
+import logging
 import os
 import sys
 
@@ -30,20 +31,12 @@ from wsgiref import simple_server
 from freezer_api.api.common import middleware
 from freezer_api.api import v1
 from freezer_api.api import versions
+
+from freezer_api.common._i18n import _, _LI, _LE, _LC, _LW
 from freezer_api.common import config
-from freezer_api.common import log
 from freezer_api.common import exceptions as freezer_api_exc
+from freezer_api.common import log
 from freezer_api.storage import driver
-
-from oslo_log import log as logging
-import olso_i18n
-_LI = oslo_i18n._LI
-_LW = oslo_i18n._LW
-
-possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
-                                   os.pardir, os.pardir, os.pardir))
-if os.path.exists(os.path.join(possible_topdir, 'freezer_api', '__init__.py')):
-    sys.path.insert(0, possible_topdir)
 
 
 def get_application(db):
@@ -91,8 +84,8 @@ def main():
         if ':' in ip:
             ip, port = ip.split(':')
     httpd = simple_server.make_server(ip, int(port), application)
-    message = _('Server listening on %(ip)s:%(port)s')
-                % {'ip':ip, 'port':port}
+    message = _('Server listening on %(ip)s:%(port)s'
+                % {'ip': ip, 'port': port})
     print message
     logging.info(message)
     try:

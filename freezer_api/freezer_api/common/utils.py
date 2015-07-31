@@ -23,7 +23,7 @@ import jsonschema
 import time
 import uuid
 
-import freezer_api.common.json_schemas
+from freezer_api.common import json_schemas
 from freezer_api.common import exceptions as freezer_api_exc
 
 

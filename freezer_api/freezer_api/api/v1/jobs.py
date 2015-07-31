@@ -20,7 +20,7 @@ Hudson (tjh@cryptsoft.com).
 """
 
 import falcon
-
+from freezer_api.common import exceptions as freezer_api_exc
 
 class JobsCollectionResource(object):
     """

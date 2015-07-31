@@ -21,8 +21,9 @@ Hudson (tjh@cryptsoft.com).
 """
 
 import falcon
-from oslo_log import log as logging
-import oslo_i18n
+import logging
+
+from freezer_api.common._i18n import _, _LI, _LE, _LC, _LW
 
 
 class FreezerAPIException(falcon.HTTPError):

@@ -19,11 +19,11 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-from oslo_config import cfg
-from oslo_log import log as logging
-import olso_i18n
-_LI = olso_i18n._LI
+import logging
 
+from oslo_config import cfg
+
+from freezer_api.common._i18n import _, _LI, _LE, _LC, _LW
 from freezer_api.storage import elastic
 
 

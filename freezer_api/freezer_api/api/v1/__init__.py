@@ -25,7 +25,6 @@ from freezer_api.api.v1 import clients
 from freezer_api.api.v1 import homedoc
 from freezer_api.api.v1 import jobs
 from freezer_api.api.v1 import sessions
-from freezer_api.common import exceptions as freezer_api_exc
 
 
 VERSION = {
