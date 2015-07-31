@@ -13,4 +13,3 @@ ADD_INSTALLED_APPS = [
     'horizon_web_ui.freezer_ui',
 ]
 
-ADD_JS_FILES = ['freezer/js/freezer.js']
