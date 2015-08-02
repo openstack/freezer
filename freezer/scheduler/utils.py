@@ -23,6 +23,7 @@ import json
 import os
 import socket
 import freezer.apiclient.exceptions
+import uuid
 
 CONFIG_FILE_EXT = '.conf'
 
@@ -77,6 +78,9 @@ def save_doc_to_json_file(doc, fname, debug=False):
 def get_jobs_from_disk(path):
     job_doc_list = [
         load_doc_from_json_file(f) for f in find_config_files(path)]
+    for job_doc in job_doc_list:
+        if job_doc:
+            job_doc['job_id'] = job_doc.get('job_id', uuid.uuid4().hex)
     return [x for x in job_doc_list if x]
 
 

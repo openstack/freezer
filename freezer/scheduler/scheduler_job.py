@@ -415,6 +415,8 @@ class Job(object):
             logging.error("[*] Unable to schedule job {0}: {1}".
                           format(self.id, e))
 
+        logging.info('scheduler job with parameters {0}'.format(kwargs))
+
         if self.scheduled:
             self.job_doc_status = Job.SCHEDULED_STATUS
             self.state = ScheduledState
