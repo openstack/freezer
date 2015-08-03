@@ -4,14 +4,17 @@ FAQ
 
 1)  **What is freezer**?
     Is a tool to automate data backup and restore
-    process using OpenStack Swift and/or other media storage
+    procedure, it uses OpenStack Swift as the default sorage but local mounted nfs filesystems and ssh upload are also supported
 
 2)  **Does freezer support incremental backup?**
-    Yes. Incremental backup are done using GNU tar incremental features
+    Two incremental approach has choosen:
+    1) Using GNU tar incremental features
+    2) An rsync like pure python implementation
 
 3)  **Does freezer check the file contents to establish if a file was modified?**
-    Freezer check for changes at mtime and ctime in
-    every file inode to evaluate if a file changed or not.
+    Using the tar approach, Freezer check for changes at mtime and ctime in
+    every file inode to evaluate if a file has changed or not.
+    Using the rsync approach the content of the files are checked
 
 4)  **Why GNU tar rather then rsync?**
     Both approaches are good. Rsync check
@@ -31,10 +34,10 @@ FAQ
     by default?**
     Yes. For OSX and \*BSD, just install gtar and freezer
     automatically will use gtar to execute backup. OS other then Linux,
-    OSX and \*BSD are currently not supported.
+    OSX, \*BSD and Windows are currently not supported.
 
 8)  **What Application backup does freezer support currently?**
-    MongoDB, MySQL to have a higher level of data consistency, while
+    MongoDB, MySQL, MS-SQL to have a higher level of data consistency, while
     any appplication is supported for crash consistent data integrity.
 
 9)  **How does the MongoDB backup happens?**
