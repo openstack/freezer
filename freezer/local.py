@@ -113,8 +113,12 @@ class LocalStorage(storage.Storage):
     def is_ready(self):
         return os.path.isdir(self.storage_directory)
 
-    def remove_older_than(self, remove_older_timestamp, hostname_backup_name):
-        pass
+    def remove_backup(self, backup):
+        """
+        :type backup: freezer.storage.Backup
+        :return:
+        """
+        shutil.rmtree(self._zero_backup_dir(backup))
 
     def restore(self, backup, path, tar_builder, level):
         """

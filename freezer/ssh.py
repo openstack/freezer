@@ -130,6 +130,16 @@ class SshStorage(storage.Storage):
     def _is_dir(self, check_dir):
         return stat.S_IFMT(self.ftp.stat(check_dir).st_mode) == stat.S_IFDIR
 
+    def rm(self, path):
+        files = self.ftp.listdir(path=path)
+        for f in files:
+            filepath = os.path.join(path, f)
+            if self._is_dir(filepath):
+                self.rm(filepath)
+            else:
+                self.ftp.remove(filepath)
+        self.ftp.rmdir(path)
+
     def is_ready(self):
         try:
             return self._is_dir(self.storage_directory)
@@ -155,8 +165,12 @@ class SshStorage(storage.Storage):
             self.ftp.chdir(basename)
             return True
 
-    def remove_older_than(self, remove_older_timestamp, hostname_backup_name):
-        pass
+    def remove_backup(self, backup):
+        """
+        :type backup: freezer.storage.Backup
+        :return:
+        """
+        self.rm(self._zero_backup_dir(backup))
 
     def restore(self, backup, path, tar_builder, level):
         """

@@ -20,6 +20,8 @@ Hudson (tjh@cryptsoft.com).
 """
 
 import sys
+import datetime
+import time
 
 from freezer import utils
 from freezer import backup
@@ -154,7 +156,13 @@ class RestoreJob(Job):
 class AdminJob(Job):
     @Job.executemethod
     def execute(self):
-        timestamp = utils.date_to_timestamp(self.conf.remove_from_date)
+        if self.conf.remove_from_date:
+            timestamp = utils.date_to_timestamp(self.conf.remove_from_date)
+        else:
+            timestamp = datetime.datetime.now() - \
+                datetime.timedelta(days=self.conf.remove_older_than)
+            timestamp = int(time.mktime(timestamp.timetuple()))
+
         self.storage.remove_older_than(timestamp,
                                        self.conf.hostname_backup_name)
 

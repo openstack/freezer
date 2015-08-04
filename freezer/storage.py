@@ -102,7 +102,8 @@ class Storage(object):
         level = 0
         if restore_timestamp:
             backups = [b for b in backups
-                       if b.timestamp <= restore_timestamp and b.tar_meta]
+                       if b.latest_update.timestamp <= restore_timestamp
+                       and b.tar_meta]
             backup = min(backups, key=lambda b: b.timestamp)
             if not backup:
                 raise ValueError('No matching backup name {0} found'
@@ -124,8 +125,25 @@ class Storage(object):
 
         self.restore(backup, path, tar_builder, level)
 
-    def remove_older_than(self, remove_older_timestamp, hostname_backup_name):
+    def remove_backup(self, backup):
+        """
+        :type backup: freezer.storage.Backup
+        :param backup:
+        :return:
+        """
         raise NotImplementedError("Should have implemented this")
+
+    def remove_older_than(self, remove_older_timestamp, hostname_backup_name):
+        """
+        Remove object in remote swift server which are
+        older than the specified days or timestamp
+        """
+
+        backups = self.find(hostname_backup_name)
+        backups = [b for b in backups
+                   if b.latest_update.timestamp < remove_older_timestamp]
+        for b in backups:
+            self.remove_backup(b)
 
     def info(self):
         raise NotImplementedError("Should have implemented this")
@@ -316,8 +334,7 @@ class Backup:
     @staticmethod
     def parse(value):
         """
-
-        :param value:
+        :param value: String representation of backup
         :type value: str
         :return:
         """

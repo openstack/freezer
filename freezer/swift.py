@@ -214,17 +214,6 @@ class SwiftStorage(storage.Storage):
                 ordered_container, indent=4,
                 separators=(',', ': '), sort_keys=True)
 
-    def remove_older_than(self, remove_older_timestamp, hostname_backup_name):
-        """
-        Remove object in remote swift server which are
-        older than the specified days or timestamp
-        """
-
-        backups = self.find(hostname_backup_name)
-        backups = [b for b in backups if b.timestamp < remove_older_timestamp]
-        for b in backups:
-            self.remove_backup(b)
-
     def remove_backup(self, backup):
         """
             Removes backup, all increments, tar_meta and segments
