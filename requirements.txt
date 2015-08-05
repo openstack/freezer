@@ -1,13 +1,13 @@
 python-swiftclient>=2.2.0,<2.5.0
-python-swiftclient>=2.2.0
 python-keystoneclient>=1.2.0,<1.4.0
 python-cinderclient>=1.1.0,<1.2.0
 python-glanceclient>=0.15.0,<0.18.0
-python-novaclient>=2.22.0,<2.24.0python-openstackclient>=1.0.3,<1.1.0
+python-novaclient>=2.22.0,<2.24.0
+python-openstackclient>=1.0.3,<1.1.0
 paramiko>=1.13.0
 
 PyMySQL>=0.6.2  # MIT License
-pymongo>=3.0.2
+pymongo>=2.6.3,<3.0
 # Not in global-requirements
 apscheduler
 # Not in global-requirements

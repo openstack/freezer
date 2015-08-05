@@ -87,7 +87,7 @@ setup(
         'python-novaclient>=2.22.0,<2.24.0',
         'python-openstackclient>=1.0.3,<1.1.0',
         'PyMySQL>=0.6.2',
-        'pymongo>=3.0.2',
+        'pymongo>=2.6.3,<3.0',
         'apscheduler',
         'pep3143daemon',
         'paramiko>=1.13.0'],
