@@ -2,6 +2,15 @@
 Test Scenario
 =============
 
+Summary
+=======
+
+    * Intro
+    * 1. Setup Devstack machine with swift and elasticsearch
+    * 2. Setup the client machine
+    * 3. Freezer test scenarios
+    * 4. Automated Integration Tests
+
 Intro
 =====
 
@@ -573,3 +582,73 @@ The restore job is the same as in 3.4.3
 
     freezer-scheduler job-create -c client_node_1 --file job-restore.conf
 
+
+4. Automated Integration Tests
+==============================
+
+Automated integration tests are being provided in the directory
+
+freezer/tests/integration directory
+
+Since they require external resources - such as swift or ssh storage -
+they are executed only when some environment variables are defined.
+
+4.1 local storage tests
+-----------------------
+always executed automatically, using temporary local directories under /tmp
+(or whatever temporary path is available)
+
+4.2 ssh storage
+---------------
+SSH storage need the following environment variables to be defined:
+::
+
+     * FREEZER_TEST_SSH_KEY
+     * FREEZER_TEST_SSH_USERNAME
+     * FREEZER_TEST_SSH_HOST
+     * FREEZER_TEST_CONTAINER
+
+For example:
+::
+
+  export FREEZER_TEST_SSH_KEY=/home/myuser/.ssh/id_rsa
+  export FREEZER_TEST_SSH_USERNAME=myuser
+  export FREEZER_TEST_SSH_HOST=127.0.0.1
+  export FREEZER_TEST_CONTAINER=/home/myuser/freezer_test_backup_storage_ssh
+
+4.3 swift storage
+-----------------
+To enable the swift integration tests - besides having a working swift node -
+the following variables need to be defined accordingly:
+::
+
+     * FREEZER_TEST_OS_TENANT_NAME
+     * FREEZER_TEST_OS_USERNAME
+     * FREEZER_TEST_OS_REGION_NAME
+     * FREEZER_TEST_OS_PASSWORD
+     * FREEZER_TEST_OS_AUTH_URL
+
+For example:
+::
+
+  export FREEZER_TEST_OS_TENANT_NAME=fproject
+  export FREEZER_TEST_OS_USERNAME=fuser
+  export FREEZER_TEST_OS_REGION_NAME=RegionOne
+  export FREEZER_TEST_OS_PASSWORD=freezer
+  export FREEZER_TEST_OS_AUTH_URL=http://192.168.56.223:5000/v2.0
+
+The cloud user/tenant has to be already been created
+
+4.4 LVM and MySQL
+-----------------
+Some tests, like LVM snapshots and access to privileged files, need
+the tests to be executed with superuser privileges.
+Tests involving such requirements are not executed when run
+with normal-user privileges.
+In cases where LVM snapshot capability is not available (for example
+the filesystem does not make use of LV or there are not enough space
+available) the LVM tests can be skipped by defining the following
+env variable:
+::
+
+  * FREEZER_TEST_NO_LVM
