@@ -121,10 +121,12 @@ class RestoreJob(Job):
         conf = self.conf
         logging.info('[*] Executing FS restore...')
         restore_timestamp = None
+
+        restore_abs_path = conf.restore_abs_path
         if conf.restore_from_date:
             restore_timestamp = utils.date_to_timestamp(conf.restore_from_date)
-        restore_abs_path = conf.restore_abs_path
         if conf.backup_media == 'fs':
+            storage = conf.storage
             builder = tar.TarCommandRestoreBuilder(conf.tar_path,
                                                    restore_abs_path)
             if conf.dry_run:
@@ -136,10 +138,16 @@ class RestoreJob(Job):
                 builder.set_encryption(conf.openssl_path,
                                        conf.encrypt_pass_file)
 
-            conf.storage.restore_from_date(conf.hostname_backup_name,
-                                           restore_abs_path,
-                                           builder,
-                                           restore_timestamp)
+            if restore_timestamp:
+                storage.restore_from_date(conf.hostname_backup_name,
+                                          restore_abs_path,
+                                          builder,
+                                          restore_timestamp)
+            else:
+                storage.restore_latest(conf.hostname_backup_name,
+                                       restore_abs_path,
+                                       builder)
+
             return
 
         res = restore.RestoreOs(conf.client_manager, conf.container)

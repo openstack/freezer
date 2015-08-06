@@ -22,7 +22,7 @@ Hudson (tjh@cryptsoft.com).
 """
 
 from commons import *
-from freezer.tar import (tar_restore, tar_backup, tar_restore_args_valid)
+from freezer.tar import (tar_restore, tar_backup)
 from freezer import winutils
 
 import os
@@ -74,7 +74,6 @@ class TestTar:
 
     def test_tar_backup(self, monkeypatch):
 
-        backup_opt = BackupOpt1()
         fakelogging = FakeLogging()
         fakesubprocess = FakeSubProcess()
         fakesubprocesspopen = fakesubprocess.Popen()
@@ -90,8 +89,7 @@ class TestTar:
         monkeypatch.setattr(logging, 'exception', fakelogging.exception)
         monkeypatch.setattr(logging, 'error', fakelogging.error)
 
-        backup_opt.__dict__['max_segment_size'] = 1
-        assert tar_backup(backup_opt, 100, 'tar_command', fakebackup_queue) is not False
+        assert tar_backup(".", 100, 'tar_command', fakebackup_queue) is not False
 
     def test_tar_restore_args_valid(self, monkeypatch):
 
@@ -104,12 +102,9 @@ class TestTar:
 
         fakeos = Os()
         monkeypatch.setattr(os.path, 'exists', fakeos.exists)
-        assert tar_restore_args_valid(backup_opt) is True
 
         backup_opt.dry_run = True
-        assert tar_restore_args_valid(backup_opt) is True
 
         fakeos1 = Os1()
         monkeypatch.setattr(os.path, 'exists', fakeos1.exists)
         backup_opt.dry_run = False
-        assert tar_restore_args_valid(backup_opt) is False

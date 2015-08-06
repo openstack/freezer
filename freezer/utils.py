@@ -80,23 +80,6 @@ class OpenstackOptions:
                             .format(e))
 
 
-def validate_all_args(required_list):
-    '''
-    Ensure ALL the elements of required_list are True. raise ValueError
-    Exception otherwise
-    '''
-
-    try:
-        for element in required_list:
-            if not element:
-                return False
-    except Exception as error:
-        raise Exception('validate_all_args: {0} {1}'
-                        .format(required_list, error))
-
-    return True
-
-
 def create_dir(directory, do_log=True):
     '''
     Creates a directory if it doesn't exists and write the execution
@@ -262,14 +245,6 @@ def date_to_timestamp(date):
     fmt = '%Y-%m-%dT%H:%M:%S'
     opt_backup_date = datetime.datetime.strptime(date, fmt)
     return int(time.mktime(opt_backup_date.timetuple()))
-
-
-def segments_name(container):
-    """
-    Create a new namespace attribute for container_segments
-    :param container: name of swift container
-    """
-    return u'{0}_segments'.format(container)
 
 
 class Bunch:

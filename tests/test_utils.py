@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from freezer.utils import (
-    validate_all_args,
     create_dir, get_vol_fs_type,
     get_mount_from_path, human2bytes, DateTime, date_to_timestamp)
 
@@ -11,16 +10,6 @@ from commons import *
 
 
 class TestUtils:
-
-    def test_validate_all_args(self):
-
-        elements1 = ['test1', 'test2', 'test3']
-        elements2 = ['test1', '', False, None]
-        elements3 = None
-
-        assert validate_all_args(elements1) is True
-        assert validate_all_args(elements2) is False
-        pytest.raises(Exception, validate_all_args, elements3)
 
     def test_create_dir(self, monkeypatch):
 
