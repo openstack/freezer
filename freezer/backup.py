@@ -48,7 +48,7 @@ def backup_mode_sql_server(backup_opt_dict):
     """
     with open(backup_opt_dict.sql_server_conf, 'r') as sql_conf_file_fd:
         for line in sql_conf_file_fd:
-            if 'instance' in line:
+            if 'instance' in line and not line.strip().startswith("#"):
                 db_instance = line.split('=')[1].strip()
                 backup_opt_dict.sql_server_instance = db_instance
                 continue
@@ -90,17 +90,20 @@ def backup_mode_mysql(backup_opt_dict):
     db_port = 3306
     with open(backup_opt_dict.mysql_conf, 'r') as mysql_file_fd:
         for line in mysql_file_fd:
-            if 'host' in line:
+            if 'host' in line and not line.strip().startswith("#"):
                 db_host = line.split('=')[1].strip()
                 continue
-            elif 'user' in line:
+            elif 'user' in line and not line.strip().startswith("#"):
                 db_user = line.split('=')[1].strip()
                 continue
-            elif 'password' in line:
+            elif 'password' in line and not line.strip().startswith("#"):
                 db_pass = line.split('=')[1].strip()
                 continue
-            elif 'port' in line:
-                db_port = line.split('=')[1].strip()
+            elif 'port' in line and not line.strip().startswith("#"):
+                try:
+                    db_port = int(db_port)
+                except ValueError:
+                    raise ValueError('[*] MySQL port should be integer')
                 continue
 
     # Initialize the DB object and connect to the db according to

@@ -262,7 +262,7 @@ def backup_arguments(args_dict={}):
         help='''Set the MySQL configuration file where freezer retrieve
         important information as db_name, user, password, host, port.
         Following is an example of config file:
-        # cat ~/.freezer/backup_mysql_conf
+        # backup_mysql_conf
         host     = <db-host>
         user     = <mysqluser>
         password = <mysqlpass>
