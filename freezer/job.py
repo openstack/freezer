@@ -128,7 +128,8 @@ class RestoreJob(Job):
         if conf.backup_media == 'fs':
             storage = conf.storage
             builder = tar.TarCommandRestoreBuilder(conf.tar_path,
-                                                   restore_abs_path)
+                                                   restore_abs_path,
+                                                   conf.compression)
             if conf.dry_run:
                 builder.set_dry_run()
             if winutils.is_windows():

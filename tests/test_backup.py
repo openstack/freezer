@@ -104,7 +104,7 @@ class TestBackUP:
 
         assert storage.backup(
             "/tmp/", "hostname_backup_name",
-            tar.TarCommandBuilder(tar_path(), ".")) is None
+            tar.TarCommandBuilder(tar_path(), ".", "gzip")) is None
 
         backup_opt.__dict__['no_incremental'] = False
         with open(
@@ -112,7 +112,7 @@ class TestBackUP:
             fd.write('testcontent\n')
         assert storage.backup(
             "/tmp/", "hostname_backup_name",
-            tar.TarCommandBuilder(tar_path(), ".")) is None
+            tar.TarCommandBuilder(tar_path(), ".", "gzip")) is None
 
     def test_backup_mode_mongo(self, monkeypatch, tmpdir):
 

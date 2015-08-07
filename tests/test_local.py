@@ -47,7 +47,7 @@ class TestLocalStorage(object):
     def test(self, tmpdir):
         backup_dir, files_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir)
-        builder = tar.TarCommandBuilder(commons.tar_path(), ".")
+        builder = tar.TarCommandBuilder(commons.tar_path(), ".", "gzip")
         storage.backup(files_dir, "file_backup", builder)
         storage.get_backups()
 
@@ -68,7 +68,7 @@ class TestLocalStorage(object):
     def test_get_backups(self, tmpdir):
         backup_dir, files_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir)
-        builder = tar.TarCommandBuilder(commons.tar_path(), ".")
+        builder = tar.TarCommandBuilder(commons.tar_path(), ".", "gzip")
         os.chdir(files_dir)
         storage.backup(files_dir, "file_backup", builder)
         backups = storage.get_backups()
@@ -77,7 +77,7 @@ class TestLocalStorage(object):
     def test_incremental_backup(self, tmpdir):
         backup_dir, files_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir)
-        builder = tar.TarCommandBuilder(commons.tar_path(), ".")
+        builder = tar.TarCommandBuilder(commons.tar_path(), ".", "gzip")
         os.chdir(files_dir)
         storage.backup(files_dir, "file_backup", builder)
         backups = storage.get_backups()
@@ -89,7 +89,7 @@ class TestLocalStorage(object):
     def test_incremental_restore(self, tmpdir):
         backup_dir, files_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir)
-        builder = tar.TarCommandBuilder(commons.tar_path(), ".")
+        builder = tar.TarCommandBuilder(commons.tar_path(), ".", "gzip")
         os.chdir(files_dir)
         storage.backup(files_dir, "file_backup", builder)
         backups = storage.get_backups()
@@ -102,7 +102,8 @@ class TestLocalStorage(object):
         assert not os.listdir(files_dir)
         utils.create_dir(files_dir)
         backup = storage.get_backups()[0]
-        builder = tar.TarCommandRestoreBuilder(commons.tar_path(), files_dir)
+        builder = tar.TarCommandRestoreBuilder(commons.tar_path(), files_dir,
+                                               "gzip")
         storage.restore(backup.latest_update, files_dir, builder)
         files = os.listdir(files_dir)
         assert len(files) == 2
@@ -114,7 +115,7 @@ class TestLocalStorage(object):
     def test_backup_file(self, tmpdir):
         backup_dir, files_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir)
-        builder = tar.TarCommandBuilder(commons.tar_path(), "file_1")
+        builder = tar.TarCommandBuilder(commons.tar_path(), "file_1", "gzip")
         os.chdir(files_dir)
         storage.backup(files_dir + "/file_1", "file_backup", builder)
         for path in os.listdir(files_dir):
@@ -122,7 +123,8 @@ class TestLocalStorage(object):
         assert not os.listdir(files_dir)
         utils.create_dir(files_dir)
         backup = storage.get_backups()[0]
-        builder = tar.TarCommandRestoreBuilder(commons.tar_path(), files_dir)
+        builder = tar.TarCommandRestoreBuilder(commons.tar_path(), files_dir,
+                                               "gzip")
         storage.restore(backup, files_dir, builder)
         files = os.listdir(files_dir)
         assert len(files) == 1
@@ -130,7 +132,7 @@ class TestLocalStorage(object):
     def test_remove_backup(self, tmpdir):
         backup_dir, files_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir)
-        builder = tar.TarCommandBuilder(commons.tar_path(), ".")
+        builder = tar.TarCommandBuilder(commons.tar_path(), ".", "gzip")
         os.chdir(files_dir)
         storage.backup(files_dir, "file_backup", builder)
         backups = storage.get_backups()

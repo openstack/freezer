@@ -64,7 +64,9 @@ DEFAULT_PARAMS = {
     'upload': True, 'mode': 'fs', 'action': 'backup',
     'vssadmin': True, 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
-    'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': ''}
+    'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
+    'compression': 'gzip'
+}
 
 
 def alter_proxy(args_dict):
@@ -408,6 +410,11 @@ def backup_arguments(args_dict={}):
         '--command', action='store',
         help='Command executed by exec action',
         dest='command', default=None)
+    arg_parser.add_argument(
+        '--compression', action='store',
+        choices=['gzip', 'bzip2', 'xz'],
+        help='compression algorithm to use. gzip is default algorithm',
+        dest='compression', default='gzip')
 
     arg_parser.add_argument(
         '--storage', action='store',
