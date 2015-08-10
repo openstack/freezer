@@ -67,12 +67,7 @@ class FreezerScheduler(object):
 
     def get_jobs(self):
         if self.client:
-            job_doc_list = []
-            try:
-                job_doc_list = utils.get_active_jobs_from_api(self.client)
-            except Exception as e:
-                logging.error('Unable to get jobs from freezer api service. '
-                              '{0}'.format(e))
+            job_doc_list = utils.get_active_jobs_from_api(self.client)
             try:
                 utils.save_jobs_to_disk(job_doc_list, self.job_path)
             except Exception as e:
@@ -130,11 +125,11 @@ class FreezerScheduler(object):
         return job
 
     def poll(self):
-        work_job_doc_list = []
         try:
             work_job_doc_list = self.get_jobs()
         except Exception as e:
             logging.error("[*] Unable to get jobs: {0}".format(e))
+            return
 
         work_job_id_list = []
 
