@@ -69,6 +69,7 @@ class TestLocalStorage(object):
         backup_dir, files_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir)
         builder = tar.TarCommandBuilder(commons.tar_path(), ".")
+        os.chdir(files_dir)
         storage.backup(files_dir, "file_backup", builder)
         backups = storage.get_backups()
         assert len(backups) == 1
@@ -77,6 +78,7 @@ class TestLocalStorage(object):
         backup_dir, files_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir)
         builder = tar.TarCommandBuilder(commons.tar_path(), ".")
+        os.chdir(files_dir)
         storage.backup(files_dir, "file_backup", builder)
         backups = storage.get_backups()
         assert len(backups) == 1
@@ -129,6 +131,7 @@ class TestLocalStorage(object):
         backup_dir, files_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir)
         builder = tar.TarCommandBuilder(commons.tar_path(), ".")
+        os.chdir(files_dir)
         storage.backup(files_dir, "file_backup", builder)
         backups = storage.get_backups()
         assert len(backups) == 1
