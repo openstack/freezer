@@ -44,6 +44,10 @@ class FreezerScheduler(object):
         # config_manager
         self.client = apiclient
         self.freezerc_executable = spawn.find_executable('freezerc')
+        if self.freezerc_executable is None:
+            # Needed in the case of a non-activated virtualenv
+            self.freezerc_executable = spawn.find_executable(
+                'freezerc', path=':'.join(sys.path))
         self.job_path = job_path
         self._client = None
         self.lock = threading.Lock()
