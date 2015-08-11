@@ -42,7 +42,7 @@ class SwiftStorage(storage.Storage):
         """
         self.client_manager = client_manager
         self.container = container
-        self.segments = utils.segments_name(container)
+        self.segments = u'{0}_segments'.format(container)
         self.work_dir = work_dir
         self.max_segment_size = max_segment_size
 
@@ -105,7 +105,7 @@ class SwiftStorage(storage.Storage):
     def is_ready(self):
         return self.check_container_existence()[0]
 
-    def restore(self, backup, path, tar_builder, level):
+    def restore(self, backup, path, tar_builder):
         """
         Restore data from swift server to your local node. Data will be
         restored in the directory specified in
@@ -130,8 +130,8 @@ class SwiftStorage(storage.Storage):
         :type tar_builder: freezer.tar.TarCommandRestoreBuilder
         """
 
-        for level in range(0, level + 1):
-            self._restore(backup.increments[level], path, tar_builder)
+        for level in range(0, backup.level + 1):
+            self._restore(backup.parent.increments[level], path, tar_builder)
 
     def _restore(self, backup, path, tar_builder):
         """

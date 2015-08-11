@@ -32,7 +32,6 @@ import hashlib
 import string
 import time
 from copy import copy
-from freezer.utils import segments_name
 
 lib_path = os.path.abspath(os.path.join('..', '..'))
 sys.path.append(lib_path)
@@ -197,7 +196,7 @@ class BackupScenarioFS(unittest.TestCase):
             name_list = [item['name'] for item in ns_backup_args.containers_list]
             retry += 1
         self.assertTrue(ns_backup_args.container in name_list)
-        self.assertTrue(segments_name(ns_backup_args.container) in name_list)
+        # self.assertTrue(segments_name(ns_backup_args.container) in name_list)
         fdict_before = self.snap_tmp_tree_sha1(self.tmp_files)
         self.damage_tmp_tree(self.tmp_files)
         # Restore
@@ -257,7 +256,7 @@ class BackupScenarioFS(unittest.TestCase):
             name_list = [item['name'] for item in ns_backup_args.containers_list]
             retry += 1
         self.assertTrue(ns_backup_args.container in name_list)
-        self.assertTrue(segments_name(ns_backup_args.container) in name_list)
+        # self.assertTrue(segments_name(ns_backup_args.container) in name_list)
         # Create a file => SAH1 hash dictionary that will recored file
         # hashes before any files being modified or deleted
         fdict_before = self.snap_tmp_tree_sha1(self.tmp_files)

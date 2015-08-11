@@ -21,7 +21,6 @@ Hudson (tjh@cryptsoft.com).
 Freezer Tar related functions
 """
 
-from freezer import utils
 from freezer import winutils
 
 import os
@@ -222,20 +221,6 @@ class TarCommandRestoreBuilder:
                 "cat < {0}".format(self.archive))
             tar_command = '{0} | {1} '.format(ssh_command, tar_command)
         return tar_command
-
-
-def tar_restore_args_valid(backup_opt_dict):
-    required_list = [
-        os.path.exists(backup_opt_dict.restore_abs_path)]
-    try:
-        valid_args = utils.validate_all_args(required_list)   # might raise
-        if not valid_args:
-            raise Exception(('please provide ALL of the following '
-                             'argument: --restore-abs-path'))
-    except Exception as err:
-        valid_args = False
-        logging.critical('[*] Critical Error: {0}'.format(err))
-    return valid_args
 
 
 def tar_restore(restore_abs_path, tar_command, read_pipe):

@@ -46,8 +46,9 @@ class Storage(object):
 
     def find(self, hostname_backup_name):
         """
-        Gets backups my backup_name and hostname
+        Gets backups by backup_name and hostname
         :param hostname_backup_name:
+        :type hostname_backup_name: str
         :rtype: list[Backup]
         :return: List of matched backups
         """
@@ -71,20 +72,19 @@ class Storage(object):
         """
         raise NotImplementedError("Should have implemented this")
 
-    def restore(self, backup, path, tar_builder, level):
+    def restore(self, backup, path, tar_builder):
         """
 
         :param backup:
         :param path:
         :param tar_builder:
         :type tar_builder: freezer.tar.TarCommandRestoreBuilder
-        :param level:
         :return:
         """
         raise NotImplementedError("Should have implemented this")
 
-    def restore_from_date(self, hostname_backup_name,
-                          path, tar_builder, restore_timestamp=None):
+    def restore_from_date(self, hostname_backup_name, path, tar_builder,
+                          restore_timestamp):
         """
         :param hostname_backup_name:
         :type hostname_backup_name: str
@@ -96,34 +96,30 @@ class Storage(object):
         :type tar_builder: freezer.tar.TarCommandRestoreBuilder
         :return:
         """
+
         backups = self.find(hostname_backup_name)
         if not backups:
             raise Exception("[*] No backups found")
-        level = 0
-        if restore_timestamp:
-            backups = [b for b in backups
-                       if b.latest_update.timestamp <= restore_timestamp
-                       and b.tar_meta]
-            backup = min(backups, key=lambda b: b.timestamp)
-            if not backup:
-                raise ValueError('No matching backup name {0} found'
-                                 .format(hostname_backup_name))
-            while (level in backup.increments
-                   and backup.increments[level].timestamp
-                    <= restore_timestamp):
-                level += 1
+        backups = [b for b in backups
+                   if b.timestamp <= restore_timestamp]
+        if not backups:
+            raise ValueError('No matching backup name {0} found'
+                             .format(hostname_backup_name))
+        backup = max(backups, key=lambda b: b.timestamp)
+        last_increments = backup.increments.values()
+        last_increments = [x for x in last_increments
+                           if x.timestamp <= restore_timestamp]
+        last_increment = max(last_increments, key=lambda x: x.timestamp)
+        self.restore(last_increment, path, tar_builder)
 
-            if level in backup.increments \
-                    and backup.increments[level].timestamp > restore_timestamp:
-                level -= 1
-        else:
-            backup = max(backups, key=lambda b: b.timestamp)
-            if not backup:
-                raise ValueError('No matching backup name {0} found'
-                                 .format(hostname_backup_name))
-            level = backup.latest_update.level
-
-        self.restore(backup, path, tar_builder, level)
+    def restore_latest(self, hostname_backup_name, path, tar_builder):
+        backups = self.find(hostname_backup_name)
+        if not backups:
+            raise ValueError('No matching backup name {0} found'
+                             .format(hostname_backup_name))
+        backup = max(backups, key=lambda b: b.latest_update.timestamp)\
+            .latest_update
+        self.restore(backup, path, tar_builder)
 
     def remove_backup(self, backup):
         """
@@ -135,10 +131,10 @@ class Storage(object):
 
     def remove_older_than(self, remove_older_timestamp, hostname_backup_name):
         """
-        Remove object in remote swift server which are
-        older than the specified days or timestamp
+        Removes backups which are older than the specified timestamp
+        :type remove_older_timestamp: int
+        :type hostname_backup_name: str
         """
-
         backups = self.find(hostname_backup_name)
         backups = [b for b in backups
                    if b.latest_update.timestamp < remove_older_timestamp]
@@ -166,7 +162,8 @@ class Storage(object):
         """
         No side effect version of get_backups
         :param names:
-        :type names: list[str]
+        :type names: list[str] - file names of backups.
+        File name should be something like that host_backup_timestamp_level
         :rtype: list[Backup]
         :return: list of zero level backups
         """
@@ -195,7 +192,11 @@ class Storage(object):
                 zero_backups.append(backup)
                 last_backup = backup
             else:
-                last_backup.add_increment(backup)
+                if last_backup:
+                    last_backup.add_increment(backup)
+                else:
+                    logging.error("Incremental backup without parent: {0}"
+                                  .format(backup.repr()))
 
         return zero_backups
 

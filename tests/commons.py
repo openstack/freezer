@@ -2,8 +2,6 @@
 from mock import MagicMock
 import sys
 
-from freezer.backup import backup_mode_mysql, backup_mode_mongo
-import freezer
 import swiftclient
 import multiprocessing
 import subprocess
@@ -12,7 +10,6 @@ import os
 import pymysql as MySQLdb
 import pymongo
 import re
-from collections import OrderedDict
 from glanceclient.common.utils import IterableWithLength
 from freezer import swift
 from freezer.utils import OpenstackOptions
@@ -65,39 +62,6 @@ class FakeLogging:
     @classmethod
     def error(cls, opt1=True):
         return True
-
-
-class Fakeget_newest_backup:
-
-    def __init__(self, opt1=True):
-        return None
-
-    def __call__(self, *args, **kwargs):
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['remote_newest_backup'] = False
-        return backup_opt
-
-
-class Fakeget_rel_oldest_backup:
-
-    def __init__(self, opt1=True):
-        return None
-
-    def __call__(self, *args, **kwargs):
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['remote_rel_oldest'] = False
-        return backup_opt
-
-
-class Fakeget_rel_oldest_backup2:
-
-    def __init__(self, opt1=True):
-        return None
-
-    def __call__(self, *args, **kwargs):
-        backup_opt = BackupOpt1()
-        backup_opt.__dict__['remote_rel_oldest'] = True
-        return backup_opt
 
 
 class FakeDistutils:

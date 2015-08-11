@@ -101,7 +101,7 @@ class TestLocalStorage(object):
         utils.create_dir(files_dir)
         backup = storage.get_backups()[0]
         builder = tar.TarCommandRestoreBuilder(commons.tar_path(), files_dir)
-        storage.restore(backup, files_dir, builder, 1)
+        storage.restore(backup.latest_update, files_dir, builder)
         files = os.listdir(files_dir)
         assert len(files) == 2
         with open(files_dir + "/file_1", "r") as file_1:
@@ -121,6 +121,17 @@ class TestLocalStorage(object):
         utils.create_dir(files_dir)
         backup = storage.get_backups()[0]
         builder = tar.TarCommandRestoreBuilder(commons.tar_path(), files_dir)
-        storage.restore(backup, files_dir, builder, 0)
+        storage.restore(backup, files_dir, builder)
         files = os.listdir(files_dir)
         assert len(files) == 1
+
+    def test_remove_backup(self, tmpdir):
+        backup_dir, files_dir = self.create_dirs(tmpdir)
+        storage = local.LocalStorage(backup_dir)
+        builder = tar.TarCommandBuilder(commons.tar_path(), ".")
+        storage.backup(files_dir, "file_backup", builder)
+        backups = storage.get_backups()
+        assert len(backups) == 1
+        storage.remove_backup(backups[0])
+        backups = storage.get_backups()
+        assert len(backups) == 0

@@ -120,17 +120,17 @@ class LocalStorage(storage.Storage):
         """
         shutil.rmtree(self._zero_backup_dir(backup))
 
-    def restore(self, backup, path, tar_builder, level):
+    def restore(self, backup, path, tar_builder):
         """
         :param backup:
+        :type backup: freezer.storage.Backup
         :param path:
         :param tar_builder:
         :type tar_builder: freezer.tar.TarCommandRestoreBuilder
-        :param level:
         :return:
         """
-        zero_dir = self._zero_backup_dir(backup)
-        for level in range(0, level + 1):
-            c_backup = backup.increments[level]
+        zero_dir = self._zero_backup_dir(backup.parent)
+        for level in range(0, backup.level + 1):
+            c_backup = backup.parent.increments[level]
             tar_builder.set_archive(zero_dir + "/" + c_backup.repr())
             subprocess.check_output(tar_builder.build(), shell=True)
