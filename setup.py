@@ -80,7 +80,6 @@ setup(
     ],
     install_requires=[
         'python-swiftclient>=2.2.0,<2.5.0',
-        'python-swiftclient>=2.2.0',
         'python-keystoneclient>=1.2.0,<1.4.0',
         'python-cinderclient>=1.1.0,<1.2.0',
         'python-glanceclient>=0.15.0,<0.18.0',
