@@ -5,7 +5,7 @@ from freezer import tar
 class TestTarCommandBuilder(unittest.TestCase):
 
     def setUp(self):
-        self.builder = tar.TarCommandBuilder("gnutar", ".")
+        self.builder = tar.TarCommandBuilder("gnutar", ".", "gzip")
 
     def test_build(self):
         self.assertEquals(
@@ -37,7 +37,7 @@ class TestTarCommandBuilder(unittest.TestCase):
 
 class TestTarCommandRestoreBuilder(unittest.TestCase):
     def setUp(self):
-        self.builder = tar.TarCommandRestoreBuilder("gnutar", "restore_path")
+        self.builder = tar.TarCommandRestoreBuilder("gnutar", "restore_path", "gzip")
 
     def test(self):
         self.assertEquals(

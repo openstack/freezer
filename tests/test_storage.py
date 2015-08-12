@@ -96,7 +96,7 @@ class TestBackup(unittest.TestCase):
             storage.Backup("host_backup_f", 1000, 0),
             last
         ]
-        builder = tar.TarCommandRestoreBuilder("", "")
+        builder = tar.TarCommandRestoreBuilder("", "", "gzip")
         self.assertRaises(ValueError, t.restore_latest, "test", ".", builder)
         t.restore = mock.Mock()
         t.restore_latest("host_backup", ".", builder)
@@ -116,7 +116,7 @@ class TestBackup(unittest.TestCase):
             storage.Backup("host_backup_f", 1000, 0),
             storage.Backup("host_backup", 5000, 0),
         ]
-        builder = tar.TarCommandRestoreBuilder("", "")
+        builder = tar.TarCommandRestoreBuilder("", "", "gzip")
         t.restore = mock.Mock()
         t.restore_latest("host_backup", ".", builder)
         t.restore.assert_called_with(increment, ".", builder)
@@ -134,7 +134,7 @@ class TestBackup(unittest.TestCase):
             storage.Backup("host_backup", 5000, 0),
         ]
         t.restore = mock.Mock()
-        builder = tar.TarCommandRestoreBuilder("", "")
+        builder = tar.TarCommandRestoreBuilder("", "", "gzip")
         t.restore_from_date("host_backup", ".", builder, 3234)
         t.restore.assert_called_with(backup_restore, ".", builder)
 
@@ -151,7 +151,7 @@ class TestBackup(unittest.TestCase):
             storage.Backup("host_backup", 5000, 0),
         ]
         t.restore = mock.Mock()
-        builder = tar.TarCommandRestoreBuilder("", "")
+        builder = tar.TarCommandRestoreBuilder("", "", "gzip")
         t.restore_from_date("host_backup", ".", builder, 3234)
         t.restore.assert_called_with(increment, ".", builder)
 

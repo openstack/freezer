@@ -108,6 +108,7 @@ setup(
                 ('freezer/bin', ['freezer/bin/LICENSE']),
                 ('freezer/bin', ['freezer/bin/gzip.exe']),
                 ('freezer/bin', ['freezer/bin/tar.exe']),
+                ('freezer/bin', ['freezer/bin/xz.exe']),
                 ('freezer/bin', ['freezer/bin/cygwin1.dll']),
                 ('freezer/bin', ['freezer/bin/cygintl-8.dll']),
                 ('freezer/bin', ['freezer/bin/cygiconv-2.dll']),
@@ -115,5 +116,6 @@ setup(
                 ('freezer/bin', ['freezer/bin/bzip2-1.0.6.tar.gz']),
                 ('freezer/bin', ['freezer/bin/gzip-1.6-1.src.tar']),
                 ('freezer/bin', ['freezer/bin/tar-1.27.1.tar.xz']),
-                ('freezer/bin', ['freezer/bin/findutils-4.5.12.tar.gz'])]
+                ('freezer/bin', ['freezer/bin/findutils-4.5.12.tar.gz']),
+                ('freezer/bin', ['freezer/bin/xz-5.2.1.tar.gz'])]
 )

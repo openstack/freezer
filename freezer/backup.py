@@ -287,9 +287,9 @@ def backup(backup_opt_dict, storage):
                 chdir_path = os.path.dirname(chdir_path)
             os.chdir(chdir_path)
             builder = TarCommandBuilder(backup_opt_dict.tar_path,
-                                        filepath=filepath)
+                                        filepath,
+                                        backup_opt_dict.compression)
             builder.set_dereference(backup_opt_dict.dereference_symlink)
-
             if backup_opt_dict.exclude:
                 builder.set_exclude(backup_opt_dict.exclude)
             if backup_opt_dict.encrypt_pass_file:

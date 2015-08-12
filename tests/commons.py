@@ -795,6 +795,7 @@ class BackupOpt1:
 
         self.client_manager.get_nova = Mock(return_value=nova_client)
         self.command = None
+        self.compression = 'gzip'
 
 
 class FakeMySQLdb:

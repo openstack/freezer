@@ -22,7 +22,6 @@ Freezer Tar related functions
 """
 
 from freezer import winutils
-
 import os
 import logging
 import subprocess
@@ -58,7 +57,7 @@ class TarCommandBuilder:
     """
 
     COMMAND_TEMPLATE = (
-        "{gnutar_path} --create -z --warning=none --no-check-device "
+        "{gnutar_path} --create {algo} --warning=none --no-check-device "
         "--one-file-system --preserve-permissions --same-owner "
         "--seek --ignore-failed-read")
 
@@ -69,7 +68,7 @@ class TarCommandBuilder:
                         'all': '--hard-dereference --dereference',
                         'none': ''}
 
-    def __init__(self, gnutar_path, filepath):
+    def __init__(self, gnutar_path, filepath, compression_algo):
         self.dereference = 'none'
         self.gnutar_path = gnutar_path
         self.exclude = None
@@ -83,6 +82,7 @@ class TarCommandBuilder:
         self.ssh_key = None
         self.ssh_user = None
         self.ssh_ip = None
+        self.compression_algo = get_tar_flag_from_algo(compression_algo)
 
     def set_output_file(self, output_file):
         self.output_file = output_file
@@ -126,9 +126,11 @@ class TarCommandBuilder:
 
     def build(self):
         tar_command = self.COMMAND_TEMPLATE.format(
-            gnutar_path=self.gnutar_path, dereference=self.dereference)
+            gnutar_path=self.gnutar_path, algo=self.compression_algo,
+            dereference=self.dereference)
         if self.dereference:
             "{0} {1}".format(tar_command, self.dereference)
+
         if self.listed_incremental:
             tar_command = self.LISTED_TEMPLATE.format(
                 tar_command=tar_command,
@@ -158,14 +160,14 @@ class TarCommandBuilder:
 
 
 class TarCommandRestoreBuilder:
-    WINDOWS_TEMPLATE = '{0} -x -z --incremental --unlink-first ' \
+    WINDOWS_TEMPLATE = '{0} -x {1} --incremental --unlink-first ' \
         '--ignore-zeros -f - '
-    DRY_RUN_TEMPLATE = '{0} -z --incremental --list ' \
+    DRY_RUN_TEMPLATE = '{0} {1} --incremental --list ' \
         '--ignore-zeros --warning=none'
-    NORMAL_TEMPLATE = '{0} -z --incremental --extract --unlink-first ' \
-        '--ignore-zeros --warning=none --overwrite --directory {1}'
+    NORMAL_TEMPLATE = '{0} {1} --incremental --extract --unlink-first ' \
+        '--ignore-zeros --warning=none --overwrite --directory {2}'
 
-    def __init__(self, tar_path, restore_path):
+    def __init__(self, tar_path, restore_path, compression_algo):
         self.dry_run = False
         self.is_windows = False
         self.openssl_path = None
@@ -176,6 +178,7 @@ class TarCommandRestoreBuilder:
         self.ssh_key = None
         self.ssh_user = None
         self.ssh_ip = None
+        self.compression_algo = get_tar_flag_from_algo(compression_algo)
 
     def set_dry_run(self):
         self.dry_run = True
@@ -197,11 +200,14 @@ class TarCommandRestoreBuilder:
 
     def build(self):
         if self.is_windows:
-            tar_command = self.NORMAL_TEMPLATE.format(self.tar_path)
+            tar_command = self.NORMAL_TEMPLATE.format(self.tar_path,
+                                                      self.compression_algo)
         elif self.dry_run:
-            tar_command = self.DRY_RUN_TEMPLATE.format(self.tar_path)
+            tar_command = self.DRY_RUN_TEMPLATE.format(self.tar_path,
+                                                       self.compression_algo)
         else:
             tar_command = self.NORMAL_TEMPLATE.format(self.tar_path,
+                                                      self.compression_algo,
                                                       self.restore_path)
 
         if self.archive and not self.ssh_key:
@@ -284,3 +290,12 @@ def tar_backup(path_to_backup, max_segment_size, tar_command, backup_queue):
     if len(tar_chunk) < max_segment_size:
         backup_queue.put(
             ({("%08d" % file_chunk_index): tar_chunk}))
+
+
+def get_tar_flag_from_algo(compression):
+    algo = {
+        'gzip': '-z',
+        'bzip2': '-j',
+        'xz': '-J',
+    }
+    return algo.get(compression)

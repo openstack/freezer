@@ -22,7 +22,7 @@ Hudson (tjh@cryptsoft.com).
 """
 
 from commons import *
-from freezer.tar import (tar_restore, tar_backup)
+from freezer.tar import (tar_restore, tar_backup,  get_tar_flag_from_algo)
 from freezer import winutils
 
 import os
@@ -108,3 +108,8 @@ class TestTar:
         fakeos1 = Os1()
         monkeypatch.setattr(os.path, 'exists', fakeos1.exists)
         backup_opt.dry_run = False
+
+    def test_get_tar_flag_from_algo(self):
+        assert get_tar_flag_from_algo('gzip') == '-z'
+        assert get_tar_flag_from_algo('bzip2') == '-j'
+        assert get_tar_flag_from_algo('xz') == '-J'
