@@ -207,35 +207,61 @@ def lvm_snap(backup_opt_dict):
     return True
 
 
-def get_lvm_info(backup_opt_dict):
+def get_lvm_info(lvm_auto_snap):
     """
     Take a file system path as argument as backup_opt_dict.path_to_backup
-    and return a dictionary containing dictionary['lvm_srcvol']
-    and dictionary['lvm_volgroup'] where the path is mounted on.
+    and return a list containing lvm_srcvol, lvm_volgroup
+    where the path is mounted on.
 
-    :param backup_opt_dict: backup_opt_dict.path_to_backup, the file system
-    path
-    :returns: the dictionary backup_opt_dict containing keys lvm_srcvol
-              and lvm_volgroup with respective values
+    :param lvm_auto_snap: the original file system path where backup needs
+    to be executed
+    :returns: a list containing the items lvm_volgroup, lvm_srcvol, lvm_device
     """
 
-    mount_point_path = get_mount_from_path(backup_opt_dict.lvm_auto_snap)
+    mount_point_path = get_mount_from_path(lvm_auto_snap)
     with open('/proc/mounts', 'r') as mount_fd:
         mount_points = mount_fd.readlines()
+        lvm_volgroup, lvm_srcvol, lvm_device = lvm_guess(
+            mount_point_path, mount_points)
 
+    if not lvm_device:
+        mount_process = subprocess.Popen(
+            ['mount'], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            env=os.environ())
+        mount_out, mount_err = mount_process.communicate()
+        mount_points = mount_out.split('\n')
+        lvm_volgroup, lvm_srcvol, lvm_device = lvm_guess(
+            mount_point_path, mount_points)
+
+    if not lvm_device:
+        raise Exception(
+            'Cannot find {0} in {1}, please provide volume group and '
+            'volume name explicitly'.format(mount_point_path, mount_points))
+
+    return lvm_volgroup, lvm_srcvol, lvm_device
+
+
+def lvm_guess(mount_point_path, mount_points):
+    """Guess lvm vol group and vol name from mount point
+
+    Extract the vol group and vol name from given list
+    of mount_points and mount_point_path
+
+    :param mount_point_path: mount path
+    :param mount_points: list of currently mounted devices
+    :return: a list containing volume group, volume name and full device path
+    """
+
+    lvm_volgroup = lvm_srcvol = lvm_device = None
     for mount_line in mount_points:
         device, mount_path = mount_line.split(' ')[0:2]
         if mount_point_path.strip() == mount_path.strip():
             mount_match = re.search(
                 r'/dev/mapper/(\w.+?\w)-(\w.+?\w)$', device)
             if mount_match:
-                backup_opt_dict.__dict__['lvm_volgroup'] = \
-                    mount_match.group(1).replace('--', '-')
+                lvm_volgroup = mount_match.group(1).replace('--', '-')
                 lvm_srcvol = mount_match.group(2).replace('--', '-')
-                backup_opt_dict.__dict__['lvm_srcvol'] = \
-                    u'/dev/{0}/{1}'.format(
-                    backup_opt_dict.lvm_volgroup, lvm_srcvol)
-                return backup_opt_dict
+                lvm_device = u'/dev/{0}/{1}'.format(lvm_volgroup, lvm_srcvol)
+                break
 
-    raise Exception("Cannot find {0} in {1}".format(
-        mount_point_path, mount_points))
+    return lvm_volgroup, lvm_srcvol, lvm_device

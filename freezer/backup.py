@@ -244,7 +244,10 @@ def snapshot_create(backup_opt_dict):
         # If lvm_auto_snap is true, the volume group and volume name will
         # be extracted automatically
         if backup_opt_dict.lvm_auto_snap:
-            backup_opt_dict = get_lvm_info(backup_opt_dict)
+            lvm_list = get_lvm_info(
+                backup_opt_dict.lvm_auto_snap)
+            backup_opt_dict.lvm_volgroup = lvm_list[0]
+            backup_opt_dict.lvm_srcvol = lvm_list[2]
 
         # Generate the lvm_snap if lvm arguments are available
         lvm_snap(backup_opt_dict)
