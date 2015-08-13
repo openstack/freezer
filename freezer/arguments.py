@@ -1,42 +1,41 @@
-"""
-Copyright 2014 Hewlett-Packard
+# Copyright 2014 Hewlett-Packard
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# This product includes cryptographic software written by Eric Young
+# (eay@cryptsoft.com). This product includes software written by Tim
+# Hudson (tjh@cryptsoft.com).
+#
+# Arguments and general parameters definitions
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+from __future__ import print_function
 
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-This product includes cryptographic software written by Eric Young
-(eay@cryptsoft.com). This product includes software written by Tim
-Hudson (tjh@cryptsoft.com).
-========================================================================
-
-Arguments and general parameters definitions
-"""
-
-import sys
-import os
 import argparse
-
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
-
-import logging
 from distutils import spawn as distspawn
-import utils
-import socket
-
-from freezer.winutils import is_windows
+import logging
+import os
 from os.path import expanduser
+import socket
+import sys
+import utils
+
+from oslo_utils import encodeutils
+
+from freezer import winutils
 
 home = expanduser("~")
 
@@ -276,7 +275,7 @@ def backup_arguments(args_dict={}):
               'the backup metrics. Use "-" to output to standard output.'),
         dest='metadata_out', default=False)
 
-    if is_windows():
+    if winutils.is_windows():
         arg_parser.add_argument(
             '--log-file', action='store',
             help='Set log file. By default logs to ~/freezer.log',
@@ -450,8 +449,21 @@ def backup_arguments(args_dict={}):
     backup_args.__dict__['remote_match_backup'] = []
     backup_args.__dict__['remote_obj_list'] = []
     backup_args.__dict__['remote_newest_backup'] = u''
-    # Set default workdir to ~/.freezer
-    backup_args.__dict__['work_dir'] = os.path.join(home, '.freezer')
+
+    # Set default working directory to ~/.freezer. If the directory
+    # does not exists it is created
+    work_dir = os.path.join(home, '.freezer')
+    backup_args.__dict__['work_dir'] = work_dir
+    if not os.path.exists(work_dir):
+        try:
+            os.makedirs(work_dir)
+        except (OSError, IOError) as err_msg:
+            # This avoids freezer-agent to crash if it can't write to
+            # ~/.freezer, which may happen on some env (for me,
+            # it happens in Jenkins, as freezer-agent can't write to
+            # /var/lib/jenkins).
+            print(encodeutils.safe_decode(
+                '{}'.format(err_msg)), file=sys.stderr)
 
     # The containers used by freezer to executed backups needs to have
     # freezer_ prefix in the name. If the user provider container doesn't
@@ -469,7 +481,7 @@ def backup_arguments(args_dict={}):
     backup_args.__dict__['manifest_meta_dict'] = {}
     backup_args.__dict__['curr_backup_level'] = ''
     backup_args.__dict__['manifest_meta_dict'] = ''
-    if is_windows():
+    if winutils.is_windows():
         backup_args.__dict__['tar_path'] = '{0}\\bin\\tar.exe'. \
             format(path_to_binaries)
     else:
@@ -497,7 +509,7 @@ def backup_arguments(args_dict={}):
     backup_args.__dict__['lvremove_path'] = distspawn.find_executable(
         'lvremove')
     backup_args.__dict__['bash_path'] = distspawn.find_executable('bash')
-    if is_windows():
+    if winutils.is_windows():
         backup_args.__dict__['openssl_path'] = 'openssl'
     else:
         backup_args.__dict__['openssl_path'] = \
@@ -517,7 +529,7 @@ def backup_arguments(args_dict={}):
     backup_args.__dict__['shadow'] = ''
     backup_args.__dict__['shadow_path'] = ''
     backup_args.__dict__['file_name'] = ''
-    if is_windows():
+    if winutils.is_windows():
         if backup_args.path_to_backup:
             backup_args.__dict__['windows_volume'] = \
                 backup_args.path_to_backup[:3]
