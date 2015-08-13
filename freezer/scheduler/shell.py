@@ -31,7 +31,7 @@ try:
     from betterprint import pprint
 except:
     def pprint(doc):
-        print json.dumps(doc, indent=4)
+        print(json.dumps(doc, indent=4))
 
 
 def do_session_remove_job(client, args):
@@ -57,7 +57,7 @@ def do_session_add_job(client, args):
         try:
             client.sessions.add_job(args.session_id, job_id)
         except Exception as e:
-            print "Error processin job {0}. {1}".format(job_id, e)
+            print("Error processin job {0}. {1}".format(job_id, e))
 
 
 def do_session_list_job(client, args):
@@ -77,7 +77,7 @@ def do_session_list_job(client, args):
                        job_data['result'],
                        job_data['client_id']
                        ])
-    print table
+    print(table)
 
 
 def do_session_delete(client, args):
@@ -122,18 +122,19 @@ def do_session_list(client, args):
     """
     table = PrettyTable(["session_id", "tag", "status",
                          "description", "jobs", "last_start"])
-    l = client.sessions.list()
-    while l:
-        offset = len(l)
-        for doc in l:
+    session_docs = client.sessions.list()
+    offset = 0
+    while session_docs:
+        offset += len(session_docs)
+        for doc in session_docs:
             table.add_row([doc['session_id'],
                            doc['session_tag'],
                            doc['status'],
                            doc.get('description', ''),
                            len(doc.get('jobs', [])),
                            doc['last_start']])
-        l = client.sessions.list(offset=offset)
-    print table
+        session_docs = client.sessions.list(offset=offset)
+    print(table)
 
 
 def do_job_create(client, args):
@@ -141,7 +142,7 @@ def do_job_create(client, args):
         raise Exception("Parameter --file required")
     job_doc = utils.load_doc_from_json_file(args.fname)
     job_id = client.jobs.create(job_doc)
-    print "Created job {0}".format(job_id)
+    print("Created job {0}".format(job_id))
 
 
 def do_job_delete(client, args):
@@ -164,14 +165,14 @@ def do_job_start(client, args):
     if not args.job_id:
         raise Exception("Parameter --job required")
     client.jobs.start_job(args.job_id)
-    print "Job {0} started".format(args.job_id)
+    print("Job {0} started".format(args.job_id))
 
 
 def do_job_stop(client, args):
     if not args.job_id:
         raise Exception("Parameter --job required")
     client.jobs.stop_job(args.job_id)
-    print "Job {0} stopped".format(args.job_id)
+    print("Job {0} stopped".format(args.job_id))
 
 
 def do_job_download(client, args):
@@ -182,25 +183,26 @@ def do_job_download(client, args):
         try:
             utils.save_doc_to_json_file(doc, fname)
         except:
-            print "Unable to write to file {0}".format(fname)
+            print("Unable to write to file {0}".format(fname))
 
 
 def do_job_upload(client, args):
     for job_doc in utils.get_jobs_from_disk(args.jobs_dir):
         job_id = client.jobs.create(job_doc)
-        print "Uploaded job {0}".format(job_id)
+        print("Uploaded job {0}".format(job_id))
 
 
 def _job_list(client, args):
     search = {}
     if args.active_only:
         search = {"match_not": [{"status": "completed"}]}
-    l = client.jobs.list(search=search)
-    while l:
-        offset = len(l)
-        for doc in l:
+    client_docs = client.jobs.list(search=search)
+    offset = 0
+    while client_docs:
+        offset += len(client_docs)
+        for doc in client_docs:
             yield doc
-        l = client.jobs.list(offset=offset, search=search)
+        client_docs = client.jobs.list(offset=offset, search=search)
     raise StopIteration
 
 
@@ -219,18 +221,19 @@ def do_job_list(client, args):
                        job_event,
                        job_result,
                        doc.get('session_id', '')])
-    print table
+    print(table)
 
 
 def do_client_list(client, args):
     table = PrettyTable(["client_id", "hostname", "description"])
     l = client.registration.list()
+    offset = 0
     while l:
-        offset = len(l)
+        offset += len(l)
         for doc in l:
             client_doc = doc['client']
             table.add_row([client_doc['client_id'],
                            client_doc.get('hostname', ''),
                            client_doc.get('description', '')])
         l = client.registration.list(offset=offset)
-    print table
+    print(table)
