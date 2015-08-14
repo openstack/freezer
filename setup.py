@@ -85,6 +85,7 @@ setup(
         'python-glanceclient>=0.15.0,<0.18.0',
         'python-novaclient>=2.22.0,<2.24.0',
         'python-openstackclient>=1.0.3,<1.1.0',
+        'oslo.utils>=1.4.0,<1.5.0',
         'PyMySQL>=0.6.2',
         'pymongo>=2.6.3,<3.0',
         'apscheduler',
