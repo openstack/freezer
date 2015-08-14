@@ -222,16 +222,16 @@ def get_lvm_info(lvm_auto_snap):
     with open('/proc/mounts', 'r') as mount_fd:
         mount_points = mount_fd.readlines()
         lvm_volgroup, lvm_srcvol, lvm_device = lvm_guess(
-            mount_point_path, mount_points)
+            mount_point_path, mount_points, '/proc/mounts')
 
     if not lvm_device:
         mount_process = subprocess.Popen(
             ['mount'], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            env=os.environ())
+            env=os.environ)
         mount_out, mount_err = mount_process.communicate()
         mount_points = mount_out.split('\n')
         lvm_volgroup, lvm_srcvol, lvm_device = lvm_guess(
-            mount_point_path, mount_points)
+            mount_point_path, mount_points, 'mount')
 
     if not lvm_device:
         raise Exception(
@@ -241,7 +241,7 @@ def get_lvm_info(lvm_auto_snap):
     return lvm_volgroup, lvm_srcvol, lvm_device
 
 
-def lvm_guess(mount_point_path, mount_points):
+def lvm_guess(mount_point_path, mount_points, source='/proc/mounts'):
     """Guess lvm vol group and vol name from mount point
 
     Extract the vol group and vol name from given list
@@ -254,7 +254,12 @@ def lvm_guess(mount_point_path, mount_points):
 
     lvm_volgroup = lvm_srcvol = lvm_device = None
     for mount_line in mount_points:
-        device, mount_path = mount_line.split(' ')[0:2]
+        if source == '/proc/mounts':
+            device, mount_path = mount_line.split(' ')[0:2]
+        elif source == 'mount':
+            mount_list = mount_line.split(' ')[0:3]
+            device = mount_list[0]
+            mount_path = mount_list[2]
         if mount_point_path.strip() == mount_path.strip():
             mount_match = re.search(
                 r'/dev/mapper/(\w.+?\w)-(\w.+?\w)$', device)
