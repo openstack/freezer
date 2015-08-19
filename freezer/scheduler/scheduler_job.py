@@ -238,6 +238,10 @@ class Job(object):
                     'run_date': self.schedule_date}
         elif self.schedule_interval:
             kwargs = {'trigger': 'interval'}
+            if not self.schedule_date:
+                kwargs.update({
+                    'start_date': datetime.datetime.now() +
+                    datetime.timedelta(0, 2, 0)})
             if self.schedule_interval == 'continuous':
                 kwargs.update({'seconds': 1})
             else:
@@ -273,7 +277,7 @@ class Job(object):
             if metadata:
                 self.scheduler.upload_metadata(metadata)
                 logging.info("[*] Job {0}, freezer action metadata uploaded"
-                             .format(metadata))
+                             .format(self.id))
         except Exception as e:
             logging.error('[*] metrics upload error: {0}'.format(e))
 
