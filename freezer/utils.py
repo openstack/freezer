@@ -37,13 +37,16 @@ class OpenstackOptions:
     or
     >> create_from_dict(dict)
     """
-    def __init__(self, user_name, tenant_name, auth_url, password,
-                 tenant_id=None, region_name=None, endpoint_type=None):
+    def __init__(self, user_name, tenant_name, project_name, auth_url,
+                 password, identity_api_version, tenant_id=None,
+                 region_name=None, endpoint_type=None):
         self.user_name = user_name
         self.tenant_name = tenant_name
         self.auth_url = auth_url
         self.password = password
         self.tenant_id = tenant_id
+        self.project_name = project_name
+        self.identity_api_version = identity_api_version
         self.region_name = region_name
         self.endpoint_type = endpoint_type
 
@@ -56,6 +59,8 @@ class OpenstackOptions:
         """
         return {'tenant_id': self.tenant_id,
                 'tenant_name': self.tenant_name,
+                'project_name': self.project_name,
+                'identity_api_version': self.identity_api_version,
                 'region_name': self.region_name,
                 'endpoint_type': self.endpoint_type}
 
@@ -69,7 +74,10 @@ class OpenstackOptions:
             return OpenstackOptions(
                 user_name=src_dict.get('OS_USERNAME', None),
                 tenant_name=src_dict.get('OS_TENANT_NAME', None),
+                project_name=src_dict.get('OS_PROJECT_NAME', None),
                 auth_url=src_dict.get('OS_AUTH_URL', None),
+                identity_api_version=src_dict.get('OS_IDENTITY_API_VERSION',
+                                                  '2.0'),
                 password=src_dict.get('OS_PASSWORD', None),
                 tenant_id=src_dict.get('OS_TENANT_ID', None),
                 region_name=src_dict.get('OS_REGION_NAME', None),
