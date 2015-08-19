@@ -292,9 +292,9 @@ Freezer can use:
 
  To use ssh storage specify "--storage ssh"
  And use "--container %path-to-folder-with-backups-on-remote-machine%"
- Also you should specify ssh-user, ssh-key and ssh-host parameters.
+ Also you should specify ssh-username, ssh-key and ssh-host parameters.
 
- ssh-user for user ubuntu should be "--ssh-user ubuntu"
+ ssh-username for user ubuntu should be "--ssh-username ubuntu"
  ssh-key should be path to your secret ssh key "--ssh-key %path-to-secret-key%"
  ssh-host can be ip of remote machine or resolvable dns name "--ssh-host 8.8.8.8"
 
@@ -302,14 +302,14 @@ Freezer can use:
 
    $ sudo freezerc --file-to-backup /data/dir/to/backup
    --container /remote-machine-path/ --backup-name my-backup-name
-   --storage ssh --ssh-user ubuntu --ssh-key ~/.ssh/id_rsa
+   --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa
    --ssh-host 8.8.8.8
 
  Restore example::
 
   $ sudo freezerc  --action restore --restore-abs-pat /data/dir/to/backup
   --container /remote-machine-path/ --backup-name my-backup-name
-  --storage ssh --ssh-user ubuntu --ssh-key ~/.ssh/id_rsa
+  --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa
   --ssh-host 8.8.8.8
 
 Restore

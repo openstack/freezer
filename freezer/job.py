@@ -37,11 +37,13 @@ import logging
 class Job:
     """
     :type storage: freezer.storage.Storage
+    :type engine: freezer.engine.engine.BackupEngine
     """
 
     def __init__(self, conf_dict):
         self.conf = conf_dict
         self.storage = conf_dict.storage
+        self.engine = conf_dict.engine
 
     def execute(self):
         logging.info('[*] Action not implemented')
@@ -85,7 +87,7 @@ class BackupJob(Job):
         self.conf.storage.prepare()
 
         if self.conf.mode == 'fs':
-            backup.backup(self.conf, self.storage)
+            backup.backup(self.conf, self.storage, self.engine)
         elif self.conf.mode == 'mongo':
             backup.backup_mode_mongo(self.conf)
         elif self.conf.mode == 'mysql':
@@ -128,29 +130,21 @@ class RestoreJob(Job):
         if conf.restore_from_date:
             restore_timestamp = utils.date_to_timestamp(conf.restore_from_date)
         if conf.backup_media == 'fs':
-            storage = conf.storage
-            builder = tar.TarCommandRestoreBuilder(conf.tar_path,
-                                                   restore_abs_path,
-                                                   conf.compression)
+            builder = tar.TarCommandRestoreBuilder(
+                conf.tar_path, restore_abs_path, conf.compression,
+                winutils.is_windows())
             if conf.dry_run:
                 builder.set_dry_run()
             if winutils.is_windows():
-                builder.set_windows()
                 os.chdir(conf.restore_abs_path)
             if conf.encrypt_pass_file:
                 builder.set_encryption(conf.openssl_path,
                                        conf.encrypt_pass_file)
 
-            if restore_timestamp:
-                storage.restore_from_date(conf.hostname_backup_name,
-                                          restore_abs_path,
-                                          builder,
-                                          restore_timestamp)
-            else:
-                storage.restore_latest(conf.hostname_backup_name,
-                                       restore_abs_path,
-                                       builder)
+            backup = self.storage.find_one(conf.hostname_backup_name,
+                                           restore_timestamp)
 
+            self.engine.restore(backup, restore_abs_path)
             return
 
         res = restore.RestoreOs(conf.client_manager, conf.container)

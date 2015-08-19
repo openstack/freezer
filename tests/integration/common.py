@@ -182,43 +182,42 @@ class TestFS(unittest.TestCase):
      - FREEZER_TEST_NO_LVM is set
     """
 
+    ssh_key = os.environ.get('FREEZER_TEST_SSH_KEY')
+    ssh_username = os.environ.get('FREEZER_TEST_SSH_USERNAME')
+    ssh_host = os.environ.get('FREEZER_TEST_SSH_HOST')
+    container = os.environ.get('FREEZER_TEST_CONTAINER')
+    use_ssh = ssh_key and ssh_username and ssh_host and container
+
+    os_tenant_name = os.environ.get('FREEZER_TEST_OS_TENANT_NAME')
+    os_user_name = os.environ.get('FREEZER_TEST_OS_USERNAME')
+    os_region = os.environ.get('FREEZER_TEST_OS_REGION_NAME')
+    os_password = os.environ.get('FREEZER_TEST_OS_PASSWORD')
+    os_auth_url = os.environ.get('FREEZER_TEST_OS_AUTH_URL')
+    use_os = (os_tenant_name and os_user_name and os_region
+              and os_password and os_auth_url)
+    if use_os:
+        os.environ['OS_USERNAME'] = os_user_name
+        os.environ['OS_TENANT_NAME'] = os_tenant_name
+        os.environ['OS_AUTH_URL'] = os_auth_url
+        os.environ['OS_PASSWORD'] = os_password
+        os.environ['OS_REGION_NAME'] = os_region
+        os.environ['OS_TENANT_ID'] = ''
+
+    openstack_executable = distutils.spawn.find_executable('openstack')
+    swift_executable = distutils.spawn.find_executable('swift')
+
+    use_lvm = (os.getuid() == 0 and 'FREEZER_TEST_NO_LVM' not in os.environ)
+    ssh_executable = distutils.spawn.find_executable('ssh')
+
     def setUp(self):
-        self.ssh_key = os.environ.get('FREEZER_TEST_SSH_KEY')
-        self.ssh_username = os.environ.get('FREEZER_TEST_SSH_USERNAME')
-        self.ssh_host = os.environ.get('FREEZER_TEST_SSH_HOST')
-        self.container = os.environ.get('FREEZER_TEST_CONTAINER')
-        self.use_ssh = self.ssh_key and self.ssh_username and self.ssh_host and self.container
-        if self.use_ssh:
-            self.ssh_client = paramiko.SSHClient()
-            self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            self.ssh_client.connect(self.ssh_host,
-                                    username=self.ssh_username,
-                                    key_filename=self.ssh_key)
-
-        self.os_tenant_name = os.environ.get('FREEZER_TEST_OS_TENANT_NAME')
-        self.os_user_name = os.environ.get('FREEZER_TEST_OS_USERNAME')
-        self.os_region = os.environ.get('FREEZER_TEST_OS_REGION_NAME')
-        self.os_password = os.environ.get('FREEZER_TEST_OS_PASSWORD')
-        self.os_auth_url = os.environ.get('FREEZER_TEST_OS_AUTH_URL')
-        self.use_os = (self.os_tenant_name and self.os_user_name and self.os_region
-                       and self.os_password and self.os_auth_url)
-        if self.use_os:
-            os.environ['OS_USERNAME'] = self.os_user_name
-            os.environ['OS_TENANT_NAME'] = self.os_tenant_name
-            os.environ['OS_AUTH_URL'] = self.os_auth_url
-            os.environ['OS_PASSWORD'] = self.os_password
-            os.environ['OS_REGION_NAME'] = self.os_region
-            os.environ['OS_TENANT_ID'] = ''
-
-        self.openstack_executable = distutils.spawn.find_executable('openstack')
-        self.swift_executable = distutils.spawn.find_executable('swift')
-
-        self.use_lvm = (os.getuid() == 0 and 'FREEZER_TEST_NO_LVM' not in os.environ)
-
         self.source_tree = Temp_Tree()
         self.dest_tree = Temp_Tree()
-
-        self.ssh_executable = distutils.spawn.find_executable('ssh')
+        if TestFS.use_ssh:
+            self.ssh_client = paramiko.SSHClient()
+            self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.ssh_client.connect(TestFS.ssh_host,
+                                    username=TestFS.ssh_username,
+                                    key_filename=TestFS.ssh_key)
 
     def tearDown(self):
         self.source_tree.cleanup()

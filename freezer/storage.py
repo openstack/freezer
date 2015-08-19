@@ -19,8 +19,9 @@ Hudson (tjh@cryptsoft.com).
 """
 
 import re
-import utils
 import logging
+
+from freezer import utils
 
 
 class Storage(object):
@@ -29,9 +30,30 @@ class Storage(object):
     class.
     """
 
+    def download_meta_file(self, backup):
+        raise NotImplementedError("Should have implemented this")
+
+    def upload_meta_file(self, backup, meta_file):
+        raise NotImplementedError("Should have implemented this")
+
+    def backup_blocks(self, backup):
+        raise NotImplementedError("Should have implemented this")
+
+    def read_backup(self, rich_queue, backup):
+        """
+        :param rich_queue:
+        :type rich_queue: freezer.streaming.RichQueue
+        :param backup:
+        :type backup: freezer.storage.Backup
+        :return:
+        """
+        rich_queue.put_messages(self.backup_blocks(backup))
+
+    def write_backup(self, rich_queue, backup):
+        raise NotImplementedError("Should have implemented this")
+
     def is_ready(self):
         """
-
         :rtype: bool
         :return:
         """
@@ -44,7 +66,7 @@ class Storage(object):
         """
         raise NotImplementedError("Should have implemented this")
 
-    def find(self, hostname_backup_name):
+    def find_all(self, hostname_backup_name):
         """
         Gets backups by backup_name and hostname
         :param hostname_backup_name:
@@ -55,71 +77,32 @@ class Storage(object):
         return [b for b in self.get_backups()
                 if b.hostname_backup_name == hostname_backup_name]
 
-    def get_backups(self):
-        raise NotImplementedError("Should have implemented this")
-
-    def backup(self, path, hostname_backup_name, tar_builder,
-               parent_backup=None, time_stamp=None):
-        """
-        Implements backup of path directory.
-
-        :type path: str
-        :type hostname_backup_name: str
-        :type tar_builder: freezer.tar.TarCommandBuilder
-        :param parent_backup: Can be None.
-                Previous backup for incremental update.
-        :type parent_backup: Backup
-        """
-        raise NotImplementedError("Should have implemented this")
-
-    def restore(self, backup, path, tar_builder):
-        """
-
-        :param backup:
-        :param path:
-        :param tar_builder:
-        :type tar_builder: freezer.tar.TarCommandRestoreBuilder
-        :return:
-        """
-        raise NotImplementedError("Should have implemented this")
-
-    def restore_from_date(self, hostname_backup_name, path, tar_builder,
-                          restore_timestamp):
+    def find_one(self, hostname_backup_name, recent_to_date=None):
         """
         :param hostname_backup_name:
         :type hostname_backup_name: str
-        :param restore_timestamp:
-        :type restore_timestamp: int
-        :param path:
-        :type path: str
-        :param tar_builder:
-        :type tar_builder: freezer.tar.TarCommandRestoreBuilder
+        :param recent_to_date:
+        :type recent_to_date: int
+        :rtype: Backup
         :return:
         """
-
-        backups = self.find(hostname_backup_name)
+        backups = self.find_all(hostname_backup_name)
+        if recent_to_date:
+            backups = [b for b in backups
+                       if b.timestamp <= recent_to_date]
+        err_msg = '[*] No matching backup name "{0}" found'\
+            .format(hostname_backup_name)
         if not backups:
-            raise Exception("[*] No backups found")
-        backups = [b for b in backups
-                   if b.timestamp <= restore_timestamp]
-        if not backups:
-            raise ValueError('No matching backup name {0} found'
-                             .format(hostname_backup_name))
+            raise IndexError(err_msg)
         backup = max(backups, key=lambda b: b.timestamp)
         last_increments = backup.increments.values()
-        last_increments = [x for x in last_increments
-                           if x.timestamp <= restore_timestamp]
-        last_increment = max(last_increments, key=lambda x: x.timestamp)
-        self.restore(last_increment, path, tar_builder)
+        if recent_to_date:
+            last_increments = [x for x in last_increments
+                               if x.timestamp <= recent_to_date]
+        return max(last_increments, key=lambda x: x.timestamp)
 
-    def restore_latest(self, hostname_backup_name, path, tar_builder):
-        backups = self.find(hostname_backup_name)
-        if not backups:
-            raise ValueError('No matching backup name {0} found'
-                             .format(hostname_backup_name))
-        backup = max(backups, key=lambda b: b.latest_update.timestamp)\
-            .latest_update
-        self.restore(backup, path, tar_builder)
+    def get_backups(self):
+        raise NotImplementedError("Should have implemented this")
 
     def remove_backup(self, backup):
         """
@@ -135,7 +118,7 @@ class Storage(object):
         :type remove_older_timestamp: int
         :type hostname_backup_name: str
         """
-        backups = self.find(hostname_backup_name)
+        backups = self.find_all(hostname_backup_name)
         backups = [b for b in backups
                    if b.latest_update.timestamp < remove_older_timestamp]
         for b in backups:
@@ -144,67 +127,21 @@ class Storage(object):
     def info(self):
         raise NotImplementedError("Should have implemented this")
 
-    @staticmethod
-    def _create_backup(name, backup=None, time_stamp=None):
-        """
-        :param name:
-        :type name: str
-        :param backup:
-        :type backup: Backup
-        :rtype: Backup
-        :return:
-        """
-        return Backup(name, time_stamp or utils.DateTime.now().timestamp,
-                      backup.latest_update.level + 1 if backup else 0)
-
-    @staticmethod
-    def _get_backups(names):
-        """
-        No side effect version of get_backups
-        :param names:
-        :type names: list[str] - file names of backups.
-        File name should be something like that host_backup_timestamp_level
-        :rtype: list[Backup]
-        :return: list of zero level backups
-        """
-        prefix = 'tar_metadata_'
-        tar_names = set([x[len(prefix):]
-                         for x in names if x.startswith(prefix)])
-        backup_names = [x for x in names if not x.startswith(prefix)]
-        backups = []
-        """:type: list[Backup]"""
-        for name in backup_names:
-            try:
-                backup = Backup.parse(name)
-                backup.tar_meta = name in tar_names
-                backups.append(backup)
-            except Exception as e:
-                logging.exception(e)
-                logging.error("cannot parse swift backup name: {0}"
-                              .format(name))
-        backups.sort(key=lambda x: (x.timestamp, x.level))
-        zero_backups = []
-        last_backup = None
-
-        """:type last_backup: freezer.storage.Backup"""
-        for backup in backups:
-            if backup.level == 0:
-                zero_backups.append(backup)
-                last_backup = backup
-            else:
-                if last_backup:
-                    last_backup.add_increment(backup)
-                else:
-                    logging.error("Incremental backup without parent: {0}"
-                                  .format(backup.repr()))
-
-        return zero_backups
-
-    def find_previous_backup(self, hostname_backup_name, no_incremental,
-                             max_level, always_level, restart_always_level):
-        backups = self.find(hostname_backup_name)
-        return self._find_previous_backup(backups, no_incremental, max_level,
-                                          always_level, restart_always_level)
+    def create_backup(self, hostname_backup_name, no_incremental,
+                      max_level, always_level, restart_always_level,
+                      time_stamp=None):
+        backups = self.find_all(hostname_backup_name)
+        prev_backup = self._find_previous_backup(
+            backups, no_incremental, max_level, always_level,
+            restart_always_level)
+        if prev_backup:
+            return Backup(
+                hostname_backup_name,
+                time_stamp or utils.DateTime.now().timestamp,
+                prev_backup.level + 1, prev_backup.full_backup)
+        else:
+            return Backup(hostname_backup_name,
+                          time_stamp or utils.DateTime.now().timestamp)
 
     @staticmethod
     def _find_previous_backup(backups, no_incremental, max_level, always_level,
@@ -257,38 +194,38 @@ class Backup:
     """
     PATTERN = r'(.*)_(\d+)_(\d+?)$'
 
-    def __init__(self, hostname_backup_name, timestamp, level, tar_meta=False):
+    def __init__(self, hostname_backup_name, timestamp, level=0,
+                 full_backup=None, tar_meta=False):
         """
-
         :param hostname_backup_name: name (hostname_backup_name) of backup
         :type hostname_backup_name: str
         :param timestamp: timestamp of backup (when it was executed)
         :type timestamp: int
-        :param level: level of backup (freezer supports incremental backup)
-            Completed full backup has level 0 and can be restored without any
-            additional information.
-            Levels 1, 2, ... means that our backup is incremental and contains
-            only smart portion of information (that was actually changed
-            since the last backup)
+        :param full_backup: Previous full_backup - not increment
+        :type full_backup: Backup
+        :param level: current incremental level of backup
         :type level: int
         :param tar_meta: Is backup has or has not an attached meta
         tar file in storage. Default = False
         :type tar_meta: bool
         :return:
         """
-        if not isinstance(level, int):
-            raise ValueError("Level should have type int")
+        if level == 0 and full_backup:
+            raise ValueError("Detected incremental backup without level")
         self.hostname_backup_name = hostname_backup_name
         self._timestamp = timestamp
         self.tar_meta = tar_meta
-        self._level = level
         self._increments = {0: self}
         self._latest_update = self
-        self._parent = self
+        self._level = level
+        if not full_backup:
+            self._full_backup = self
+        else:
+            self._full_backup = full_backup
 
     @property
-    def parent(self):
-        return self._parent
+    def full_backup(self):
+        return self._full_backup
 
     @property
     def timestamp(self):
@@ -307,7 +244,7 @@ class Backup:
         return self._latest_update
 
     def tar(self):
-        return "tar_metadata_{0}".format(self.repr())
+        return "tar_metadata_{0}".format(self)
 
     def add_increment(self, increment):
         """
@@ -320,7 +257,6 @@ class Backup:
             raise ValueError("Can not add increment to increment")
         if increment.level == 0:
             raise ValueError("Can not add increment with level 0")
-        increment._parent = self
         if (increment.level not in self._increments or
                 increment.timestamp >
                 self._increments[increment.level].timestamp):
@@ -328,12 +264,59 @@ class Backup:
         if self.latest_update.level <= increment.level:
             self._latest_update = increment
 
-    def repr(self):
+    def __repr__(self):
         return '_'.join([self.hostname_backup_name,
                          repr(self._timestamp), repr(self._level)])
 
+    def __str__(self):
+        return self.__repr__()
+
     @staticmethod
-    def parse(value):
+    def parse_backups(names):
+        """
+        No side effect version of get_backups
+        :param names:
+        :type names: list[str] - file names of backups.
+        File name should be something like that host_backup_timestamp_level
+        :rtype: list[Backup]
+        :return: list of zero level backups
+        """
+        prefix = 'tar_metadata_'
+        tar_names = set([x[len(prefix):]
+                         for x in names if x.startswith(prefix)])
+        backup_names = [x for x in names if not x.startswith(prefix)]
+        backups = []
+        """:type: list[freezer.storage.BackupRepr]"""
+        for name in backup_names:
+            try:
+                backup = Backup._parse(name)
+                backup.tar_meta = name in tar_names
+                backups.append(backup)
+            except Exception as e:
+                logging.exception(e)
+                logging.error("cannot parse backup name: {0}"
+                              .format(name))
+        backups.sort(key=lambda x: (x.timestamp, x.level))
+        zero_backups = []
+        """:type: list[freezer.storage.Backup]"""
+        last_backup = None
+
+        """:type last_backup: freezer.storage.Backup"""
+        for backup in backups:
+            if backup.level == 0:
+                last_backup = backup.backup()
+                zero_backups.append(last_backup)
+            else:
+                if last_backup:
+                    last_backup.add_increment(backup.backup(last_backup))
+                else:
+                    logging.error("Incremental backup without parent: {0}"
+                                  .format(backup))
+
+        return zero_backups
+
+    @staticmethod
+    def _parse(value):
         """
         :param value: String representation of backup
         :type value: str
@@ -342,7 +325,8 @@ class Backup:
         match = re.search(Backup.PATTERN, value, re.I)
         if not match:
             raise ValueError("Cannot parse backup from string: " + value)
-        return Backup(match.group(1), int(match.group(2)), int(match.group(3)))
+        return BackupRepr(match.group(1), int(match.group(2)),
+                          int(match.group(3)))
 
     def __eq__(self, other):
         if self is other:
@@ -353,3 +337,37 @@ class Backup:
             self.tar_meta == other.tar_meta and \
             self._level == other.level and \
             len(self.increments) == len(other.increments)
+
+
+class BackupRepr:
+    """
+    Intermediate for parsing purposes - it parsed backup name.
+    Difference between Backup and BackupRepr - backupRepr can be parsed from
+    str and doesn't require information about full_backup
+    """
+    def __init__(self, hostname_backup_name, timestamp, level, tar_meta=False):
+        """
+
+        :param hostname_backup_name:
+        :type hostname_backup_name: str
+        :param timestamp:
+        :type timestamp: int
+        :param level:
+        :type level: int
+        :param tar_meta:
+        :type tar_meta: bool
+        :return:
+        """
+        self.hostname_backup_name = hostname_backup_name
+        self.timestamp = timestamp
+        self.level = level
+        self.tar_meta = tar_meta
+
+    def repr(self):
+        return "_".join([self.hostname_backup_name, str(self.timestamp),
+                         str(self.level)])
+
+    def backup(self, full_backup=None):
+        return Backup(self.hostname_backup_name, self.timestamp,
+                      level=self.level, full_backup=full_backup,
+                      tar_meta=self.tar_meta)

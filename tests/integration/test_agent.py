@@ -16,6 +16,7 @@
 from copy import copy
 import json
 import os
+import unittest
 
 import common
 import uuid
@@ -177,9 +178,13 @@ class TestBackupSSH(common.TestFS):
      - FREEZER_TEST_CONTAINER (directory on the remote machine used to store backups)
     """
 
+    @unittest.skipIf(not common.TestFS.use_ssh,
+                     "Cannot test with ssh, please provide"
+                     "'FREEZER_TEST_SSH_KEY,'"
+                     "'FREEZER_TEST_SSH_USERNAME',"
+                     "'FREEZER_TEST_SSH_HOST',"
+                     "'FREEZER_TEST_CONTAINER'")
     def test_backup_ssh(self):
-        if not self.use_ssh:
-            return
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
 
@@ -210,7 +215,6 @@ class TestBackupSSH(common.TestFS):
 
         result = common.execute(FREEZERC + self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
-
         result = json.loads(result)
         sub_path = '_'.join([result['hostname'], result['backup_name']])
         # It may be reasonable to insert a check of the files in the
@@ -228,9 +232,13 @@ class TestBackupSSH(common.TestFS):
 
         self.remove_ssh_directory(sub_path)
 
+    @unittest.skipIf(not common.TestFS.use_ssh,
+                     "Cannot test with ssh, please provide"
+                     "'FREEZER_TEST_SSH_KEY,'"
+                     "'FREEZER_TEST_SSH_USERNAME',"
+                     "'FREEZER_TEST_SSH_HOST',"
+                     "'FREEZER_TEST_CONTAINER'")
     def test_backup_ssh_incremental(self):
-        if not self.use_ssh:
-            return
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
 
@@ -291,12 +299,14 @@ class TestBackupSSH(common.TestFS):
 
         self.remove_ssh_directory(sub_path)
 
+    @unittest.skipIf(not common.TestFS.use_ssh,
+                     "Cannot test with ssh, please provide"
+                     "'FREEZER_TEST_SSH_KEY,'"
+                     "'FREEZER_TEST_SSH_USERNAME',"
+                     "'FREEZER_TEST_SSH_HOST',"
+                     "'FREEZER_TEST_CONTAINER'")
+    @unittest.skipIf(not common.TestFS.use_lvm, "No LVM support")
     def test_backup_ssh_incremental_with_lvm(self):
-        if not self.use_ssh:
-            return
-        if not self.use_lvm:
-            return
-
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
 
@@ -369,10 +379,14 @@ class TestBackupUsingSwiftStorage(common.TestFS):
      - FREEZER_TEST_OS_PASSWORD
      - FREEZER_TEST_OS_AUTH_URL
     """
-
+    @unittest.skipIf(not common.TestFS.use_os,
+                     "Cannot test with swift, please provide"
+                     "'FREEZER_TEST_OS_TENANT_NAME',"
+                     "'FREEZER_TEST_OS_USERNAME',"
+                     "'FREEZER_TEST_OS_REGION_NAME',"
+                     "'FREEZER_TEST_OS_PASSWORD',"
+                     "'FREEZER_TEST_OS_AUTH_URL'")
     def test_backup_os_simple(self):
-        if not self.use_os:
-            return
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
 
@@ -426,13 +440,17 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         result = self.remove_swift_container(backup_args['container'])
         self.assertIsNotNone(result)
 
+    @unittest.skipIf(not common.TestFS.use_os,
+                     "Cannot test with swift, please provide"
+                     "'FREEZER_TEST_OS_TENANT_NAME',"
+                     "'FREEZER_TEST_OS_USERNAME',"
+                     "'FREEZER_TEST_OS_REGION_NAME',"
+                     "'FREEZER_TEST_OS_PASSWORD',"
+                     "'FREEZER_TEST_OS_AUTH_URL'")
+    @unittest.skipIf(not common.TestFS.use_lvm, "No LVM support")
+    @unittest.skipIf(not os.path.isdir('/var/lib/mysql'),
+                     "No path /var/lib/mysql")
     def test_backup_swift_mysql(self):
-        if not self.use_os:
-            return
-        if not self.use_lvm:
-            return
-        if not os.path.isdir('/var/lib/mysql'):
-            return
         self.source_tree = common.Temp_Tree(dir='/var/lib/mysql', create=False)
 
         backup_name = uuid.uuid4().hex

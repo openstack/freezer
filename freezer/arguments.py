@@ -49,7 +49,7 @@ DEFAULT_PARAMS = {
     'max_segment_size': 67108864, 'lvm_srcvol': False,
     'download_limit': -1, 'hostname': False, 'remove_from_date': False,
     'restart_always_level': False, 'lvm_dirmount': False,
-    'dst_file': False, 'dereference_symlink': 'none',
+    'dst_file': False, 'dereference_symlink': '',
     'restore_from_host': False, 'config': False, 'mysql_conf': False,
     'insecure': False, 'lvm_snapname': False, 'lvm_snapperm': 'ro',
     'max_priority': False, 'max_level': False, 'path_to_backup': False,
@@ -299,7 +299,7 @@ def backup_arguments(args_dict={}):
         help=(
             "Follow hard and soft links and archive and dump the files they "
             " refer to. Default False."),
-        dest='dereference_symlink', default='none')
+        dest='dereference_symlink', default='')
     arg_parser.add_argument(
         '-U', '--upload', action='store_true',
         help="Upload to Swift the destination file passed to the -d option.\

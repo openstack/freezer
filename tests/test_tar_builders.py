@@ -5,7 +5,7 @@ from freezer import tar
 class TestTarCommandBuilder(unittest.TestCase):
 
     def setUp(self):
-        self.builder = tar.TarCommandBuilder("gnutar", ".", "gzip")
+        self.builder = tar.TarCommandBuilder("gnutar", ".", "gzip", False)
 
     def test_build(self):
         self.assertEquals(
@@ -31,13 +31,15 @@ class TestTarCommandBuilder(unittest.TestCase):
             self.builder.build(),
             "gnutar --create -z --warning=none --no-check-device "
             "--one-file-system --preserve-permissions --same-owner "
-            "--seek --ignore-failed-read --listed-incremental=listed-file.tar "
+            "--seek --ignore-failed-read --hard-dereference "
+            "--listed-incremental=listed-file.tar "
             "--exclude=\"excluded_files\" . | openssl enc -aes-256-cfb -pass "
             "file:encrypt_pass_file")
 
 class TestTarCommandRestoreBuilder(unittest.TestCase):
     def setUp(self):
-        self.builder = tar.TarCommandRestoreBuilder("gnutar", "restore_path", "gzip")
+        self.builder = tar.TarCommandRestoreBuilder(
+            "gnutar", "restore_path", "gzip", False)
 
     def test(self):
         self.assertEquals(

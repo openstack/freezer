@@ -18,23 +18,25 @@ This product includes cryptographic software written by Eric Young
 Hudson (tjh@cryptsoft.com).
 """
 
-import subprocess
-import logging
 import os
 import stat
+import logging
+
 import paramiko
 
-
 from freezer import storage
+from freezer import utils
 
 
 class SshStorage(storage.Storage):
     """
-    :type ssh: paramiko.SSHClient
     :type ftp: paramiko.SFTPClient
     """
+    DEFAULT_CHUNK_SIZE = 10000000
+
     def __init__(self, storage_directory, work_dir,
-                 ssh_key_path, remote_username, remote_ip):
+                 ssh_key_path, remote_username, remote_ip,
+                 chunk_size=DEFAULT_CHUNK_SIZE):
         """
         :param storage_directory: directory of storage
         :type storage_directory: str
@@ -45,14 +47,16 @@ class SshStorage(storage.Storage):
         self.remote_ip = remote_ip
         self.storage_directory = storage_directory
         self.work_dir = work_dir
+        self.chunk_size = chunk_size
         ssh = paramiko.SSHClient()
         # automatically add keys without requiring human intervention
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         ssh.connect(remote_ip, username=remote_username,
                     key_filename=ssh_key_path)
+        # we should keep link to ssh to prevent garbage collection
         self.ssh = ssh
-        self.ftp = ssh.open_sftp()
+        self.ftp = self.ssh.open_sftp()
 
     def prepare(self):
         if not self.is_ready():
@@ -62,15 +66,20 @@ class SshStorage(storage.Storage):
         backup_names = self.ftp.listdir(self.storage_directory)
         backups = []
         for backup_name in backup_names:
-            backup_dir = self.storage_directory + "/" + backup_name
+            backup_dir = utils.joined_path(self.storage_directory, backup_name)
             timestamps = self.ftp.listdir(backup_dir)
             for timestamp in timestamps:
-                increments = self.ftp.listdir(backup_dir + "/" + timestamp)
-                backups.extend(self._get_backups(increments))
+                increments = self.ftp.listdir(
+                    utils.joined_path(backup_dir, timestamp))
+                backups.extend(storage.Backup.parse_backups(increments))
         return backups
 
     def info(self):
         pass
+
+    def backup_dir(self, backup):
+        return "{0}{1}{2}".format(self._zero_backup_dir(backup),
+                                  os.sep, backup)
 
     def _backup_dir(self, backup):
         """
@@ -78,8 +87,9 @@ class SshStorage(storage.Storage):
         :type backup: freezer.storage.Backup
         :return:
         """
-        return "{0}/{1}".format(self.storage_directory,
-                                backup.hostname_backup_name)
+        return "{0}{1}{2}".format(self.storage_directory,
+                                  os.sep,
+                                  backup.hostname_backup_name)
 
     def _zero_backup_dir(self, backup):
         """
@@ -87,46 +97,9 @@ class SshStorage(storage.Storage):
         :type backup: freezer.storage.Backup
         :return:
         """
-        return "{0}/{1}".format(self._backup_dir(backup), backup.timestamp)
-
-    def backup(self, path, hostname_backup_name, tar_builder,
-               parent_backup=None, time_stamp=None):
-        """
-        Backup path
-        storage_dir/backup_name/timestamp/backup_name_timestamps_level
-        :param path:
-        :param hostname_backup_name:
-        :param tar_builder:
-        :type tar_builder: freezer.tar.TarCommandBuilder
-        :param parent_backup:
-        :type parent_backup: freezer.storage.Backup
-        :return:
-        """
-        new_backup = self._create_backup(hostname_backup_name, parent_backup,
-                                         time_stamp)
-
-        if parent_backup:
-            zero_backup = self._zero_backup_dir(parent_backup.parent)
-        else:
-            zero_backup = self._zero_backup_dir(new_backup)
-        self.mkdir_p(zero_backup)
-        output_file = "{0}/{1}".format(zero_backup, new_backup.repr())
-        tar_builder.set_output_file(output_file)
-        tar_builder.set_ssh(self.ssh_key_path, self.remote_username,
-                            self.remote_ip)
-        tar_incremental = "{0}/{1}".format(self.work_dir, new_backup.tar())
-        if parent_backup:
-            self.ftp.get(zero_backup + "/" + parent_backup.tar(),
-                         tar_incremental)
-
-        tar_builder.set_listed_incremental(tar_incremental)
-
-        logging.info('[*] Changing current working directory to: {0}'
-                     .format(path))
-        logging.info('[*] Backup started for: {0}'.format(path))
-
-        subprocess.check_output(tar_builder.build(), shell=True)
-        self.ftp.put(tar_incremental, zero_backup + "/" + new_backup.tar())
+        return "{0}{1}{2}".format(self._backup_dir(backup.full_backup),
+                                  os.sep,
+                                  backup.full_backup.timestamp)
 
     def _is_dir(self, check_dir):
         return stat.S_IFMT(self.ftp.stat(check_dir).st_mode) == stat.S_IFDIR
@@ -166,6 +139,32 @@ class SshStorage(storage.Storage):
             self.ftp.chdir(basename)
             return True
 
+    def download_meta_file(self, backup):
+        """
+        :type backup: freezer.storage.Backup
+        :param backup:
+        :return:
+        """
+        utils.create_dir(self.work_dir)
+        if backup.level == 0:
+            return "{0}{1}{2}".format(self.work_dir, os.sep, backup.tar())
+        meta_backup = backup.full_backup.increments[backup.level - 1]
+        zero_backup = self._zero_backup_dir(backup)
+        from_path = "{0}{1}{2}".format(zero_backup, os.sep, meta_backup.tar())
+        to_path = "{0}{1}{2}".format(self.work_dir, os.sep, meta_backup.tar())
+        if backup.level != 0:
+            if os.path.exists(to_path):
+                os.remove(to_path)
+            self.ftp.get(from_path, to_path)
+        return to_path
+
+    def upload_meta_file(self, backup, meta_file):
+        zero_backup = self._zero_backup_dir(backup)
+        to_path = "{0}{1}{2}".format(zero_backup, os.sep, backup.tar())
+        logging.info("Ssh storage uploading {0} to {1}".format(meta_file,
+                                                               to_path))
+        self.ftp.put(meta_file, to_path)
+
     def remove_backup(self, backup):
         """
         :type backup: freezer.storage.Backup
@@ -173,19 +172,29 @@ class SshStorage(storage.Storage):
         """
         self.rm(self._zero_backup_dir(backup))
 
-    def restore(self, backup, path, tar_builder):
+    def backup_blocks(self, backup):
+        filename = self.backup_dir(backup)
+        with self.ftp.open(filename, mode='rb',
+                           bufsize=self.chunk_size) as backup_file:
+            while True:
+                chunk = backup_file.read(self.chunk_size)
+                if chunk == '':
+                    break
+                if len(chunk):
+                    yield chunk
+
+    def write_backup(self, rich_queue, backup):
         """
-        :param backup:
-        :param path:
-        :param tar_builder:
-        :type tar_builder: freezer.tar.TarCommandRestoreBuilder
-        :return:
+        Upload object on the remote swift server
+        :type rich_queue: freezer.streaming.RichQueue
+        :type backup: SwiftBackup
         """
-        zero_dir = self._zero_backup_dir(backup.parent)
-        for level in range(0, backup.level + 1):
-            c_backup = backup.parent.increments[level]
-            tar_builder.set_archive(zero_dir + "/" + c_backup.repr())
-            tar_builder.set_ssh(self.ssh_key_path,
-                                self.remote_username,
-                                self.remote_ip)
-            subprocess.check_output(tar_builder.build(), shell=True)
+        filename = self.backup_dir(backup)
+        self.mkdir_p(self._zero_backup_dir(backup))
+        logging.info("SSH write backup enter")
+
+        with self.ftp.open(filename, mode='wb',
+                           bufsize=self.chunk_size) as b_file:
+            logging.debug("SSH write backup getting chunk")
+            for message in rich_queue.get_messages():
+                b_file.write(message)

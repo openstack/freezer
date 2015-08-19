@@ -22,74 +22,13 @@ Hudson (tjh@cryptsoft.com).
 """
 
 from commons import *
-from freezer.tar import (tar_restore, tar_backup,  get_tar_flag_from_algo)
-from freezer import winutils
+from freezer.tar import get_tar_flag_from_algo
 
 import os
 import logging
-import subprocess
-import pytest
 
 
 class TestTar:
-
-    def test_tar_restore(self, monkeypatch):
-
-        backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
-        fakesubprocess = FakeSubProcess5()
-        fakesubprocesspopen = fakesubprocess.Popen()
-        fakemultiprocessing = FakeMultiProcessing()
-        fakepipe = fakemultiprocessing.Pipe()
-        fakeos = Os()
-
-        monkeypatch.setattr(os, 'path', fakeos)
-        monkeypatch.setattr(os, 'remove', fakeos.remove)
-        monkeypatch.setattr(
-            subprocess.Popen, 'communicate', fakesubprocesspopen.communicate)
-        monkeypatch.setattr(subprocess, 'Popen', fakesubprocesspopen)
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        pytest.raises(SystemExit, tar_restore, "", "",  fakepipe)
-
-        fakesubprocess = FakeSubProcess()
-        fakesubprocesspopen = fakesubprocess.Popen()
-        monkeypatch.setattr(
-            subprocess.Popen, 'communicate', fakesubprocesspopen.communicate)
-        monkeypatch.setattr(
-            subprocess, 'Popen', fakesubprocesspopen)
-        assert tar_restore("", "", fakepipe) is None
-
-        # expected_tar_cmd = 'gzip -dc | tar -xf - --unlink-first --ignore-zeros'
-        monkeypatch.setattr(winutils, 'is_windows', ReturnBool.return_true)
-        fake_os = Os()
-        monkeypatch.setattr(os, 'chdir', fake_os.chdir)
-        assert tar_restore("", "", fakepipe) is None
-
-        monkeypatch.setattr(os, 'chdir', fake_os.chdir2)
-        pytest.raises(Exception, tar_restore, backup_opt, "", fakepipe)
-
-    def test_tar_backup(self, monkeypatch):
-
-        fakelogging = FakeLogging()
-        fakesubprocess = FakeSubProcess()
-        fakesubprocesspopen = fakesubprocess.Popen()
-        fakemultiprocessing = FakeMultiProcessing()
-        fakebackup_queue = fakemultiprocessing.Queue()
-
-        monkeypatch.setattr(
-            subprocess.Popen, 'communicate', fakesubprocesspopen.communicate)
-        monkeypatch.setattr(
-            subprocess, 'Popen', fakesubprocesspopen)
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
-
-        assert tar_backup(".", 100, 'tar_command', fakebackup_queue) is not False
 
     def test_tar_restore_args_valid(self, monkeypatch):
 

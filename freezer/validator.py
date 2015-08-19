@@ -22,3 +22,8 @@ class Validator:
         if conf.restore_abs_path and not conf.action == "restore":
             raise Exception('Restore abs path with {0} action'
                             .format(conf.action))
+
+        if conf.storage == "ssh" and \
+                not (conf.ssh_key and conf.ssh_username and conf.ssh_host):
+            raise Exception("Please provide ssh_key, "
+                            "ssh_username and ssh_host")

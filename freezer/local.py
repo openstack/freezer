@@ -18,50 +18,75 @@ This product includes cryptographic software written by Eric Young
 Hudson (tjh@cryptsoft.com).
 """
 
-import subprocess
-import logging
 import os
 import shutil
+import io
+import logging
 
 from freezer import storage
 from freezer import utils
 
 
 class LocalStorage(storage.Storage):
+    DEFAULT_CHUNK_SIZE = 20000000
 
-    def prepare(self):
-        utils.create_dir(self.storage_directory)
-
-    def get_backups(self):
-        backup_names = os.listdir(self.storage_directory)
-        backups = []
-        for backup_name in backup_names:
-            backup_dir = self.storage_directory + "/" + backup_name
-            timestamps = os.listdir(backup_dir)
-            for timestamp in timestamps:
-                increments = os.listdir(backup_dir + "/" + timestamp)
-                backups.extend(self._get_backups(increments))
-        return backups
-
-    def __init__(self, storage_directory):
+    def __init__(self, storage_directory, work_dir,
+                 chunk_size=DEFAULT_CHUNK_SIZE):
         """
         :param storage_directory: directory of storage
         :type storage_directory: str
         :return:
         """
         self.storage_directory = storage_directory
+        self.work_dir = work_dir
+        self.chunk_size = chunk_size
+
+    def download_meta_file(self, backup):
+        """
+        :type backup: freezer.storage.Backup
+        :param backup:
+        :return:
+        """
+        utils.create_dir(self.work_dir)
+        if backup.level == 0:
+            return utils.joined_path(self.work_dir, backup.tar())
+        meta_backup = backup.full_backup.increments[backup.level - 1]
+        zero_backup = self._zero_backup_dir(backup)
+        to_path = utils.joined_path(self.work_dir, meta_backup.tar())
+        if os.path.exists(to_path):
+            os.remove(to_path)
+        from_path = utils.joined_path(zero_backup, meta_backup.tar())
+        shutil.copyfile(from_path, to_path)
+        return to_path
+
+    def upload_meta_file(self, backup, meta_file):
+        zero_backup = self._zero_backup_dir(backup)
+        to_path = utils.joined_path(zero_backup, backup.tar())
+        shutil.copyfile(meta_file, to_path)
+
+    def prepare(self):
+        utils.create_dir(self.storage_directory)
+
+    def get_backups(self):
+        backup_names = os.listdir(self.storage_directory)
+        logging.info(backup_names)
+        backups = []
+        for backup_name in backup_names:
+            backup_dir = utils.joined_path(self.storage_directory, backup_name)
+            timestamps = os.listdir(backup_dir)
+            for timestamp in timestamps:
+                increments = \
+                    os.listdir(utils.joined_path(backup_dir, timestamp))
+                backups.extend(storage.Backup.parse_backups(increments))
+        logging.info(backups)
+        return backups
 
     def info(self):
         pass
 
-    def _backup_dir(self, backup):
-        """
-        :param backup:
-        :type backup: freezer.storage.Backup
-        :return:
-        """
-        return "{0}/{1}".format(self.storage_directory,
-                                backup.hostname_backup_name)
+    def backup_to_file_path(self, backup):
+        return utils.joined_path(self._zero_backup_dir(backup),
+                                 backup)
 
     def _zero_backup_dir(self, backup):
         """
@@ -69,47 +94,9 @@ class LocalStorage(storage.Storage):
         :type backup: freezer.storage.Backup
         :return:
         """
-        return "{0}/{1}".format(self._backup_dir(backup), backup.timestamp)
-
-    def backup(self, path, hostname_backup_name, tar_builder,
-               parent_backup=None, time_stamp=None):
-        """
-        Backup path
-        storage_dir/backup_name/timestamp/backup_name_timestamps_level
-        :param path:
-        :param hostname_backup_name:
-        :param tar_builder:
-        :type tar_builder: freezer.tar.TarCommandBuilder
-        :param parent_backup:
-        :type parent_backup: freezer.storage.Backup
-        :return:
-        """
-        new_backup = self._create_backup(hostname_backup_name, parent_backup,
-                                         time_stamp)
-
-        host_backups = self._backup_dir(new_backup)
-        utils.create_dir(host_backups)
-
-        if parent_backup:
-            zero_backup = self._zero_backup_dir(parent_backup.parent)
-        else:
-            zero_backup = self._zero_backup_dir(new_backup)
-        utils.create_dir(zero_backup)
-        tar_builder.set_output_file("{0}/{1}".format(zero_backup,
-                                                     new_backup.repr()))
-
-        tar_incremental = "{0}/{1}".format(zero_backup, new_backup.tar())
-        if parent_backup:
-            shutil.copyfile("{0}/{1}".format(
-                zero_backup, parent_backup.tar()), tar_incremental)
-
-        tar_builder.set_listed_incremental(tar_incremental)
-
-        logging.info('[*] Changing current working directory to: {0}'
-                     .format(path))
-        logging.info('[*] Backup started for: {0}'.format(path))
-
-        subprocess.check_output(tar_builder.build(), shell=True)
+        backup_dir = utils.joined_path(
+            self.storage_directory, backup.hostname_backup_name)
+        return utils.joined_path(backup_dir, backup.full_backup.timestamp)
 
     def is_ready(self):
         return os.path.isdir(self.storage_directory)
@@ -121,17 +108,27 @@ class LocalStorage(storage.Storage):
         """
         shutil.rmtree(self._zero_backup_dir(backup))
 
-    def restore(self, backup, path, tar_builder):
+    def backup_blocks(self, backup):
+        filename = self.backup_to_file_path(backup)
+        with io.open(filename, 'rb') as backup_file:
+            while True:
+                chunk = backup_file.read(self.chunk_size)
+                if chunk == '':
+                    break
+                if len(chunk):
+                    yield chunk
+
+    def write_backup(self, rich_queue, backup):
         """
-        :param backup:
-        :type backup: freezer.storage.Backup
-        :param path:
-        :param tar_builder:
-        :type tar_builder: freezer.tar.TarCommandRestoreBuilder
-        :return:
+        Upload object on the remote swift server
+        :type rich_queue: freezer.streaming.RichQueue
+        :type backup: SwiftBackup
         """
-        zero_dir = self._zero_backup_dir(backup.parent)
-        for level in range(0, backup.level + 1):
-            c_backup = backup.parent.increments[level]
-            tar_builder.set_archive(zero_dir + "/" + c_backup.repr())
-            subprocess.check_output(tar_builder.build(), shell=True)
+        filename = self.backup_to_file_path(backup)
+        logging.info("Local storage write backup enter")
+        if backup.level == 0:
+            os.makedirs(os.path.dirname(filename))
+        with io.open(filename, 'wb', buffering=self.chunk_size) as b_file:
+            for message in rich_queue.get_messages():
+                b_file.write(message)
+        logging.info("Local storage write backup successfully finished")

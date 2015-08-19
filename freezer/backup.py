@@ -27,7 +27,6 @@ import time
 
 from freezer import utils
 from freezer.lvm import lvm_snap, lvm_snap_remove, get_lvm_info
-from freezer.tar import TarCommandBuilder
 from freezer.vss import vss_create_shadow_copy
 from freezer.vss import vss_delete_shadow_copy
 from freezer.winutils import start_sql_server
@@ -66,7 +65,8 @@ def backup_mode_sql_server(backup_opt_dict):
 
     try:
         stop_sql_server(backup_opt_dict)
-        backup(backup_opt_dict, backup_opt_dict.storage)
+        backup(backup_opt_dict, backup_opt_dict.storage,
+               backup_opt_dict.engine)
     finally:
         if not backup_opt_dict.vssadmin:
             # if vssadmin is false, wait until the backup is complete
@@ -137,7 +137,7 @@ def backup_mode_mysql(backup_opt_dict):
         raise Exception('[*] MySQL: {0}'.format(error))
 
     # Execute backup
-    backup(backup_opt_dict, backup_opt_dict.storage)
+    backup(backup_opt_dict, backup_opt_dict.storage, backup_opt_dict.engine)
 
 
 def backup_mode_mongo(backup_opt_dict):
@@ -161,7 +161,8 @@ def backup_mode_mongo(backup_opt_dict):
     mongo_primary = master_dict['primary']
 
     if mongo_me == mongo_primary:
-        backup(backup_opt_dict, backup_opt_dict.storage)
+        backup(backup_opt_dict, backup_opt_dict.storage,
+               backup_opt_dict.engine)
     else:
         logging.warning('[*] localhost {0} is not Master/Primary,\
         exiting...'.format(local_hostname))
@@ -290,12 +291,14 @@ def snapshot_remove(backup_opt_dict, shadow, windows_volume):
         lvm_snap_remove(backup_opt_dict)
 
 
-def backup(backup_opt_dict, storage):
+def backup(backup_opt_dict, storage, engine):
     """
 
     :param backup_opt_dict:
     :param storage:
     :type storage: freezer.storage.Storage
+    :param engine: Backup Engine
+    :type engine: freezer.engine.engine.BackupEngine
     :return:
     """
     backup_media = backup_opt_dict.backup_media
@@ -314,30 +317,17 @@ def backup(backup_opt_dict, storage):
                 filepath = os.path.basename(chdir_path)
                 chdir_path = os.path.dirname(chdir_path)
             os.chdir(chdir_path)
-            builder = TarCommandBuilder(backup_opt_dict.tar_path,
-                                        filepath,
-                                        backup_opt_dict.compression)
-            builder.set_dereference(backup_opt_dict.dereference_symlink)
-            if backup_opt_dict.exclude:
-                builder.set_exclude(backup_opt_dict.exclude)
-            if backup_opt_dict.encrypt_pass_file:
-                builder.set_encryption(
-                    backup_opt_dict.openssl_path,
-                    backup_opt_dict.encrypt_pass_file)
             hostname_backup_name = backup_opt_dict.hostname_backup_name
             if not storage.is_ready():
                 storage.prepare()
-            incremental_backup = storage.find_previous_backup(
+            backup_instance = storage.create_backup(
                 hostname_backup_name,
                 backup_opt_dict.no_incremental,
                 backup_opt_dict.max_level,
                 backup_opt_dict.always_level,
-                backup_opt_dict.restart_always_level)
-            storage.backup(
-                backup_opt_dict.path_to_backup, hostname_backup_name,
-                builder, incremental_backup,
+                backup_opt_dict.restart_always_level,
                 time_stamp=time_stamp)
-
+            engine.backup(filepath, backup_instance)
         finally:
             snapshot_remove(backup_opt_dict, backup_opt_dict.shadow,
                             backup_opt_dict.windows_volume)

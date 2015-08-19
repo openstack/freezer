@@ -6,14 +6,14 @@ import mock
 
 class TestBackup(unittest.TestCase):
     def test_backup_parse(self):
-        self.assertRaises(ValueError, storage.Backup.parse, "asdfasdfasdf")
-        backup = storage.Backup.parse("test_name_host_1234_0")
+        self.assertRaises(ValueError, storage.Backup._parse, "asdfasdfasdf")
+        backup = storage.Backup._parse("test_name_host_1234_0")
         self.assertEqual(backup.level, 0)
         self.assertEqual(backup.timestamp, 1234)
         self.assertEqual(backup.hostname_backup_name, "test_name_host")
 
     def test_backup_creation(self):
-        backup = storage.Backup("name", 1234, 0)
+        backup = storage.Backup("name", 1234)
         self.assertEqual(backup.hostname_backup_name, "name")
         self.assertEqual(backup.timestamp, 1234)
         self.assertEqual(backup.level, 0)
@@ -23,63 +23,63 @@ class TestBackup(unittest.TestCase):
         self.assertEqual(len(backup.increments), 1)
 
     def test_backup_increment(self):
-        backup = storage.Backup("name", 1234, 0)
+        backup = storage.Backup("name", 1234)
         self.assertRaises(ValueError, backup.add_increment, backup)
-        increment = storage.Backup("name", 4567, 1)
+        increment = storage.Backup("name", 4567, 1, backup)
         backup.add_increment(increment)
         self.assertEqual(len(backup.increments), 2)
 
     def test__find_previous_backup(self):
-        backup = storage.Backup("name", 1234, 0)
+        backup = storage.Backup("name", 1234)
         b = storage.Storage._find_previous_backup([backup], False, 2, False, 0)
         assert b == backup
 
     def test__find_previous_backup_with_max_level(self):
-        backup = storage.Backup("name", 1234, 0)
-        i1 = storage.Backup("name", 1234, 1)
-        i2 = storage.Backup("name", 1234, 2)
+        backup = storage.Backup("name", 1234)
+        i1 = storage.Backup("name", 1234, 1, backup)
+        i2 = storage.Backup("name", 1234, 2, backup)
         backup.add_increment(i1)
         backup.add_increment(i2)
         b = storage.Storage._find_previous_backup([backup], False, 2, False, 0)
         assert not b
 
     def test__find_previous_backup_with_max_level_not_reached(self):
-        backup = storage.Backup("name", 1234, 0)
-        i1 = storage.Backup("name", 1234, 1)
+        backup = storage.Backup("name", 1234)
+        i1 = storage.Backup("name", 1234, 1, backup)
         backup.add_increment(i1)
         b = storage.Storage._find_previous_backup([backup], False, 2, False, 0)
         assert b == i1
 
     def test__find_previous_backup_with_always_level_reached(self):
-        backup = storage.Backup("name", 1234, 0)
-        i1 = storage.Backup("name", 1234, 1)
-        i2 = storage.Backup("name", 1234, 2)
+        backup = storage.Backup("name", 1234)
+        i1 = storage.Backup("name", 1234, 1, backup)
+        i2 = storage.Backup("name", 1234, 2, backup)
         backup.add_increment(i1)
         backup.add_increment(i2)
         b = storage.Storage._find_previous_backup([backup], False, False, 2, 0)
         assert b == i1
 
     def test__find_previous_backup_with_always_level_reached_2(self):
-        backup = storage.Backup("name", 1234, 0)
-        i1 = storage.Backup("name", 1234, 1)
-        i2 = storage.Backup("name", 1234, 2)
+        backup = storage.Backup("name", 1234)
+        i1 = storage.Backup("name", 1234, 1, backup)
+        i2 = storage.Backup("name", 1234, 2, backup)
         backup.add_increment(i1)
         backup.add_increment(i2)
         b = storage.Storage._find_previous_backup([backup], False, False, 3, 0)
         assert b == i2
 
-    def test_find(self):
+    def test_find_all(self):
         t = storage.Storage()
         t.get_backups = mock.Mock()
         t.get_backups.return_value = [
-            storage.Backup("host_backup", 1000, 0),
-            storage.Backup("host_backup", 1000, 0),
-            storage.Backup("host_backup", 1000, 0),
-            storage.Backup("host_backup", 1000, 0),
-            storage.Backup("host_backup_f", 1000, 0),
-            storage.Backup("host_backup", 1000, 0),
+            storage.Backup("host_backup", 1000),
+            storage.Backup("host_backup", 1000),
+            storage.Backup("host_backup", 1000),
+            storage.Backup("host_backup", 1000),
+            storage.Backup("host_backup_f", 1000),
+            storage.Backup("host_backup", 1000),
         ]
-        result = t.find("host_backup")
+        result = t.find_all("host_backup")
         assert len(result) == 5
         for r in result:
             assert r.hostname_backup_name != "host_backup_f"
@@ -87,82 +87,70 @@ class TestBackup(unittest.TestCase):
     def test_restore_latest_backup(self):
         t = storage.Storage()
         t.get_backups = mock.Mock()
-        last = storage.Backup("host_backup", 5000, 0)
+        last = storage.Backup("host_backup", 5000)
         t.get_backups.return_value = [
-            storage.Backup("host_backup", 1000, 0),
-            storage.Backup("host_backup", 2000, 0),
-            storage.Backup("host_backup", 3000, 0),
-            storage.Backup("host_backup", 4000, 0),
-            storage.Backup("host_backup_f", 1000, 0),
+            storage.Backup("host_backup", 1000),
+            storage.Backup("host_backup", 2000),
+            storage.Backup("host_backup", 3000),
+            storage.Backup("host_backup", 4000),
+            storage.Backup("host_backup_f", 1000),
             last
         ]
-        builder = tar.TarCommandRestoreBuilder("", "", "gzip")
-        self.assertRaises(ValueError, t.restore_latest, "test", ".", builder)
-        t.restore = mock.Mock()
-        t.restore_latest("host_backup", ".", builder)
-        t.restore.assert_called_with(last, ".", builder)
+        self.assertRaises(IndexError, t.find_one, "")
+        assert t.find_one("host_backup") == last
 
     def test_find_latest_backup_respects_increments_timestamp(self):
-        test_backup = storage.Backup("host_backup", 1000, 0)
-        increment = storage.Backup("host_backup", 6000, 1)
+        test_backup = storage.Backup("host_backup", 5500)
+        increment = storage.Backup("host_backup", 6000, 1, test_backup)
         test_backup.add_increment(increment)
         t = storage.Storage()
         t.get_backups = mock.Mock()
         t.get_backups.return_value = [
             test_backup,
-            storage.Backup("host_backup", 2000, 0),
-            storage.Backup("host_backup", 3000, 0),
-            storage.Backup("host_backup", 4000, 0),
-            storage.Backup("host_backup_f", 1000, 0),
-            storage.Backup("host_backup", 5000, 0),
+            storage.Backup("host_backup", 2000),
+            storage.Backup("host_backup", 3000),
+            storage.Backup("host_backup", 4000),
+            storage.Backup("host_backup_f", 1000),
+            storage.Backup("host_backup", 5000),
         ]
-        builder = tar.TarCommandRestoreBuilder("", "", "gzip")
-        t.restore = mock.Mock()
-        t.restore_latest("host_backup", ".", builder)
-        t.restore.assert_called_with(increment, ".", builder)
+        assert t.find_one("host_backup") == increment
 
     def test_restore_from_date(self):
         t = storage.Storage()
         t.get_backups = mock.Mock()
-        backup_restore = storage.Backup("host_backup", 3000, 0)
+        backup_restore = storage.Backup("host_backup", 3000)
         t.get_backups.return_value = [
-            storage.Backup("host_backup", 1000, 0),
-            storage.Backup("host_backup", 2000, 0),
+            storage.Backup("host_backup", 1000),
+            storage.Backup("host_backup", 2000),
             backup_restore,
-            storage.Backup("host_backup", 4000, 0),
-            storage.Backup("host_backup_f", 1000, 0),
-            storage.Backup("host_backup", 5000, 0),
+            storage.Backup("host_backup", 4000),
+            storage.Backup("host_backup_f", 1000),
+            storage.Backup("host_backup", 5000),
         ]
-        t.restore = mock.Mock()
-        builder = tar.TarCommandRestoreBuilder("", "", "gzip")
-        t.restore_from_date("host_backup", ".", builder, 3234)
-        t.restore.assert_called_with(backup_restore, ".", builder)
+        assert t.find_one("host_backup", 3234) == backup_restore
 
     def test_restore_from_date_increment(self):
         t = storage.Storage()
         t.get_backups = mock.Mock()
-        test_backup = storage.Backup("host_backup", 1000, 0)
-        increment = storage.Backup("host_backup", 3200, 1)
+        test_backup = storage.Backup("host_backup", 1000)
+        increment = storage.Backup("host_backup", 3200, 1, test_backup)
         test_backup.add_increment(increment)
         t.get_backups.return_value = [
             test_backup,
-            storage.Backup("host_backup", 4000, 0),
-            storage.Backup("host_backup_f", 1000, 0),
-            storage.Backup("host_backup", 5000, 0),
+            storage.Backup("host_backup", 4000),
+            storage.Backup("host_backup_f", 1000),
+            storage.Backup("host_backup", 5000),
         ]
-        t.restore = mock.Mock()
-        builder = tar.TarCommandRestoreBuilder("", "", "gzip")
-        t.restore_from_date("host_backup", ".", builder, 3234)
-        t.restore.assert_called_with(increment, ".", builder)
+        assert t.find_one("host_backup", 3234) == increment
 
     def test__get_backups_wrong_name(self):
-        result = storage.Storage._get_backups(["hostname"])
+        result = storage.Backup.parse_backups(["hostname"])
         assert len(result) == 0
-        result = storage.Storage._get_backups(["hostname_100_2"])
+        result = storage.Backup.parse_backups(["hostname_100_2"])
         assert len(result) == 0
 
     def test__get_backups_good_name(self):
-        result = storage.Storage._get_backups(["host_backup_100_0"])
+        result = storage.Backup.parse_backups(["host_backup_100_0"])
         assert len(result) == 1
         result = result[0]
         assert result.hostname_backup_name == "host_backup"
@@ -172,15 +160,15 @@ class TestBackup(unittest.TestCase):
     def test_remove_older_than(self):
         t = storage.Storage()
         t.get_backups = mock.Mock()
-        r1 = storage.Backup("host_backup", 1000, 0)
-        r2 = storage.Backup("host_backup", 2000, 0)
+        r1 = storage.Backup("host_backup", 1000)
+        r2 = storage.Backup("host_backup", 2000)
         t.get_backups.return_value = [
             r1,
             r2,
-            storage.Backup("host_backup", 3000, 0),
-            storage.Backup("host_backup", 4000, 0),
-            storage.Backup("host_backup_f", 1000, 0),
-            storage.Backup("host_backup", 5000, 0),
+            storage.Backup("host_backup", 3000),
+            storage.Backup("host_backup", 4000),
+            storage.Backup("host_backup_f", 1000),
+            storage.Backup("host_backup", 5000),
         ]
         t.remove_backup = mock.Mock()
         t.remove_older_than(3000, "host_backup")

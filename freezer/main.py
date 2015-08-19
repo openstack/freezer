@@ -20,6 +20,12 @@ Hudson (tjh@cryptsoft.com).
 
 Freezer main execution function
 """
+import os
+import subprocess
+import logging
+import sys
+import json
+
 from freezer.bandwidth import monkeypatch_socket_bandwidth
 from freezer import job
 from freezer.arguments import backup_arguments
@@ -28,12 +34,9 @@ from freezer import swift
 from freezer import local
 from freezer import ssh
 from freezer import utils
-from freezer.utils import create_dir
-import os
-import subprocess
-import logging
-import sys
-import json
+from freezer.engine import tar_engine
+from freezer import winutils
+
 # Initialize backup options
 from freezer.validator import Validator
 
@@ -55,7 +58,7 @@ def freezer_main(args={}):
         def configure_logging(file_name):
             expanded_file_name = os.path.expanduser(file_name)
             expanded_dir_name = os.path.dirname(expanded_file_name)
-            create_dir(expanded_dir_name, do_log=False)
+            utils.create_dir(expanded_dir_name, do_log=False)
             logging.basicConfig(
                 filename=expanded_file_name,
                 level=logging.INFO,
@@ -88,7 +91,7 @@ def freezer_main(args={}):
                 u'{0}'.format(backup_args.ionice),
                 u'-c', u'1', u'-n', u'0', u'-t',
                 u'-p', u'{0}'.format(PID)
-                ])
+            ])
         except Exception as priority_error:
             logging.warning('[*] Priority: {0}'.format(priority_error))
 
@@ -133,28 +136,32 @@ def freezer_main(args={}):
             swift_auth_version=identity_api_version,
             dry_run=backup_args.dry_run)
 
-        backup_args.__dict__['storage'] = swift.SwiftStorage(
-            client_manager,
-            backup_args.container,
-            backup_args.work_dir,
+        storage = swift.SwiftStorage(
+            client_manager, backup_args.container, backup_args.work_dir,
             backup_args.max_segment_size)
         backup_args.__dict__['client_manager'] = client_manager
     elif backup_args.storage == "local":
-        backup_args.__dict__['storage'] = \
-            local.LocalStorage(backup_args.container)
+        storage = local.LocalStorage(backup_args.container,
+                                     backup_args.work_dir)
     elif backup_args.storage == "ssh":
-        if not (backup_args.ssh_key and backup_args.ssh_username and
-           backup_args.ssh_host):
-            raise Exception("Please provide ssh_key, "
-                            "ssh_username and ssh_host")
-        backup_args.__dict__['storage'] = \
-            ssh.SshStorage(backup_args.container,
-                           backup_args.work_dir,
-                           backup_args.ssh_key,
-                           backup_args.ssh_username,
-                           backup_args.ssh_host)
+        storage = ssh.SshStorage(
+            backup_args.container, backup_args.work_dir,
+            backup_args.ssh_key, backup_args.ssh_username,
+            backup_args.ssh_host)
     else:
         raise Exception("Not storage found for name " + backup_args.storage)
+
+    backup_args.__dict__['storage'] = storage
+    backup_args.__dict__['engine'] = tar_engine.TarBackupEngine(
+        backup_args.tar_path,
+        backup_args.compression,
+        backup_args.dereference_symlink,
+        backup_args.exclude,
+        storage,
+        winutils.is_windows(),
+        backup_args.openssl_path,
+        backup_args.encrypt_pass_file,
+        backup_args.dry_run)
 
     freezer_job = job.create_job(backup_args)
     freezer_job.execute()

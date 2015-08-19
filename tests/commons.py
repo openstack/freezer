@@ -13,6 +13,7 @@ import re
 from glanceclient.common.utils import IterableWithLength
 from freezer import swift
 from freezer.utils import OpenstackOptions
+from freezer.engine import tar_engine
 
 os.environ['OS_REGION_NAME'] = 'testregion'
 os.environ['OS_TENANT_ID'] = '0123456789'
@@ -789,13 +790,17 @@ class BackupOpt1:
                                           self.container,
                                           self.work_dir,
                                           self.max_segment_size)
+        self.compression = 'gzip'
+
+        self.engine = tar_engine.TarBackupEngine(
+            tar_path(),  self.compression, self.dereference_symlink,
+            self.exclude, self.storage, False)
         self.client_manager.get_glance = Mock(return_value=FakeGlanceClient())
         self.client_manager.get_cinder = Mock(return_value=FakeCinderClient())
         nova_client = MagicMock()
 
         self.client_manager.get_nova = Mock(return_value=nova_client)
         self.command = None
-        self.compression = 'gzip'
 
 
 class FakeMySQLdb:

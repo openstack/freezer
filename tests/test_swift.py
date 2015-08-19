@@ -41,38 +41,44 @@ class TestSwiftStorage(unittest.TestCase):
             "hostname_backup_4000_1",
         ]
 
-        self.backup = storage.Backup("hostname_backup", 1000, 0, True)
-        self.backup_2 = storage.Backup("hostname_backup", 3000, 0, True)
-        self.increment = storage.Backup("hostname_backup", 2000, 1, True)
-        self.increment_2 = storage.Backup("hostname_backup", 4000, 1, True)
+        self.backup = storage.Backup("hostname_backup", 1000, tar_meta=True)
+        self.backup_2 = storage.Backup("hostname_backup", 3000, tar_meta=True)
+        self.increment = storage.Backup("hostname_backup", 2000,
+                                        full_backup=self.backup,
+                                        level=1,
+                                        tar_meta=True)
+        self.increment_2 = storage.Backup("hostname_backup", 4000,
+                                          full_backup=self.backup_2,
+                                          level=1,
+                                          tar_meta=True)
 
     def test__get_backups(self):
-        backups = swift.SwiftStorage._get_backups(self.files)
+        backups = storage.Backup.parse_backups(self.files)
         self.assertEqual(len(backups), 1)
         backup = backups[0]
         self.assertEqual(backup, self.backup)
 
     def test__get_backups_with_tar_only(self):
-        backups = swift.SwiftStorage._get_backups(
+        backups = storage.Backup.parse_backups(
             ["tar_metadata_hostname_backup_1000_0"])
         self.assertEqual(len(backups), 0)
 
     def test__get_backups_without_tar(self):
-        backups = swift.SwiftStorage._get_backups(["hostname_backup_1000_0"])
+        backups = storage.Backup.parse_backups(["hostname_backup_1000_0"])
         self.assertEqual(len(backups), 1)
         self.backup.tar_meta = False
         backup = backups[0]
         self.assertEqual(backup, self.backup)
 
     def test__get_backups_increment(self):
-        backups = swift.SwiftStorage._get_backups(self.increments)
+        backups = storage.Backup.parse_backups(self.increments)
         self.assertEqual(len(backups), 1)
         self.backup.add_increment(self.increment)
         backup = backups[0]
         self.assertEqual(backup, self.backup)
 
     def test__get_backups_increments(self):
-        backups = swift.SwiftStorage._get_backups(self.cycles_increments)
+        backups = storage.Backup.parse_backups(self.cycles_increments)
         self.assertEqual(len(backups), 2)
         self.backup.add_increment(self.increment)
         self.backup_2.add_increment(self.increment_2)

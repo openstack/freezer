@@ -27,6 +27,7 @@ import time
 import datetime
 import re
 import subprocess
+import errno
 
 
 class OpenstackOptions:
@@ -88,11 +89,25 @@ class OpenstackOptions:
                             .format(e))
 
 
+def create_dir_tree(dir):
+    try:
+        os.makedirs(dir)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(dir):
+            pass
+        else:
+            raise exc
+
+
+def joined_path(prefix, suffix):
+    return "{0}{1}{2}".format(prefix, os.sep, suffix)
+
+
 def create_dir(directory, do_log=True):
-    '''
+    """
     Creates a directory if it doesn't exists and write the execution
     in the logs
-    '''
+    """
     expanded_dir_name = os.path.expanduser(directory)
     try:
         if not os.path.isdir(expanded_dir_name):
@@ -209,6 +224,11 @@ def human2bytes(s):
     set and return the corresponding bytes as an integer.
     When unable to recognize the format ValueError is raised.
     """
+    # if isinstance(s, (int, long)):
+    #     return s
+
+    if s.isdigit():
+        return long(s)
 
     if s in (False, None, '-1'):
         return -1

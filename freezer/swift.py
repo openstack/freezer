@@ -18,15 +18,12 @@ This product includes cryptographic software written by Eric Young
 Hudson (tjh@cryptsoft.com).
 """
 
-from copy import deepcopy
-import multiprocessing
-
-from freezer import utils
-from freezer import tar
 import json
 import time
 import logging
 import os
+
+from freezer import utils
 from freezer import storage
 
 
@@ -35,7 +32,10 @@ class SwiftStorage(storage.Storage):
     :type client_manager: freezer.osclients.ClientManager
     """
 
-    def __init__(self, client_manager, container, work_dir, max_segment_size):
+    RESP_CHUNK_SIZE = 10000000
+
+    def __init__(self, client_manager, container, work_dir, max_segment_size,
+                 chunk_size=RESP_CHUNK_SIZE):
         """
         :type client_manager: freezer.osclients.ClientManager
         :type container: str
@@ -45,6 +45,7 @@ class SwiftStorage(storage.Storage):
         self.segments = u'{0}_segments'.format(container)
         self.work_dir = work_dir
         self.max_segment_size = max_segment_size
+        self.chunk_size = chunk_size
 
     def swift(self):
         """
@@ -85,86 +86,36 @@ class SwiftStorage(storage.Storage):
                                      .format(error))
                     raise Exception("cannot add object to storage")
 
-    def upload_manifest(self, name, headers=None):
+    def upload_manifest(self, backup):
         """
         Upload Manifest to manage segments in Swift
 
-        :param name: Name of manifest file
-        :type name: str
+        :param backup: Backup
+        :type backup: freezer.storage.Backup
         """
-
         self.client_manager.create_swift()
-        headers = deepcopy(headers) or dict()
-        headers['x-object-manifest'] = u'{0}/{1}'.format(self.segments,
-                                                         name.strip())
-        logging.info('[*] Uploading Swift Manifest: {0}'.format(name))
-        self.swift().put_object(container=self.container, obj=name,
+        headers = {'x-object-manifest':
+                   u'{0}/{1}'.format(self.segments, backup)}
+        logging.info('[*] Uploading Swift Manifest: {0}'.format(backup))
+        self.swift().put_object(container=self.container, obj=str(backup),
                                 contents=u'', headers=headers)
         logging.info('[*] Manifest successfully uploaded!')
 
+    def upload_meta_file(self, backup, meta_file):
+        # Upload swift manifest for segments
+        # Request a new auth client in case the current token
+        # is expired before uploading tar meta data or the swift manifest
+        self.client_manager.create_swift()
+
+        # Upload tar incremental meta data file and remove it
+        logging.info('[*] Uploading tar meta data file: {0}'.format(
+            backup.tar()))
+        with open(meta_file, 'r') as meta_fd:
+            self.swift().put_object(
+                self.container, backup.tar(), meta_fd)
+
     def is_ready(self):
         return self.check_container_existence()[0]
-
-    def restore(self, backup, path, tar_builder):
-        """
-        Restore data from swift server to your local node. Data will be
-        restored in the directory specified in
-        backup_opt_dict.restore_abs_path. The
-        object specified with the --get-object option will be downloaded from
-        the Swift server and will be downloaded inside the parent directory of
-        backup_opt_dict.restore_abs_path. If the object was compressed during
-        backup time, then it is decrypted, decompressed and de-archived to
-        backup_opt_dict.restore_abs_path. Before download the file, the size of
-        the local volume/disk/partition will be computed. If there is enough
-        space
-        the full restore will be executed. Please remember to stop any service
-        that require access to the data before to start the restore execution
-        and to start the service at the end of the restore execution
-
-          Take options dict as argument and sort/remove duplicate elements from
-        backup_opt_dict.remote_match_backup and find the closes backup to the
-        provided from backup_opt_dict.restore_from_date. Once the objects are
-        looped backwards and the level 0 backup is found, along with the other
-        level 1,2,n, is download the object from swift and untar them locally
-        starting from level 0 to level N.
-        :type tar_builder: freezer.tar.TarCommandRestoreBuilder
-        """
-
-        for level in range(0, backup.level + 1):
-            self._restore(backup.parent.increments[level], path, tar_builder)
-
-    def _restore(self, backup, path, tar_builder):
-        """
-        :type backup: freezer.storage.Backup
-        :param backup:
-        :type path: str
-        :type tar_builder: freezer.tar.TarCommandRestoreBuilder
-        :return:
-        """
-        write_pipe, read_pipe = multiprocessing.Pipe()
-        process_stream = multiprocessing.Process(
-            target=self.object_to_stream,
-            args=(write_pipe, read_pipe, backup.repr(),))
-        process_stream.daemon = True
-        process_stream.start()
-
-        write_pipe.close()
-        # Start the tar pipe consumer process
-        tar_stream = multiprocessing.Process(
-            target=tar.tar_restore, args=(path, tar_builder.build(),
-                                          read_pipe))
-        tar_stream.daemon = True
-        tar_stream.start()
-        read_pipe.close()
-        process_stream.join()
-        tar_stream.join()
-
-        if tar_stream.exitcode:
-            raise Exception('failed to restore file')
-
-        logging.info(
-            '[*] Restore execution successfully executed \
-             for backup name {0}'.format(backup.repr()))
 
     def prepare(self):
         containers = self.check_container_existence()
@@ -183,21 +134,6 @@ class SwiftStorage(storage.Storage):
         containers_list = [c['name'] for c in self.swift().get_account()[1]]
         return (self.container in containers_list,
                 self.segments in containers_list)
-
-    def add_object(self, backup_queue, current_backup):
-        """
-        Upload object on the remote swift server
-        :type current_backup: SwiftBackup
-        """
-        file_chunk_index, file_chunk = backup_queue.get().popitem()
-        while file_chunk_index or file_chunk:
-            segment_package_name = u'{0}/{1}/{2}/{3}'.format(
-                current_backup.repr(), current_backup.timestamp,
-                self.max_segment_size, file_chunk_index)
-            self.upload_chunk(file_chunk, segment_package_name)
-            file_chunk_index, file_chunk = backup_queue.get().popitem()
-
-    RESP_CHUNK_SIZE = 65536
 
     def info(self):
         ordered_container = {}
@@ -225,7 +161,7 @@ class SwiftStorage(storage.Storage):
                 # remove segment
                 for segment in self.swift().get_container(
                         self.segments,
-                        prefix=backup.increments[i].repr())[1]:
+                        prefix=backup.increments[i])[1]:
                     self.swift().delete_object(self.segments, segment['name'])
 
                 # remove tar
@@ -237,7 +173,7 @@ class SwiftStorage(storage.Storage):
                 # remove manifest
                 for segment in self.swift().get_container(
                         self.container,
-                        prefix=backup.increments[i].repr())[1]:
+                        prefix=backup.increments[i])[1]:
                     self.swift().delete_object(self.container, segment['name'])
 
     def add_stream(self, stream, package_name, headers=None):
@@ -255,31 +191,6 @@ class SwiftStorage(storage.Storage):
         self.swift().put_object(self.container, package_name, "",
                                 headers=headers)
 
-    def object_to_stream(self, write_pipe, read_pipe, obj_name):
-        """
-        Take a payload downloaded from Swift
-        and generate a stream to be consumed from other processes
-        """
-        logging.info('[*] Downloading data stream...')
-
-        # Close the read pipe in this child as it is unneeded
-        # and download the objects from swift in chunks. The
-        # Chunk size is set by RESP_CHUNK_SIZE and sent to che write
-        # pipe
-        read_pipe.close()
-        for obj_chunk in self.swift().get_object(
-                self.container, obj_name,
-                resp_chunk_size=self.RESP_CHUNK_SIZE)[1]:
-            write_pipe.send_bytes(obj_chunk)
-
-        # Closing the pipe after checking no data
-        # is still available in the pipe.
-        while True:
-            if not write_pipe.poll():
-                write_pipe.close()
-                break
-            time.sleep(1)
-
     def get_backups(self):
         """
         :rtype: list[SwiftBackup]
@@ -288,35 +199,31 @@ class SwiftStorage(storage.Storage):
         try:
             files = self.swift().get_container(self.container)[1]
             names = [x['name'] for x in files if 'name' in x]
-            return self._get_backups(names)
+            return storage.Backup.parse_backups(names)
         except Exception as error:
             raise Exception('[*] Error: get_object_list: {0}'.format(error))
 
-    def get_last_backup(self, hostname_backup_name):
-        """
-
-        :param hostname_backup_name:
-        :return: last backup or throws exception
-        :rtype: freezer.swift.backup.SwiftBackup
-        """
-        return max(self.find(hostname_backup_name), key=lambda b: b.timestamp)
-
-    def _download_tar_meta(self, backup):
+    def download_meta_file(self, backup):
         """
         Downloads meta_data to work_dir of previous backup.
 
         :param backup: A backup or increment. Current backup is incremental,
         that means we should download tar_meta for detection new files and
         changes. If backup.tar_meta is false, raise Exception
-        :type backup: SwiftBackup
+        :type backup: freezer.storage.Backup
         :return:
         """
-        if not backup.tar_meta:
+        utils.create_dir(self.work_dir)
+        if backup.level == 0:
+            return "{0}{1}{2}".format(self.work_dir, os.sep, backup.tar())
+
+        meta_backup = backup.full_backup.increments[backup.level - 1]
+
+        if not meta_backup.tar_meta:
             raise ValueError('Latest update have no tar_meta')
 
-        utils.create_dir(self.work_dir)
-        tar_meta = backup.tar()
-        tar_meta_abs = "{0}/{1}".format(self.work_dir, tar_meta)
+        tar_meta = meta_backup.tar()
+        tar_meta_abs = "{0}{1}{2}".format(self.work_dir, os.sep, tar_meta)
 
         logging.info('[*] Downloading object {0} {1}'.format(
             tar_meta, tar_meta_abs))
@@ -326,82 +233,25 @@ class SwiftStorage(storage.Storage):
 
         with open(tar_meta_abs, 'ab') as obj_fd:
             iterator = self.swift().get_object(
-                self.container, tar_meta, resp_chunk_size=16000000)[1]
+                self.container, tar_meta, resp_chunk_size=self.chunk_size)[1]
             for obj_chunk in iterator:
                 obj_fd.write(obj_chunk)
+        return tar_meta_abs
 
-    def _execute_tar_and_upload(self, path_to_backup, current_backup,
-                                tar_command):
+    def backup_blocks(self, backup):
+        for chunk in self.swift().get_object(
+                self.container, backup, resp_chunk_size=self.chunk_size)[1]:
+            yield chunk
+
+    def write_backup(self, rich_queue, backup):
         """
-
-        :param path_to_backup:
-        :type path_to_backup: str
-        :param current_backup:
-        :type current_backup: freezer.storage.Backup
-        :param tar_command:
-        :type tar_command: str
-        :return:
+        Upload object on the remote swift server
+        :type rich_queue: freezer.streaming.RichQueue
+        :type backup: SwiftBackup
         """
-        # Initialize a Queue for a maximum of 2 items
-        tar_backup_queue = multiprocessing.Queue(maxsize=2)
-
-        logging.info('[*] Changing current working directory to: {0} \
-        '.format(path_to_backup))
-        logging.info('[*] Backup started for: {0}'.format(path_to_backup))
-
-        tar_backup_stream = multiprocessing.Process(
-            target=tar.tar_backup, args=(path_to_backup,
-                                         self.max_segment_size,
-                                         tar_command,
-                                         tar_backup_queue))
-
-        tar_backup_stream.daemon = True
-        tar_backup_stream.start()
-
-        add_object_stream = multiprocessing.Process(
-            target=self.add_object, args=(tar_backup_queue, current_backup))
-        add_object_stream.daemon = True
-        add_object_stream.start()
-
-        tar_backup_stream.join()
-        tar_backup_queue.put(({False: False}))
-        tar_backup_queue.close()
-        add_object_stream.join()
-
-        if add_object_stream.exitcode:
-            raise Exception('failed to upload object to swift server')
-
-    def _upload_tar_meta(self, new_backup, old_backup):
-        meta_data_abs_path = os.path.join(self.work_dir, old_backup.tar())
-
-        # Upload swift manifest for segments
-        # Request a new auth client in case the current token
-        # is expired before uploading tar meta data or the swift manifest
-        self.client_manager.create_swift()
-
-        # Upload tar incremental meta data file and remove it
-        logging.info('[*] Uploading tar meta data file: {0}'.format(
-            new_backup.tar()))
-        with open(meta_data_abs_path, 'r') as meta_fd:
-            self.swift().put_object(
-                self.container, new_backup.tar(), meta_fd)
-        # Removing tar meta data file, so we have only one
-        # authoritative version on swift
-        logging.info('[*] Removing tar meta data file: {0}'.format(
-            meta_data_abs_path))
-        os.remove(meta_data_abs_path)
-
-    def backup(self, path, hostname_backup_name, tar_builder,
-               parent_backup=None, time_stamp=None):
-        new_backup = self._create_backup(hostname_backup_name, parent_backup,
-                                         time_stamp)
-
-        if parent_backup:
-            self._download_tar_meta(parent_backup)
-        tar_builder.set_listed_incremental(
-            "{0}/{1}".format(self.work_dir,
-                             (parent_backup or new_backup).tar()))
-
-        self._execute_tar_and_upload(path, new_backup, tar_builder.build())
-        self._upload_tar_meta(new_backup, parent_backup or new_backup)
-        self.upload_manifest(new_backup.repr())
+        for block_index, message in enumerate(rich_queue.get_messages()):
+            segment_package_name = u'{0}/{1}/{2}/{3}'.format(
+                backup, backup.timestamp,
+                self.max_segment_size, "%08d" % block_index)
+            self.upload_chunk(message, segment_package_name)
+        self.upload_manifest(backup)
