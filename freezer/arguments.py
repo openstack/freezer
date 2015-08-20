@@ -555,4 +555,6 @@ def backup_arguments(args_dict={}):
 
     backup_args.__dict__['backup_media'] = backup_media
 
+    backup_args.__dict__['time_stamp'] = None
+
     return backup_args, arg_parser

@@ -97,21 +97,23 @@ class BackupJob(Job):
 
     def get_metadata(self):
         metadata = {
-            'current_level': self.conf.curr_backup_level,
+            'curr_backup_level': self.conf.curr_backup_level
+            if self.conf.curr_backup_level != '' else 0,
             'fs_real_path': (self.conf.lvm_auto_snap or
                              self.conf.path_to_backup),
             'vol_snap_path':
                 self.conf.path_to_backup if self.conf.lvm_auto_snap else '',
             'client_os': sys.platform,
-            'client_version': self.conf.__version__
+            'client_version': self.conf.__version__,
+            'time_stamp': self.conf.time_stamp
         }
         fields = ['action', 'always_level', 'backup_media', 'backup_name',
-                  'container', 'container_segments', 'curr_backup_level',
+                  'container', 'container_segments',
                   'dry_run', 'hostname', 'path_to_backup', 'max_level',
-                  'mode', 'meta_data_file', 'backup_name', 'hostname',
-                  'time_stamp', 'curr_backup_level']
+                  'mode', 'backup_name', 'hostname',
+                  'time_stamp']
         for field_name in fields:
-            metadata[field_name] = self.conf.__dict__.get(field_name, '')
+            metadata[field_name] = self.conf.__dict__.get(field_name, '') or ''
         return metadata
 
 

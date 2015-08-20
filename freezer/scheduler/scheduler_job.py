@@ -272,9 +272,10 @@ class Job(object):
             metadata = json.loads(metadata_string)
             if metadata:
                 self.scheduler.upload_metadata(metadata)
+                logging.info("[*] Job {0}, freezer action metadata uploaded"
+                             .format(metadata))
         except Exception as e:
             logging.error('[*] metrics upload error: {0}'.format(e))
-        logging.info("[*] Job {0}, freezer action metadata uploaded")
 
     def execute_job_action(self, job_action):
         max_retries = job_action.get('max_retries', 1)

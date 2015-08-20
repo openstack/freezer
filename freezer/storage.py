@@ -59,7 +59,7 @@ class Storage(object):
         raise NotImplementedError("Should have implemented this")
 
     def backup(self, path, hostname_backup_name, tar_builder,
-               parent_backup=None):
+               parent_backup=None, time_stamp=None):
         """
         Implements backup of path directory.
 
@@ -145,7 +145,7 @@ class Storage(object):
         raise NotImplementedError("Should have implemented this")
 
     @staticmethod
-    def _create_backup(name, backup=None):
+    def _create_backup(name, backup=None, time_stamp=None):
         """
         :param name:
         :type name: str
@@ -154,7 +154,7 @@ class Storage(object):
         :rtype: Backup
         :return:
         """
-        return Backup(name, utils.DateTime.now().timestamp,
+        return Backup(name, time_stamp or utils.DateTime.now().timestamp,
                       backup.latest_update.level + 1 if backup else 0)
 
     @staticmethod

@@ -278,6 +278,9 @@ def backup(backup_opt_dict, storage):
     """
     backup_media = backup_opt_dict.backup_media
 
+    time_stamp = utils.DateTime.now().timestamp
+    backup_opt_dict.time_stamp = time_stamp
+
     if backup_media == 'fs':
 
         try:
@@ -308,8 +311,11 @@ def backup(backup_opt_dict, storage):
                 backup_opt_dict.max_level,
                 backup_opt_dict.always_level,
                 backup_opt_dict.restart_always_level)
-            storage.backup(backup_opt_dict.path_to_backup,
-                           hostname_backup_name, builder, incremental_backup)
+            storage.backup(
+                backup_opt_dict.path_to_backup, hostname_backup_name,
+                builder, incremental_backup,
+                time_stamp=time_stamp)
+
         finally:
             snapshot_remove(backup_opt_dict, backup_opt_dict.shadow,
                             backup_opt_dict.windows_volume)
