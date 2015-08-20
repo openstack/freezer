@@ -592,6 +592,94 @@ allows create a glance image from volume and upload to swift.
 To use standard cinder backups please provide --cindernative-vol-id argument.
 
 
+freezer-scheduler
+-----------------
+The freezer-scheduler is one of the two freezer components which is run on
+the client nodes, the other one being the freezer-agent.
+It has a double role: it is used both to start the scheduler daemon, and as
+a cli-tool which allows the user to interact with the api.
+
+The freezer-scheduler daemon process can be started stopped using the usual
+positional arguments
+::
+
+  freezer-scheduler start|stop
+
+It may be useful to use the "-c" parameter to specify the client-id that the
+scheduler will use when interacting with the api
+
+The cli-tool version is used to manage the jobs in the api.
+A "job" is basically a container, a document which contains one
+or more "actions".
+An action contains the instructions for the freezer-agent. They are the same parameter
+that would be passed to the agent on the command line, for example:
+"backup_name", "path_to_backup", "max_level"
+
+To sum it up, a job is a sequence of parameters that the scheduler pulls
+from the api and passes to a newly spawned freezer-agent process at the
+right time.
+
+The scheduler understands the "scheduling" part of the job document,
+which it uses to actually schedule the job, while the rest of the parameters
+are substantially opaque.
+
+The first step to use the scheduler is creating a document with the job:
+::
+
+  cat test_job.json
+
+  {
+    "job_actions": [
+        {
+            "freezer_action": {
+                "action": "backup",
+                "mode": "fs",
+                "backup_name": "backup1",
+                "path_to_backup": "/home/me/datadir",
+                "container": "schedule_backups",
+                "log_file": "/home/me/.freezer/freezer.log"
+            },
+            "max_retries": 3,
+            "max_retries_interval": 60
+        }
+    ],
+    "job_schedule": {
+        "schedule_interval": "4 hours",
+        "schedule_start_date": "2015-08-16T17:58:00"
+    },
+    "description": "my scheduled backup 6"
+  }
+
+Then upload that job into the api:
+::
+
+  freezer-scheduler -c node12 job-create --file test_job.json
+
+The newly created job can be found with:
+::
+
+  freezer-scheduler -c node12 job-list
+
+  +----------------------------------+--------------------+-----------+--------+-------+--------+------------+
+  |              job_id              |    description     | # actions | status | event | result | session_id |
+  +----------------------------------+--------------------+-----------+--------+-------+--------+------------+
+  | 07999ea33a494ccf84590191d6fe850c | schedule_backups 6 |     1     |        |       |        |            |
+  +----------------------------------+--------------------+-----------+--------+-------+--------+------------+
+
+Its content can be read with:
+::
+
+  freezer-scheduler -c node12 job-get -j 07999ea33a494ccf84590191d6fe850c
+
+The scheduler can be started on the target node with:
+::
+
+  freezer-scheduler -c node12 -i 15 -f ~/job_dir start
+
+The scheduler could have already been started. As soon as the freezer-scheduler contacts the api,
+it fetches the job and schedules it.
+
+
 Miscellanea
 -----------
 
