@@ -439,7 +439,7 @@ Remember to source the OS variables and use the custom client_id
                 "max_level": 6,
                 "lvm_snapname": "freezer_db-mysql-snap",
                 "max_priority": true,
-                "remove_older_then": 90,
+                "remove_older_than": 90,
                 "max_segment_size": 67108864,
                 "container": "freezer_backup_devstack_1"
             },
@@ -539,7 +539,7 @@ the files created in the swift container:
                 "always_level": 1,
                 "lvm_snapname": "freezer_db-mysql-snap",
                 "max_priority": true,
-                "remove_older_then": 90,
+                "remove_older_than": 90,
                 "max_segment_size": 67108864,
                 "container": "freezer_backup_devstack_1_alwayslevel"
             },
