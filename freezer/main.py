@@ -136,6 +136,7 @@ def freezer_main(args={}):
             backup_args.container,
             backup_args.work_dir,
             backup_args.max_segment_size)
+        backup_args.__dict__['client_manager'] = client_manager
     elif backup_args.storage == "local":
         backup_args.__dict__['storage'] = \
             local.LocalStorage(backup_args.container)
