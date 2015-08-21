@@ -17,11 +17,17 @@ This product includes cryptographic software written by Eric Young
 (eay@cryptsoft.com). This product includes software written by Tim
 Hudson (tjh@cryptsoft.com).
 ========================================================================
+
+client interface to the Freezer API
 """
 
+import argparse
+import os
 import socket
 
-from openstackclient.identity import client as os_client
+from keystoneclient.auth.identity import v2
+from keystoneclient.auth.identity import v3
+from keystoneclient import session as ksc_session
 
 from backups import BackupsManager
 from registration import RegistrationManager
@@ -29,7 +35,16 @@ from jobs import JobManager
 from actions import ActionManager
 from sessions import SessionManager
 
-import exceptions
+
+FREEZER_SERVICE_TYPE = 'backup'
+
+
+def env(*vars, **kwargs):
+    for v in vars:
+        value = os.environ.get(v, None)
+        if value:
+            return value
+    return kwargs.get('default', '')
 
 
 class cached_property(object):
@@ -45,24 +60,145 @@ class cached_property(object):
         return value
 
 
-class Client(object):
+def build_os_option_parser(parser):
+    parser.add_argument(
+        '--os-username', action='store',
+        help=('Name used for authentication with the OpenStack '
+              'Identity service. Defaults to env[OS_USERNAME].'),
+        dest='os_username', default=env('OS_USERNAME'))
+    parser.add_argument(
+        '--os-password', action='store',
+        help=('Password used for authentication with the OpenStack '
+              'Identity service. Defaults to env[OS_PASSWORD].'),
+        dest='os_password', default=env('OS_PASSWORD'))
+    parser.add_argument(
+        '--os-project-name', action='store',
+        help=('Project name to scope to. Defaults to '
+              'env[OS_PROJECT_NAME].'),
+        dest='os_project_name',
+        default=env('OS_PROJECT_NAME', default='default'))
+    parser.add_argument(
+        '--os-project-domain-name', action='store',
+        help=('Domain name containing project. Defaults to '
+              'env[OS_PROJECT_DOMAIN_NAME].'),
+        dest='os_project_domain_name', default=env('OS_PROJECT_DOMAIN_NAME',
+                                                   default='default'))
+    parser.add_argument(
+        '--os-user-domain-name', action='store',
+        help=('User\'s domain name. Defaults to '
+              'env[OS_USER_DOMAIN_NAME].'),
+        dest='os_user_domain_name', default=env('OS_USER_DOMAIN_NAME',
+                                                default='default'))
+    parser.add_argument(
+        '--os-tenant-name', action='store',
+        help=('Tenant to request authorization on. Defaults to '
+              'env[OS_TENANT_NAME].'),
+        dest='os_tenant_name', default=env('OS_TENANT_NAME'))
+    parser.add_argument(
+        '--os-tenant-id', action='store',
+        help=('Tenant to request authorization on. Defaults to '
+              'env[OS_TENANT_ID].'),
+        dest='os_tenant_id', default=env('OS_TENANT_ID'))
+    parser.add_argument(
+        '--os-auth-url', action='store',
+        help=('Specify the Identity endpoint to use for '
+              'authentication. Defaults to env[OS_AUTH_URL].'),
+        dest='os_auth_url', default=env('OS_AUTH_URL'))
+    parser.add_argument(
+        '--os-backup-url', action='store',
+        help=('Specify the Freezer backup service endpoint to use. '
+              'Defaults to env[OS_BACKUP_URL].'),
+        dest='os_backup_url', default=env('OS_BACKUP_URL'))
+    parser.add_argument(
+        '--os-region-name', action='store',
+        help=('Specify the region to use. Defaults to '
+              'env[OS_REGION_NAME].'),
+        dest='os_region_name', default=env('OS_REGION_NAME'))
+    parser.add_argument(
+        '--os-token', action='store',
+        help=('Specify an existing token to use instead of retrieving'
+              ' one via authentication (e.g. with username & password). '
+              'Defaults to env[OS_TOKEN].'),
+        dest='os_token', default=env('OS_TOKEN'))
+    parser.add_argument(
+        '--os-identity-api-version', action='store',
+        help=('Identity API version: 2.0 or 3. '
+              'Defaults to env[OS_IDENTITY_API_VERSION]'),
+        dest='os_identity_api_version',
+        default=env('OS_IDENTITY_API_VERSION'))
+    return parser
 
-    def __init__(self, version='1',
+
+def guess_auth_version(opts):
+    if opts.os_identity_api_version == '3':
+        return '3'
+    elif opts.os_identity_api_version == '2.0':
+        return '2.0'
+    elif opts.os_auth_url.endswith('v3'):
+        return '3'
+    elif opts.os_auth_url.endswith('v2.0'):
+        return '2.0'
+    return None
+
+
+def get_auth_plugin(opts):
+    auth_version = guess_auth_version(opts)
+    if opts.os_username:
+        if auth_version == '3':
+            return v3.Password(auth_url=opts.os_auth_url,
+                               username=opts.os_username,
+                               password=opts.os_password,
+                               project_name=opts.os_project_name,
+                               user_domain_name=opts.os_user_domain_name,
+                               project_domain_name=opts.os_project_domain_name)
+        elif auth_version == '2.0':
+            return v2.Password(auth_url=opts.os_auth_url,
+                               username=opts.os_username,
+                               password=opts.os_password,
+                               tenant_name=opts.os_tenant_name)
+    elif opts.os_token:
+        if auth_version == '3':
+            return v3.Token(auth_url=opts.os_auth_url,
+                            token=opts.os_token,
+                            project_name=opts.os_project_name,
+                            project_domain_name=opts.os_project_domain_name)
+        elif auth_version == '2.0':
+            return v2.Token(auth_url=opts.os_auth_url,
+                            token=opts.os_token,
+                            tenant_name=opts.os_tenant_name)
+    raise Exception('Unable to determine correct auth method')
+
+
+class Client(object):
+    def __init__(self,
+                 version='1',
                  token=None,
                  username=None,
                  password=None,
                  tenant_name=None,
                  auth_url=None,
                  session=None,
-                 endpoint=None):
+                 endpoint=None,
+                 opts=None):
+
+        self.opts = opts or build_os_option_parser(
+            argparse.ArgumentParser(description='Freezer Client')
+        ).parse_args()
+        if token:
+            self.opts.os_token = token
+        if username:
+            self.opts.os_username = username
+        if password:
+            self.opts.os_password = password
+        if tenant_name:
+            self.opts.os_tenant_name = tenant_name
+        if auth_url:
+            self.opts.os_auth_url = auth_url
+        if endpoint:
+            self.opts.os_backup_url = endpoint
+        self._session = session
         self.version = version
-        self.token = token
-        self.username = username
-        self.tenant_name = tenant_name
-        self.password = password
-        self.auth_url = auth_url
-        self._endpoint = endpoint
-        self.session = session
+
         self.backups = BackupsManager(self)
         self.registration = RegistrationManager(self)
         self.jobs = JobManager(self)
@@ -70,52 +206,29 @@ class Client(object):
         self.sessions = SessionManager(self)
 
     @cached_property
-    def endpoint(self):
-        if self._endpoint:
-            return self._endpoint
-        services = self.auth.services.list()
-        try:
-            freezer_service = next(x for x in services if x.name == 'freezer')
-        except:
-            raise exceptions.ApiClientException(
-                'freezer service not found in services list')
-        endpoints = self.auth.endpoints.list()
-        try:
-            freezer_endpoint =\
-                next(x for x in endpoints
-                     if x.service_id == freezer_service.id)
-        except:
-            raise exceptions.ApiClientException(
-                'freezer endpoint not found in endpoint list')
-        return freezer_endpoint.publicurl
+    def session(self):
+        if self._session:
+            return self._session
+        auth_plugin = get_auth_plugin(self.opts)
+        return ksc_session.Session(auth=auth_plugin)
 
     @cached_property
-    def auth(self):
-        if self.username and self.password:
-            _auth = os_client.IdentityClientv2(
-                auth_url=self.auth_url,
-                username=self.username,
-                password=self.password,
-                tenant_name=self.tenant_name)
-        elif self.token:
-            _auth = os_client.IdentityClientv2(
-                endpoint=self.auth_url,
-                token=self.token)
+    def endpoint(self):
+        if self.opts.os_backup_url:
+            return self.opts.os_backup_url
         else:
-            raise exceptions.ApiClientException("Missing auth credentials")
-        return _auth
+            auth_ref = self.session.auth.get_auth_ref(self.session)
+            endpoint = auth_ref.service_catalog.url_for(
+                service_type=FREEZER_SERVICE_TYPE,
+                endpoint_type='public',
+            )
+        return endpoint
 
     @property
     def auth_token(self):
-        return self.auth.auth_token
-
-    def api_exists(self):
-        try:
-            if self.endpoint is not None:
-                return True
-        except:
-            return False
+        return self.session.get_token()
 
     @cached_property
     def client_id(self):
-        return '{0}_{1}'.format(self.auth.project_id, socket.gethostname())
+        return '{0}_{1}'.format(self.session.get_project_id(),
+                                socket.gethostname())

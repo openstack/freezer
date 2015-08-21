@@ -23,108 +23,157 @@ import unittest
 from mock import Mock, patch
 
 from freezer.apiclient import client
-from freezer.apiclient import exceptions
+
+
+class TestSupportFunctions(unittest.TestCase):
+
+    @patch('freezer.apiclient.client.os')
+    def test_env_return_env_var(self, mock_os):
+        mock_os.environ = {'TEST_ENV_VAR': 'qwerty'}
+        var = client.env('TEST_ENV_VAR')
+        self.assertEquals(var, 'qwerty')
+
+    @patch('freezer.apiclient.client.os')
+    def test_env_return_default(self, mock_os):
+        mock_os.environ = {}
+        var = client.env('TEST_ENV_VAR')
+        self.assertEquals(var, '')
+
+    @patch('freezer.apiclient.client.env')
+    def test_build_os_option_parser(self, mock_env):
+        mock_env.return_value = ''
+        mock_parser = Mock()
+        mock_parser._me = 'test12345'
+        retval = client.build_os_option_parser(mock_parser)
+        self.assertEquals(retval._me, 'test12345')
+
+        call_count = mock_parser.add_argument.call_count
+        self.assertGreater(call_count, 10)
+
+    def test_guess_auth_version_returns_none(self):
+        mock_opts = Mock()
+        mock_opts.os_identity_api_version = ''
+        mock_opts.os_auth_url = ''
+        self.assertIsNone(client.guess_auth_version(mock_opts))
+
+    def test_guess_auth_version_explicit_3(self):
+        mock_opts = Mock()
+        mock_opts.os_identity_api_version = '3'
+        self.assertEquals(client.guess_auth_version(mock_opts), '3')
+
+    def test_guess_auth_version_explicit_2(self):
+        mock_opts = Mock()
+        mock_opts.os_identity_api_version = '2.0'
+        self.assertEquals(client.guess_auth_version(mock_opts), '2.0')
+
+    def test_guess_auth_version_implicit_3(self):
+        mock_opts = Mock()
+        mock_opts.os_auth_url = 'http://whatever/v3'
+        self.assertEquals(client.guess_auth_version(mock_opts), '3')
+
+    def test_guess_auth_version_implicit_2(self):
+        mock_opts = Mock()
+        mock_opts.os_auth_url = 'http://whatever/v2.0'
+        self.assertEquals(client.guess_auth_version(mock_opts), '2.0')
+
+    @patch('freezer.apiclient.client.v3')
+    @patch('freezer.apiclient.client.v2')
+    def test_get_auth_plugin_v3_Password(self, mock_v2, mock_v3):
+        mock_opts = Mock()
+        mock_opts.os_identity_api_version = '3'
+        mock_opts.os_user_name = 'myuser'
+        mock_opts.os_token = ''
+        client.get_auth_plugin(mock_opts)
+        self.assertTrue(mock_v3.Password.called)
+
+    @patch('freezer.apiclient.client.v3')
+    @patch('freezer.apiclient.client.v2')
+    def test_get_auth_plugin_v3_Token(self, mock_v2, mock_v3):
+        mock_opts = Mock()
+        mock_opts.os_identity_api_version = '3'
+        mock_opts.os_username = ''
+        mock_opts.os_token = 'mytoken'
+        client.get_auth_plugin(mock_opts)
+        self.assertTrue(mock_v3.Token.called)
+
+    @patch('freezer.apiclient.client.v3')
+    @patch('freezer.apiclient.client.v2')
+    def test_get_auth_plugin_v2_Password(self, mock_v2, mock_v3):
+        mock_opts = Mock()
+        mock_opts.os_identity_api_version = '2.0'
+        mock_opts.os_user_name = 'myuser'
+        mock_opts.os_token = ''
+        client.get_auth_plugin(mock_opts)
+        self.assertTrue(mock_v2.Password.called)
+
+    @patch('freezer.apiclient.client.v3')
+    @patch('freezer.apiclient.client.v2')
+    def test_get_auth_plugin_v2_Token(self, mock_v2, mock_v3):
+        mock_opts = Mock()
+        mock_opts.os_identity_api_version = '2.0'
+        mock_opts.os_username = ''
+        mock_opts.os_token = 'mytoken'
+        client.get_auth_plugin(mock_opts)
+        self.assertTrue(mock_v2.Token.called)
+
+    @patch('freezer.apiclient.client.v3')
+    @patch('freezer.apiclient.client.v2')
+    def test_get_auth_plugin_raises_when_no_username_token(self, mock_v2, mock_v3):
+        mock_opts = Mock()
+        mock_opts.os_identity_api_version = '2.0'
+        mock_opts.os_username = ''
+        mock_opts.os_token = ''
+        self.assertRaises(Exception, client.get_auth_plugin, mock_opts)
 
 
 class TestClientMock(unittest.TestCase):
 
-    def create_mock_endpoint(self, service_id):
-        m = Mock()
-        m.service_id = service_id
-        m.publicurl = 'http://frezerapiurl:9090'
-        return m
-
-    def create_mock_service(self, name, id):
-        m = Mock()
-        m.name = name
-        m.id = id
-        return m
-
-    def setUp(self):
-        mock_enpointlist_ok = [self.create_mock_endpoint('idqwerty'),
-                               self.create_mock_endpoint('idfreak'),
-                               self.create_mock_endpoint('blabla')]
-        mock_servicelist_ok = [self.create_mock_service(name='glance', id='idqwerty'),
-                               self.create_mock_service(name='freezer', id='idfreak')]
-        self.mock_IdentityClientv2 = Mock()
-        self.mock_IdentityClientv2.endpoints.list.return_value = mock_enpointlist_ok
-        self.mock_IdentityClientv2.services.list.return_value = mock_servicelist_ok
-        self.mock_IdentityClientv2.project_id = 'project_mayhem'
-
-    @patch('freezer.apiclient.client.os_client')
-    def test_client_create_username(self, mock_os_client):
-        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        c = client.Client(username='myname',
-                          password='mypasswd',
-                          tenant_name='mytenant',
-                          auth_url='http://whatever:35357/v2.0/')
+    @patch('freezer.apiclient.client.ksc_session')
+    @patch('freezer.apiclient.client.get_auth_plugin')
+    def test_client_new(self, mock_get_auth_plugin, mock_ksc_session):
+        c = client.Client(opts=Mock(), endpoint='blabla')
         self.assertIsInstance(c, client.Client)
-        self.assertEqual(c.endpoint, 'http://frezerapiurl:9090')
 
-    @patch('freezer.apiclient.client.os_client')
-    def test_client_create_token(self, mock_os_client):
-        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        c = client.Client(token='mytoken',
-                          auth_url='http://whatever:35357/v2.0/')
+    @patch('freezer.apiclient.client.ksc_session')
+    @patch('freezer.apiclient.client.get_auth_plugin')
+    def test_client_new_with_kwargs(self, mock_get_auth_plugin, mock_ksc_session):
+        kwargs = {'token': 'alpha',
+                  'username': 'bravo',
+                  'password': 'charlie',
+                  'tenant_name': 'delta',
+                  'auth_url': 'echo',
+                  'session': 'foxtrot',
+                  'endpoint': 'golf',
+                  'version': 'hotel',
+                  'opts': Mock()}
+        c = client.Client(**kwargs)
         self.assertIsInstance(c, client.Client)
-        self.assertEqual(c.endpoint, 'http://frezerapiurl:9090')
+        self.assertEqual(c.opts.os_token, 'alpha')
+        self.assertEqual(c.opts.os_username, 'bravo')
+        self.assertEqual(c.opts.os_password, 'charlie')
+        self.assertEqual(c.opts.os_tenant_name, 'delta')
+        self.assertEqual(c.opts.os_auth_url, 'echo')
+        self.assertEqual(c._session, 'foxtrot')
+        self.assertEqual(c.session, 'foxtrot')
+        self.assertEqual(c.endpoint, 'golf')
+        self.assertEqual(c.version, 'hotel')
 
-    @patch('freezer.apiclient.client.os_client')
-    def test_client_create_assigns_endpoint(self, mock_os_client):
-        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        c = client.Client(username='myname',
-                          password='mypasswd',
-                          tenant_name='mytenant',
-                          endpoint='http://caccadura:9999',
-                          auth_url='http://whatever:35357/v2.0/')
+    @patch('freezer.apiclient.client.ksc_session')
+    @patch('freezer.apiclient.client.get_auth_plugin')
+    def test_get_token(self, mock_get_auth_plugin, mock_ksc_session):
+        mock_session = Mock()
+        mock_session.get_token.return_value = 'antaniX2'
+        c = client.Client(session=mock_session, endpoint='justtest', opts=Mock())
         self.assertIsInstance(c, client.Client)
-        self.assertEqual(c.endpoint, 'http://caccadura:9999')
+        self.assertEquals(c.auth_token, 'antaniX2')
 
-    @patch('freezer.apiclient.client.os_client')
     @patch('freezer.apiclient.client.socket')
-    def test_client_correctly_creates_client_id(self, mock_socket, mock_os_client):
-        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        c = client.Client(username='myname',
-                          password='mypasswd',
-                          tenant_name='mytenant',
-                          endpoint='http://caccadura:9999',
-                          auth_url='http://whatever:35357/v2.0/')
-        mock_socket.gethostname.return_value = 'tyler'
-        self.assertEqual(c.client_id, 'project_mayhem_tyler')
-
-    @patch('freezer.apiclient.client.os_client')
-    def test_client_error_no_credentials(self, mock_os_client):
-        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        self.assertRaises(exceptions.ApiClientException, client.Client, auth_url='http://whatever:35357/v2.0/')
-
-    @patch('freezer.apiclient.client.os_client')
-    def test_client_service_not_found(self, mock_os_client):
-        mock_servicelist_bad = [self.create_mock_service(name='glance', id='idqwerty'),
-                                self.create_mock_service(name='spanishinquisition', id='idfreak')]
-        self.mock_IdentityClientv2.services.list.return_value = mock_servicelist_bad
-        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        self.assertRaises(exceptions.ApiClientException, client.Client, token='mytoken', auth_url='http://whatever:35357/v2.0/')
-
-    @patch('freezer.apiclient.client.os_client')
-    def test_client_endpoint_not_found(self, mock_os_client):
-        mock_enpointlist_bad = [self.create_mock_endpoint('idqwerty'),
-                               self.create_mock_endpoint('idfiasco'),
-                               self.create_mock_endpoint('blabla')]
-        self.mock_IdentityClientv2.endpoints.list.return_value = mock_enpointlist_bad
-        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        self.assertRaises(exceptions.ApiClientException, client.Client, token='mytoken', auth_url='http://whatever:35357/v2.0/')
-
-    @patch('freezer.apiclient.client.os_client')
-    def test_client_api_exists(self, mock_os_client):
-        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        c = client.Client(token='mytoken',
-                          auth_url='http://whatever:35357/v2.0/')
-        self.assertTrue(c.api_exists())
-
-    @patch('freezer.apiclient.client.os_client')
-    def test_client_auth_token(self, mock_os_client):
-        self.mock_IdentityClientv2.auth_token = 'stotoken'
-        mock_os_client.IdentityClientv2.return_value = self.mock_IdentityClientv2
-        c = client.Client(token='mytoken',
-                          auth_url='http://whatever:35357/v2.0/')
-        self.assertEqual(c.auth_token, 'stotoken')
+    @patch('freezer.apiclient.client.ksc_session')
+    @patch('freezer.apiclient.client.get_auth_plugin')
+    def test_get_client_id(self, mock_get_auth_plugin, mock_ksc_session, mock_socket):
+        mock_socket.gethostname.return_value = 'parmenide'
+        mock_session = Mock()
+        mock_session.get_project_id.return_value = 'H2O'
+        c = client.Client(session=mock_session, endpoint='justtest', opts=Mock())
+        self.assertIsInstance(c, client.Client)
+        self.assertEquals(c.client_id, 'H2O_parmenide')

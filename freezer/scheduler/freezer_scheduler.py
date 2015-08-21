@@ -33,7 +33,6 @@ from freezer.apiclient import client
 import arguments
 import shell
 import utils
-from freezer.utils import create_dir
 
 from daemon import Daemon
 from scheduler_job import Job
@@ -181,18 +180,12 @@ def main():
 
     if args.action is None:
         print "No action"
-        sys.exit(1)
+        return os.EX_DATAERR
 
     apiclient = None
+
     if args.no_api is False:
-        os_options = arguments.OpenstackOptions(args, os.environ)
-        if args.debug:
-            print os_options
-        apiclient = client.Client(username=os_options.username,
-                                  password=os_options.password,
-                                  tenant_name=os_options.tenant_name,
-                                  endpoint=os_options.endpoint,
-                                  auth_url=os_options.auth_url)
+        apiclient = client.Client(opts=args)
         if args.client_id:
             apiclient.client_id = args.client_id
 
@@ -201,9 +194,7 @@ def main():
             return doers[args.action](apiclient, args)
         except Exception as e:
             print ('ERROR {0}'.format(e))
-            return 1
-
-    create_dir(args.jobs_dir, do_log=False)
+            return os.EX_SOFTWARE
 
     freezer_scheduler = FreezerScheduler(apiclient=apiclient,
                                          interval=int(args.interval),
