@@ -72,7 +72,7 @@ class LocalStorage(storage.Storage):
         return "{0}/{1}".format(self._backup_dir(backup), backup.timestamp)
 
     def backup(self, path, hostname_backup_name, tar_builder,
-               parent_backup=None):
+               parent_backup=None, time_stamp=None):
         """
         Backup path
         storage_dir/backup_name/timestamp/backup_name_timestamps_level
@@ -84,7 +84,8 @@ class LocalStorage(storage.Storage):
         :type parent_backup: freezer.storage.Backup
         :return:
         """
-        new_backup = self._create_backup(hostname_backup_name, parent_backup)
+        new_backup = self._create_backup(hostname_backup_name, parent_backup,
+                                         time_stamp)
 
         host_backups = self._backup_dir(new_backup)
         utils.create_dir(host_backups)

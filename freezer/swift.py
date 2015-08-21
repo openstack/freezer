@@ -392,8 +392,9 @@ class SwiftStorage(storage.Storage):
         os.remove(meta_data_abs_path)
 
     def backup(self, path, hostname_backup_name, tar_builder,
-               parent_backup=None):
-        new_backup = self._create_backup(hostname_backup_name, parent_backup)
+               parent_backup=None, time_stamp=None):
+        new_backup = self._create_backup(hostname_backup_name, parent_backup,
+                                         time_stamp)
 
         if parent_backup:
             self._download_tar_meta(parent_backup)
