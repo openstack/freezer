@@ -4,10 +4,10 @@ class Validator:
     def validate_env(options):
         """:type options: freezer.utils.OpenstackOptions"""
         if not (options.password and options.user_name and options.auth_url and
-                options.tenant_name):
+           (options.tenant_name or options.project_name)):
             raise Exception("Please set up in your env:"
-                            "OS_USERNAME, OS_TENANT_NAME, OS_AUTH_URL,"
-                            "OS_PASSWORD")
+                            "OS_USERNAME, OS_TENANT_NAME/OS_PROJECT_NAME,"
+                            " OS_AUTH_URL, OS_PASSWORD")
 
     @staticmethod
     def validate(conf):

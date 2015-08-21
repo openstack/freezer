@@ -41,8 +41,8 @@ home = expanduser("~")
 
 
 DEFAULT_PARAMS = {
-    'os_auth_ver': 2, 'list_objects': False, 'get_object': False,
-    'lvm_auto_snap': False, 'lvm_volgroup': False,
+    'os_identity_api_version': None, 'list_objects': False,
+    'get_object': False, 'lvm_auto_snap': False, 'lvm_volgroup': False,
     'exclude': False, 'sql_server_conf': False,
     'backup_name': False, 'quiet': False,
     'container': 'freezer_backups', 'no_incremental': False,
@@ -351,10 +351,10 @@ def backup_arguments(args_dict={}):
         help='Allow to access swift servers without checking SSL certs.',
         dest='insecure', default=False)
     arg_parser.add_argument(
-        '--os-auth-ver', choices=['1', '2', '3'],
-        action='store',
-        help='Swift auth version, could be 1, 2 or 3',
-        dest='os_auth_ver', default=2)
+        '--os-auth-ver', '--os-identity-api-version',
+        choices=['1', '2', '2.0', '3'], action='store',
+        help='Openstack identity api version, can be 1, 2, 2.0 or 3',
+        dest='os_identity_api_version', default=None)
     arg_parser.add_argument(
         '--proxy', action='store',
         help='''Enforce proxy that alters system HTTP_PROXY and HTTPS_PROXY,

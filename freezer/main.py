@@ -125,11 +125,13 @@ def freezer_main(args={}):
     if backup_args.storage == "swift":
         options = utils.OpenstackOptions.create_from_env()
         Validator.validate_env(options)
+        identity_api_version = (backup_args.os_identity_api_version or
+                                options.identity_api_version)
         client_manager = ClientManager(
-            options,
-            backup_args.insecure,
-            backup_args.os_auth_ver,
-            backup_args.dry_run)
+            options=options,
+            insecure=backup_args.insecure,
+            swift_auth_version=identity_api_version,
+            dry_run=backup_args.dry_run)
 
         backup_args.__dict__['storage'] = swift.SwiftStorage(
             client_manager,
@@ -141,8 +143,8 @@ def freezer_main(args={}):
         backup_args.__dict__['storage'] = \
             local.LocalStorage(backup_args.container)
     elif backup_args.storage == "ssh":
-        if not (backup_args.ssh_key and backup_args.ssh_username
-                and backup_args.ssh_host):
+        if not (backup_args.ssh_key and backup_args.ssh_username and
+           backup_args.ssh_host):
             raise Exception("Please provide ssh_key, "
                             "ssh_username and ssh_host")
         backup_args.__dict__['storage'] = \
