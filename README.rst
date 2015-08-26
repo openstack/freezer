@@ -249,11 +249,68 @@ Execute a mysql backup with nova::
 
 All the freezerc activities are logged into /var/log/freezer.log.
 
-Local storage backup execution:
+
+Swift, Local and SSH Storages
+-----------------------------
+
+Freezer can use:
+
+ local storage - folder that is available in the same os (may be mounted)
+
+ To use local storage specify "--storage local"
+ And use "--container %path-to-folder-with-backups%"
+ Backup example::
 
    $ sudo freezerc --file-to-backup /data/dir/to/backup
-      --container /my_backup_path/ --backup-name my-backup-name
-      --storage local
+   --container /tmp/my_backup_path/ --backup-name my-backup-name
+   --storage local
+
+ Restore example::
+
+   $ sudo freezerc --action restore --restore-abs-path /data/dir/to/backup
+   --container /tmp/my_backup_path/ --backup-name my-backup-name
+   --storage local
+
+ swift storage - OS object storage
+
+ To use local storage specify "--storage swift" or skip "--storage" parameter at all.
+ And use "--container %swift-container-name%"
+
+ Backup example::
+
+   $ sudo freezerc --file-to-backup /data/dir/to/backup
+   --container freezer-container --backup-name my-backup-name
+   --storage swift
+
+ Restore example::
+
+   $ sudo freezerc --action restore --restore-abs-path /data/dir/to/backup
+   --container freezer-container --backup-name my-backup-name
+   --storage swift
+
+ ssh storage - folder on remote machine
+
+ To use ssh storage specify "--storage ssh"
+ And use "--container %path-to-folder-with-backups-on-remote-machine%"
+ Also you should specify ssh-user, ssh-key and ssh-host parameters.
+
+ ssh-user for user ubuntu should be "--ssh-user ubuntu"
+ ssh-key should be path to your secret ssh key "--ssh-key %path-to-secret-key%"
+ ssh-host can be ip of remote machine or resolvable dns name "--ssh-host 8.8.8.8"
+
+ Backup example::
+
+   $ sudo freezerc --file-to-backup /data/dir/to/backup
+   --container /remote-machine-path/ --backup-name my-backup-name
+   --storage ssh --ssh-user ubuntu --ssh-key ~/.ssh/id_rsa
+   --ssh-host 8.8.8.8
+
+ Restore example::
+
+  $ sudo freezerc  --action restore --restore-abs-pat /data/dir/to/backup
+  --container /remote-machine-path/ --backup-name my-backup-name
+  --storage ssh --ssh-user ubuntu --ssh-key ~/.ssh/id_rsa
+  --ssh-host 8.8.8.8
 
 Restore
 -------
@@ -478,85 +535,6 @@ following basic logic happens when Freezer execute:
    important as the Manifest file contains the information of the
    previous Freezer execution.
 
-The following is what the Swift Manifest looks like::
-
-    {
-        'X-Object-Meta-Encrypt-Data': 'Yes',
-        'X-Object-Meta-Segments-Size-Bytes': '134217728',
-        'X-Object-Meta-Backup-Created-Timestamp': '1395734461',
-        'X-Object-Meta-Remove-Backup-Older-Than-Days': '',
-        'X-Object-Meta-Src-File-To-Backup': '/var/lib/snapshot-backup/mongod_dev-mongo-s1',
-        'X-Object-Meta-Maximum-Backup-level': '0',
-        'X-Object-Meta-Always-Backup-Level': '',
-        'X-Object-Manifest': u'socorro-backup-dev_segments/dev-mongo-s1-r1_mongod_dev-mongo-s1_1395734461_0',
-        'X-Object-Meta-Backup-Current-Level': '0',
-        'X-Object-Meta-Abs-File-Path': '',
-        'X-Object-Meta-Backup-Name': 'mongod_dev-mongo-s1',
-        'X-Object-Meta-Tar-Meta-Obj-Name': 'tar_metadata_dev-mongo-s1-r1_mongod_dev-mongo-s1_1395734461_0',
-        'X-Object-Meta-Hostname': 'dev-mongo-s1-r1',
-        'X-Object-Meta-Container-Segments': 'socorro-backup-dev_segments'
-    }
-
-3) The most relevant data taken in consideration for incremental are:
-
--  'X-Object-Meta-Maximum-Backup-level': '7'
-
-Value set by the option: --max-level int
-
-Assuming we are executing the backup daily, let's say managed from the
-crontab, the first backup will start from Level 0, that is, a full
-backup. At every daily execution, the current backup level will be
-incremented by 1. Then current backup level is equal to the maximum
-backup level, then the backup restart to level 0. That is, every week a
-full backup will be executed.
-
--  'X-Object-Meta-Always-Backup-Level': ''
-
-Value set by the option: --always-level int
-
-When current level is equal to 'Always-Backup-Level', every next backup
-will be executed to the specified level. Let's say --always-level is set
-to 1, the first backup will be a level 0 (complete backup) and every
-next execution will backup the data exactly from the where the level 0
-ended. The main difference between Always-Backup-Level and
-Maximum-Backup-level is that the counter level doesn't restart from
-level 0
-
--  'X-Object-Manifest':
-   u'socorro-backup-dev/dev-mongo-s1-r1\_mongod\_dev-mongo-s1\_1395734461\_0'
-
-Through this meta data, we can identify the exact Manifest name of the
-provided backup name. The syntax is:
-container\_name/hostname\_backup\_name\_timestamp\_initiallevel
-
--  'X-Object-Meta-Backup-Current-Level': '0'
-
-Record the current backup level. This is important as the value is
-incremented by 1 in the next freezer execution.
-
-Value set by the option: -N BACKUP\_NAME, --backup-name BACKUP\_NAME The
-option is used to identify the backup. It is a mandatory option and
-fundamental to execute incremental backup. 'Meta-Backup-Name' and
-'Meta-Hostname' are used to uniquely identify the current and next
-incremental backups
-
--  'X-Object-Meta-Tar-Meta-Obj-Name':
-   'tar\_metadata\_dev-mongo-s1-r1\_mongod\_dev-mongo-s1\_1395734461\_0'
-
-Freezer use tar to execute incremental backup. What tar do is to store
-in a meta data file the inode information of every file archived. Thus,
-on the next Freezer execution, the tar meta data file is retrieved and
-download from swift and it is used to generate the next backup level.
-After the next level backup execution is terminated, the file update tar
-meta data file will be uploaded and recorded in the Manifest file. The
-naming convention used for this file is:
-tar\_metadata\_backupname\_hostname\_timestamp\_backuplevel
-
--  'X-Object-Meta-Hostname': 'dev-mongo-s1-r1'
-
-The hostname of the node where the Freezer perform the backup. This meta
-data is important to identify a backup with a specific node, thus avoid
-possible confusion and associate backup to the wrong node.
 
 Nova and Cinder Backups
 -----------------------
