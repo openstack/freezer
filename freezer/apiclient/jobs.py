@@ -88,10 +88,61 @@ class JobManager(object):
         return r.json()['version']
 
     def start_job(self, job_id):
-        return self.update(job_id, {'job_schedule': {'event': 'start'}})
+        """
+        Request to start a job
+
+        :param job_id: the id of the job to start
+        :return: the response obj:
+                 {
+                    result: string 'success' or 'already started'
+                 }
+        """
+        # endpoint /v1/jobs/{job_id}/event
+        endpoint = '{0}{1}/event'.format(self.endpoint, job_id)
+        doc = {"start": None}
+        r = requests.post(endpoint,
+                          headers=self.headers,
+                          data=json.dumps(doc))
+        if r.status_code != 202:
+            raise exceptions.ApiClientException(r)
+        return r.json()
 
     def stop_job(self, job_id):
-        return self.update(job_id, {'job_schedule': {'event': 'stop'}})
+        """
+        Request to stop a job
+
+        :param job_id: the id of the job to start
+        :return: the response obj:
+                 {
+                    result: string 'success' or 'already stopped'
+                 }
+        """
+        # endpoint /v1/jobs/{job_id}/event
+        endpoint = '{0}{1}/event'.format(self.endpoint, job_id)
+        doc = {"stop": None}
+        r = requests.post(endpoint,
+                          headers=self.headers,
+                          data=json.dumps(doc))
+        if r.status_code != 202:
+            raise exceptions.ApiClientException(r)
+        return r.json()
 
     def abort_job(self, job_id):
-        return self.update(job_id, {'job_schedule': {'event': 'abort'}})
+        """
+        Request to abort a job
+
+        :param job_id: the id of the job to start
+        :return: the response obj:
+                 {
+                    result: string 'success' or 'already stopped'
+                 }
+        """
+        # endpoint /v1/jobs/{job_id}/event
+        endpoint = '{0}{1}/event'.format(self.endpoint, job_id)
+        doc = {"abort": None}
+        r = requests.post(endpoint,
+                          headers=self.headers,
+                          data=json.dumps(doc))
+        if r.status_code != 202:
+            raise exceptions.ApiClientException(r)
+        return r.json()
