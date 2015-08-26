@@ -48,8 +48,17 @@ def backup_mode_sql_server(backup_opt_dict):
     """
     with open(backup_opt_dict.sql_server_conf, 'r') as sql_conf_file_fd:
         for line in sql_conf_file_fd:
-            if 'instance' in line and not line.strip().startswith("#"):
-                db_instance = line.split('=')[1].strip()
+            line = line.strip().split('#', 1)[0]
+            if not line:
+                continue
+
+            key, value = line.split('=')
+            # remove white spaces
+            key = key.strip()
+            value = value.strip()
+
+            if key == 'instance':
+                db_instance = utils.dequote(value)
                 backup_opt_dict.sql_server_instance = db_instance
                 continue
             else:
@@ -90,16 +99,29 @@ def backup_mode_mysql(backup_opt_dict):
     db_port = 3306
     with open(backup_opt_dict.mysql_conf, 'r') as mysql_file_fd:
         for line in mysql_file_fd:
-            if 'host' in line and not line.strip().startswith("#"):
-                db_host = line.split('=')[1].strip()
+            line = line.strip().split('#', 1)[0]
+            if not line:
                 continue
-            elif 'user' in line and not line.strip().startswith("#"):
-                db_user = line.split('=')[1].strip()
+
+            key, value = line.split('=')
+            # remove white spaces
+            key = key.strip()
+            value = value.strip()
+
+            if key == 'host':
+                db_host = utils.dequote(value)
                 continue
-            elif 'password' in line and not line.strip().startswith("#"):
-                db_pass = line.split('=')[1].strip()
+
+            if key == 'user':
+                db_user = utils.dequote(value)
                 continue
-            elif 'port' in line and not line.strip().startswith("#"):
+
+            if key == 'password':
+                db_pass = utils.dequote(value)
+                continue
+
+            if key == 'port':
+                db_port = utils.dequote(value)
                 try:
                     db_port = int(db_port)
                 except ValueError:
