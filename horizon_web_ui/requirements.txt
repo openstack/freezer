@@ -1,2 +1,0 @@
-parsedatetime>=1.4
-freezer
