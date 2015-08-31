@@ -84,6 +84,12 @@ def base_parser(parser):
         help='show tracebacks on errors',
     )
     parser.add_argument(
+        '--no-daemon',
+        action='store_true',
+        help='Prevents the scheduler from running in daemon mode',
+        dest='no_daemon', default=False
+    )
+    parser.add_argument(
         '-l', '--log-file', action='store',
         help=('location of log file'),
         dest='log_file', default=None)

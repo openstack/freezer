@@ -34,7 +34,7 @@ import arguments
 import shell
 import utils
 
-from daemon import Daemon
+from daemon import Daemon, NoDaemon
 from scheduler_job import Job
 
 
@@ -179,7 +179,7 @@ def main():
     args = arguments.get_args(possible_actions)
 
     if args.action is None:
-        print "No action"
+        print ('No action')
         return os.EX_DATAERR
 
     apiclient = None
@@ -200,7 +200,11 @@ def main():
                                          interval=int(args.interval),
                                          job_path=args.jobs_dir)
 
-    daemon = Daemon(daemonizable=freezer_scheduler)
+    if args.no_daemon:
+        print ('Freezer Scheduler running in no-daemon mode')
+        daemon = NoDaemon(daemonizable=freezer_scheduler)
+    else:
+        daemon = Daemon(daemonizable=freezer_scheduler)
 
     if args.action == 'start':
         daemon.start(log_file=args.log_file)

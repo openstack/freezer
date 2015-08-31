@@ -7,14 +7,81 @@
 #     http://www.apache.org/licenses/LICENSE-2.0
 
 import unittest
-from mock import Mock, patch
+from mock import Mock, patch, mock_open
 
 import signal
 
 from freezer.scheduler import daemon
 
 
-class TestOpenstackOptions(unittest.TestCase):
+class TestLogging(unittest.TestCase):
+
+    @patch('freezer.scheduler.daemon.logging')
+    def test_setup_logging_default(self, mock_logging):
+        res = daemon.setup_logging(None)
+        self.assertEqual(res, '/var/log/freezer-scheduler.log')
+
+    @patch('freezer.scheduler.daemon.create_dir')
+    @patch('freezer.scheduler.daemon.logging')
+    def test_setup_logging_userdefined(self, mock_logging, mock_createdir):
+        res = daemon.setup_logging('mylogfile')
+        self.assertEqual(res, 'mylogfile')
+
+
+class TestNoDaemon(unittest.TestCase):
+
+    @patch('freezer.scheduler.daemon.signal')
+    def setUp(self, mock_signal):
+        self.daemonizable = Mock()
+        self.daemon = daemon.NoDaemon(daemonizable=self.daemonizable)
+
+    def test_create(self):
+        self.assertIsInstance(self.daemon, daemon.NoDaemon)
+
+    @patch('freezer.scheduler.daemon.logging')
+    def test_exit_handler(self, mock_logging):
+        daemon.NoDaemon.exit_flag = False
+        self.daemon.handle_program_exit(33, None)
+        self.assertEquals(daemon.NoDaemon.exit_flag, True)
+        self.assertTrue(self.daemonizable.stop.called)
+
+    @patch('freezer.scheduler.daemon.logging')
+    def test_reload_handler(self, mock_logging):
+        daemon.NoDaemon.exit_flag = False
+        self.daemon.handle_reload(33, None)
+        self.assertEquals(daemon.NoDaemon.exit_flag, False)
+        self.assertTrue(self.daemonizable.reload.called)
+
+    @patch('freezer.scheduler.daemon.logging')
+    def test_start_exit_ok(self, mock_logging):
+        daemon.NoDaemon.exit_flag = False
+        res = self.daemon.start(log_file=None, dump_stack_trace=False)
+        self.assertIsNone(res)
+        self.assertEquals(daemon.NoDaemon.exit_flag, True)
+        self.assertTrue(self.daemonizable.start.called)
+
+    @patch('freezer.scheduler.daemon.logging')
+    def test_start_restarts_daemonizable_on_Exception(self, mock_logging):
+        daemon.NoDaemon.exit_flag = False
+        self.daemonizable.start.side_effect = [Exception('test'), lambda: DEFAULT]
+
+        res = self.daemon.start(log_file=None, dump_stack_trace=True)
+
+        self.assertIsNone(res)
+        self.assertEquals(daemon.NoDaemon.exit_flag, True)
+        self.assertEquals(self.daemonizable.start.call_count, 2)
+        self.assertTrue(mock_logging.error.called)
+
+    def test_has_stop_method(self):
+        res = self.daemon.stop()
+        self.assertIsNone(res)
+
+    def test_has_status_method(self):
+        res = self.daemon.status()
+        self.assertIsNone(res)
+
+
+class TestDaemon(unittest.TestCase):
 
     def setUp(self):
         self.daemonizable = Mock()
@@ -22,17 +89,6 @@ class TestOpenstackOptions(unittest.TestCase):
 
     def test_create(self):
         self.assertIsInstance(self.daemon, daemon.Daemon)
-
-    @patch('freezer.scheduler.daemon.logging')
-    def test_setup_logging_default(self, mock_logging):
-        res = self.daemon.setup_logging(None)
-        self.assertEqual(res, '/var/log/freezer-scheduler.log')
-
-    @patch('freezer.scheduler.daemon.create_dir')
-    @patch('freezer.scheduler.daemon.logging')
-    def test_setup_logging_userdefined(self, mock_logging, mock_createdir):
-        res = self.daemon.setup_logging('mylogfile')
-        self.assertEqual(res, 'mylogfile')
 
     def test_handle_program_exit_calls_scheduler_stop(self):
         self.daemon.handle_program_exit(Mock(), Mock())
@@ -54,3 +110,78 @@ class TestOpenstackOptions(unittest.TestCase):
         mock_gettempdir.return_value = '/tempus_fugit'
         retval = self.daemon.pid_fname
         self.assertEqual(retval, '/tempus_fugit/freezer_sched_chet.pid')
+
+    @patch('freezer.scheduler.daemon.os.path.isfile')
+    def test_pid_not_exists(self, mock_isfile):
+        mock_isfile.return_value = False
+        res = self.daemon.pid
+        self.assertIsNone(res)
+
+    @patch('freezer.scheduler.daemon.os.path.isfile')
+    def test_pid_exists(self, mock_isfile):
+        mock_isfile.return_value = True
+        pid_file_text = "125"
+        mocked_open_function = mock_open(read_data=pid_file_text)
+
+        with patch("__builtin__.open", mocked_open_function):
+            res = self.daemon.pid
+
+        self.assertEquals(res, 125)
+
+    @patch('freezer.scheduler.daemon.logging')
+    @patch('freezer.scheduler.daemon.PidFile')
+    @patch('freezer.scheduler.daemon.DaemonContext')
+    def test_start(self, mock_DaemonContext, mock_PidFile, mock_logging):
+        daemon.Daemon.exit_flag = False
+        res = self.daemon.start()
+        self.assertIsNone(res)
+        self.assertEquals(daemon.Daemon.exit_flag, True)
+        self.assertTrue(self.daemonizable.start.called)
+
+    @patch('freezer.scheduler.daemon.logging')
+    @patch('freezer.scheduler.daemon.PidFile')
+    @patch('freezer.scheduler.daemon.DaemonContext')
+    def test_start_restarts_daemonizable_on_Exception(self, mock_DaemonContext, mock_PidFile, mock_logging):
+        daemon.Daemon.exit_flag = False
+        self.daemonizable.start.side_effect = [Exception('test'), lambda: DEFAULT]
+
+        res = self.daemon.start(log_file=None, dump_stack_trace=True)
+
+        self.assertIsNone(res)
+        self.assertEquals(daemon.Daemon.exit_flag, True)
+        self.assertEquals(self.daemonizable.start.call_count, 2)
+        self.assertTrue(mock_logging.error.called)
+
+    @patch('freezer.scheduler.daemon.os')
+    def test_stop_not_existing(self, mock_os):
+        self.daemon.pid = None
+        self.daemon.stop()
+        self.assertFalse(mock_os.kill.called)
+
+    @patch('freezer.scheduler.daemon.os')
+    def test_stop_existing(self, mock_os):
+        self.daemon.pid = 33
+        self.daemon.stop()
+        mock_os.kill.assert_called_once_with(33, signal.SIGTERM)
+
+    @patch('freezer.scheduler.daemon.os')
+    def test_reload_not_existing(self, mock_os):
+        self.daemon.pid = None
+        self.daemon.reload()
+        self.assertFalse(mock_os.kill.called)
+
+    @patch('freezer.scheduler.daemon.os')
+    def test_reload_existing(self, mock_os):
+        self.daemon.pid = 33
+        self.daemon.reload()
+        mock_os.kill.assert_called_once_with(33, signal.SIGHUP)
+
+    def test_status_not_existing(self):
+        self.daemon.pid = None
+        res = self.daemon.status()
+        self.assertIsNone(res)
+
+    def test_status_existing(self):
+        self.daemon.pid = 33
+        res = self.daemon.status()
+        self.assertIsNone(res)

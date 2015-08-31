@@ -32,6 +32,102 @@ from pep3143daemon import DaemonContext, PidFile
 from freezer.utils import create_dir
 
 
+def setup_logging(log_file):
+
+    class NoLogFilter(logging.Filter):
+        def filter(self, record):
+            return False
+
+    def configure_logging(file_name):
+        expanded_file_name = os.path.expanduser(file_name)
+        expanded_dir_name = os.path.dirname(expanded_file_name)
+        create_dir(expanded_dir_name, do_log=False)
+        logging.basicConfig(
+            filename=expanded_file_name,
+            level=logging.INFO,
+            format=('%(asctime)s %(name)s %(levelname)s %(message)s'))
+        # filter out some annoying messages
+        # not the best position for this code
+        log_filter = NoLogFilter()
+        logging.getLogger("apscheduler.scheduler").\
+            addFilter(log_filter)
+        logging.getLogger("apscheduler.executors.default").\
+            addFilter(log_filter)
+        logging.getLogger("requests.packages.urllib3.connectionpool").\
+            addFilter(log_filter)
+        return expanded_file_name
+
+    log_file_paths = [log_file] if log_file else [
+        '/var/log/freezer-scheduler.log',
+        '~/.freezer/freezer-scheduler.log']
+    for file_name in log_file_paths:
+        try:
+            return configure_logging(file_name)
+        except IOError:
+            pass
+
+    raise Exception("Unable to write to log file")
+
+
+class NoDaemon:
+    """
+    A class which shares the same interface as the Daemon class,
+    but is used to execute the scheduler as a foreground process
+
+    """
+
+    instance = None
+    exit_flag = False
+
+    def __init__(self, daemonizable):
+        # daemonizable has to provide start/stop (and possibly reload) methods
+        NoDaemon.instance = self
+        self.daemonizable = daemonizable
+
+        # register signal handlers
+        for (signal_number, handler) in self.signal_map.items():
+            signal.signal(signal_number, handler)
+
+    @property
+    def signal_map(self):
+        return {
+            signal.SIGTERM: NoDaemon.handle_program_exit,
+            signal.SIGINT: NoDaemon.handle_program_exit,
+            signal.SIGHUP: NoDaemon.handle_reload,
+            }
+
+    @staticmethod
+    def handle_program_exit(signum, frame):
+        logging.info('[*] Got signal {0}. Exiting ...'.format(signum))
+        NoDaemon.exit_flag = True
+        NoDaemon.instance.daemonizable.stop()
+
+    @staticmethod
+    def handle_reload(signum, frame):
+        NoDaemon.instance.daemonizable.reload()
+
+    def start(self, log_file=None, dump_stack_trace=False):
+        setup_logging(log_file)
+        while not NoDaemon.exit_flag:
+            try:
+                logging.info('[*] Starting in no-daemon mode')
+                self.daemonizable.start()
+                NoDaemon.exit_flag = True
+            except Exception as e:
+                if dump_stack_trace:
+                    logging.error(traceback.format_exc(e))
+                logging.error('[*] Restarting procedure in no-daemon mode '
+                              'after Fatal Error: {0}'.format(e))
+                sleep(10)
+        logging.info('[*] Done exiting')
+
+    def stop(self):
+        pass
+
+    def status(self):
+        pass
+
+
 class Daemon:
     """
     A class to manage all the daemon-related stuff
@@ -46,43 +142,6 @@ class Daemon:
         Daemon.instance = self
         self._pid_fname = pid_fname
         self.daemonizable = daemonizable
-
-    @staticmethod
-    def setup_logging(log_file):
-
-        class NoLogFilter(logging.Filter):
-            def filter(self, record):
-                return False
-
-        def configure_logging(file_name):
-            expanded_file_name = os.path.expanduser(file_name)
-            expanded_dir_name = os.path.dirname(expanded_file_name)
-            create_dir(expanded_dir_name, do_log=False)
-            logging.basicConfig(
-                filename=expanded_file_name,
-                level=logging.INFO,
-                format=('%(asctime)s %(name)s %(levelname)s %(message)s'))
-            # filter out some annoying messages
-            # not the best position for this code
-            log_filter = NoLogFilter()
-            logging.getLogger("apscheduler.scheduler").\
-                addFilter(log_filter)
-            logging.getLogger("apscheduler.executors.default").\
-                addFilter(log_filter)
-            logging.getLogger("requests.packages.urllib3.connectionpool").\
-                addFilter(log_filter)
-            return expanded_file_name
-
-        log_file_paths = [log_file] if log_file else [
-            '/var/log/freezer-scheduler.log',
-            '~/.freezer/freezer-scheduler.log']
-        for file_name in log_file_paths:
-            try:
-                return configure_logging(file_name)
-            except IOError:
-                pass
-
-        raise Exception("Unable to write to log file")
 
     @staticmethod
     def handle_program_exit(signum, frame):
@@ -116,18 +175,10 @@ class Daemon:
                 return int(f.read())
         return None
 
-    @property
-    def jobs_file(self):
-        return ''
-
-    @property
-    def no_api(self):
-        return False
-
     def start(self, log_file=None, dump_stack_trace=False):
         pidfile = PidFile(self.pid_fname)
         with DaemonContext(pidfile=pidfile, signal_map=self.signal_map):
-            self.setup_logging(log_file)
+            setup_logging(log_file)
             while not Daemon.exit_flag:
                 try:
                     logging.info('[*] freezer daemon starting, pid: {0}'.
@@ -147,18 +198,18 @@ class Daemon:
         if pid:
             os.kill(self.pid, signal.SIGTERM)
         else:
-            print "Not Running"
+            print ('Not Running')
 
     def status(self):
         pid = self.pid
         if pid:
-            print "Running with pid: {0}".format(pid)
+            print ('Running with pid: {0}'.format(pid))
         else:
-            print "Not Running"
+            print ('Not Running')
 
     def reload(self):
         pid = self.pid
         if pid:
             os.kill(pid, signal.SIGHUP)
         else:
-            print "Not Running"
+            print ('Not Running')

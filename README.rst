@@ -574,17 +574,22 @@ freezer-scheduler
 -----------------
 The freezer-scheduler is one of the two freezer components which is run on
 the client nodes, the other one being the freezer-agent.
-It has a double role: it is used both to start the scheduler daemon, and as
+It has a double role: it is used both to start the scheduler process, and as
 a cli-tool which allows the user to interact with the api.
 
-The freezer-scheduler daemon process can be started stopped using the usual
+The freezer-scheduler process can be started/stopped in daemon mode using the usual
 positional arguments
 ::
 
   freezer-scheduler start|stop
 
-It may be useful to use the "-c" parameter to specify the client-id that the
-scheduler will use when interacting with the api
+It can be also be started as a foreground process using the --no-daemon flag:
+::
+
+  freezer-scheduler --no-daemon start
+
+This can be useful for testing purposes or when launched in a Docker container
+or by a babysitting process such as systemd.
 
 The cli-tool version is used to manage the jobs in the api.
 A "job" is basically a container, a document which contains one
@@ -600,6 +605,23 @@ right time.
 The scheduler understands the "scheduling" part of the job document,
 which it uses to actually schedule the job, while the rest of the parameters
 are substantially opaque.
+
+It may also be useful to use the "-c" parameter to specify the client-id that
+the scheduler will use when interacting with the api.
+
+The purpose of the *client-id* is that of associate a job with the
+scheduler instance which is supposed to execute that job.
+
+A single openstack user could manage different resources on different nodes
+(and actually may even have different freezer-scheduler instances running
+on the same node with different local privileges, for example),
+and the client-id allows him to associate the specific scheduler instance
+with its specific jobs.
+
+When not provided with a custom client-id, the scheduler falls to the default
+which is composed from the tenant-is and the hostname of the machine it is
+running on.
+
 
 The first step to use the scheduler is creating a document with the job:
 ::
