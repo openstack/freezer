@@ -183,7 +183,7 @@ class Client(object):
 
         self.opts = opts or build_os_option_parser(
             argparse.ArgumentParser(description='Freezer Client')
-        ).parse_args()
+        ).parse_known_args()[0]
         if token:
             self.opts.os_token = token
         if username:
@@ -196,6 +196,7 @@ class Client(object):
             self.opts.os_auth_url = auth_url
         if endpoint:
             self.opts.os_backup_url = endpoint
+
         self._session = session
         self.version = version
 
