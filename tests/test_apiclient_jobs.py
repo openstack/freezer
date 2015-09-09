@@ -19,6 +19,7 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
+import json
 import unittest
 from mock import Mock, patch
 
@@ -33,6 +34,7 @@ class TestJobManager(unittest.TestCase):
         self.mock_response = Mock()
         self.mock_client.endpoint = 'http://testendpoint:9999'
         self.mock_client.auth_token = 'testtoken'
+        self.headers = {'X-Auth-Token': 'testtoken'}
         self.mock_client.client_id = 'test_client_id_78900987'
         self.job_manager = jobs.JobManager(self.mock_client)
 
@@ -159,50 +161,84 @@ class TestJobManager(unittest.TestCase):
         self.assertRaises(exceptions.ApiClientException, self.job_manager.update,
                           'd454beec-1f3c-4d11-aa1a-404116a40502', {'status': 'bamboozled'})
 
-    @patch('freezer.apiclient.jobs.requests')
-    def test_start_job_calls_update_with_correct_update_doc(self, mock_requests):
-        self.mock_response.status_code = 200
-        self.mock_response.json.return_value = {
-            "patch": {"event": "whatever"},
-            "version": 12,
-            "job_id": "d454beec-1f3c-4d11-aa1a-404116a40502"
-        }
-        mock_requests.patch.return_value = self.mock_response
-        retval = self.job_manager.start_job('d454beec-1f3c-4d11-aa1a-404116a40502')
-        self.assertEqual(retval, 12)
-        endpoint = 'http://testendpoint:9999/v1/jobs/d454beec-1f3c-4d11-aa1a-404116a40502'
-        headers = {'X-Auth-Token': 'testtoken'}
-        data = '{"job_schedule": {"event": "start"}}'
-        mock_requests.patch.assert_called_with(endpoint, headers=headers, data=data)
 
     @patch('freezer.apiclient.jobs.requests')
-    def test_stop_job_calls_update_with_correct_update_doc(self, mock_requests):
-        self.mock_response.status_code = 200
-        self.mock_response.json.return_value = {
-            "patch": {"event": "whatever"},
-            "version": 12,
-            "job_id": "d454beec-1f3c-4d11-aa1a-404116a40502"
-        }
-        mock_requests.patch.return_value = self.mock_response
-        retval = self.job_manager.stop_job('d454beec-1f3c-4d11-aa1a-404116a40502')
-        self.assertEqual(retval, 12)
-        endpoint = 'http://testendpoint:9999/v1/jobs/d454beec-1f3c-4d11-aa1a-404116a40502'
-        headers = {'X-Auth-Token': 'testtoken'}
-        data = '{"job_schedule": {"event": "stop"}}'
-        mock_requests.patch.assert_called_with(endpoint, headers=headers, data=data)
+    def test_start_job_posts_proper_data(self, mock_requests):
+        job_id = 'jobdfsfnqwerty1234'
+        self.mock_response.status_code = 202
+        self.mock_response.json.return_value = {'result': 'success'}
+        mock_requests.post.return_value = self.mock_response
+        # /v1/jobs/{job_id}/event
+
+        endpoint = '{0}/v1/jobs/{1}/event'.format(self.mock_client.endpoint, job_id)
+        data = {"start": None}
+        retval = self.job_manager.start_job(job_id)
+        self.assertEqual(retval, {'result': 'success'})
+
+        args = mock_requests.post.call_args[0]
+        kwargs = mock_requests.post.call_args[1]
+        self.assertEquals(endpoint, args[0])
+        self.assertEquals(data, json.loads(kwargs['data']))
+        self.assertEquals(self.headers, kwargs['headers'])
 
     @patch('freezer.apiclient.jobs.requests')
-    def test_abort_job_calls_update_with_correct_update_doc(self, mock_requests):
-        self.mock_response.status_code = 200
-        self.mock_response.json.return_value = {
-            "patch": {"event": "whatever"},
-            "version": 12,
-            "job_id": "d454beec-1f3c-4d11-aa1a-404116a40502"
-        }
-        mock_requests.patch.return_value = self.mock_response
-        retval = self.job_manager.abort_job('d454beec-1f3c-4d11-aa1a-404116a40502')
-        self.assertEqual(retval, 12)
-        endpoint = 'http://testendpoint:9999/v1/jobs/d454beec-1f3c-4d11-aa1a-404116a40502'
-        headers = {'X-Auth-Token': 'testtoken'}
-        data = '{"job_schedule": {"event": "abort"}}'
-        mock_requests.patch.assert_called_with(endpoint, headers=headers, data=data)
+    def test_start_job_raise_ApiClientException_when_api_return_error_code(self, mock_requests):
+        job_id = 'jobdfsfnqwerty1234'
+        self.mock_response.status_code = 500
+        self.mock_response.json.return_value = {'result': 'success'}
+        mock_requests.post.return_value = self.mock_response
+        self.assertRaises(exceptions.ApiClientException, self.job_manager.start_job, job_id)
+
+    @patch('freezer.apiclient.jobs.requests')
+    def test_stop_job_posts_proper_data(self, mock_requests):
+        job_id = 'jobdfsfnqwerty1234'
+        self.mock_response.status_code = 202
+        self.mock_response.json.return_value = {'result': 'success'}
+        mock_requests.post.return_value = self.mock_response
+        # /v1/jobs/{job_id}/event
+
+        endpoint = '{0}/v1/jobs/{1}/event'.format(self.mock_client.endpoint, job_id)
+        data = {"stop": None}
+        retval = self.job_manager.stop_job(job_id)
+        self.assertEqual(retval, {'result': 'success'})
+
+        args = mock_requests.post.call_args[0]
+        kwargs = mock_requests.post.call_args[1]
+        self.assertEquals(endpoint, args[0])
+        self.assertEquals(data, json.loads(kwargs['data']))
+        self.assertEquals(self.headers, kwargs['headers'])
+
+    @patch('freezer.apiclient.jobs.requests')
+    def test_stop_job_raise_ApiClientException_when_api_return_error_code(self, mock_requests):
+        job_id = 'jobdfsfnqwerty1234'
+        self.mock_response.status_code = 500
+        self.mock_response.json.return_value = {'result': 'success'}
+        mock_requests.post.return_value = self.mock_response
+        self.assertRaises(exceptions.ApiClientException, self.job_manager.start_job, job_id)
+
+    @patch('freezer.apiclient.jobs.requests')
+    def test_abort_job_posts_proper_data(self, mock_requests):
+        job_id = 'jobdfsfnqwerty1234'
+        self.mock_response.status_code = 202
+        self.mock_response.json.return_value = {'result': 'success'}
+        mock_requests.post.return_value = self.mock_response
+        # /v1/jobs/{job_id}/event
+
+        endpoint = '{0}/v1/jobs/{1}/event'.format(self.mock_client.endpoint, job_id)
+        data = {"abort": None}
+        retval = self.job_manager.abort_job(job_id)
+        self.assertEqual(retval, {'result': 'success'})
+
+        args = mock_requests.post.call_args[0]
+        kwargs = mock_requests.post.call_args[1]
+        self.assertEquals(endpoint, args[0])
+        self.assertEquals(data, json.loads(kwargs['data']))
+        self.assertEquals(self.headers, kwargs['headers'])
+
+    @patch('freezer.apiclient.jobs.requests')
+    def test_abort_job_raise_ApiClientException_when_api_return_error_code(self, mock_requests):
+        job_id = 'jobdfsfnqwerty1234'
+        self.mock_response.status_code = 500
+        self.mock_response.json.return_value = {'result': 'success'}
+        mock_requests.post.return_value = self.mock_response
+        self.assertRaises(exceptions.ApiClientException, self.job_manager.abort_job, job_id)
