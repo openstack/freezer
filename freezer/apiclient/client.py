@@ -126,6 +126,17 @@ def build_os_option_parser(parser):
               'Defaults to env[OS_IDENTITY_API_VERSION]'),
         dest='os_identity_api_version',
         default=env('OS_IDENTITY_API_VERSION'))
+    parser.add_argument(
+        '--os-endpoint-type', action='store',
+        choices=['public', 'publicURL', 'internal', 'internalURL',
+                 'admin', 'adminURL'],
+        help=('Endpoint type to select. '
+              'Valid endpoint types: "public" or "publicURL", '
+              '"internal" or "internalURL", "admin" or "adminURL". '
+              'Defaults to env[OS_ENDPOINT_TYPE] or "public"'),
+        dest='os_endpoint_type',
+        default=env('OS_ENDPOINT_TYPE', default='public'))
+
     return parser
 
 
@@ -221,7 +232,7 @@ class Client(object):
             auth_ref = self.session.auth.get_auth_ref(self.session)
             endpoint = auth_ref.service_catalog.url_for(
                 service_type=FREEZER_SERVICE_TYPE,
-                endpoint_type='public',
+                endpoint_type=self.opts.os_endpoint_type,
             )
         return endpoint
 
