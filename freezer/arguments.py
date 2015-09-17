@@ -64,7 +64,7 @@ DEFAULT_PARAMS = {
     'vssadmin': True, 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
-    'compression': 'gzip'
+    'ssh_port': 22, 'compression': 'gzip'
 }
 
 
@@ -434,6 +434,10 @@ def backup_arguments(args_dict={}):
         '--ssh-host', action='store',
         help="Remote host for ssh storage only",
         dest='ssh_host', default=DEFAULT_PARAMS['ssh_host'])
+    arg_parser.add_argument(
+        '--ssh-port', action='store',
+        help="Remote port for ssh storage only (default 22)", type=int,
+        dest='ssh_port', default=DEFAULT_PARAMS['ssh_port'])
 
     arg_parser.set_defaults(**defaults)
     backup_args = arg_parser.parse_args()

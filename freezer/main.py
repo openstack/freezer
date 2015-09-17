@@ -145,9 +145,9 @@ def freezer_main(args={}):
                                      backup_args.work_dir)
     elif backup_args.storage == "ssh":
         storage = ssh.SshStorage(
-            backup_args.container, backup_args.work_dir,
-            backup_args.ssh_key, backup_args.ssh_username,
-            backup_args.ssh_host)
+            backup_args.container, backup_args.work_dir, backup_args.ssh_key,
+            backup_args.ssh_username, backup_args.ssh_host,
+            backup_args.ssh_port)
     else:
         raise Exception("Not storage found for name " + backup_args.storage)
 

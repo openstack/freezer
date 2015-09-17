@@ -36,7 +36,7 @@ class SshStorage(storage.Storage):
 
     def __init__(self, storage_directory, work_dir,
                  ssh_key_path, remote_username, remote_ip,
-                 chunk_size=DEFAULT_CHUNK_SIZE):
+                 port, chunk_size=DEFAULT_CHUNK_SIZE):
         """
         :param storage_directory: directory of storage
         :type storage_directory: str
@@ -53,7 +53,7 @@ class SshStorage(storage.Storage):
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         ssh.connect(remote_ip, username=remote_username,
-                    key_filename=ssh_key_path)
+                    key_filename=ssh_key_path, port=port)
         # we should keep link to ssh to prevent garbage collection
         self.ssh = ssh
         self.ftp = self.ssh.open_sftp()

@@ -293,6 +293,7 @@ Freezer can use:
  To use ssh storage specify "--storage ssh"
  And use "--container %path-to-folder-with-backups-on-remote-machine%"
  Also you should specify ssh-username, ssh-key and ssh-host parameters.
+ ssh-port is optional parameter, default is 22
 
  ssh-username for user ubuntu should be "--ssh-username ubuntu"
  ssh-key should be path to your secret ssh key "--ssh-key %path-to-secret-key%"
