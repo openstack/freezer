@@ -1168,7 +1168,7 @@ class FakeSys:
 
     @staticmethod
     def fake_sys_argv():
-        return [1, 2, 3]
+        return ['', '', '']
 
     # @staticmethod
     def fake_sys_exit(self, status_code):

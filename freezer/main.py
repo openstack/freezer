@@ -40,13 +40,12 @@ from freezer import winutils
 # Initialize backup options
 from freezer.validator import Validator
 
-(backup_args, arg_parse) = backup_arguments()
-
 
 def freezer_main(args={}):
     """Freezer main loop for job execution.
     """
-    global backup_args, arg_parse
+
+    (backup_args, arg_parse) = backup_arguments()
 
     def configure_log_file_using_defaults():
         """ Configure log file for freezer """
@@ -110,7 +109,7 @@ def freezer_main(args={}):
     try:
         log_file_name = configure_log_file_using_defaults()
     except Exception as err:
-        fail(1, err, do_log=False)
+        fail(1, err, quiet=backup_args.quiet, do_log=False)
 
     if not backup_args.quiet:
         logging.info('log file at {0}'.format(log_file_name))
@@ -174,10 +173,10 @@ def freezer_main(args={}):
     return backup_args
 
 
-def fail(exit_code, e, do_log=True):
+def fail(exit_code, e, quiet=False, do_log=True):
     """ Catch the exceptions and write it to log """
     msg = '[*] Critical Error: {0}\n'.format(e)
-    if not backup_args.quiet:
+    if quiet:
         sys.stderr.write(msg)
     if do_log:
         logging.critical(msg)

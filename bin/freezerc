@@ -35,10 +35,10 @@ from freezer.main import freezer_main, fail
 
 if __name__ == '__main__':
     try:
-        freezer_main()
+        backup_args = freezer_main()
     except ValueError as err:
-        fail(1, err)
+        fail(1, err, quiet=backup_args.quiet)
     except ImportError as err:
-        fail(1, err)
+        fail(1, err, quiet=backup_args.quiet)
     except Exception as err:
-        fail(1, err)
+        fail(1, err, quiet=backup_args.quiet)

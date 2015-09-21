@@ -17,16 +17,13 @@ limitations under the License.
 This product includes cryptographic software written by Eric Young
 (eay@cryptsoft.com). This product includes software written by Tim
 Hudson (tjh@cryptsoft.com).
-========================================================================
-
 """
 
 from commons import fake_create_job
 from commons import FakeSys
-from commons import BackupOpt1
 
-from freezer.main import freezer_main
 from freezer import job
+from freezer.main import freezer_main
 import pytest
 import sys
 
@@ -37,7 +34,9 @@ def test_freezer_main(monkeypatch):
     monkeypatch.setattr(sys, 'exit', fake_sys.fake_sys_exit)
     with pytest.raises(SystemExit):
         freezer_main()
-    
+
     monkeypatch.setattr(job, 'create_job', fake_create_job)
     monkeypatch.setattr(sys, 'argv', FakeSys.fake_sys_argv())
-    assert freezer_main() is not None
+    # assert freezer_main() is not None
+    with pytest.raises(SystemExit):
+        freezer_main()
