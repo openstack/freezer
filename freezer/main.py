@@ -28,7 +28,6 @@ import json
 
 from freezer.bandwidth import monkeypatch_socket_bandwidth
 from freezer import job
-from freezer.arguments import backup_arguments
 from freezer.osclients import ClientManager
 from freezer import swift
 from freezer import local
@@ -41,11 +40,9 @@ from freezer import winutils
 from freezer.validator import Validator
 
 
-def freezer_main(args={}):
+def freezer_main(backup_args, arg_parse):
     """Freezer main loop for job execution.
     """
-
-    (backup_args, arg_parse) = backup_arguments()
 
     def configure_log_file_using_defaults():
         """ Configure log file for freezer """
@@ -94,16 +91,12 @@ def freezer_main(args={}):
         except Exception as priority_error:
             logging.warning('[*] Priority: {0}'.format(priority_error))
 
-    # Alternative arguments provision useful to run Freezer without
-    # command line e.g. functional testing
-    if args:
-        backup_args.__dict__.update(args)
-    elif len(sys.argv) < 2:
-        arg_parse.print_help()
-        sys.exit(1)
-
     if backup_args.version:
         print "freezer version {0}".format(backup_args.__version__)
+        sys.exit(1)
+
+    if len(sys.argv) < 2:
+        arg_parse.print_help()
         sys.exit(1)
 
     try:
@@ -170,13 +163,11 @@ def freezer_main(args={}):
         if metadata:
             sys.stdout.write(json.dumps(metadata))
 
-    return backup_args
 
-
-def fail(exit_code, e, quiet=False, do_log=True):
+def fail(exit_code, e, quiet, do_log=True):
     """ Catch the exceptions and write it to log """
     msg = '[*] Critical Error: {0}\n'.format(e)
-    if quiet:
+    if not quiet:
         sys.stderr.write(msg)
     if do_log:
         logging.critical(msg)

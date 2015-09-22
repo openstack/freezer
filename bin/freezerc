@@ -31,14 +31,16 @@ Freezer offer the following features:
 '''
 
 from freezer.main import freezer_main, fail
+from freezer.arguments import backup_arguments
 
 
 if __name__ == '__main__':
+    (backup_args, opt_args) = backup_arguments()
     try:
-        backup_args = freezer_main()
+        freezer_main(backup_args, opt_args)
     except ValueError as err:
-        fail(1, err, quiet=backup_args.quiet)
+        fail(1, err, backup_args.quiet)
     except ImportError as err:
-        fail(1, err, quiet=backup_args.quiet)
+        fail(1, err, backup_args.quiet)
     except Exception as err:
-        fail(1, err, quiet=backup_args.quiet)
+        fail(1, err, backup_args.quiet)
