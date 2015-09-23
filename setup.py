@@ -56,7 +56,9 @@ setup(
     packages=find_packages(),
     platforms='Linux, *BSD, OSX',
     cmdclass={'test': PyTest},
-    scripts=['bin/freezerc'],
+    scripts=['bin/freezerc', 'freezer/bin/trickle',
+             'freezer/bin/trickle-overload.so'],
+    include_package_data=True,
     classifiers=[
         'Programming Language :: Python',
         'Development Status :: 5 - Production/Stable',
@@ -119,5 +121,7 @@ setup(
                 ('freezer/bin', ['freezer/bin/gzip-1.6-1.src.tar']),
                 ('freezer/bin', ['freezer/bin/tar-1.27.1.tar.xz']),
                 ('freezer/bin', ['freezer/bin/findutils-4.5.12.tar.gz']),
-                ('freezer/bin', ['freezer/bin/xz-5.2.1.tar.gz'])]
+                ('freezer/bin', ['freezer/bin/xz-5.2.1.tar.gz']),
+                ('freezer/bin', ['freezer/bin/trickle']),
+                ('freezer/bin', ['freezer/bin/trickle-overload.so'])]
 )

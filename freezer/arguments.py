@@ -36,6 +36,7 @@ import utils
 from oslo_utils import encodeutils
 
 from freezer import winutils
+from tempfile import NamedTemporaryFile
 
 home = expanduser("~")
 
@@ -47,7 +48,7 @@ DEFAULT_PARAMS = {
     'backup_name': False, 'quiet': False,
     'container': 'freezer_backups', 'no_incremental': False,
     'max_segment_size': 67108864, 'lvm_srcvol': False,
-    'download_limit': -1, 'hostname': False, 'remove_from_date': False,
+    'download_limit': None, 'hostname': False, 'remove_from_date': False,
     'restart_always_level': False, 'lvm_dirmount': False,
     'dst_file': False, 'dereference_symlink': '',
     'restore_from_host': False, 'config': False, 'mysql_conf': False,
@@ -57,7 +58,7 @@ DEFAULT_PARAMS = {
     'cinder_vol_id': '', 'cindernative_vol_id': '',
     'nova_inst_id': '', 'list_containers': False,
     'remove_older_than': None, 'restore_from_date': False,
-    'upload_limit': -1, 'always_level': False, 'version': False,
+    'upload_limit': None, 'always_level': False, 'version': False,
     'dry_run': False, 'lvm_snapsize': False,
     'restore_abs_path': False, 'log_file': None,
     'upload': True, 'mode': 'fs', 'action': 'backup',
@@ -114,6 +115,11 @@ def backup_arguments(args_dict={}):
     defaults = DEFAULT_PARAMS.copy()
     args, remaining_argv = conf_parser.parse_known_args()
     if args.config:
+        if not os.path.exists(args.config):
+            logging.error("[*] Critical Error: Configuration file {0} not"
+                          " found".format(args.config))
+            raise Exception("Configuration file {0} not found !".format(
+                args.config))
         config = configparser.SafeConfigParser()
         config.read([args.config])
         section = config.sections()[0]
@@ -560,5 +566,59 @@ def backup_arguments(args_dict={}):
     backup_args.__dict__['backup_media'] = backup_media
 
     backup_args.__dict__['time_stamp'] = None
+
+    if backup_args.upload_limit or backup_args.download_limit and not\
+            winutils.is_windows():
+        if backup_args.config:
+            conf_file = NamedTemporaryFile(prefix='freezer_job_', delete=False)
+            defaults['upload_limit'] = defaults['download_limit'] = -1
+            utils.save_config_to_file(defaults, conf_file)
+            conf_index = sys.argv.index('--config') + 1
+            sys.argv[conf_index] = conf_file.name
+
+        if '--upload-limit' in sys.argv:
+            index = sys.argv.index('--upload-limit')
+            sys.argv.pop(index)
+            sys.argv.pop(index)
+        if '--download-limit' in sys.argv:
+            index = sys.argv.index('--download-limit')
+            sys.argv.pop(index)
+            sys.argv.pop(index)
+
+        trickle_executable = distspawn.find_executable('trickle')
+        if trickle_executable is None:
+            trickle_executable = distspawn.find_executable(
+                'trickle', path=":".join(sys.path))
+            if trickle_executable is None:
+                        trickle_executable = distspawn.find_executable(
+                            'trickle', path=":".join(os.environ.get('PATH')))
+
+        trickle_lib = distspawn.find_executable('trickle-overload.so')
+        if trickle_lib is None:
+            trickle_lib = distspawn.find_executable(
+                'trickle-overload.so', path=":".join(sys.path))
+            if trickle_lib is None:
+                trickle_lib = distspawn.find_executable(
+                    'trickle-overload.so', path=":".join(
+                        os.environ.get('PATH')))
+        if trickle_executable and trickle_lib:
+            logging.info("[*] Info: Starting trickle ...")
+            os.environ['LD_PRELOAD'] = trickle_lib
+            trickle_command = '{0} -d {1} -u {2} '.\
+                format(trickle_executable,
+                       getattr(backup_args, 'download_limit') or -1,
+                       getattr(backup_args, 'upload_limit') or -1)
+            backup_args.__dict__['trickle_command'] = trickle_command
+            if "tricklecount" in os.environ:
+                tricklecount = int(os.environ.get("tricklecount", 1))
+                tricklecount += 1
+                os.environ["tricklecount"] = str(tricklecount)
+
+            else:
+                os.environ["tricklecount"] = str(1)
+        else:
+            logging.critical("[*] Trickle or Trickle library not found"
+                             ". Switching to normal mode without limiting"
+                             " bandwidth")
 
     return backup_args, arg_parser

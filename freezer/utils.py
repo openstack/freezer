@@ -28,6 +28,7 @@ import datetime
 import re
 import subprocess
 import errno
+from ConfigParser import ConfigParser
 
 
 class OpenstackOptions:
@@ -123,6 +124,15 @@ def create_dir(directory, do_log=True):
         err = '[*] Error while creating directory {0}: {1}\
             '.format(expanded_dir_name, error)
         raise Exception(err)
+
+
+def save_config_to_file(config, f, section='freezer_default'):
+    parser = ConfigParser()
+    parser.add_section(section)
+    for option, option_value in config.items():
+        parser.set(section, option, option_value)
+    parser.write(f)
+    f.close()
 
 
 class DateTime(object):
