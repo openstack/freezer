@@ -24,7 +24,7 @@ import logging
 
 import paramiko
 
-from freezer import storage
+from freezer.storage import storage
 from freezer import utils
 
 
@@ -48,12 +48,19 @@ class SshStorage(storage.Storage):
         self.storage_directory = storage_directory
         self.work_dir = work_dir
         self.chunk_size = chunk_size
-        ssh = paramiko.SSHClient()
+        self.port = port
         # automatically add keys without requiring human intervention
+        self.ssh = None
+        self.ftp = None
+        self.init()
+
+    def init(self):
+        ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        ssh.connect(remote_ip, username=remote_username,
-                    key_filename=ssh_key_path, port=port)
+        ssh.connect(self.remote_ip, username=self.remote_username,
+                    key_filename=self.ssh_key_path, port=self.port)
+
         # we should keep link to ssh to prevent garbage collection
         self.ssh = ssh
         self.ftp = self.ssh.open_sftp()
@@ -173,9 +180,9 @@ class SshStorage(storage.Storage):
         self.rm(self._zero_backup_dir(backup))
 
     def backup_blocks(self, backup):
+        self.init()
         filename = self.backup_dir(backup)
-        with self.ftp.open(filename, mode='rb',
-                           bufsize=self.chunk_size) as backup_file:
+        with self.ftp.open(filename, mode='rb') as backup_file:
             while True:
                 chunk = backup_file.read(self.chunk_size)
                 if chunk == '':

@@ -24,7 +24,7 @@ import logging
 import os
 
 from freezer import utils
-from freezer import storage
+from freezer.storage import storage
 
 
 class SwiftStorage(storage.Storage):

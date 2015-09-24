@@ -25,13 +25,13 @@ try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
-from distutils import spawn as distspawn
 import logging
 import os
 from os.path import expanduser
 import socket
 import sys
 import utils
+from distutils import spawn as distspawn
 
 from oslo_utils import encodeutils
 
@@ -448,17 +448,9 @@ def backup_arguments(args_dict={}):
     arg_parser.set_defaults(**defaults)
     backup_args = arg_parser.parse_args()
 
-    # windows bin
-    path_to_binaries = os.path.dirname(os.path.abspath(__file__))
-
     # Intercept command line arguments if you are not using the CLIvss
     if args_dict:
         backup_args.__dict__.update(args_dict)
-
-    # Set additional namespace attributes
-    backup_args.__dict__['remote_match_backup'] = []
-    backup_args.__dict__['remote_obj_list'] = []
-    backup_args.__dict__['remote_newest_backup'] = u''
 
     # Set default working directory to ~/.freezer. If the directory
     # does not exists it is created
@@ -488,46 +480,10 @@ def backup_arguments(args_dict={}):
     # If hostname is not set, hostname of the current node will be used
     if not backup_args.hostname:
         backup_args.__dict__['hostname'] = socket.gethostname()
-    backup_args.__dict__['manifest_meta_dict'] = {}
-    backup_args.__dict__['curr_backup_level'] = ''
-    backup_args.__dict__['manifest_meta_dict'] = ''
-    if winutils.is_windows():
-        backup_args.__dict__['tar_path'] = '{0}\\bin\\tar.exe'. \
-            format(path_to_binaries)
-    else:
-        backup_args.__dict__['tar_path'] = distspawn.find_executable('tar')
-    # If freezer is being used under OSX, please install gnutar and
-    # rename the executable as gnutar
-    if 'darwin' in sys.platform or 'bsd' in sys.platform:
-        if distspawn.find_executable('gtar'):
-            backup_args.__dict__['tar_path'] = \
-                distspawn.find_executable('gtar')
-        elif distspawn.find_executable('gnutar'):
-            backup_args.__dict__['tar_path'] = \
-                distspawn.find_executable('gnutar')
-        else:
-            raise Exception('Please install gnu tar (gtar) as it is a '
-                            'mandatory requirement to use freezer.')
 
     # If we have provided --proxy then overwrite the system HTTP_PROXY and
     # HTTPS_PROXY
     alter_proxy(backup_args.__dict__)
-
-    # Get absolute path of other commands used by freezer
-    backup_args.__dict__['lvcreate_path'] = distspawn.find_executable(
-        'lvcreate')
-    backup_args.__dict__['lvremove_path'] = distspawn.find_executable(
-        'lvremove')
-    backup_args.__dict__['bash_path'] = distspawn.find_executable('bash')
-    if winutils.is_windows():
-        backup_args.__dict__['openssl_path'] = 'openssl'
-    else:
-        backup_args.__dict__['openssl_path'] = \
-            distspawn.find_executable('openssl')
-    backup_args.__dict__['file_path'] = distspawn.find_executable('file')
-    backup_args.__dict__['mount_path'] = distspawn.find_executable('mount')
-    backup_args.__dict__['umount_path'] = distspawn.find_executable('umount')
-    backup_args.__dict__['ionice'] = distspawn.find_executable('ionice')
 
     # MySQLdb object
     backup_args.__dict__['mysql_db_inst'] = ''
@@ -546,10 +502,6 @@ def backup_arguments(args_dict={}):
 
         if backup_args.vssadmin == 'False' or backup_args.vssadmin == 'false':
             backup_args.vssadmin = False
-
-    backup_args.__dict__['meta_data'] = {}
-    backup_args.__dict__['meta_data_file'] = ''
-    backup_args.__dict__['absolute_path'] = ''
 
     # Freezer version
     backup_args.__dict__['__version__'] = '1.1.3'

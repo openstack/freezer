@@ -134,7 +134,7 @@ class Storage(object):
         prev_backup = self._find_previous_backup(
             backups, no_incremental, max_level, always_level,
             restart_always_level)
-        if prev_backup:
+        if prev_backup and prev_backup.tar_meta:
             return Backup(
                 hostname_backup_name,
                 time_stamp or utils.DateTime.now().timestamp,
@@ -154,6 +154,7 @@ class Storage(object):
         :param max_level:
         :param always_level:
         :param restart_always_level:
+        :rtype: freezer.storage.storage.Backup
         :return:
         """
         if no_incremental or not backups:

@@ -2,11 +2,8 @@ import tempfile
 import shutil
 import pytest
 
-from freezer import local
-from freezer import tar
+from freezer.storage import local
 from freezer import utils
-import commons
-import os
 
 @pytest.mark.incremental
 class TestLocalStorage(object):

@@ -11,9 +11,9 @@ import pymysql as MySQLdb
 import pymongo
 import re
 from glanceclient.common.utils import IterableWithLength
-from freezer import swift
+from freezer.storage import swift
 from freezer.utils import OpenstackOptions
-from freezer.engine import tar_engine
+from freezer.engine.tar import tar_engine
 
 os.environ['OS_REGION_NAME'] = 'testregion'
 os.environ['OS_TENANT_ID'] = '0123456789'

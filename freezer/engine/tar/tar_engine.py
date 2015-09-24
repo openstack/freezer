@@ -23,25 +23,23 @@ Freezer general utils functions
 import logging
 import os
 import subprocess
+import sys
 import threading
-import time
 
 from freezer.engine import engine
-from freezer import tar
+from freezer.engine.tar import tar_builders
 from freezer import streaming
+from freezer import winutils
 
 
 class TarBackupEngine(engine.BackupEngine):
     DEFAULT_CHUNK_SIZE = 20000000
 
     def __init__(
-            self, gnutar_path, compression_algo, dereference_symlink,
-            exclude, main_storage, is_windows, open_ssl_path=None,
-            encrypt_pass_file=None, dry_run=False,
+            self, compression_algo, dereference_symlink, exclude, main_storage,
+            is_windows, encrypt_pass_file=None, dry_run=False,
             chunk_size=DEFAULT_CHUNK_SIZE):
-        self.gnutar_path = gnutar_path
         self.compression_algo = compression_algo
-        self.open_ssl_path = open_ssl_path
         self.encrypt_pass_file = encrypt_pass_file
         self.dereference_symlink = dereference_symlink
         self.exclude = exclude
@@ -72,7 +70,6 @@ class TarBackupEngine(engine.BackupEngine):
                 break
             if tar_chunk:
                 rich_queue.put(tar_chunk)
-        logging.info("reader finished")
         rich_queue.finish()
 
     @staticmethod
@@ -92,12 +89,10 @@ class TarBackupEngine(engine.BackupEngine):
 
     def backup_data(self, backup_path, manifest_path):
         logging.info("Tar engine backup stream enter")
-        tar_command = tar.TarCommandBuilder(
-            self.gnutar_path, backup_path, self.compression_algo,
-            self.is_windows)
-        if self.open_ssl_path:
-            tar_command.set_encryption(self.open_ssl_path,
-                                       self.encrypt_pass_file)
+        tar_command = tar_builders.TarCommandBuilder(
+            backup_path, self.compression_algo, self.is_windows)
+        if self.encrypt_pass_file:
+            tar_command.set_encryption(self.encrypt_pass_file)
         if self.dereference_symlink:
             tar_command.set_dereference(self.dereference_symlink)
         tar_command.set_exclude(self.exclude)
@@ -122,60 +117,43 @@ class TarBackupEngine(engine.BackupEngine):
                 pass
         logging.info("Tar engine streaming end")
 
-    def restore_stream(self, restore_path, rich_queue):
+    def restore_level(self, restore_path, read_pipe):
         """
-        :param restore_path:
-        :type restore_path: str
-        :param rich_queue:
-        :type rich_queue: freezer.streaming.RichQueue
-        :return:
+        Restore the provided file into backup_opt_dict.restore_abs_path
+        Decrypt the file if backup_opt_dict.encrypt_pass_file key is provided
         """
 
-        tar_command = tar.TarCommandRestoreBuilder(
-            self.gnutar_path, restore_path, self.compression_algo,
-            self.is_windows)
+        tar_command = tar_builders.TarCommandRestoreBuilder(
+            restore_path, self.compression_algo, self.is_windows)
 
-        if self.open_ssl_path:
-            tar_command.set_encryption(self.open_ssl_path,
-                                       self.encrypt_pass_file)
+        if self.encrypt_pass_file:
+            tar_command.set_encryption(self.encrypt_pass_file)
 
         if self.dry_run:
             tar_command.set_dry_run()
 
         command = tar_command.build()
-        logging.info("Execution restore command: \n{}".format(command))
 
-        tar_process = subprocess.Popen(
-            command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, shell=True, close_fds=True)
-        if self.is_windows:
+        if winutils.is_windows():
             # on windows, chdir to restore path.
             os.chdir(restore_path)
 
-        writer = threading.Thread(target=self.writer,
-                                  args=(rich_queue, tar_process.stdin))
-        writer.daemon = True
-        writer.start()
-        error_queue = streaming.RichQueue(size=2000)
-        # error buffer size should be small to detect error
-        reader = threading.Thread(target=self.reader,
-                                  args=(error_queue, tar_process.stderr, 10))
-        reader.daemon = True
-        reader.start()
+        tar_cmd_proc = subprocess.Popen(
+            command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, shell=True)
+        # Start loop reading the pipe and pass the data to the tar std input.
+        # If EOFError exception is raised, the loop end the std err will be
+        # checked for errors.
+        try:
+            while True:
+                t = read_pipe.recv_bytes()
+                tar_cmd_proc.stdin.write(t)
+        except EOFError:
+            logging.info('[*] Pipe closed as EOF reached. '
+                         'Data transmitted successfully')
 
-        while writer.is_alive() and not tar_process.poll() \
-                and error_queue.empty():
-            # here I know that tar_process is still running and I have no
-            # exceptions so far. So I need just wait
-            # I understand that sleep here means block of main thread, and
-            # may make it irresponsible. So I provide here very small timeout
-            time.sleep(1)
+        tar_err = tar_cmd_proc.communicate()[1]
 
-        res = []
-        while not error_queue.empty():
-            res.append(error_queue.get())
-        if res:
-            tar_err = "".join(res)
+        if 'error' in tar_err.lower():
             logging.exception('[*] Restore error: {0}'.format(tar_err))
-            rich_queue.force_stop()
-            raise Exception('[*] Restore error: {0}'.format(tar_err))
+            sys.exit(1)

@@ -1,12 +1,8 @@
 #!/usr/bin/env python
 
-from freezer.arguments import backup_arguments, alter_proxy
-import argparse
-from commons import *
-import sys
+from freezer.arguments import alter_proxy
 import os
 import pytest
-import distutils.spawn as distspawn
 
 
 class TestArguments(object):
@@ -39,24 +35,3 @@ class TestArguments(object):
         alter_proxy(test_dict)
         assert os.environ["HTTP_PROXY"] == test_proxy
         assert os.environ["HTTPS_PROXY"] == test_proxy
-
-    def test_arguments(self, monkeypatch):
-        fakeargparse = FakeArgparse()
-        fakeargparse = fakeargparse.ArgumentParser()
-        fakedistutils = FakeDistutils()
-        fakedistutilsspawn = fakedistutils.spawn()
-
-        monkeypatch.setattr(
-            argparse, 'ArgumentParser', fakeargparse)
-
-        platform = sys.platform
-        assert backup_arguments() is not False
-
-        if sys.__dict__['platform'] != 'darwin':
-            sys.__dict__['platform'] = 'darwin'
-            pytest.raises(Exception, backup_arguments)
-        sys.__dict__['platform'] = 'darwin'
-        monkeypatch.setattr(
-            distspawn, 'find_executable', fakedistutilsspawn.find_executable)
-        assert backup_arguments() is not False
-        sys.__dict__['platform'] = platform

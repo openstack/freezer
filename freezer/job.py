@@ -27,9 +27,6 @@ from freezer import utils
 from freezer import backup
 from freezer import exec_cmd
 from freezer import restore
-from freezer import tar
-from freezer import winutils
-import os
 
 import logging
 
@@ -99,8 +96,7 @@ class BackupJob(Job):
 
     def get_metadata(self):
         metadata = {
-            'curr_backup_level': self.conf.curr_backup_level
-            if self.conf.curr_backup_level != '' else 0,
+            'curr_backup_level': 0,
             'fs_real_path': (self.conf.lvm_auto_snap or
                              self.conf.path_to_backup),
             'vol_snap_path':
@@ -130,17 +126,6 @@ class RestoreJob(Job):
         if conf.restore_from_date:
             restore_timestamp = utils.date_to_timestamp(conf.restore_from_date)
         if conf.backup_media == 'fs':
-            builder = tar.TarCommandRestoreBuilder(
-                conf.tar_path, restore_abs_path, conf.compression,
-                winutils.is_windows())
-            if conf.dry_run:
-                builder.set_dry_run()
-            if winutils.is_windows():
-                os.chdir(conf.restore_abs_path)
-            if conf.encrypt_pass_file:
-                builder.set_encryption(conf.openssl_path,
-                                       conf.encrypt_pass_file)
-
             backup = self.storage.find_one(conf.hostname_backup_name,
                                            restore_timestamp)
 

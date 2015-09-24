@@ -21,6 +21,8 @@ Hudson (tjh@cryptsoft.com).
 Freezer general utils functions
 """
 import logging
+import multiprocessing
+import time
 
 from freezer import streaming
 from freezer import utils
@@ -57,8 +59,6 @@ class BackupEngine(object):
             Restore stream is a consumer, that is actually does restore (for
             tar it is a thread that creates gnutar subprocess and feeds chunks
             to stdin of this thread.
-
-    author: Eldar Nugaev
     """
     @property
     def main_storage(self):
@@ -69,7 +69,7 @@ class BackupEngine(object):
 
         PS. Should be changed to select the most up-to-date storage from
         existing ones
-        :rtype: freezer.storage.Storage
+        :rtype: freezer.storage.storage.Storage
         :return:
         """
         raise NotImplementedError("Should have implemented this")
@@ -103,6 +103,23 @@ class BackupEngine(object):
         """
         raise NotImplementedError("Should have implemented this")
 
+    def read_blocks(self, backup, write_pipe, read_pipe):
+        # Close the read pipe in this child as it is unneeded
+        # and download the objects from swift in chunks. The
+        # Chunk size is set by RESP_CHUNK_SIZE and sent to che write
+        # pipe
+        read_pipe.close()
+        for block in self.main_storage.backup_blocks(backup):
+            write_pipe.send_bytes(block)
+
+        # Closing the pipe after checking no data
+        # is still available in the pipe.
+        while True:
+            if not write_pipe.poll():
+                write_pipe.close()
+                break
+            time.sleep(1)
+
     def restore(self, backup, restore_path):
         """
         :type backup: freezer.storage.Backup
@@ -113,27 +130,38 @@ class BackupEngine(object):
         for level in range(0, backup.level + 1):
             b = backup.full_backup.increments[level]
             logging.info("Restore backup {0}".format(b))
-            streaming.stream(
-                self.main_storage.read_backup, {"backup": b},
-                self.restore_stream, {"restore_path": restore_path})
+            read_pipe, write_pipe = multiprocessing.Pipe()
+            process_stream = multiprocessing.Process(
+                target=self.read_blocks,
+                args=(b, write_pipe, read_pipe))
+            process_stream.daemon = True
+            process_stream.start()
+            write_pipe.close()
+
+            # Start the tar pipe consumer process
+            tar_stream = multiprocessing.Process(
+                target=self.restore_level, args=(restore_path, read_pipe))
+            tar_stream.daemon = True
+            tar_stream.start()
+            read_pipe.close()
+            write_pipe.close()
+            process_stream.join()
+            tar_stream.join()
+
+            if tar_stream.exitcode:
+                raise Exception('failed to restore file')
+
         logging.info(
             '[*] Restore execution successfully executed \
              for backup name {0}'.format(backup))
+
+    def restore_level(self, restore_path, read_pipe):
+        raise NotImplementedError("Should have implemented this")
 
     def backup_data(self, backup_path, manifest_path):
         """
         :param backup_path:
         :param manifest_path:
-        :return:
-        """
-        raise NotImplementedError("Should have implemented this")
-
-    def restore_stream(self, restore_path, rich_queue):
-        """
-        :param restore_path:
-        :type restore_path: str
-        :param rich_queue:
-        :type rich_queue: freezer.streaming.RichQueue
         :return:
         """
         raise NotImplementedError("Should have implemented this")

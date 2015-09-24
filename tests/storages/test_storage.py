@@ -1,6 +1,5 @@
 import unittest
-from freezer import storage
-from freezer import tar
+from freezer.storage import storage
 import mock
 
 

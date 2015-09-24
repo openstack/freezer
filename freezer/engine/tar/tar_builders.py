@@ -20,6 +20,7 @@ Hudson (tjh@cryptsoft.com).
 
 Freezer Tar related functions
 """
+from freezer import utils
 
 
 class TarCommandBuilder:
@@ -43,8 +44,8 @@ class TarCommandBuilder:
                         'hard': '--hard-dereference',
                         'all': '--hard-dereference --dereference'}
 
-    def __init__(self, gnutar_path, filepath, compression_algo, is_windows):
-        self.gnutar_path = gnutar_path
+    def __init__(self, filepath, compression_algo, is_windows, tar_path=None):
+        self.tar_path = tar_path or utils.tar_path()
         self.dereference = ''
         self.listed_incremental = None
         self.exclude = ''
@@ -71,17 +72,17 @@ class TarCommandBuilder:
         """
         self.dereference = self.DEREFERENCE_MODE[mode]
 
-    def set_encryption(self, openssl_path, encrypt_pass_file):
-        self.openssl_path = openssl_path
+    def set_encryption(self, encrypt_pass_file, openssl_path=None):
+        self.openssl_path = openssl_path or utils.openssl_path()
         self.encrypt_pass_file = encrypt_pass_file
 
     def build(self):
         if self.is_windows:
             tar_command = self.WINDOWS_TEMPLATE.format(
-                gnutar_path=self.gnutar_path, algo=self.compression_algo)
+                gnutar_path=self.tar_path, algo=self.compression_algo)
         else:
             tar_command = self.UNIX_TEMPLATE.format(
-                gnutar_path=self.gnutar_path, algo=self.compression_algo)
+                gnutar_path=self.tar_path, algo=self.compression_algo)
 
         if self.dereference:
             tar_command = "{0} {1}".format(tar_command, self.dereference)
@@ -114,12 +115,13 @@ class TarCommandRestoreBuilder:
     UNIX_TEMPLATE = '{0} {1} --incremental --extract --unlink-first ' \
         '--ignore-zeros --warning=none --overwrite --directory {2}'
 
-    def __init__(self, tar_path, restore_path, compression_algo, is_windows):
+    def __init__(self, restore_path, compression_algo, is_windows,
+                 tar_path=None):
         self.dry_run = False
         self.is_windows = False
         self.openssl_path = None
         self.encrypt_pass_file = None
-        self.tar_path = tar_path
+        self.tar_path = tar_path or utils.tar_path()
         self.restore_path = restore_path
         self.compression_algo = get_tar_flag_from_algo(compression_algo)
         self.is_windows = is_windows
@@ -127,8 +129,8 @@ class TarCommandRestoreBuilder:
     def set_dry_run(self):
         self.dry_run = True
 
-    def set_encryption(self, openssl_path, encrypt_pass_file):
-        self.openssl_path = openssl_path
+    def set_encryption(self, encrypt_pass_file, openssl_path=None):
+        self.openssl_path = openssl_path or utils.openssl_path()
         self.encrypt_pass_file = encrypt_pass_file
 
     def build(self):

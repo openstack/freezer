@@ -21,8 +21,7 @@ Hudson (tjh@cryptsoft.com).
 Freezer LVM related functions
 """
 
-from freezer.utils import (
-    create_dir, get_vol_fs_type, get_mount_from_path)
+from freezer import utils
 
 import re
 import os
@@ -54,7 +53,7 @@ def lvm_eval(backup_opt_dict):
         return False
 
     # Create lvm_dirmount dir if it doesn't exists and write action in logs
-    create_dir(backup_opt_dict.lvm_dirmount)
+    utils.create_dir(backup_opt_dict.lvm_dirmount)
 
     return True
 
@@ -79,10 +78,10 @@ def lvm_snap_remove(backup_opt_dict):
             logging.warning('[*] Found lvm snapshot {0} mounted on {1}\
             '.format(dev_vol, mount_point))
             umount_proc = subprocess.Popen('{0} -l -f {1}'.format(
-                backup_opt_dict.umount_path, mount_point),
+                utils.find_executable("umount"), mount_point),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                shell=True, executable=backup_opt_dict.bash_path)
+                shell=True, executable=utils.find_executable("bash"))
             (umount_out, mount_err) = umount_proc.communicate()
             if re.search(r'\S+', umount_out):
                 raise Exception('impossible to umount {0} {1}'
@@ -94,10 +93,10 @@ def lvm_snap_remove(backup_opt_dict):
                     mapper_snap_vol))
                 snap_rm_proc = subprocess.Popen(
                     '{0} -f {1}'.format(
-                        backup_opt_dict.lvremove_path, mapper_snap_vol),
+                        utils.find_executable("lvremove"), mapper_snap_vol),
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                    shell=True, executable=backup_opt_dict.bash_path)
+                    shell=True, executable=utils.find_executable("bash"))
                 (lvm_rm_out, lvm_rm_err) = snap_rm_proc.communicate()
                 if 'successfully removed' in lvm_rm_out:
                     logging.info('[*] {0}'.format(lvm_rm_out))
@@ -143,7 +142,7 @@ def lvm_snap(backup_opt_dict):
     # Create the snapshot according the values passed from command line
     lvm_create_snap = '{0} --size {1} --snapshot --permission {2} --name {3} {4}\
     '.format(
-        backup_opt_dict.lvcreate_path,
+        utils.find_executable("lvcreate"),
         backup_opt_dict.lvm_snapsize,
         ('r' if backup_opt_dict.lvm_snapperm == 'ro'
          else backup_opt_dict.lvm_snapperm),
@@ -160,7 +159,7 @@ def lvm_snap(backup_opt_dict):
     lvm_process = subprocess.Popen(
         lvm_create_snap, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, shell=True,
-        executable=backup_opt_dict.bash_path)
+        executable=utils.find_executable("bash"))
     (lvm_out, lvm_err) = lvm_process.communicate()
     if lvm_err is False:
         raise Exception('lvm snapshot creation error: {0}'.format(lvm_err))
@@ -176,7 +175,7 @@ def lvm_snap(backup_opt_dict):
 
     # Guess the file system of the provided source volume and st mount
     # options accordingly
-    filesys_type = get_vol_fs_type(backup_opt_dict)
+    filesys_type = utils.get_vol_fs_type(backup_opt_dict)
     mount_options = '-o {}'.format(backup_opt_dict.lvm_snapperm)
     if 'xfs' == filesys_type:
         mount_options = ' -onouuid '
@@ -185,14 +184,14 @@ def lvm_snap(backup_opt_dict):
         backup_opt_dict.lvm_volgroup,
         backup_opt_dict.lvm_snapname)
     mount_snap = '{0} {1} {2} {3}'.format(
-        backup_opt_dict.mount_path,
+        utils.find_executable("mount"),
         mount_options,
         abs_snap_name,
         backup_opt_dict.lvm_dirmount)
     mount_process = subprocess.Popen(
         mount_snap, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, shell=True,
-        executable=backup_opt_dict.bash_path)
+        executable=utils.find_executable("bash"))
     mount_err = mount_process.communicate()[1]
     if 'already mounted' in mount_err:
         logging.warning('[*] Volume {0} already mounted on {1}\
@@ -218,7 +217,7 @@ def get_lvm_info(lvm_auto_snap):
     :returns: a list containing the items lvm_volgroup, lvm_srcvol, lvm_device
     """
 
-    mount_point_path = get_mount_from_path(lvm_auto_snap)
+    mount_point_path = utils.get_mount_from_path(lvm_auto_snap)
     with open('/proc/mounts', 'r') as mount_fd:
         mount_points = mount_fd.readlines()
         lvm_volgroup, lvm_srcvol, lvm_device = lvm_guess(

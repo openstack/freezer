@@ -29,6 +29,8 @@ import re
 import subprocess
 import errno
 from ConfigParser import ConfigParser
+from distutils import spawn as distspawn
+import sys
 
 
 class OpenstackOptions:
@@ -178,11 +180,11 @@ def get_vol_fs_type(backup_opt_dict):
         raise Exception(err)
 
     file_cmd = '{0} -0 -bLs --no-pad --no-buffer --preserve-date \
-    {1}'.format(backup_opt_dict.file_path, vol_name)
+    {1}'.format(find_executable("file"), vol_name)
     file_process = subprocess.Popen(
         file_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, shell=True,
-        executable=backup_opt_dict.bash_path)
+        executable=find_executable("bash"))
     (file_out, file_err) = file_process.communicate()
     file_match = re.search(r'(\S+?) filesystem data', file_out, re.I)
     if file_match is None:
@@ -354,3 +356,35 @@ def dequote(s):
     if (s[0] == s[-1]) and s.startswith(("'", '"')):
         return s[1:-1]
     return s
+
+
+def find_executable(name):
+    return distspawn.find_executable(name)
+
+
+def openssl_path():
+    import winutils
+    if winutils.is_windows():
+        return 'openssl'
+    else:
+        return find_executable('openssl')
+
+
+def tar_path():
+    import winutils
+    if winutils.is_windows():
+        # windows bin
+        path_to_binaries = os.path.dirname(os.path.abspath(__file__))
+        return '{0}\\bin\\tar.exe'.format(path_to_binaries)
+    elif 'darwin' in sys.platform or 'bsd' in sys.platform:
+        # If freezer is being used under OSX, please install gnutar and
+        # rename the executable as gnutar
+        if distspawn.find_executable('gtar'):
+            return find_executable('gtar')
+        elif distspawn.find_executable('gnutar'):
+            return find_executable('gnutar')
+        else:
+            raise Exception('Please install gnu tar (gtar) as it is a '
+                            'mandatory requirement to use freezer.')
+    else:
+        return find_executable('tar')

@@ -80,6 +80,7 @@ class TestLvm:
         backup_opt.lvm_snapsize = False
         backup_opt.lvm_snapname = False
         monkeypatch.setattr(os, 'path', fakeos)
+        monkeypatch.setattr(utils, 'find_executable', lambda x: "123")
         monkeypatch.setattr(subprocess, 'Popen', fakesubprocess.Popen)
         pytest.raises(Exception, lvm_snap, backup_opt)
 

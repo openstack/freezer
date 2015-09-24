@@ -29,11 +29,11 @@ import json
 from freezer.bandwidth import monkeypatch_socket_bandwidth
 from freezer import job
 from freezer.osclients import ClientManager
-from freezer import swift
-from freezer import local
-from freezer import ssh
+from freezer.storage import swift
+from freezer.storage import local
+from freezer.storage import ssh
 from freezer import utils
-from freezer.engine import tar_engine
+from freezer.engine.tar import tar_engine
 from freezer import winutils
 
 # Initialize backup options
@@ -84,7 +84,7 @@ def freezer_main(backup_args, arg_parse):
             os.nice(-19)
             # Set I/O Priority to Real Time class with level 0
             subprocess.call([
-                u'{0}'.format(backup_args.ionice),
+                u'{0}'.format(utils.find_executable("ionice")),
                 u'-c', u'1', u'-n', u'0', u'-t',
                 u'-p', u'{0}'.format(PID)
             ])
@@ -145,13 +145,11 @@ def freezer_main(backup_args, arg_parse):
 
     backup_args.__dict__['storage'] = storage
     backup_args.__dict__['engine'] = tar_engine.TarBackupEngine(
-        backup_args.tar_path,
         backup_args.compression,
         backup_args.dereference_symlink,
         backup_args.exclude,
         storage,
         winutils.is_windows(),
-        backup_args.openssl_path,
         backup_args.encrypt_pass_file,
         backup_args.dry_run)
 

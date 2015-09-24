@@ -1,8 +1,8 @@
 import unittest
 from freezer import osclients
 from freezer import utils
-from freezer import swift
-from freezer import storage
+from freezer.storage import swift
+from freezer.storage import storage
 
 
 class TestSwiftStorage(unittest.TestCase):

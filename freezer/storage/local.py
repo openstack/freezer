@@ -23,7 +23,7 @@ import shutil
 import io
 import logging
 
-from freezer import storage
+from freezer.storage import storage
 from freezer import utils
 
 
