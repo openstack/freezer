@@ -29,125 +29,92 @@ import subprocess
 import logging
 
 
-def lvm_eval(backup_opt_dict):
-    """
-    Evaluate if the backup must be executed using lvm snapshot
-    or just directly on the plain filesystem. If no lvm options are specified
-    the backup will be executed directly on the file system and without
-    use lvm snapshot. If one of the lvm options are set, then the lvm snap
-    will be used to execute backup. This mean all the required options
-    must be set accordingly
-    """
-
-    if not backup_opt_dict.lvm_volgroup:
-        logging.warning('[*] Required lvm_volgroup not set. The backup will '
-                        'execute without lvm snapshot.')
-        return False
-    if not backup_opt_dict.lvm_srcvol:
-        logging.warning('[*] Required lvm_srcvol not set. The backup will '
-                        'execute without lvm snapshot.')
-        return False
-    if not backup_opt_dict.lvm_dirmount:
-        logging.warning('[*] Required lvm_dirmount not set. The backup will '
-                        'execute without lvm snapshot.')
-        return False
-
-    # Create lvm_dirmount dir if it doesn't exists and write action in logs
-    utils.create_dir(backup_opt_dict.lvm_dirmount)
-
-    return True
-
-
 def lvm_snap_remove(backup_opt_dict):
     """
-    Remove the specified lvm_snapshot. If the volume is mounted
-    it will unmount it and then removed
+    Unmount the snapshot and removes it
+
+    :param backup_opt_dict.lvm_dirmount: mount point of the snapshot
+    :param backup_opt_dict.lvm_volgroup: volume group to which the lv belongs
+    :param backup_opt_dict.lvm_snapname: name of the snapshot lv
+    :return: None, raises on error
     """
-
-    if not lvm_eval(backup_opt_dict):
-        return True
-
-    vol_group = backup_opt_dict.lvm_volgroup.replace('-', '--')
-    snap_name = backup_opt_dict.lvm_snapname.replace('-', '--')
-    mapper_snap_vol = '/dev/mapper/{0}-{1}'.format(vol_group, snap_name)
-    proc_mount_fd = open('/proc/mounts', 'r')
-    for mount_line in proc_mount_fd:
-        if mapper_snap_vol.lower() in mount_line.lower():
-            mount_list = mount_line.split(' ')
-            (dev_vol, mount_point) = mount_list[0], mount_list[1]
-            logging.warning('[*] Found lvm snapshot {0} mounted on {1}\
-            '.format(dev_vol, mount_point))
-            umount_proc = subprocess.Popen('{0} -l -f {1}'.format(
-                utils.find_executable("umount"), mount_point),
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                shell=True, executable=utils.find_executable("bash"))
-            (umount_out, mount_err) = umount_proc.communicate()
-            if re.search(r'\S+', umount_out):
-                raise Exception('impossible to umount {0} {1}'
-                                .format(mount_point, mount_err))
-            else:
-                # Change working directory to be able to unmount
-                os.chdir(backup_opt_dict.work_dir)
-                logging.info('[*] Volume {0} unmounted'.format(
-                    mapper_snap_vol))
-                snap_rm_proc = subprocess.Popen(
-                    '{0} -f {1}'.format(
-                        utils.find_executable("lvremove"), mapper_snap_vol),
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                    shell=True, executable=utils.find_executable("bash"))
-                (lvm_rm_out, lvm_rm_err) = snap_rm_proc.communicate()
-                if 'successfully removed' in lvm_rm_out:
-                    logging.info('[*] {0}'.format(lvm_rm_out))
-                    return True
-                else:
-                    raise Exception('lvm_snap_rm {0}'.format(lvm_rm_err))
-    raise Exception('no lvm snap removed')
+    os.chdir(backup_opt_dict.work_dir)
+    _umount(backup_opt_dict.lvm_dirmount)
+    lv = os.path.join('/dev',
+                      backup_opt_dict.lvm_volgroup,
+                      backup_opt_dict.lvm_snapname)
+    _lvremove(lv)
+    logging.info('[*] Snapshot volume {0} removed'.format(lv))
 
 
 def lvm_snap(backup_opt_dict):
     """
-    Implement checks on lvm volumes availability. According to these checks
-    we might create an lvm snapshot and mount it or use an existing one
+    Checks the provided parameters and create the lvm snapshot if requested
+
+    The path_to_backup might be adjusted in case the user requested
+    a lvm snapshot without specifying an exact path for the snapshot
+    (lvm_auto_snap).
+    The assumption in this case is that the user wants to use the lvm snapshot
+    capability to backup the specified filesystem path, leaving out all
+    the rest of the parameters which will guessed and set by freezer.
+
+    if a snapshot is requested using the --snapshot flag, but lvm_auto_snap
+    is not provided, then path_to_backup is supposed to be the path to backup
+    *before* any information about the snapshot is added and will be
+    adjusted.
+
+    :param backup_opt_dict: the configuration dict
+    :return: True if the snapshot has been taken, False otherwise
     """
-    if lvm_eval(backup_opt_dict) is not True:
-        return True
-    # Setting lvm snapsize to 5G is not set
-    if backup_opt_dict.lvm_snapsize is False:
-        backup_opt_dict.lvm_snapsize = '5G'
-        logging.warning('[*] lvm_snapsize not configured. Setting the \
-        lvm snapshot size to 5G')
+    if backup_opt_dict.snapshot:
+        if not backup_opt_dict.lvm_auto_snap:
+            # 1) the provided path_to_backup has the meaning of
+            #    the lvm_auto_snap and is therefore copied into it
+            # 2) the correct value of path_to_backup, which takes into
+            #    consideration the snapshot mount-point, is cleared
+            #    and will be calculated by freezer
+            backup_opt_dict.lvm_auto_snap =\
+                backup_opt_dict.path_to_backup
+            backup_opt_dict.path_to_backup = ''
 
-    # Setting lvm snapshot name to freezer_backup_snap it not set
-    if backup_opt_dict.lvm_snapname is False:
-        backup_opt_dict.lvm_snapname = 'freezer_backup_snap'
-        logging.warning('[*] lvm_snapname not configured. Setting default \
-        name "freezer_backup_snap" for the lvm backup snap session')
+    if backup_opt_dict.lvm_auto_snap:
+        # adjust/check lvm parameters according to provided lvm_auto_snap
+        lvm_info = get_lvm_info(backup_opt_dict.lvm_auto_snap)
 
-    logging.info('[*] Source LVM Volume: {0}'.format(
-        backup_opt_dict.lvm_srcvol))
-    logging.info('[*] LVM Volume Group: {0}'.format(
-        backup_opt_dict.lvm_volgroup))
-    logging.info('[*] Snapshot name: {0}'.format(
-        backup_opt_dict.lvm_snapname))
-    logging.info('[*] Snapshot size: {0}'.format(
-        backup_opt_dict.lvm_snapsize))
-    logging.info('[*] Directory where the lvm snaphost will be mounted on:\
-        {0}'.format(backup_opt_dict.lvm_dirmount.strip()))
+        if not backup_opt_dict.lvm_volgroup:
+            backup_opt_dict.lvm_volgroup = lvm_info['volgroup']
 
-    if backup_opt_dict.lvm_snapperm not in ('ro', 'rw'):
-        raise ValueError('[*] Error: Please set a valid mount option\
-               for lvm snapshot: {}'.format(backup_opt_dict.lvm_snapperm))
-    # Create the snapshot according the values passed from command line
-    lvm_create_snap = '{0} --size {1} --snapshot --permission {2} --name {3} {4}\
-    '.format(
-        utils.find_executable("lvcreate"),
-        backup_opt_dict.lvm_snapsize,
-        ('r' if backup_opt_dict.lvm_snapperm == 'ro'
-         else backup_opt_dict.lvm_snapperm),
-        backup_opt_dict.lvm_snapname,
-        backup_opt_dict.lvm_srcvol)
+        if not backup_opt_dict.lvm_srcvol:
+            backup_opt_dict.lvm_srcvol = lvm_info['srcvol']
+
+        path_to_backup = os.path.join(backup_opt_dict.lvm_dirmount,
+                                      lvm_info['snap_path'])
+        if backup_opt_dict.path_to_backup:
+            # path_to_backup is user-provided, check if consistent
+            if backup_opt_dict.path_to_backup != path_to_backup:
+                raise Exception('Path to backup mismatch. '
+                                'provided: {0}, should be LVM-mounted: {1}'.
+                                format(backup_opt_dict.path_to_backup,
+                                       path_to_backup))
+        else:
+            # path_to_backup not provided: use the one calculated above
+            backup_opt_dict.path_to_backup = path_to_backup
+
+    if not validate_lvm_params(backup_opt_dict):
+        logging.info('[*] No LVM requested/configured')
+        return False
+
+    utils.create_dir(backup_opt_dict.lvm_dirmount)
+
+    lvm_create_command = (
+        '{0} --size {1} --snapshot --permission {2} '
+        '--name {3} {4}'.format(
+            utils.find_executable('lvcreate'),
+            backup_opt_dict.lvm_snapsize,
+            ('r' if backup_opt_dict.lvm_snapperm == 'ro'
+             else backup_opt_dict.lvm_snapperm),
+            backup_opt_dict.lvm_snapname,
+            backup_opt_dict.lvm_srcvol))
 
     # If backup mode is mysql, then the db will be flushed and read locked
     # before the creation of the lvm snap
@@ -157,21 +124,25 @@ def lvm_snap(backup_opt_dict):
         backup_opt_dict.mysql_db_inst.commit()
 
     lvm_process = subprocess.Popen(
-        lvm_create_snap, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        lvm_create_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, shell=True,
-        executable=utils.find_executable("bash"))
+        executable=utils.find_executable('bash'))
     (lvm_out, lvm_err) = lvm_process.communicate()
-    if lvm_err is False:
-        raise Exception('lvm snapshot creation error: {0}'.format(lvm_err))
-    else:
-        logging.warning('[*] {0}'.format(lvm_out))
 
     # Unlock MySQL Tables if backup is == mysql
+    # regardless of the snapshot being taken or not
     if backup_opt_dict.mode == 'mysql':
         cursor.execute('UNLOCK TABLES')
         backup_opt_dict.mysql_db_inst.commit()
         cursor.close()
         backup_opt_dict.mysql_db_inst.close()
+
+    if lvm_process.returncode:
+        raise Exception('lvm snapshot creation error: {0}'.format(lvm_err))
+
+    logging.debug('[*] {0}'.format(lvm_out))
+    logging.warning('[*] Logical volume "{0}" created'.
+                    format(backup_opt_dict.lvm_snapname))
 
     # Guess the file system of the provided source volume and st mount
     # options accordingly
@@ -183,26 +154,29 @@ def lvm_snap(backup_opt_dict):
     abs_snap_name = '/dev/{0}/{1}'.format(
         backup_opt_dict.lvm_volgroup,
         backup_opt_dict.lvm_snapname)
-    mount_snap = '{0} {1} {2} {3}'.format(
-        utils.find_executable("mount"),
+    mount_command = '{0} {1} {2} {3}'.format(
+        utils.find_executable('mount'),
         mount_options,
         abs_snap_name,
         backup_opt_dict.lvm_dirmount)
     mount_process = subprocess.Popen(
-        mount_snap, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        mount_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, shell=True,
-        executable=utils.find_executable("bash"))
+        executable=utils.find_executable('bash'))
     mount_err = mount_process.communicate()[1]
     if 'already mounted' in mount_err:
         logging.warning('[*] Volume {0} already mounted on {1}\
         '.format(abs_snap_name, backup_opt_dict.lvm_dirmount))
         return True
     if mount_err:
+        logging.error("[*] Snapshot mount error. Removing snapshot")
+        lvm_snap_remove(backup_opt_dict)
         raise Exception('lvm snapshot mounting error: {0}'.format(mount_err))
     else:
         logging.warning(
             '[*] Volume {0} succesfully mounted on {1}'.format(
                 abs_snap_name, backup_opt_dict.lvm_dirmount))
+
     return True
 
 
@@ -214,10 +188,11 @@ def get_lvm_info(lvm_auto_snap):
 
     :param lvm_auto_snap: the original file system path where backup needs
     to be executed
-    :returns: a list containing the items lvm_volgroup, lvm_srcvol, lvm_device
+    :returns: a dict containing the keys 'volgroup', 'srcvol' and 'snap_path'
     """
 
-    mount_point_path = utils.get_mount_from_path(lvm_auto_snap)
+    mount_point_path, snap_path = utils.get_mount_from_path(lvm_auto_snap)
+
     with open('/proc/mounts', 'r') as mount_fd:
         mount_points = mount_fd.readlines()
         lvm_volgroup, lvm_srcvol, lvm_device = lvm_guess(
@@ -237,7 +212,11 @@ def get_lvm_info(lvm_auto_snap):
             'Cannot find {0} in {1}, please provide volume group and '
             'volume name explicitly'.format(mount_point_path, mount_points))
 
-    return lvm_volgroup, lvm_srcvol, lvm_device
+    lvm_params = {'volgroup': lvm_volgroup,
+                  'srcvol': lvm_device,
+                  'snap_path': snap_path}
+
+    return lvm_params
 
 
 def lvm_guess(mount_point_path, mount_points, source='/proc/mounts'):
@@ -269,3 +248,75 @@ def lvm_guess(mount_point_path, mount_points, source='/proc/mounts'):
                 break
 
     return lvm_volgroup, lvm_srcvol, lvm_device
+
+
+def validate_lvm_params(backup_opt_dict):
+    """
+    Validates the parameters and raises in case of missing values
+
+    :param backup_opt_dict:
+    :return: False is snapshot is not requested,
+             True snapshot is requested and parameters are valid
+    """
+    if backup_opt_dict.lvm_snapperm not in ('ro', 'rw'):
+        raise ValueError('[*] Error: Invalid value for option lvm-snap-perm: '
+                         '{}'.format(backup_opt_dict.lvm_snapperm))
+
+    if not backup_opt_dict.path_to_backup:
+        raise ValueError('[*] Error: no path-to-backup and '
+                         'no lvm-auto-snap provided')
+
+    if not backup_opt_dict.lvm_srcvol and not backup_opt_dict.lvm_volgroup:
+        # no lvm parameters provided, assume lvm snapshot is not requested
+        return False
+
+    if not backup_opt_dict.lvm_srcvol:
+        raise ValueError('[*] Error: no lvm-srcvol and '
+                         'no lvm-auto-snap provided')
+    if not backup_opt_dict.lvm_volgroup:
+        raise ValueError('[*] Error: no lvm-volgroup and '
+                         'no lvm-auto-snap provided')
+
+    logging.info('[*] Source LVM Volume: {0}'.format(
+        backup_opt_dict.lvm_srcvol))
+    logging.info('[*] LVM Volume Group: {0}'.format(
+        backup_opt_dict.lvm_volgroup))
+    logging.info('[*] Snapshot name: {0}'.format(
+        backup_opt_dict.lvm_snapname))
+    logging.info('[*] Snapshot size: {0}'.format(
+        backup_opt_dict.lvm_snapsize))
+    logging.info('[*] Directory where the lvm snaphost will be mounted on:'
+                 ' {0}'.format(backup_opt_dict.lvm_dirmount.strip()))
+    logging.info('[*] Path to backup (including snapshot): {0}'
+                 .format(backup_opt_dict.path_to_backup))
+
+    return True
+
+
+def _umount(path):
+    # TODO: check if cwd==path and change working directory to unmount ?
+    umount_proc = subprocess.Popen('{0} -l -f {1}'.format(
+        utils.find_executable('umount'), path),
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        shell=True, executable=utils.find_executable('bash'))
+    (umount_out, mount_err) = umount_proc.communicate()
+
+    if umount_proc.returncode:
+        raise Exception('impossible to umount {0}. {1}'
+                        .format(path, mount_err))
+
+    logging.info('[*] Volume {0} unmounted'.format(path))
+
+
+def _lvremove(lv):
+    lvremove_proc = subprocess.Popen(
+        '{0} -f {1}'.format(utils.find_executable('lvremove'), lv),
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, shell=True,
+        executable=utils.find_executable('bash'))
+    output, error = lvremove_proc.communicate()
+    if lvremove_proc.returncode:
+        raise Exception(
+            'unable to remove snapshot {0}. {1}'.format(lv, error))

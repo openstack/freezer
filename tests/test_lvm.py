@@ -16,140 +16,410 @@ limitations under the License.
 ========================================================================
 """
 
-from commons import *
-from freezer.lvm import (
-    lvm_eval, lvm_snap_remove, lvm_snap)
-from freezer import utils
-import __builtin__
-import pytest
-import StringIO
-import logging
+import unittest
+from mock import Mock, patch, mock_open, call
+
+from freezer import lvm
 
 
-class TestLvm:
+class Test_lvm_snap_remove(unittest.TestCase):
 
-    def test_lvm_eval(self):
+    @patch('freezer.lvm.os')
+    @patch('freezer.lvm._umount')
+    @patch('freezer.lvm._lvremove')
+    def test_return_none_on_success(self, mock_lvremove, mock_umount, mock_os):
+        backup_opt = Mock()
+        backup_opt.lvm_volgroup = 'one'
+        backup_opt.lvm_snapname = 'two'
+        self.assertIsNone(lvm.lvm_snap_remove(backup_opt))
 
-        backup_opt = BackupOpt1()
-        assert lvm_eval(backup_opt) is True
 
-        backup_opt.__dict__['lvm_dirmount'] = None
-        assert lvm_eval(backup_opt) is False
+class Test_lvm_snap(unittest.TestCase):
 
-    def test_lvm_snap_remove(self, monkeypatch):
+    @patch('freezer.lvm.validate_lvm_params')
+    def test_no_lvm_configured_returns_false(self, mock_validate_lvm_params):
+        backup_opt = Mock()
+        backup_opt.lvm_auto_snap = ''
+        mock_validate_lvm_params.return_value = False
+        backup_opt.snapshot = False
+        self.assertFalse(lvm.lvm_snap(backup_opt))
 
-        fakeopen = FakeOpen()
-        fakelogging = FakeLogging()
-        fakesubprocess = FakeSubProcess()
-        fakesubprocesspopen = fakesubprocess.Popen()
+    @patch('freezer.lvm.validate_lvm_params')
+    @patch('freezer.lvm.get_lvm_info')
+    @patch('freezer.lvm.utils.create_dir')
+    def test_with_auto_snap_param_path_mismatch_raises(self, mock_create_dir, mock_get_lvm_info, mock_validate_lvm_params):
+        mock_get_lvm_info.return_value = {
+            'volgroup': 'lvm_volgroup',
+            'srcvol': 'lvm_device',
+            'snap_path': 'snap_path'}
 
-        monkeypatch.setattr(
-            subprocess.Popen, 'communicate', fakesubprocesspopen.communicate)
-        monkeypatch.setattr(
-            subprocess, 'Popen', fakesubprocesspopen)
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
+        backup_opt = Mock()
+        backup_opt.snapshot = False
+        backup_opt.lvm_auto_snap = '/just/a/path'
+        backup_opt.path_to_backup = '/different'
+        backup_opt.lvm_dirmount = '/var/mountpoint'
 
-        backup_opt = BackupOpt1()
-        pytest.raises(Exception, lvm_snap_remove, backup_opt)
+        self.assertRaises(Exception, lvm.lvm_snap, backup_opt)
 
-        backup_opt.__dict__['lvm_volgroup'] = False
-        assert lvm_snap_remove(backup_opt) is True
+    @patch('freezer.lvm.get_lvm_info')
+    @patch('freezer.lvm.utils.create_dir')
+    def test_with_snapshot_opt_simple_sets_correct_path_and_raises_on_perm(self, mock_create_dir, mock_get_lvm_info):
+        mock_get_lvm_info.return_value = {
+            'volgroup': 'lvm_volgroup',
+            'srcvol': 'lvm_device',
+            'snap_path': 'snap_path'}
 
-        backup_opt = BackupOpt1()
-        monkeypatch.setattr(__builtin__, 'open', fakeopen.fopen)
-        pytest.raises(Exception, lvm_snap_remove, backup_opt)
+        backup_opt = Mock()
+        backup_opt.snapshot = True
+        backup_opt.lvm_auto_snap = ''
+        backup_opt.path_to_backup = '/just/a/path'
+        backup_opt.lvm_dirmount = '/var/mountpoint'
+        backup_opt.lvm_snapperm = 'invalid_value'
 
-        fakere = FakeRe2()
-        monkeypatch.setattr(re, 'search', fakere.search)
+        with self.assertRaises(Exception) as cm:
+            lvm.lvm_snap(backup_opt)
+        the_exception = cm.exception
+        self.assertIn('Invalid value for option lvm-snap-perm', the_exception.message)
 
-        assert lvm_snap_remove(backup_opt) is True
+    @patch('freezer.lvm.validate_lvm_params')
+    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.lvm.utils.get_vol_fs_type')
+    @patch('freezer.lvm.get_lvm_info')
+    @patch('freezer.lvm.utils.create_dir')
+    def test_ok(self, mock_create_dir, mock_get_lvm_info, mock_get_vol_fs_type, mock_popen, mock_validate_lvm_params):
+        mock_get_lvm_info.return_value = {
+            'volgroup': 'lvm_volgroup',
+            'srcvol': 'lvm_device',
+            'snap_path': 'snap_path'}
+        mock_process = Mock()
+        mock_process.communicate.return_value = '', ''
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
 
-    def test_lvm_snap(self, monkeypatch):
+        backup_opt = Mock()
+        backup_opt.snapshot = True
+        backup_opt.lvm_auto_snap = ''
+        backup_opt.path_to_backup = '/just/a/path'
+        backup_opt.lvm_dirmount = '/var/mountpoint'
+        backup_opt.lvm_snapperm = 'ro'
+        backup_opt.lvm_volgroup = ''
+        backup_opt.lvm_srcvol = ''
 
-        backup_opt = BackupOpt1()
-        backup_opt.lvm_snapsize = False
-        backup_opt.lvm_snapname = False
-        pytest.raises(Exception, lvm_snap, backup_opt)
+        self.assertTrue(lvm.lvm_snap(backup_opt))
 
-        backup_opt = BackupOpt1()
-        fakeos = Os()
-        fakesubprocess = FakeSubProcess()
-        backup_opt.lvm_snapsize = False
-        backup_opt.lvm_snapname = False
-        monkeypatch.setattr(os, 'path', fakeos)
-        monkeypatch.setattr(utils, 'find_executable', lambda x: "123")
-        monkeypatch.setattr(subprocess, 'Popen', fakesubprocess.Popen)
-        pytest.raises(Exception, lvm_snap, backup_opt)
+    @patch('freezer.lvm.validate_lvm_params')
+    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.lvm.utils.get_vol_fs_type')
+    @patch('freezer.lvm.get_lvm_info')
+    @patch('freezer.lvm.utils.create_dir')
+    def test_snapshot_fails(self, mock_create_dir, mock_get_lvm_info, mock_get_vol_fs_type, mock_popen, mock_validate_lvm_params):
+        mock_get_lvm_info.return_value = {
+            'volgroup': 'lvm_volgroup',
+            'srcvol': 'lvm_device',
+            'snap_path': 'snap_path'}
+        mock_process = Mock()
+        mock_process.communicate.return_value = '', ''
+        mock_process.returncode = 1
+        mock_popen.return_value = mock_process
 
-        get_vol_fs_type = Fake_get_vol_fs_type()
-        backup_opt = BackupOpt1()
-        fakeos = Os()
-        fakesubprocess = FakeSubProcess2()
-        backup_opt.lvm_snapsize = False
-        backup_opt.lvm_snapname = False
-        monkeypatch.setattr(os, 'path', fakeos)
-        monkeypatch.setattr(subprocess, 'Popen', fakesubprocess.Popen)
-        monkeypatch.setattr(utils, 'get_vol_fs_type', get_vol_fs_type.get_vol_fs_type1)
-        fakere = FakeRe()
-        monkeypatch.setattr(re, 'search', fakere.search)
-        assert lvm_snap(backup_opt) is True
+        backup_opt = Mock()
+        backup_opt.snapshot = True
+        backup_opt.lvm_auto_snap = ''
+        backup_opt.path_to_backup = '/just/a/path'
+        backup_opt.lvm_dirmount = '/var/mountpoint'
+        backup_opt.lvm_snapperm = 'ro'
 
-        get_vol_fs_type = Fake_get_vol_fs_type()
-        backup_opt = BackupOpt1()
-        fakeos = Os()
-        fakesubprocess = FakeSubProcess3()
-        backup_opt.lvm_snapsize = False
-        backup_opt.lvm_snapname = False
-        monkeypatch.setattr(os, 'path', fakeos)
-        monkeypatch.setattr(subprocess, 'Popen', fakesubprocess.Popen)
-        monkeypatch.setattr(utils, 'get_vol_fs_type', get_vol_fs_type.get_vol_fs_type1)
-        fakere = FakeRe()
-        monkeypatch.setattr(re, 'search', fakere.search)
-        pytest.raises(Exception, lvm_snap, backup_opt)
+        with self.assertRaises(Exception) as cm:
+            lvm.lvm_snap(backup_opt)
+        the_exception = cm.exception
+        self.assertIn('lvm snapshot creation error', the_exception.message)
 
-        get_vol_fs_type = Fake_get_vol_fs_type()
-        backup_opt = BackupOpt1()
-        fakeos = Os()
-        fakesubprocess = FakeSubProcess1()
-        backup_opt.lvm_snapsize = False
-        backup_opt.lvm_snapname = False
-        monkeypatch.setattr(os, 'path', fakeos)
-        monkeypatch.setattr(subprocess, 'Popen', fakesubprocess.Popen)
-        monkeypatch.setattr(utils, 'get_vol_fs_type', get_vol_fs_type.get_vol_fs_type1)
-        fakere = FakeRe()
-        monkeypatch.setattr(re, 'search', fakere.search)
-        pytest.raises(Exception, lvm_snap, backup_opt)
+    @patch('freezer.lvm.lvm_snap_remove')
+    @patch('freezer.lvm.validate_lvm_params')
+    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.lvm.utils.get_vol_fs_type')
+    @patch('freezer.lvm.get_lvm_info')
+    @patch('freezer.lvm.utils.create_dir')
+    def test_already_mounted(self, mock_create_dir, mock_get_lvm_info, mock_get_vol_fs_type,
+                             mock_popen, mock_validate_lvm_params, lvm_snap_remove):
+        mock_get_vol_fs_type.return_value = 'xfs'
+        mock_get_lvm_info.return_value = {
+            'volgroup': 'lvm_volgroup',
+            'srcvol': 'lvm_device',
+            'snap_path': 'snap_path'}
+        mock_process = Mock()
+        mock_process.communicate.return_value = '', 'already mounted'
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
 
-        get_vol_fs_type = Fake_get_vol_fs_type()
-        backup_opt = BackupOpt1()
-        fakeos = Os()
-        fakesubprocess = FakeSubProcess4()
-        backup_opt.lvm_snapsize = False
-        backup_opt.lvm_snapname = False
-        monkeypatch.setattr(os, 'path', fakeos)
-        monkeypatch.setattr(subprocess, 'Popen', fakesubprocess.Popen)
-        monkeypatch.setattr(utils, 'get_vol_fs_type', get_vol_fs_type.get_vol_fs_type1)
-        fakere = FakeRe()
-        monkeypatch.setattr(re, 'search', fakere.search)
-        assert lvm_snap(backup_opt) is True
+        backup_opt = Mock()
+        backup_opt.snapshot = True
+        backup_opt.lvm_auto_snap = ''
+        backup_opt.path_to_backup = '/just/a/path'
+        backup_opt.lvm_dirmount = '/var/mountpoint'
+        backup_opt.lvm_snapperm = 'ro'
 
-        get_vol_fs_type = Fake_get_vol_fs_type()
-        backup_opt = BackupOpt1()
-        backup_opt.lvm_dirmount = None
-        fakeos = Os()
-        fakesubprocess = FakeSubProcess4()
-        backup_opt.lvm_snapsize = False
-        backup_opt.lvm_snapname = False
-        monkeypatch.setattr(os, 'path', fakeos)
-        monkeypatch.setattr(subprocess, 'Popen', fakesubprocess.Popen)
-        monkeypatch.setattr(utils, 'get_vol_fs_type', get_vol_fs_type.get_vol_fs_type1)
-        fakere = FakeRe()
-        monkeypatch.setattr(re, 'search', fakere.search)
-        assert lvm_snap(backup_opt) is True
+        self.assertTrue(lvm.lvm_snap(backup_opt))
 
-        backup_opt = BackupOpt1()
-        backup_opt.lvm_snapperm = False
-        pytest.raises(Exception, lvm_snap, backup_opt)
+
+    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.lvm.utils.get_vol_fs_type')
+    @patch('freezer.lvm.get_lvm_info')
+    @patch('freezer.lvm.utils.create_dir')
+    def test_mysql_mode_locks_unlocks_tables(self, mock_create_dir, mock_get_lvm_info, mock_get_vol_fs_type, mock_popen):
+        mock_get_vol_fs_type.return_value = 'xfs'
+        mock_get_lvm_info.return_value = {
+            'volgroup': 'lvm_volgroup',
+            'srcvol': 'lvm_device',
+            'snap_path': 'snap_path'}
+        mock_process = Mock()
+        mock_process.communicate.return_value = '', ''
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+
+        backup_opt = Mock()
+        backup_opt.snapshot = True
+        backup_opt.lvm_auto_snap = ''
+        backup_opt.path_to_backup = '/just/a/path'
+        backup_opt.lvm_dirmount = '/var/mountpoint'
+        backup_opt.lvm_snapperm = 'ro'
+        backup_opt.mode = 'mysql'
+        backup_opt.mysql_db_inst = Mock()
+        mock_cursor = Mock()
+        backup_opt.mysql_db_inst.cursor.return_value = mock_cursor
+
+        self.assertTrue(lvm.lvm_snap(backup_opt))
+
+        first_call = call('FLUSH TABLES WITH READ LOCK')
+        second_call = call('UNLOCK TABLES')
+        self.assertEquals(first_call, mock_cursor.execute.call_args_list[0])
+        self.assertEquals(second_call, mock_cursor.execute.call_args_list[1])
+
+
+    @patch('freezer.lvm.lvm_snap_remove')
+    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.lvm.utils.get_vol_fs_type')
+    @patch('freezer.lvm.get_lvm_info')
+    @patch('freezer.lvm.utils.create_dir')
+    def test_snapshot_mount_error_raises_Exception(self,
+                                                   mock_create_dir,
+                                                   mock_get_lvm_info,
+                                                   mock_get_vol_fs_type,
+                                                   mock_popen,
+                                                   mock_lvm_snap_remove):
+        mock_get_vol_fs_type.return_value = 'xfs'
+        mock_get_lvm_info.return_value = {
+            'volgroup': 'lvm_volgroup',
+            'srcvol': 'lvm_device',
+            'snap_path': 'snap_path'}
+        mock_lvcreate_process, mock_mount_process = Mock(), Mock()
+
+        mock_lvcreate_process.communicate.return_value = '', ''
+        mock_lvcreate_process.returncode = 0
+
+        mock_mount_process.communicate.return_value = '', 'mount error'
+        mock_mount_process.returncode = 1
+
+        mock_popen.side_effect = [mock_lvcreate_process, mock_mount_process]
+
+        backup_opt = Mock()
+        backup_opt.snapshot = True
+        backup_opt.lvm_auto_snap = ''
+        backup_opt.path_to_backup = '/just/a/path'
+        backup_opt.lvm_dirmount = '/var/mountpoint'
+        backup_opt.lvm_snapperm = 'ro'
+
+        with self.assertRaises(Exception) as cm:
+            lvm.lvm_snap(backup_opt)
+        the_exception = cm.exception
+        self.assertIn('lvm snapshot mounting error', the_exception.message)
+
+        mock_lvm_snap_remove.assert_called_once_with(backup_opt)
+
+
+class Test_get_lvm_info(unittest.TestCase):
+
+    @patch('freezer.lvm.lvm_guess')
+    @patch('freezer.lvm.utils.get_mount_from_path')
+    def test_using_guess(self, mock_get_mount_from_path, mock_lvm_guess):
+        mock_get_mount_from_path.return_value = '/home/somedir', 'some-snap-path'
+        mock_lvm_guess.return_value = 'vg_test', 'lv_test', 'lvm_device'
+        mounts = ('/dev/mapper/vg_prova-lv_prova_vol1 /home/pippo ext4 rw,relatime,data=ordered 0 0')
+        mocked_open_function = mock_open(read_data=mounts)
+
+        with patch("__builtin__.open", mocked_open_function):
+            res = lvm.get_lvm_info('lvm_auto_snap_value')
+
+        expected_result = {'volgroup': 'vg_test',
+                           'snap_path': 'some-snap-path',
+                           'srcvol': 'lvm_device'}
+        self.assertEquals(res, expected_result)
+
+    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.lvm.lvm_guess')
+    @patch('freezer.lvm.utils.get_mount_from_path')
+    def test_using_mount(self, mock_get_mount_from_path, mock_lvm_guess, mock_popen):
+        mock_get_mount_from_path.return_value = '/home/somedir', 'some-snap-path'
+        mock_lvm_guess.side_effect = [(None, None, None), ('vg_test', 'lv_test', 'lvm_device')]
+        mounts = ('/dev/mapper/vg_prova-lv_prova_vol1 /home/pippo ext4 rw,relatime,data=ordered 0 0')
+        mocked_open_function = mock_open(read_data=mounts)
+        mock_process = Mock()
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        mock_process.communicate.return_value = '', ''
+
+        with patch("__builtin__.open", mocked_open_function):
+            res = lvm.get_lvm_info('lvm_auto_snap_value')
+
+        expected_result = {'volgroup': 'vg_test',
+                           'snap_path': 'some-snap-path',
+                           'srcvol': 'lvm_device'}
+        self.assertEquals(res, expected_result)
+
+    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.lvm.lvm_guess')
+    @patch('freezer.lvm.utils.get_mount_from_path')
+    def test_raises_Exception_when_info_not_found(self, mock_get_mount_from_path, mock_lvm_guess, mock_popen):
+        mock_get_mount_from_path.return_value = '/home/somedir', 'some-snap-path'
+        mock_lvm_guess.return_value = None, None, None
+        mounts = ('/dev/mapper/vg_prova-lv_prova_vol1 /home/pippo ext4 rw,relatime,data=ordered 0 0')
+        mocked_open_function = mock_open(read_data=mounts)
+        mock_process = Mock()
+        mock_lvm_guess.return_value = None, None, None
+        mock_process.communicate.return_value = '', ''
+        mock_popen.return_value = mock_process
+
+        with patch("__builtin__.open", mocked_open_function):
+            self.assertRaises(Exception, lvm.get_lvm_info, 'lvm_auto_snap_value')
+
+
+class Test_lvm_guess(unittest.TestCase):
+
+    def test_no_match(self):
+        mount_points = []
+        mount_point_path = '/home/pippo'
+        source = '/proc/mounts'
+
+        res = lvm.lvm_guess(mount_point_path, mount_points, source)
+
+        expected_result = (None, None, None)
+        self.assertEquals(res, expected_result)
+
+    def test_unsing_proc_mounts(self):
+        mount_points = ['rootfs / rootfs rw 0 0\n', 'sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0\n', 'proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0\n', 'udev /dev devtmpfs rw,relatime,size=2010616k,nr_inodes=502654,mode=755 0 0\n', 'devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0\n', 'tmpfs /run tmpfs rw,nosuid,noexec,relatime,size=404836k,mode=755 0 0\n', '/dev/mapper/fabuntu--vg-root / ext4 rw,relatime,errors=remount-ro,data=ordered 0 0\n', 'none /sys/fs/cgroup tmpfs rw,relatime,size=4k,mode=755 0 0\n', 'none /sys/fs/fuse/connections fusectl rw,relatime 0 0\n', 'none /sys/kernel/debug debugfs rw,relatime 0 0\n', 'none /sys/kernel/security securityfs rw,relatime 0 0\n', 'cgroup /sys/fs/cgroup/cpuset cgroup rw,relatime,cpuset 0 0\n', 'cgroup /sys/fs/cgroup/cpu cgroup rw,relatime,cpu 0 0\n', 'cgroup /sys/fs/cgroup/cpuacct cgroup rw,relatime,cpuacct 0 0\n', 'cgroup /sys/fs/cgroup/memory cgroup rw,relatime,memory 0 0\n', 'none /run/lock tmpfs rw,nosuid,nodev,noexec,relatime,size=5120k 0 0\n', 'none /run/shm tmpfs rw,nosuid,nodev,relatime 0 0\n', 'none /run/user tmpfs rw,nosuid,nodev,noexec,relatime,size=102400k,mode=755 0 0\n', 'cgroup /sys/fs/cgroup/devices cgroup rw,relatime,devices 0 0\n', 'none /sys/fs/pstore pstore rw,relatime 0 0\n', 'cgroup /sys/fs/cgroup/freezer cgroup rw,relatime,freezer 0 0\n', 'cgroup /sys/fs/cgroup/blkio cgroup rw,relatime,blkio 0 0\n', 'cgroup /sys/fs/cgroup/perf_event cgroup rw,relatime,perf_event 0 0\n', 'cgroup /sys/fs/cgroup/hugetlb cgroup rw,relatime,hugetlb 0 0\n', '/dev/sda1 /boot ext2 rw,relatime 0 0\n', 'systemd /sys/fs/cgroup/systemd cgroup rw,nosuid,nodev,noexec,relatime,name=systemd 0 0\n', '/dev/mapper/vg_prova-lv_prova_vol1 /home/pippo ext4 rw,relatime,data=ordered 0 0\n']
+        mount_point_path = '/home/pippo'
+        source = '/proc/mounts'
+
+        res = lvm.lvm_guess(mount_point_path, mount_points, source)
+
+        expected_result = ('vg_prova', 'lv_prova_vol1', '/dev/vg_prova/lv_prova_vol1')
+        self.assertEquals(res, expected_result)
+
+    def test_unsing_mount(self):
+        mount_points = ['/dev/mapper/fabuntu--vg-root on / type ext4 (rw,errors=remount-ro)',
+                        'proc on /proc type proc (rw,noexec,nosuid,nodev)',
+                        'sysfs on /sys type sysfs (rw,noexec,nosuid,nodev)',
+                        'none on /sys/fs/cgroup type tmpfs (rw)',
+                        'none on /sys/fs/fuse/connections type fusectl (rw)',
+                        'none on /sys/kernel/debug type debugfs (rw)',
+                        'none on /sys/kernel/security type securityfs (rw)',
+                        'udev on /dev type devtmpfs (rw,mode=0755)',
+                        'devpts on /dev/pts type devpts (rw,noexec,nosuid,gid=5,mode=0620)',
+                        'tmpfs on /run type tmpfs (rw,noexec,nosuid,size=10%,mode=0755)',
+                        'none on /run/lock type tmpfs (rw,noexec,nosuid,nodev,size=5242880)',
+                        'none on /run/shm type tmpfs (rw,nosuid,nodev)',
+                        'none on /run/user type tmpfs (rw,noexec,nosuid,nodev,size=104857600,mode=0755)',
+                        'none on /sys/fs/pstore type pstore (rw)',
+                        'cgroup on /sys/fs/cgroup/cpuset type cgroup (rw,relatime,cpuset)',
+                        'cgroup on /sys/fs/cgroup/cpu type cgroup (rw,relatime,cpu)',
+                        'cgroup on /sys/fs/cgroup/cpuacct type cgroup (rw,relatime,cpuacct)',
+                        'cgroup on /sys/fs/cgroup/memory type cgroup (rw,relatime,memory)',
+                        'cgroup on /sys/fs/cgroup/devices type cgroup (rw,relatime,devices)',
+                        'cgroup on /sys/fs/cgroup/freezer type cgroup (rw,relatime,freezer)',
+                        'cgroup on /sys/fs/cgroup/blkio type cgroup (rw,relatime,blkio)',
+                        'cgroup on /sys/fs/cgroup/perf_event type cgroup (rw,relatime,perf_event)',
+                        'cgroup on /sys/fs/cgroup/hugetlb type cgroup (rw,relatime,hugetlb)',
+                        '/dev/sda1 on /boot type ext2 (rw)',
+                        'systemd on /sys/fs/cgroup/systemd type cgroup (rw,noexec,nosuid,nodev,none,name=systemd)',
+                        '/dev/mapper/vg_prova-lv_prova_vol1 on /home/pippo type ext4 (rw)',
+                        '']
+        mount_point_path = '/home/pippo'
+        source = 'mount'
+
+        res = lvm.lvm_guess(mount_point_path, mount_points, source)
+
+        expected_result = ('vg_prova', 'lv_prova_vol1', '/dev/vg_prova/lv_prova_vol1')
+        self.assertEquals(res, expected_result)
+
+
+class Test_validate_lvm_params(unittest.TestCase):
+
+    def setUp(self):
+        self.backup_opt = Mock()
+        self.backup_opt.lvm_snapperm = 'ro'
+        self.backup_opt.path_to_backup = '/path/to/backup'
+        self.backup_opt.lvm_srcvol = '/lvm/srcvol'
+        self.backup_opt.lvm_volgroup = 'vg_burger'
+
+    def test_return_true_on_lvm_configuration_valid(self):
+        self.backup_opt.lvm_srcvol = ''
+        self.backup_opt.lvm_volgroup = ''
+        self.assertFalse(lvm.validate_lvm_params(self.backup_opt))
+
+    def test_return_false_on_lvm_not_required(self):
+        self.assertTrue(lvm.validate_lvm_params(self.backup_opt))
+
+    def test_raises_Exception_on_snapperm_invalid(self):
+        self.backup_opt.lvm_snapperm = 'squeezeme'
+        self.assertRaises(Exception, lvm.validate_lvm_params, self.backup_opt)
+
+    def test_raises_Exception_on_no_pathtobackup(self):
+        self.backup_opt.path_to_backup = ''
+        self.assertRaises(Exception, lvm.validate_lvm_params, self.backup_opt)
+
+    def test_raises_Exception_on_no_lvmsrcvol(self):
+        self.backup_opt.lvm_srcvol = ''
+        self.assertRaises(Exception, lvm.validate_lvm_params, self.backup_opt)
+
+    def test_raises_Exception_on_no_lvmvolgrp(self):
+        self.backup_opt.lvm_volgroup = ''
+        self.assertRaises(Exception, lvm.validate_lvm_params, self.backup_opt)
+
+
+
+class Test_umount(unittest.TestCase):
+
+    @patch('freezer.lvm.subprocess.Popen')
+    def test_return_none_on_success(self, mock_popen):
+        mock_process = Mock()
+        mock_process.communicate.return_value = '', ''
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        self.assertIsNone(lvm._umount('path'))
+
+    @patch('freezer.lvm.subprocess.Popen')
+    def test_raises_on_popen_returncode_not_0(self, mock_popen):
+        mock_process = Mock()
+        mock_process.communicate.return_value = '', ''
+        mock_process.returncode = 1
+        mock_popen.return_value = mock_process
+        self.assertRaises(Exception, lvm._umount, 'path')
+
+
+class Test_lvremove(unittest.TestCase):
+
+    @patch('freezer.lvm.subprocess.Popen')
+    def test_return_none_on_success(self, mock_popen):
+        mock_process = Mock()
+        mock_process.communicate.return_value = '', ''
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        self.assertIsNone(lvm._lvremove('logicalvolume'))
+
+    @patch('freezer.lvm.subprocess.Popen')
+    def test_raises_on_popen_returncode_not_0(self, mock_popen):
+        mock_process = Mock()
+        mock_process.communicate.return_value = '', ''
+        mock_process.returncode = 1
+        mock_popen.return_value = mock_process
+        self.assertRaises(Exception, lvm._lvremove, 'path')

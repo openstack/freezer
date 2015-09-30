@@ -204,7 +204,7 @@ def get_mount_from_path(path):
     for that file system path.
 
     :param path: file system path
-    :returns: mount point of path
+    :returns: mount point of path, rest of the path
     """
 
     if not os.path.exists(path):
@@ -216,7 +216,7 @@ def get_mount_from_path(path):
 
     while not os.path.ismount(mount_point_path):
         mount_point_path = os.path.dirname(mount_point_path)
-    return mount_point_path
+    return mount_point_path, os.path.relpath(path, mount_point_path)
 
 
 # see: http://goo.gl/kTQMs

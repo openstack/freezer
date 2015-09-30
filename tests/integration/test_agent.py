@@ -125,7 +125,7 @@ class TestBackupFSLocalstorage(common.TestFS):
             self.assertIsNotNone(result)
         self.assertTreesMatch()
 
-    def test_backup_local_storage_lvm(self):
+    def test_backup_local_storage_lvm_raises_path_mismatch(self):
         if not self.use_lvm:
             return
 
@@ -162,6 +162,89 @@ class TestBackupFSLocalstorage(common.TestFS):
                 'container': storage_dir.path
             }
 
+            result = common.execute(FREEZERC + self.dict_to_args(backup_args), must_fail=True, merge_stderr=True)
+            self.assertIn('Path to backup mismatch', result)
+
+    def test_backup_local_storage_lvm_with_auto_snap(self):
+        if not self.use_lvm:
+            return
+
+        self.source_tree.add_random_data()
+        self.assertTreesMatchNot()
+
+        backup_name = uuid.uuid4().hex
+        lvm_auto_snap= self.source_tree.path
+        lvm_snapsize= '1G'
+        lvm_snapname= 'freezer-snap_{0}'.format(backup_name)
+        lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
+        path_to_backup = os.path.join(lvm_dirmount, self.source_tree.path)
+
+        with common.Temp_Tree() as storage_dir:
+            backup_args = {
+                'action': 'backup',
+                'mode': 'fs',
+                'lvm_auto_snap': lvm_auto_snap,
+                'lvm_dirmount': lvm_dirmount,
+                'lvm_snapsize': lvm_snapsize,
+                'lvm_snapname': lvm_snapname,
+                'container': storage_dir.path,
+                'storage': 'local',
+                'max_level': '6',
+                'max_segment_size': '67108864',
+                'backup_name': backup_name
+            }
+            restore_args = {
+                'action': 'restore',
+                'restore_abs_path': self.dest_tree.path,
+                'backup_name': copy(backup_args['backup_name']),
+                'storage': 'local',
+                'container': storage_dir.path
+            }
+
+            result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+            self.assertIsNotNone(result)
+            result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+            self.assertIsNotNone(result)
+        self.assertTreesMatch()
+
+
+    def test_backup_local_storage_use_lvm_snapshot_and_path_to_backup(self):
+        if not self.use_lvm:
+            return
+
+        self.source_tree.add_random_data()
+        self.assertTreesMatchNot()
+
+        backup_name = uuid.uuid4().hex
+        lvm_auto_snap= self.source_tree.path
+        lvm_snapsize= '50M'
+        lvm_snapname= 'freezer-snap_{0}'.format(backup_name)
+        lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
+        path_to_backup = os.path.join(lvm_dirmount, self.source_tree.path)
+
+        with common.Temp_Tree() as storage_dir:
+            backup_args = {
+                'action': 'backup',
+                'mode': 'fs',
+                'path_to_backup': lvm_auto_snap,
+                'snapshot': '',
+                'lvm_dirmount': lvm_dirmount,
+                'lvm_snapsize': lvm_snapsize,
+                'lvm_snapname': lvm_snapname,
+                'container': storage_dir.path,
+                'storage': 'local',
+                'max_level': '6',
+                'max_segment_size': '67108864',
+                'backup_name': backup_name
+            }
+            restore_args = {
+                'action': 'restore',
+                'restore_abs_path': self.dest_tree.path,
+                'backup_name': copy(backup_args['backup_name']),
+                'storage': 'local',
+                'container': storage_dir.path
+            }
+
             result = common.execute(FREEZERC + self.dict_to_args(backup_args))
             self.assertIsNotNone(result)
             result = common.execute(FREEZERC + self.dict_to_args(restore_args))
@@ -177,6 +260,15 @@ class TestBackupSSH(common.TestFS):
      - FREEZER_TEST_SSH_HOST
      - FREEZER_TEST_CONTAINER (directory on the remote machine used to store backups)
     """
+    def do_backup_and_restore_with_check(self, backup_args, restore_args):
+        self.source_tree.add_random_data()
+        self.assertTreesMatchNot()
+        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        self.assertIsNotNone(result)
+        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        self.assertIsNotNone(result)
+        self.assertTreesMatch()
+        return True
 
     @unittest.skipIf(not common.TestFS.use_ssh,
                      "Cannot test with ssh, please provide"
@@ -279,23 +371,14 @@ class TestBackupSSH(common.TestFS):
         self.assertIsNotNone(result)
         self.assertTreesMatch()
 
-        # -- level 1
-        self.source_tree.add_random_data()
-        self.assertTreesMatchNot()
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
-        self.assertIsNotNone(result)
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
-        self.assertIsNotNone(result)
-        self.assertTreesMatch()
-
-        # -- level 2
-        self.source_tree.add_random_data()
-        self.assertTreesMatchNot()
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
-        self.assertIsNotNone(result)
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
-        self.assertIsNotNone(result)
-        self.assertTreesMatch()
+        # -- many levels
+        self.do_backup_and_restore_with_check(backup_args, restore_args)
+        self.do_backup_and_restore_with_check(backup_args, restore_args)
+        self.do_backup_and_restore_with_check(backup_args, restore_args)
+        self.do_backup_and_restore_with_check(backup_args, restore_args)
+        self.do_backup_and_restore_with_check(backup_args, restore_args)
+        self.do_backup_and_restore_with_check(backup_args, restore_args)
+        self.do_backup_and_restore_with_check(backup_args, restore_args)
 
         self.remove_ssh_directory(sub_path)
 
@@ -315,7 +398,7 @@ class TestBackupSSH(common.TestFS):
         lvm_snapsize= '1G'
         lvm_snapname= 'freezer-snap_{0}'.format(backup_name)
         lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
-        path_to_backup = os.path.join(lvm_dirmount, self.source_tree.path)
+        path_to_backup = os.path.join(lvm_dirmount, os.path.relpath(self.source_tree.path, '/'))
 
         backup_args = {
             'action': 'backup',
@@ -447,6 +530,69 @@ class TestBackupUsingSwiftStorage(common.TestFS):
                      "'FREEZER_TEST_OS_REGION_NAME',"
                      "'FREEZER_TEST_OS_PASSWORD',"
                      "'FREEZER_TEST_OS_AUTH_URL'")
+    def test_backup_os_simple_with_bzip2(self):
+        self.source_tree.add_random_data()
+        self.assertTreesMatchNot()
+
+        backup_args = {
+            'action': 'backup',
+            'mode': 'fs',
+            'compression': 'bzip2',
+            'path_to_backup': self.source_tree.path,
+            'max_level': '6',
+            'max_segment_size': '67108864',
+            'backup_name': uuid.uuid4().hex,
+            'storage': 'swift',
+            'container': 'freezer_test_backups_{0}'.format(uuid.uuid4().hex),
+            'metadata_out': '-'
+        }
+        restore_args = {
+            'action': 'restore',
+            'compression': 'bzip2',
+            'restore_abs_path': self.dest_tree.path,
+            'backup_name': copy(backup_args['backup_name']),
+            'storage': 'swift',
+            'container': copy(backup_args['container']),
+        }
+        remove_args = {
+            'action': 'admin',
+            'remove_older_than': 0,
+            'backup_name': copy(backup_args['backup_name']),
+            'storage': 'swift',
+            'container': copy(backup_args['container']),
+        }
+        # --- backup
+        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        self.assertIsNotNone(result)
+        result = json.loads(result)
+        self.assertIn('backup_name', result)
+        self.assertEquals(result['backup_name'], backup_args['backup_name'])
+        self.assertIn('container', result)
+        self.assertEquals(result['container'], backup_args['container'])
+
+        # It may be reasonable to insert a check of the files in the
+        # swift container
+        # file_list = self.get_file_list_openstack(result['container'])
+
+        # --- restore
+        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        self.assertIsNotNone(result)
+        self.assertTreesMatch()
+
+        # --- remove backups and container
+        result = common.execute(FREEZERC + self.dict_to_args(remove_args))
+        self.assertIsNotNone(result)
+
+        result = self.remove_swift_container(backup_args['container'])
+        self.assertIsNotNone(result)
+
+    @unittest.skipIf(not common.TestFS.use_os,
+                     "Cannot test with swift, please provide"
+                     "'FREEZER_TEST_OS_TENANT_NAME',"
+                     "'FREEZER_TEST_OS_USERNAME',"
+                     "'FREEZER_TEST_OS_REGION_NAME',"
+                     "'FREEZER_TEST_OS_PASSWORD',"
+                     "'FREEZER_TEST_OS_AUTH_URL'")
     @unittest.skipIf(not common.TestFS.use_lvm, "No LVM support")
     @unittest.skipIf(not os.path.isdir('/var/lib/mysql'),
                      "No path /var/lib/mysql")
@@ -458,14 +604,13 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         lvm_snapsize = '1G'
         lvm_snapname = 'freezer-snap_{0}'.format(backup_name)
         lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
-        path_to_backup = os.path.join(lvm_dirmount, self.source_tree.path)
 
         backup_args = {
             'action': 'backup',
             'mode': 'mysql',
             'mysql_conf': '/etc/mysql/debian.cnf',
-            'path_to_backup': path_to_backup,
-            'lvm_auto_snap': lvm_auto_snap,
+            'path_to_backup': self.source_tree.path,
+            'snapshot': '',
             'lvm_dirmount': lvm_dirmount,
             'lvm_snapsize': lvm_snapsize,
             'lvm_snapname': lvm_snapname,

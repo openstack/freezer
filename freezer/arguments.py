@@ -40,6 +40,9 @@ from tempfile import NamedTemporaryFile
 
 home = expanduser("~")
 
+DEFAULT_LVM_SNAPNAME = 'freezer_backup_snap'
+DEFAULT_LVM_SNAPSIZE = '1G'
+DEFAULT_LVM_DIRMOUNT = '/var/lib/freezer'
 
 DEFAULT_PARAMS = {
     'os_identity_api_version': None, 'list_objects': False,
@@ -49,17 +52,18 @@ DEFAULT_PARAMS = {
     'container': 'freezer_backups', 'no_incremental': False,
     'max_segment_size': 67108864, 'lvm_srcvol': False,
     'download_limit': None, 'hostname': False, 'remove_from_date': False,
-    'restart_always_level': False, 'lvm_dirmount': False,
+    'restart_always_level': False, 'lvm_dirmount': DEFAULT_LVM_DIRMOUNT,
     'dst_file': False, 'dereference_symlink': '',
     'restore_from_host': False, 'config': False, 'mysql_conf': False,
-    'insecure': False, 'lvm_snapname': False, 'lvm_snapperm': 'ro',
+    'insecure': False, 'lvm_snapname': DEFAULT_LVM_SNAPNAME,
+    'lvm_snapperm': 'ro', 'snapshot': False,
     'max_priority': False, 'max_level': False, 'path_to_backup': False,
     'encrypt_pass_file': False, 'volume': False, 'proxy': False,
     'cinder_vol_id': '', 'cindernative_vol_id': '',
     'nova_inst_id': '', 'list_containers': False,
     'remove_older_than': None, 'restore_from_date': False,
     'upload_limit': None, 'always_level': False, 'version': False,
-    'dry_run': False, 'lvm_snapsize': False,
+    'dry_run': False, 'lvm_snapsize': DEFAULT_LVM_SNAPSIZE,
     'restore_abs_path': False, 'log_file': None,
     'upload': True, 'mode': 'fs', 'action': 'backup',
     'vssadmin': True, 'shadow': '', 'shadow_path': '',
@@ -179,6 +183,12 @@ def backup_arguments(args_dict={}):
         help="The file name used to save the object on your local disk and\
         upload file in swift", dest='dst_file', default=False)
     arg_parser.add_argument(
+        '-s', '--snapshot', action='store_true',
+        help=('Create a snapshot of the fs containing the resource to backup.'
+              ' When used, the lvm parameters will be guessed and/or the '
+              'default values will be used'),
+        dest='snapshot', default=False)
+    arg_parser.add_argument(
         '--lvm-auto-snap', action='store',
         help=("Automatically guess the volume group and volume name for "
               "given PATH."),
@@ -201,13 +211,15 @@ def backup_arguments(args_dict={}):
         dest='lvm_snapperm', default='ro')
     arg_parser.add_argument(
         '--lvm-snapsize', action='store',
-        help="Set the lvm snapshot size when creating a new snapshot.\
-            Please add G for Gigabytes or M for Megabytes, i.e. 500M or 8G.\
-            Default 5G.", dest='lvm_snapsize', default=False)
+        help=('Set the lvm snapshot size when creating a new snapshot. '
+              'Please add G for Gigabytes or M for Megabytes, i.e. 500M or 8G.'
+              ' Default {0}.'.format(DEFAULT_LVM_SNAPSIZE)),
+        dest='lvm_snapsize', default=DEFAULT_LVM_SNAPSIZE)
     arg_parser.add_argument(
         '--lvm-dirmount', action='store',
-        help="Set the directory you want to mount the lvm snapshot to.\
-        Default not set", dest='lvm_dirmount', default=False)
+        help=("Set the directory you want to mount the lvm snapshot to. "
+              "Default to {0}".format(DEFAULT_LVM_DIRMOUNT)),
+        dest='lvm_dirmount', default=DEFAULT_LVM_DIRMOUNT)
     arg_parser.add_argument(
         '--lvm-volgroup', action='store',
         help="Specify the volume group of your logical volume.\

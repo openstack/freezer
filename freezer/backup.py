@@ -26,7 +26,7 @@ from os.path import expanduser
 import time
 
 from freezer import utils
-from freezer.lvm import lvm_snap, lvm_snap_remove, get_lvm_info
+from freezer import lvm
 from freezer.vss import vss_create_shadow_copy
 from freezer.vss import vss_delete_shadow_copy
 from freezer.winutils import start_sql_server
@@ -253,33 +253,36 @@ class BackupOs:
 
 
 def snapshot_create(backup_opt_dict):
+    """
+    Calls the code to take fs snapshots, depending on the platform
+
+    :param backup_opt_dict:
+    :return: boolean value, True if snapshot has been taken, false otherwise
+    """
+
     if is_windows():
+        # vssadmin is to be deprecated in favor of the --snapshot flag
+        if backup_opt_dict.snapshot:
+            backup_opt_dict.vssadmin = True
         if backup_opt_dict.vssadmin:
             # Create a shadow copy.
             backup_opt_dict.shadow_path, backup_opt_dict.shadow = \
                 vss_create_shadow_copy(backup_opt_dict.windows_volume)
 
+            backup_opt_dict.path_to_backup = use_shadow(
+                backup_opt_dict.path_to_backup,
+                backup_opt_dict.windows_volume)
+
             # execute this after the snapshot creation
             if backup_opt_dict.mode == 'sqlserver':
                 start_sql_server(backup_opt_dict)
 
+            return True
+        return False
+
     else:
-        # If lvm_auto_snap is true, the volume group and volume name will
-        # be extracted automatically
-        if backup_opt_dict.lvm_auto_snap:
-            lvm_list = get_lvm_info(
-                backup_opt_dict.lvm_auto_snap)
-            backup_opt_dict.lvm_volgroup = lvm_list[0]
-            backup_opt_dict.lvm_srcvol = lvm_list[2]
 
-        # Generate the lvm_snap if lvm arguments are available
-        lvm_snap(backup_opt_dict)
-
-    if is_windows() and backup_opt_dict.vssadmin:
-        backup_opt_dict.path_to_backup = use_shadow(
-            backup_opt_dict.path_to_backup,
-            backup_opt_dict.windows_volume)
-    return backup_opt_dict
+        return lvm.lvm_snap(backup_opt_dict)
 
 
 def snapshot_remove(backup_opt_dict, shadow, windows_volume):
@@ -288,7 +291,7 @@ def snapshot_remove(backup_opt_dict, shadow, windows_volume):
         vss_delete_shadow_copy(shadow, windows_volume)
     else:
         # Unmount and remove lvm snapshot volume
-        lvm_snap_remove(backup_opt_dict)
+        lvm.lvm_snap_remove(backup_opt_dict)
 
 
 def backup(backup_opt_dict, storage, engine):
@@ -308,8 +311,8 @@ def backup(backup_opt_dict, storage, engine):
 
     if backup_media == 'fs':
 
+        snapshot_taken = snapshot_create(backup_opt_dict)
         try:
-            backup_opt_dict = snapshot_create(backup_opt_dict)
             filepath = '.'
             chdir_path = os.path.expanduser(
                 os.path.normpath(backup_opt_dict.path_to_backup.strip()))
@@ -329,8 +332,10 @@ def backup(backup_opt_dict, storage, engine):
                 time_stamp=time_stamp)
             engine.backup(filepath, backup_instance)
         finally:
-            snapshot_remove(backup_opt_dict, backup_opt_dict.shadow,
-                            backup_opt_dict.windows_volume)
+            # whether an error occurred or not, remove the snapshot anyway
+            if snapshot_taken:
+                snapshot_remove(backup_opt_dict, backup_opt_dict.shadow,
+                                backup_opt_dict.windows_volume)
         return
 
     backup_os = BackupOs(backup_opt_dict.client_manager,

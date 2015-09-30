@@ -42,7 +42,8 @@ class TestUtils:
     def test_get_mount_from_path(self):
         dir1 = '/tmp'
         dir2 = '/tmp/nonexistentpathasdf'
-        assert type(get_mount_from_path(dir1)) is str
+        assert type(get_mount_from_path(dir1)[0]) is str
+        assert type(get_mount_from_path(dir1)[1]) is str
         pytest.raises(Exception, get_mount_from_path, dir2)
 
     def test_human2bytes(self):
