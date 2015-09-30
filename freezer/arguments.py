@@ -430,7 +430,7 @@ def backup_arguments(args_dict={}):
         dest='storage', default='swift')
     arg_parser.add_argument(
         '--ssh-key', action='store',
-        help="Path ot ssh-key for ssh storage only",
+        help="Path to ssh-key for ssh storage only",
         dest='ssh_key', default=DEFAULT_PARAMS['ssh_key'])
     arg_parser.add_argument(
         '--ssh-username', action='store',
