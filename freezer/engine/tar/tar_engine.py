@@ -51,7 +51,7 @@ class TarBackupEngine(engine.BackupEngine):
     @property
     def main_storage(self):
         """
-        :rtype: freezer.storage.Storage
+        :rtype: freezer.storage.storage.Storage
         :return:
         """
         return self._main_storage
@@ -124,6 +124,18 @@ class TarBackupEngine(engine.BackupEngine):
             sys.exit(1)
         logging.info("Tar engine streaming end")
 
+    @staticmethod
+    def check_process_output(process):
+        tar_err = process.communicate()[1]
+
+        if 'error' in tar_err.lower():
+            logging.exception('[*] Restore error: {0}'.format(tar_err))
+            sys.exit(1)
+
+        if process.returncode:
+            logging.error('[*] Restore return code is not 0')
+            sys.exit(1)
+
     def restore_level(self, restore_path, read_pipe):
         """
         Restore the provided file into backup_opt_dict.restore_abs_path
@@ -153,18 +165,9 @@ class TarBackupEngine(engine.BackupEngine):
         # checked for errors.
         try:
             while True:
-                t = read_pipe.recv_bytes()
-                tar_process.stdin.write(t)
+                tar_process.stdin.write(read_pipe.recv_bytes())
         except EOFError:
             logging.info('[*] Pipe closed as EOF reached. '
                          'Data transmitted successfully')
 
-        tar_err = tar_process.communicate()[1]
-
-        if 'error' in tar_err.lower():
-            logging.exception('[*] Restore error: {0}'.format(tar_err))
-            sys.exit(1)
-
-        if tar_process.returncode:
-            logging.error('[*] Restore return code is not 0')
-            sys.exit(1)
+        self.check_process_output(tar_process)
