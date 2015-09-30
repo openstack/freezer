@@ -633,3 +633,66 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         result = common.execute(FREEZERC + self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         # we cannot test if trees as a running mysql instance will modify the files
+
+    @unittest.skipIf(not common.TestFS.use_os,
+                     "Cannot test with swift, please provide"
+                     "'FREEZER_TEST_OS_TENANT_NAME',"
+                     "'FREEZER_TEST_OS_USERNAME',"
+                     "'FREEZER_TEST_OS_REGION_NAME',"
+                     "'FREEZER_TEST_OS_PASSWORD',"
+                     "'FREEZER_TEST_OS_AUTH_URL'")
+    def test_backup_os_simple_with_bandwidth_limit(self):
+        self.source_tree.add_random_data()
+        self.assertTreesMatchNot()
+
+        backup_args = {
+            'action': 'backup',
+            'mode': 'fs',
+            'path_to_backup': self.source_tree.path,
+            'max_level': '6',
+            'upload_limit': '1M',
+            'download_limit': '1M',
+            'max_segment_size': '67108864',
+            'backup_name': uuid.uuid4().hex,
+            'storage': 'swift',
+            'container': 'freezer_test_backups_{0}'.format(uuid.uuid4().hex),
+            'metadata_out': '-'
+        }
+        restore_args = {
+            'action': 'restore',
+            'restore_abs_path': self.dest_tree.path,
+            'backup_name': copy(backup_args['backup_name']),
+            'storage': 'swift',
+            'container': copy(backup_args['container']),
+        }
+        remove_args = {
+            'action': 'admin',
+            'remove_older_than': 0,
+            'backup_name': copy(backup_args['backup_name']),
+            'storage': 'swift',
+            'container': copy(backup_args['container']),
+        }
+        # --- backup
+        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        self.assertIsNotNone(result)
+        result = json.loads(result)
+        self.assertIn('backup_name', result)
+        self.assertEquals(result['backup_name'], backup_args['backup_name'])
+        self.assertIn('container', result)
+        self.assertEquals(result['container'], backup_args['container'])
+
+        # It may be reasonable to insert a check of the files in the
+        # swift container
+        # file_list = self.get_file_list_openstack(result['container'])
+
+        # --- restore
+        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        self.assertIsNotNone(result)
+        self.assertTreesMatch()
+
+        # --- remove backups and container
+        result = common.execute(FREEZERC + self.dict_to_args(remove_args))
+        self.assertIsNotNone(result)
+
+        result = self.remove_swift_container(backup_args['container'])
+        self.assertIsNotNone(result)

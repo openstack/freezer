@@ -158,8 +158,7 @@ def freezer_main(backup_args, arg_parse):
             if int(os.environ.get("tricklecount")) > 1:
                 logging.critical("[*] Trickle seems to be not working,"
                                  " Switching to normal mode ")
-                freezer_job = job.create_job(backup_args)
-                freezer_job.execute()
+                run_job(backup_args)
 
         freezer_command = '{0} {1}'.format(backup_args.trickle_command,
                                            ' '.join(sys.argv))
@@ -174,12 +173,15 @@ def freezer_main(backup_args, arg_parse):
         if process.returncode:
             logging.error("[*] Trickle Error: {0}".format(error))
             logging.critical("[*] Switching to work without trickle ...")
-            freezer_job = job.create_job(backup_args)
-            freezer_job.execute()
+            run_job(backup_args)
 
     else:
-        freezer_job = job.create_job(backup_args)
-        freezer_job.execute()
+        run_job(backup_args)
+
+
+def run_job(backup_args):
+    freezer_job = job.create_job(backup_args)
+    freezer_job.execute()
 
     if backup_args.metadata_out == '-':
         metadata = freezer_job.get_metadata()
