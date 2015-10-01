@@ -54,7 +54,7 @@ class TestSupportFunctions(unittest.TestCase):
         mock_opts = Mock()
         mock_opts.os_identity_api_version = ''
         mock_opts.os_auth_url = ''
-        self.assertIsNone(client.guess_auth_version(mock_opts))
+        self.assertRaises(Exception, client.guess_auth_version, mock_opts)
 
     def test_guess_auth_version_explicit_3(self):
         mock_opts = Mock()
