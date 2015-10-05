@@ -114,17 +114,7 @@ class SwiftStorage(storage.Storage):
             self.swift().put_object(
                 self.container, backup.tar(), meta_fd)
 
-    def is_ready(self):
-        return self.check_container_existence()[0]
-
     def prepare(self):
-        containers = self.check_container_existence()
-        if not containers[0]:
-            self.swift().put_container(self.container)
-        if not containers[1]:
-            self.swift().put_container(self.segments)
-
-    def check_container_existence(self):
         """
         Check if the provided container is already available on Swift.
         The verification is done by exact matching between the provided
@@ -132,8 +122,10 @@ class SwiftStorage(storage.Storage):
         account.
         """
         containers_list = [c['name'] for c in self.swift().get_account()[1]]
-        return (self.container in containers_list,
-                self.segments in containers_list)
+        if self.container not in containers_list:
+            self.swift().put_container(self.container)
+        if self.segments not in containers_list:
+            self.swift().put_container(self.segments)
 
     def info(self):
         ordered_container = {}
@@ -150,6 +142,10 @@ class SwiftStorage(storage.Storage):
                 ordered_container, indent=4,
                 separators=(',', ': '), sort_keys=True)
 
+    def remove(self, container, prefix):
+        for segment in self.swift().get_container(container, prefix=prefix)[1]:
+            self.swift().delete_object(container, segment['name'])
+
     def remove_backup(self, backup):
         """
             Removes backup, all increments, tar_meta and segments
@@ -159,26 +155,14 @@ class SwiftStorage(storage.Storage):
         for i in range(backup.latest_update.level, -1, -1):
             if i in backup.increments:
                 # remove segment
-                for segment in self.swift().get_container(
-                        self.segments,
-                        prefix=backup.increments[i])[1]:
-                    self.swift().delete_object(self.segments, segment['name'])
-
+                self.remove(self.segments, backup.increments[i])
                 # remove tar
-                for segment in self.swift().get_container(
-                        self.container,
-                        prefix=backup.increments[i].tar())[1]:
-                    self.swift().delete_object(self.container, segment['name'])
-
+                self.remove(self.container, backup.increments[i].tar())
                 # remove manifest
-                for segment in self.swift().get_container(
-                        self.container,
-                        prefix=backup.increments[i])[1]:
-                    self.swift().delete_object(self.container, segment['name'])
+                self.remove(self.container, backup.increments[i])
 
     def add_stream(self, stream, package_name, headers=None):
         i = 0
-
         for el in stream:
             self.upload_chunk("{0}/{1}".format(package_name, "%08d" % i), el)
             i += 1

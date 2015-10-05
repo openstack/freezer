@@ -46,16 +46,7 @@ class TestLocalStorage(object):
     def remove_storage(self, backup_dir):
         shutil.rmtree(backup_dir)
 
-    def test_is_ready(self, tmpdir):
-        backup_dir, files_dir, work_dir = self.create_dirs(tmpdir)
-        storage = local.LocalStorage(backup_dir, work_dir)
-        assert storage.is_ready()
-
     def test_prepare(self, tmpdir):
         backup_dir, files_dir, work_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir, work_dir)
-        assert storage.is_ready()
-        self.remove_storage(backup_dir)
-        assert not storage.is_ready()
         storage.prepare()
-        assert storage.is_ready()

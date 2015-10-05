@@ -39,29 +39,12 @@ class Storage(object):
     def backup_blocks(self, backup):
         raise NotImplementedError("Should have implemented this")
 
-    def read_backup(self, rich_queue, backup):
-        """
-        :param rich_queue:
-        :type rich_queue: freezer.streaming.RichQueue
-        :param backup:
-        :type backup: freezer.storage.Backup
-        :return:
-        """
-        rich_queue.put_messages(self.backup_blocks(backup))
-
     def write_backup(self, rich_queue, backup):
-        raise NotImplementedError("Should have implemented this")
-
-    def is_ready(self):
-        """
-        :rtype: bool
-        :return:
-        """
         raise NotImplementedError("Should have implemented this")
 
     def prepare(self):
         """
-
+        Creates directories, containers
         :return: nothing
         """
         raise NotImplementedError("Should have implemented this")

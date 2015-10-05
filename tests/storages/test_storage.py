@@ -21,6 +21,15 @@ class TestBackup(unittest.TestCase):
         self.assertEqual(backup.latest_update.hostname_backup_name, "name")
         self.assertEqual(len(backup.increments), 1)
 
+    def test_backup_full_backup(self):
+        ok = False
+        try:
+            storage.Backup("name", 1324, 0, "full_backup")
+        except ValueError:
+            ok = True
+        if not ok:
+            raise Exception("Should throw ValueError")
+
     def test_backup_increment(self):
         backup = storage.Backup("name", 1234)
         self.assertRaises(ValueError, backup.add_increment, backup)

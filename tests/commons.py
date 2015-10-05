@@ -23,15 +23,6 @@ os.environ['OS_USERNAME'] = 'testusername'
 os.environ['OS_TENANT_NAME'] = 'testtenantename'
 
 
-class FakeTime:
-
-    def __init__(self):
-        return None
-
-    def sleep(self, *args):
-        return True
-
-
 class FakeLogging:
 
     def __init__(self):
@@ -65,98 +56,6 @@ class FakeLogging:
         return True
 
 
-class FakeDistutils:
-
-    def __init__(self):
-        return None
-
-    class spawn:
-        def __init__(self, *args, **kwargs):
-            return None
-
-        def __call__(self, *args, **kwargs):
-            return self
-
-        def find_executable(self, *args, **kwargs):
-            return True
-
-
-class FakeArgparse:
-
-    def __init__(self):
-        return None
-
-    def __call__(self, prog='freezerc'):
-        return self.ArgumentParser
-
-    class ArgumentParser:
-
-        def __init__(self, prog='freezerc'):
-            return None
-
-        def __call__(self, *args, **kwargs):
-            return self
-
-        @classmethod
-        def add_argument(self, *args, **kwargs):
-            self.container = 'testcontainer'
-            self.hostname = 'testhostname'
-            self.proxy = False
-            return True
-
-        @classmethod
-        def parse_args(self):
-            self.hostname = None
-            return self
-
-        @classmethod
-        def parse_known_args(self):
-            config_file = '/tmp/freezer-config-test-{}.conf'.format(int(time.time()))
-            config_fd = open(config_file, 'wb')
-            config_fd.write('[test:section]\nbackup_name = False\n')
-            config_fd.close()
-            self.config = config_file
-            return self, []
-
-        @classmethod
-        def set_defaults(self, *args, **kwargs):
-            for k, v in kwargs.iteritems():
-                if k not in self.__dict__:
-                    self.__dict__[k] = v
-            return self
-
-
-class FakeOpen:
-    def __init__(self):
-        return None
-
-    @classmethod
-    def fopen(self, opt1=True, op2=True):
-
-        #fd_open = __builtin__.open('/tmp/pytest-testopen', 'w')
-        #fd_open.write('/dev/mapper/testgroup-testsnapname\n')
-        #fd_open.close()
-        #with __builtin__.open('/tmp/pytest-testopen', 'r') as fd_open:
-        #    return fd_open
-        fake_fd = [
-            '/dev/mapper/testgroup-testsnapname test1 test2 test3',
-            '/dev/mapjkhkper/testsdkjs-testsnaalskdjalpnme test1 test2 test3']
-        return fake_fd
-
-    @classmethod
-    def close(self):
-        return self
-
-    @classmethod
-    def readlines(self):
-        fake_fd = []
-        fake_fd.append(
-            '/dev/mapper/testgroup-testsnapname test1 test2 test3')
-        fake_fd.append(
-            '/dev/mapjkhkper/testsdkjs-testsnaalskdjalpnme test1 test2 test3')
-        return fake_fd
-
-
 class FakeBackup:
     def __init__(self):
         return None
@@ -168,142 +67,6 @@ class FakeBackup:
         return True
 
     def fake_backup_mode_mysql(self, *args, **kwargs):
-        return True
-
-
-class FakeMultiProcessing:
-
-    def __init__(self):
-        return None
-
-    class Queue:
-        def __init__(self):
-            return None
-
-        def put(self, opt1=dict()):
-            return True
-
-        def get(self, opt1=dict()):
-
-            return {'item': 'test-item-value'}
-
-        def close(self):
-            return True
-
-        def __call__(self, *args, **kwargs):
-            return self
-
-    class Pipe:
-        def __init__(self, duplex=True):
-            return None
-
-        def send_bytes(self, opt1=True):
-            return True
-
-        def recv_bytes(self, opt1=True):
-            raise EOFError
-
-        def send(self, opt1=True):
-            return True
-
-        def recv(self, opt1=True):
-            raise EOFError
-
-        def poll(self):
-            return True
-
-        def close(self):
-            return True
-
-        def __call__(self, duplex=True):
-            return [self, self]
-
-    class Process:
-        def __init__(self, target=True, args=True):
-            self.target = target
-            self.args = args
-            self.exitcode = 0
-
-        def start(self):
-            return True
-
-        def stop(self):
-            return True
-
-        def daemon(self):
-            return True
-
-        def join(self):
-            return True
-
-    @classmethod
-    def util(cls):
-        return True
-
-
-class FakeMultiProcessing1:
-    def __init__(self, duplex=True, maxsize=True):
-        return None
-
-    class Queue:
-        def __init__(self, duplex=True, maxsize=2):
-            return None
-
-        def put(self, opt1=dict()):
-            return False
-
-        def get(self, opt1=dict()):
-
-            return {'item': 'test-item-value'}
-
-        def __call__(self, duplex=True):
-            return []
-
-    class Pipe:
-        def __init__(self, duplex=True):
-            return None
-
-        def send_bytes(self, opt1=True):
-            return False
-
-        def recv_bytes(self, opt1=True):
-            raise EOFError
-
-        def send(self, opt1=True):
-            return False
-
-        def recv(self, opt1=True):
-            raise EOFError
-
-        def poll(self):
-            return False
-
-        def close(self):
-            return False
-
-        def __call__(self, duplex=True):
-            return [self, self]
-
-    class Process:
-        def __init__(self, target=True, args=True):
-            self.target = target
-            self.args = args
-            self.exitcode = 1
-
-        def start(self):
-            return True
-
-        def stop(self):
-            return True
-
-        def daemon(self):
-            return True
-
-        def join(self):
-            return True
-
-    @classmethod
-    def util(cls):
         return True
 
 
@@ -326,52 +89,6 @@ class FakeSubProcess:
     @classmethod
     def communicate_error(cls):
         return '', 'error'
-
-    class stdin:
-        def __call__(self, *args, **kwargs):
-            return self
-
-        @classmethod
-        def write(cls, *args, **kwargs):
-            return True
-
-
-class FakeSubProcess1:
-    def __init__(self, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
-        return None
-
-    @classmethod
-    def Popen(cls, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
-        return cls
-
-    @classmethod
-    def communicate(cls):
-        return '', 'asdfasdf'
-
-    class stdin:
-        def __call__(self, *args, **kwargs):
-            return self
-
-        @classmethod
-        def write(cls, *args, **kwargs):
-            return True
-
-
-class FakeSubProcess2:
-    def __init__(self, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
-        return None
-
-    @classmethod
-    def Popen(cls, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
-        return cls
-
-    @classmethod
-    def communicate(cls):
-        return '', 'already mounted'
 
     class stdin:
         def __call__(self, *args, **kwargs):
@@ -405,53 +122,6 @@ class FakeSubProcess3:
             return True
 
 
-class FakeSubProcess4:
-
-    def __init__(self, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
-        return None
-
-    @classmethod
-    def Popen(cls, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
-        return cls
-
-    @classmethod
-    def communicate(cls):
-        return '', ''
-
-    class stdin:
-        def __call__(self, *args, **kwargs):
-            return self
-
-        @classmethod
-        def write(cls, *args, **kwargs):
-            return True
-
-
-class FakeSubProcess5:
-    def __init__(self, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
-        return None
-
-    @classmethod
-    def Popen(cls, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
-        return cls
-
-    @classmethod
-    def communicate(cls):
-        return 'error', 'error'
-
-    class stdin:
-        def __call__(self, *args, **kwargs):
-            return self
-
-        @classmethod
-        def write(cls, *args, **kwargs):
-            return True
-
-
 class FakeSubProcess6:
     def __init__(self):
         pass
@@ -467,17 +137,6 @@ class FakeSubProcess6:
     @classmethod
     def communicate_error(cls):
         return '', 'error'
-
-
-class Lvm:
-    def __init__(self):
-        pass
-
-    def lvm_snap_remove(self, opt1=True):
-        return True
-
-    def lvm_eval(self, opt1=True):
-        return False
 
 
 class FakeIdObject:
@@ -632,38 +291,6 @@ class FakeSwiftClient:
                          'x-object-meta-name': "name"}, "abc"]
 
 
-class FakeSwiftClient1:
-
-    def __init__(self):
-        pass
-
-    class client:
-        def __init__(self):
-            pass
-
-        class Connection:
-            def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
-                pass
-
-            def put_object(self, opt1=True, opt2=True, opt3=True, opt4=True, opt5=True, headers=True, content_length=True, content_type=True):
-                raise Exception
-
-            def head_object(self, opt1=True, opt2=True):
-                raise Exception
-
-            def put_container(self, container=True):
-                raise Exception
-
-            def delete_object(self):
-                raise Exception
-
-            def get_container(self, *args, **kwargs):
-                raise Exception
-
-            def get_account(self, *args, **kwargs):
-                raise Exception
-
-
 class FakeRe:
 
     def __init__(self):
@@ -679,23 +306,6 @@ class FakeRe:
             return 'testgroup'
         else:
             return '10'
-
-
-class FakeRe2:
-
-    def __init__(self):
-        return None
-
-    def __call__(self, *args, **kwargs):
-        return None
-
-    @classmethod
-    def search(cls, opt1=True, opt2=True, opt3=True):
-        return None
-
-    @classmethod
-    def group(cls, opt1=True, opt2=True):
-        return None
 
 
 class BackupOpt1:
@@ -793,7 +403,7 @@ class BackupOpt1:
         self.compression = 'gzip'
 
         self.engine = tar_engine.TarBackupEngine(
-            tar_path(),  self.compression, self.dereference_symlink,
+            self.compression, self.dereference_symlink,
             self.exclude, self.storage, False)
         self.client_manager.get_glance = Mock(return_value=FakeGlanceClient())
         self.client_manager.get_cinder = Mock(return_value=FakeCinderClient())
@@ -834,50 +444,6 @@ class FakeMySQLdb:
     @classmethod
     def close(cls):
         return True
-
-
-class FakeMySQLdb2:
-
-    def __init__(self):
-        return None
-
-    @classmethod
-    def connect(self, host=True, user=True, passwd=True, port=True):
-        raise Exception
-
-
-class FakeMongoDB:
-
-    def __init__(self, opt1=True):
-        return None
-
-    def __call__(self, opt1=True):
-        return self
-
-    class admin:
-        def __init__(self):
-            return None
-
-        @classmethod
-        def command(cls, opt1=True):
-            return {'me': 'testnode', 'primary': 'testnode'}
-
-
-class FakeMongoDB2:
-
-    def __init__(self, opt1=True):
-        return None
-
-    def __call__(self, opt1=True):
-        return self
-
-    class admin:
-        def __init__(self):
-            return None
-
-        @classmethod
-        def command(cls, opt1=True):
-            return {'me': 'testnode', 'primary': 'testanothernode'}
 
 
 class Os:
@@ -989,30 +555,10 @@ class Os:
         raise Exception
 
 
-class Os1(Os):
-    @classmethod
-    def exists(cls, directory=True):
-        return False
-
-
-class Fake_get_vol_fs_type:
-
-    def __init__(self):
-        return None
-
-    @classmethod
-    def get_vol_fs_type1(self, opt1=True):
-        return 'xfs'
-
-
 def fake_get_match_backup(self, backup_opt):
     #backup_opt = BackupOpt1()
     backup_opt.remote_match_backup = None
     return backup_opt
-
-
-def fake_restore_fs_sort_obj(*args, **kwargs):
-    return True
 
 
 class FakeSwift:
@@ -1037,15 +583,6 @@ class FakeSwift:
 
     def remove_obj_older_than(self, backup_opt):
         return backup_opt
-
-
-class FakeRestore:
-
-    def __init__(self):
-        return None
-
-    def fake_restore_fs(self, *args, **kwargs):
-        return True
 
 
 class FakeUtils:
@@ -1158,9 +695,6 @@ def fake_create_subprocess(cmd):
 def fake_create_subprocess2(cmd):
     return True, 'Error'
 
-def tar_path():
-    return "gnutar" if sys.__dict__['platform'] == 'darwin' else "tar"
-
 class FakeSys:
 
     def __init__(self):
@@ -1173,19 +707,3 @@ class FakeSys:
     # @staticmethod
     def fake_sys_exit(self, status_code):
         raise SystemExit(status_code)
-
-
-class ReturnBool:
-
-    @staticmethod
-    def return_true():
-        return True
-
-    @staticmethod
-    def return_false():
-        return False
-
-    @staticmethod
-    def return_none():
-        return None
-

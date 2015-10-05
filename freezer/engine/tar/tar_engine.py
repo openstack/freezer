@@ -115,6 +115,13 @@ class TarBackupEngine(engine.BackupEngine):
                 yield tar_queue.get()
             except streaming.Wait:
                 pass
+        tar_err = tar_process.communicate()[1]
+        if 'error' in tar_err.lower():
+            logging.exception('[*] Backup error: {0}'.format(tar_err))
+            sys.exit(1)
+        if tar_process.returncode:
+            logging.error('[*] Backup return code is not 0')
+            sys.exit(1)
         logging.info("Tar engine streaming end")
 
     def restore_level(self, restore_path, read_pipe):
@@ -138,7 +145,7 @@ class TarBackupEngine(engine.BackupEngine):
             # on windows, chdir to restore path.
             os.chdir(restore_path)
 
-        tar_cmd_proc = subprocess.Popen(
+        tar_process = subprocess.Popen(
             command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, shell=True)
         # Start loop reading the pipe and pass the data to the tar std input.
@@ -147,13 +154,17 @@ class TarBackupEngine(engine.BackupEngine):
         try:
             while True:
                 t = read_pipe.recv_bytes()
-                tar_cmd_proc.stdin.write(t)
+                tar_process.stdin.write(t)
         except EOFError:
             logging.info('[*] Pipe closed as EOF reached. '
                          'Data transmitted successfully')
 
-        tar_err = tar_cmd_proc.communicate()[1]
+        tar_err = tar_process.communicate()[1]
 
         if 'error' in tar_err.lower():
             logging.exception('[*] Restore error: {0}'.format(tar_err))
+            sys.exit(1)
+
+        if tar_process.returncode:
+            logging.error('[*] Restore return code is not 0')
             sys.exit(1)
