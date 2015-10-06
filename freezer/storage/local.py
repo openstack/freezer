@@ -49,19 +49,19 @@ class LocalStorage(storage.Storage):
         """
         utils.create_dir(self.work_dir)
         if backup.level == 0:
-            return utils.joined_path(self.work_dir, backup.tar())
+            return utils.path_join(self.work_dir, backup.tar())
         meta_backup = backup.full_backup.increments[backup.level - 1]
         zero_backup = self._zero_backup_dir(backup)
-        to_path = utils.joined_path(self.work_dir, meta_backup.tar())
+        to_path = utils.path_join(self.work_dir, meta_backup.tar())
         if os.path.exists(to_path):
             os.remove(to_path)
-        from_path = utils.joined_path(zero_backup, meta_backup.tar())
+        from_path = utils.path_join(zero_backup, meta_backup.tar())
         shutil.copyfile(from_path, to_path)
         return to_path
 
     def upload_meta_file(self, backup, meta_file):
         zero_backup = self._zero_backup_dir(backup)
-        to_path = utils.joined_path(zero_backup, backup.tar())
+        to_path = utils.path_join(zero_backup, backup.tar())
         shutil.copyfile(meta_file, to_path)
 
     def prepare(self):
@@ -72,11 +72,11 @@ class LocalStorage(storage.Storage):
         logging.info(backup_names)
         backups = []
         for backup_name in backup_names:
-            backup_dir = utils.joined_path(self.storage_directory, backup_name)
+            backup_dir = utils.path_join(self.storage_directory, backup_name)
             timestamps = os.listdir(backup_dir)
             for timestamp in timestamps:
                 increments = \
-                    os.listdir(utils.joined_path(backup_dir, timestamp))
+                    os.listdir(utils.path_join(backup_dir, timestamp))
                 backups.extend(storage.Backup.parse_backups(increments))
         logging.info(backups)
         return backups
@@ -85,8 +85,7 @@ class LocalStorage(storage.Storage):
         pass
 
     def backup_to_file_path(self, backup):
-        return utils.joined_path(self._zero_backup_dir(backup),
-                                 backup)
+        return utils.path_join(self._zero_backup_dir(backup), backup)
 
     def _zero_backup_dir(self, backup):
         """
@@ -94,9 +93,9 @@ class LocalStorage(storage.Storage):
         :type backup: freezer.storage.Backup
         :return:
         """
-        backup_dir = utils.joined_path(
-            self.storage_directory, backup.hostname_backup_name)
-        return utils.joined_path(backup_dir, backup.full_backup.timestamp)
+        return utils.path_join(self.storage_directory,
+                               backup.hostname_backup_name,
+                               backup.full_backup.timestamp)
 
     def remove_backup(self, backup):
         """

@@ -30,7 +30,7 @@ import os
 from os.path import expanduser
 import socket
 import sys
-import utils
+from freezer import utils
 from distutils import spawn as distspawn
 
 from oslo_utils import encodeutils
@@ -73,30 +73,23 @@ DEFAULT_PARAMS = {
 }
 
 
-def alter_proxy(args_dict):
-    """
-    Read proxy option from dictionary and alter the HTTP_PROXY and/or
-    HTTPS_PROXY system variables
-    """
-    # Default case where 'proxy' key is not set -- do nothing
-    if args_dict['proxy'] is False:
-        return
-    proxy_value = args_dict['proxy'].lower()
-    # python-swift client takes into account both
-    # upper and lower case proxies so clear them all
-    os.environ.pop("http_proxy", None)
-    os.environ.pop("https_proxy", None)
-    os.environ.pop("HTTP_PROXY", None)
-    os.environ.pop("HTTPS_PROXY", None)
-    if proxy_value == '':
-        pass
-    elif proxy_value.startswith('http://') or \
-            proxy_value.startswith('https://'):
-        logging.info('[*] Using proxy {0}'.format(proxy_value))
-        os.environ['HTTP_PROXY'] = str(proxy_value)
-        os.environ['HTTPS_PROXY'] = str(proxy_value)
-    else:
-        raise Exception('Proxy has unknown scheme')
+def enrich_defaults(config_path):
+    defaults = DEFAULT_PARAMS.copy()
+    if config_path:
+        if not os.path.exists(config_path):
+            logging.error("[*] Critical Error: Configuration file {0} not"
+                          " found".format(config_path))
+            raise Exception("Configuration file {0} not found !".format(
+                config_path))
+        config = configparser.SafeConfigParser()
+        config.read([config_path])
+        section = config.sections()[0]
+        for option in config.options(section):
+            option_value = config.get(section, option)
+            if option_value in ('False', 'None'):
+                option_value = False
+            defaults[option] = option_value
+    return defaults
 
 
 def backup_arguments(args_dict={}):
@@ -116,22 +109,8 @@ def backup_arguments(args_dict={}):
               "from config file. When config file is used any option "
               "from command line provided take precedence."))
 
-    defaults = DEFAULT_PARAMS.copy()
     args, remaining_argv = conf_parser.parse_known_args()
-    if args.config:
-        if not os.path.exists(args.config):
-            logging.error("[*] Critical Error: Configuration file {0} not"
-                          " found".format(args.config))
-            raise Exception("Configuration file {0} not found !".format(
-                args.config))
-        config = configparser.SafeConfigParser()
-        config.read([args.config])
-        section = config.sections()[0]
-        for option in config.options(section):
-            option_value = config.get(section, option)
-            if option_value in ('False', 'None'):
-                option_value = False
-            defaults[option] = option_value
+    defaults = enrich_defaults(args.config)
 
     # Generate a new argparse istance and inherit options from config parse
     arg_parser = argparse.ArgumentParser(
@@ -495,13 +474,11 @@ def backup_arguments(args_dict={}):
 
     # If we have provided --proxy then overwrite the system HTTP_PROXY and
     # HTTPS_PROXY
-    alter_proxy(backup_args.__dict__)
+    if backup_args.proxy:
+        utils.alter_proxy(backup_args.proxy)
 
     # MySQLdb object
     backup_args.__dict__['mysql_db_inst'] = ''
-
-    # SQL Server object
-    backup_args.__dict__['sql_server_instance'] = ''
 
     # Windows volume
     backup_args.__dict__['shadow'] = ''

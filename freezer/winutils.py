@@ -76,13 +76,13 @@ def add_gzip_to_command(tar_cmd):
     return '{0} | {1}'.format(tar_cmd, gzip_cmd)
 
 
-def stop_sql_server(backup_opt_dict):
+def stop_sql_server(sql_server_instance):
     """ Stop a SQL Server instance to perform the backup of the db files """
 
     logging.info('[*] Stopping SQL Server for backup')
     with DisableFileSystemRedirection():
         cmd = 'net stop "SQL Server ({0})"'\
-            .format(backup_opt_dict.sql_server_instance)
+            .format(sql_server_instance)
         (out, err) = create_subprocess(cmd)
         if err != '':
             raise Exception('[*] Error while stopping SQL Server,'

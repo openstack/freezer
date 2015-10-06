@@ -53,6 +53,11 @@ class OpenstackOptions:
         self.identity_api_version = identity_api_version
         self.region_name = region_name
         self.endpoint_type = endpoint_type
+        if not (self.password and self.user_name and self.auth_url and
+           (self.tenant_name or self.project_name)):
+            raise Exception("Please set up in your env:"
+                            "OS_USERNAME, OS_TENANT_NAME/OS_PROJECT_NAME,"
+                            " OS_AUTH_URL, OS_PASSWORD")
 
     @property
     def os_options(self):
@@ -74,22 +79,18 @@ class OpenstackOptions:
 
     @staticmethod
     def create_from_dict(src_dict):
-        try:
-            return OpenstackOptions(
-                user_name=src_dict.get('OS_USERNAME', None),
-                tenant_name=src_dict.get('OS_TENANT_NAME', None),
-                project_name=src_dict.get('OS_PROJECT_NAME', None),
-                auth_url=src_dict.get('OS_AUTH_URL', None),
-                identity_api_version=src_dict.get('OS_IDENTITY_API_VERSION',
-                                                  '2.0'),
-                password=src_dict.get('OS_PASSWORD', None),
-                tenant_id=src_dict.get('OS_TENANT_ID', None),
-                region_name=src_dict.get('OS_REGION_NAME', None),
-                endpoint_type=src_dict.get('OS_ENDPOINT_TYPE', None)
-            )
-        except Exception as e:
-            raise Exception('Missing Openstack connection parameter: {0}'
-                            .format(e))
+        return OpenstackOptions(
+            user_name=src_dict.get('OS_USERNAME', None),
+            tenant_name=src_dict.get('OS_TENANT_NAME', None),
+            project_name=src_dict.get('OS_PROJECT_NAME', None),
+            auth_url=src_dict.get('OS_AUTH_URL', None),
+            identity_api_version=src_dict.get('OS_IDENTITY_API_VERSION',
+                                              '2.0'),
+            password=src_dict.get('OS_PASSWORD', None),
+            tenant_id=src_dict.get('OS_TENANT_ID', None),
+            region_name=src_dict.get('OS_REGION_NAME', None),
+            endpoint_type=src_dict.get('OS_ENDPOINT_TYPE', None)
+        )
 
 
 def create_dir_tree(dir):
@@ -100,10 +101,6 @@ def create_dir_tree(dir):
             pass
         else:
             raise exc
-
-
-def joined_path(prefix, suffix):
-    return "{0}{1}{2}".format(prefix, os.sep, suffix)
 
 
 def create_dir(directory, do_log=True):
@@ -166,14 +163,12 @@ class DateTime(object):
         return DateTime(datetime.datetime.now())
 
 
-def get_vol_fs_type(backup_opt_dict):
-    '''
+def get_vol_fs_type(vol_name):
+    """
     The argument need to be a full path lvm name i.e. /dev/vg0/var
     or a disk partition like /dev/sda1. The returnet value is the
     file system type
-    '''
-
-    vol_name = backup_opt_dict.lvm_srcvol
+    """
     if os.path.exists(vol_name) is False:
         err = '[*] Provided volume name not found: {0} '.format(vol_name)
         logging.exception(err)
@@ -196,6 +191,11 @@ def get_vol_fs_type(backup_opt_dict):
         logging.info('[*] File system {0} found for volume {1}'.format(
             filesys_type, vol_name))
         return filesys_type.lower().strip()
+
+
+def path_join(*args):
+    """Should work for windows and linux"""
+    return "/".join([str(x) for x in args])
 
 
 def get_mount_from_path(path):
@@ -384,3 +384,25 @@ def tar_path():
                             'mandatory requirement to use freezer.')
     else:
         return find_executable('tar')
+
+
+def alter_proxy(proxy):
+    """
+    Read proxy option from dictionary and alter the HTTP_PROXY and/or
+    HTTPS_PROXY system variables
+    """
+    # Default case where 'proxy' key is not set -- do nothing
+    proxy_value = proxy.lower()
+    # python-swift client takes into account both
+    # upper and lower case proxies so clear them all
+    os.environ.pop("http_proxy", None)
+    os.environ.pop("https_proxy", None)
+    os.environ.pop("HTTP_PROXY", None)
+    os.environ.pop("HTTPS_PROXY", None)
+    if proxy_value.startswith('http://') or \
+            proxy_value.startswith('https://'):
+        logging.info('[*] Using proxy {0}'.format(proxy_value))
+        os.environ['HTTP_PROXY'] = str(proxy_value)
+        os.environ['HTTPS_PROXY'] = str(proxy_value)
+    else:
+        raise Exception('Proxy has unknown scheme')

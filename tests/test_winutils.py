@@ -139,4 +139,5 @@ class TestWinutils:
         monkeypatch.setattr(
             subprocess, 'Popen', fakesubprocesspopen)
 
-        pytest.raises(Exception, winutils.stop_sql_server(backup_opt))
+        pytest.raises(Exception, winutils.stop_sql_server(
+            backup_opt.sql_server_instance))

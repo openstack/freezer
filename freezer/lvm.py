@@ -146,7 +146,7 @@ def lvm_snap(backup_opt_dict):
 
     # Guess the file system of the provided source volume and st mount
     # options accordingly
-    filesys_type = utils.get_vol_fs_type(backup_opt_dict)
+    filesys_type = utils.get_vol_fs_type(backup_opt_dict.lvm_srcvol)
     mount_options = '-o {}'.format(backup_opt_dict.lvm_snapperm)
     if 'xfs' == filesys_type:
         mount_options = ' -onouuid '
