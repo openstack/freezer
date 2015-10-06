@@ -149,7 +149,8 @@ def guess_auth_version(opts):
         return '3'
     elif opts.os_auth_url.endswith('v2.0'):
         return '2.0'
-    return None
+    raise Exception('Please provide valid keystone auth url with valid'
+                    ' keystone api version to use')
 
 
 def get_auth_plugin(opts):
@@ -177,7 +178,8 @@ def get_auth_plugin(opts):
             return v2.Token(auth_url=opts.os_auth_url,
                             token=opts.os_token,
                             tenant_name=opts.os_tenant_name)
-    raise Exception('Unable to determine correct auth method')
+    raise Exception('Unable to determine correct auth method, please provide'
+                    ' either username or token')
 
 
 class Client(object):
