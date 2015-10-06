@@ -28,6 +28,12 @@ import tempfile
 import unittest
 import paramiko
 
+INTEGRATION_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_DIR = os.path.normpath(os.path.join(INTEGRATION_DIR, '..'))
+COMMON_DIR = os.path.normpath(os.path.join(TEST_DIR, '..'))
+FREEZER_BIN_DIR = os.path.normpath(os.path.join(COMMON_DIR, 'bin'))
+FREEZERC = os.path.normpath(os.path.join(FREEZER_BIN_DIR, 'freezerc '))
+
 class CommandFailed(Exception):
 
     def __init__(self, returncode, cmd, output, stderr):
@@ -46,7 +52,8 @@ class CommandFailed(Exception):
 
 def execute(cmd, must_fail=False, merge_stderr=False):
     """Executes specified command for the given action."""
-    cmdlist = shlex.split(cmd.encode('utf-8'))
+    cmd_freezer = FREEZERC + " " + cmd
+    cmdlist = shlex.split(cmd_freezer.encode('utf-8'))
     result = ''
     result_err = ''
     stdout = subprocess.PIPE
@@ -55,9 +62,9 @@ def execute(cmd, must_fail=False, merge_stderr=False):
     result, result_err = proc.communicate()
 
     if not must_fail and proc.returncode != 0:
-        raise CommandFailed(proc.returncode, cmd, result, result_err)
+        raise CommandFailed(proc.returncode, cmd_freezer, result, result_err)
     if must_fail and proc.returncode == 0:
-        raise CommandFailed(proc.returncode, cmd, result, result_err)
+        raise CommandFailed(proc.returncode, cmd_freezer, result, result_err)
     return result
 
 
@@ -268,4 +275,14 @@ class TestFS(unittest.TestCase):
                                             container))
             execute('{0} delete {1}_segments'.format(self.swift_executable,
                                                      container))
+        return True
+
+    def do_backup_and_restore_with_check(self, backup_args, restore_args):
+        self.source_tree.add_random_data()
+        self.assertTreesMatchNot()
+        result = execute(self.dict_to_args(backup_args))
+        self.assertIsNotNone(result)
+        result = execute(self.dict_to_args(restore_args))
+        self.assertIsNotNone(result)
+        self.assertTreesMatch()
         return True

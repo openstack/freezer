@@ -102,7 +102,9 @@ class TestWinutils:
         monkeypatch.setattr(
             subprocess, 'Popen', fakesubprocesspopen)
 
-        pytest.raises(Exception, winutils.start_sql_server(backup_opt))
+        pytest.raises(
+            Exception,
+            winutils.start_sql_server(backup_opt.sql_server_instance))
 
     def test_stop_sql_server(self, monkeypatch):
         fake_disable_redirection = FakeDisableFileSystemRedirection()
@@ -125,7 +127,8 @@ class TestWinutils:
 
         monkeypatch.setattr(logging, 'info', fakelogging.info)
 
-        assert winutils.start_sql_server(backup_opt) is not False
+        assert winutils.start_sql_server(
+            backup_opt.sql_server_instance) is not False
 
         fakesubprocess = FakeSubProcess3()
         fakesubprocesspopen = fakesubprocess.Popen()

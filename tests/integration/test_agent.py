@@ -22,21 +22,14 @@ import common
 import uuid
 
 
-INTEGRATION_DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_DIR = os.path.normpath(os.path.join(INTEGRATION_DIR, '..'))
-COMMON_DIR = os.path.normpath(os.path.join(TEST_DIR, '..'))
-FREEZER_BIN_DIR = os.path.normpath(os.path.join(COMMON_DIR, 'bin'))
-FREEZERC = os.path.normpath(os.path.join(FREEZER_BIN_DIR, 'freezerc '))
-
-
 class TestSimpleExecution(common.TestFS):
 
     def test_freezerc_executes(self):
-        result = common.execute(FREEZERC + ' -h')
+        result = common.execute('-h')
         self.assertIsNotNone(result)
 
     def test_freezerc_fails_with_wrong_params(self):
-        result = common.execute(FREEZERC + ' --blabla', must_fail=True, merge_stderr=True)
+        result = common.execute('--blabla', must_fail=True,  merge_stderr=True)
         self.assertIn('unrecognized arguments', result)
 
 
@@ -81,11 +74,12 @@ class TestBackupFSLocalstorage(common.TestFS):
                 'storage': 'local',
                 'container': storage_dir.path
             }
-            result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+            result = common.execute(self.dict_to_args(backup_args))
             self.assertIsNotNone(result)
-            result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+            result = common.execute(self.dict_to_args(restore_args))
             self.assertIsNotNone(result)
             self.assertTreesMatch()
+        self.do_backup_and_restore_with_check(backup_args, restore_args)
 
     def test_backup_preexisting_dir(self):
         """
@@ -119,15 +113,14 @@ class TestBackupFSLocalstorage(common.TestFS):
                 'storage': 'local',
                 'container': storage_dir.path
             }
-            result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+            result = common.execute(self.dict_to_args(backup_args))
             self.assertIsNotNone(result)
-            result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+            result = common.execute(self.dict_to_args(restore_args))
             self.assertIsNotNone(result)
         self.assertTreesMatch()
 
+    @unittest.skipIf(not common.TestFS.use_lvm, "No LVM support")
     def test_backup_local_storage_lvm_raises_path_mismatch(self):
-        if not self.use_lvm:
-            return
 
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
@@ -154,20 +147,13 @@ class TestBackupFSLocalstorage(common.TestFS):
                 'max_segment_size': '67108864',
                 'backup_name': backup_name
             }
-            restore_args = {
-                'action': 'restore',
-                'restore_abs_path': self.dest_tree.path,
-                'backup_name': copy(backup_args['backup_name']),
-                'storage': 'local',
-                'container': storage_dir.path
-            }
 
-            result = common.execute(FREEZERC + self.dict_to_args(backup_args), must_fail=True, merge_stderr=True)
+            result = common.execute(self.dict_to_args(backup_args),
+                                    must_fail=True, merge_stderr=True)
             self.assertIn('Path to backup mismatch', result)
 
+    @unittest.skipIf(not common.TestFS.use_lvm, "No LVM support")
     def test_backup_local_storage_lvm_with_auto_snap(self):
-        if not self.use_lvm:
-            return
 
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
@@ -201,17 +187,14 @@ class TestBackupFSLocalstorage(common.TestFS):
                 'container': storage_dir.path
             }
 
-            result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+            result = common.execute(self.dict_to_args(backup_args))
             self.assertIsNotNone(result)
-            result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+            result = common.execute(self.dict_to_args(restore_args))
             self.assertIsNotNone(result)
         self.assertTreesMatch()
 
-
+    @unittest.skipIf(not common.TestFS.use_lvm, "No LVM support")
     def test_backup_local_storage_use_lvm_snapshot_and_path_to_backup(self):
-        if not self.use_lvm:
-            return
-
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
 
@@ -245,9 +228,9 @@ class TestBackupFSLocalstorage(common.TestFS):
                 'container': storage_dir.path
             }
 
-            result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+            result = common.execute(self.dict_to_args(backup_args))
             self.assertIsNotNone(result)
-            result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+            result = common.execute(self.dict_to_args(restore_args))
             self.assertIsNotNone(result)
         self.assertTreesMatch()
 
@@ -260,15 +243,6 @@ class TestBackupSSH(common.TestFS):
      - FREEZER_TEST_SSH_HOST
      - FREEZER_TEST_CONTAINER (directory on the remote machine used to store backups)
     """
-    def do_backup_and_restore_with_check(self, backup_args, restore_args):
-        self.source_tree.add_random_data()
-        self.assertTreesMatchNot()
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
-        self.assertIsNotNone(result)
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
-        self.assertIsNotNone(result)
-        self.assertTreesMatch()
-        return True
 
     @unittest.skipIf(not common.TestFS.use_ssh,
                      "Cannot test with ssh, please provide"
@@ -305,7 +279,7 @@ class TestBackupSSH(common.TestFS):
             'ssh_host': self.ssh_host
         }
 
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        result = common.execute(self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
         result = json.loads(result)
         sub_path = '_'.join([result['hostname'], result['backup_name']])
@@ -318,7 +292,7 @@ class TestBackupSSH(common.TestFS):
         self.assertIn('container', result)
         self.assertEquals(result['container'], self.container)
 
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        result = common.execute(self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         self.assertTreesMatch()
 
@@ -358,7 +332,7 @@ class TestBackupSSH(common.TestFS):
             'ssh_username': self.ssh_username,
             'ssh_host': self.ssh_host
         }
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        result = common.execute(self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
 
         result = json.loads(result)
@@ -367,7 +341,7 @@ class TestBackupSSH(common.TestFS):
         # storage directory
         # file_list = self.get_file_list_ssh(sub_path)
 
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        result = common.execute(self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         self.assertTreesMatch()
 
@@ -427,27 +401,27 @@ class TestBackupSSH(common.TestFS):
             'ssh_username': self.ssh_username,
             'ssh_host': self.ssh_host
         }
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        result = common.execute(self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        result = common.execute(self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         self.assertTreesMatch()
 
         # -- level 1
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        result = common.execute(self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        result = common.execute(self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         self.assertTreesMatch()
 
         # -- level 2
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        result = common.execute(self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        result = common.execute(self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         self.assertTreesMatch()
 
@@ -499,7 +473,7 @@ class TestBackupUsingSwiftStorage(common.TestFS):
             'container': copy(backup_args['container']),
         }
         # --- backup
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        result = common.execute(self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
         result = json.loads(result)
         self.assertIn('backup_name', result)
@@ -512,12 +486,12 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         # file_list = self.get_file_list_openstack(result['container'])
 
         # --- restore
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        result = common.execute(self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         self.assertTreesMatch()
 
         # --- remove backups and container
-        result = common.execute(FREEZERC + self.dict_to_args(remove_args))
+        result = common.execute(self.dict_to_args(remove_args))
         self.assertIsNotNone(result)
 
         result = self.remove_swift_container(backup_args['container'])
@@ -562,7 +536,7 @@ class TestBackupUsingSwiftStorage(common.TestFS):
             'container': copy(backup_args['container']),
         }
         # --- backup
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        result = common.execute(self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
         result = json.loads(result)
         self.assertIn('backup_name', result)
@@ -575,12 +549,12 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         # file_list = self.get_file_list_openstack(result['container'])
 
         # --- restore
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        result = common.execute(self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         self.assertTreesMatch()
 
         # --- remove backups and container
-        result = common.execute(FREEZERC + self.dict_to_args(remove_args))
+        result = common.execute(self.dict_to_args(remove_args))
         self.assertIsNotNone(result)
 
         result = self.remove_swift_container(backup_args['container'])
@@ -628,9 +602,9 @@ class TestBackupUsingSwiftStorage(common.TestFS):
             'container': copy(backup_args['container'])
         }
 
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        result = common.execute(self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        result = common.execute(self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         # we cannot test if trees as a running mysql instance will modify the files
 
@@ -673,7 +647,7 @@ class TestBackupUsingSwiftStorage(common.TestFS):
             'container': copy(backup_args['container']),
         }
         # --- backup
-        result = common.execute(FREEZERC + self.dict_to_args(backup_args))
+        result = common.execute(self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
         result = json.loads(result)
         self.assertIn('backup_name', result)
@@ -686,12 +660,12 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         # file_list = self.get_file_list_openstack(result['container'])
 
         # --- restore
-        result = common.execute(FREEZERC + self.dict_to_args(restore_args))
+        result = common.execute(self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         self.assertTreesMatch()
 
         # --- remove backups and container
-        result = common.execute(FREEZERC + self.dict_to_args(remove_args))
+        result = common.execute(self.dict_to_args(remove_args))
         self.assertIsNotNone(result)
 
         result = self.remove_swift_container(backup_args['container'])

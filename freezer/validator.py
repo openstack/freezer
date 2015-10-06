@@ -1,5 +1,8 @@
 class Validator:
 
+    def __init__(self):
+        pass
+
     @staticmethod
     def validate_env(options):
         """:type options: freezer.utils.OpenstackOptions"""

@@ -71,7 +71,7 @@ def backup_mode_sql_server(backup_opt_dict):
         if not backup_opt_dict.vssadmin:
             # if vssadmin is false, wait until the backup is complete
             # to start sql server again
-            start_sql_server(backup_opt_dict)
+            start_sql_server(backup_opt_dict.sql_server_instance)
 
 
 def backup_mode_mysql(backup_opt_dict):
@@ -275,7 +275,7 @@ def snapshot_create(backup_opt_dict):
 
             # execute this after the snapshot creation
             if backup_opt_dict.mode == 'sqlserver':
-                start_sql_server(backup_opt_dict)
+                start_sql_server(backup_opt_dict.sql_server_instance)
 
             return True
         return False
@@ -321,8 +321,6 @@ def backup(backup_opt_dict, storage, engine):
                 chdir_path = os.path.dirname(chdir_path)
             os.chdir(chdir_path)
             hostname_backup_name = backup_opt_dict.hostname_backup_name
-            if not storage.is_ready():
-                storage.prepare()
             backup_instance = storage.create_backup(
                 hostname_backup_name,
                 backup_opt_dict.no_incremental,

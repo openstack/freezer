@@ -98,9 +98,6 @@ class LocalStorage(storage.Storage):
             self.storage_directory, backup.hostname_backup_name)
         return utils.joined_path(backup_dir, backup.full_backup.timestamp)
 
-    def is_ready(self):
-        return os.path.isdir(self.storage_directory)
-
     def remove_backup(self, backup):
         """
         :type backup: freezer.storage.Backup

@@ -54,6 +54,7 @@ class TestUtils:
         assert human2bytes('0.5kilo') == 512
         assert human2bytes('0.1  byte') == 0
         assert human2bytes('1 k') == 1024
+        assert human2bytes("1000") == 1000
         pytest.raises(ValueError, human2bytes, '12 foo')
 
     def test_OpenstackOptions_creation_success(self):

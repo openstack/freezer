@@ -236,9 +236,6 @@ def human2bytes(s):
     set and return the corresponding bytes as an integer.
     When unable to recognize the format ValueError is raised.
     """
-    # if isinstance(s, (int, long)):
-    #     return s
-
     if s.isdigit():
         return long(s)
 
@@ -379,10 +376,9 @@ def tar_path():
     elif 'darwin' in sys.platform or 'bsd' in sys.platform:
         # If freezer is being used under OSX, please install gnutar and
         # rename the executable as gnutar
-        if distspawn.find_executable('gtar'):
-            return find_executable('gtar')
-        elif distspawn.find_executable('gnutar'):
-            return find_executable('gnutar')
+        path = find_executable('gtar') or find_executable('gnutar')
+        if path:
+            return path
         else:
             raise Exception('Please install gnu tar (gtar) as it is a '
                             'mandatory requirement to use freezer.')
