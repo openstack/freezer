@@ -149,8 +149,8 @@ class QueuedThread(threading.Thread):
         try:
             super(QueuedThread, self).run()
         except Exception as e:
-            logging.exception(e)
             self.rich_queue.force_stop()
+            raise e
 
 
 def stream(read_function, read_function_kwargs,

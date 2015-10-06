@@ -21,6 +21,7 @@ Hudson (tjh@cryptsoft.com).
 Freezer Tar related functions
 """
 from freezer import utils
+from freezer.utils import get_executable_path
 
 
 class TarCommandBuilder:
@@ -161,4 +162,8 @@ def get_tar_flag_from_algo(compression):
         'bzip2': '-j',
         'xz': '-J',
     }
+    compression_exec = get_executable_path(compression)
+    if not compression_exec:
+        raise Exception("[*] Critical Error: [*] {0} executable not found ".
+                        format(compression))
     return algo.get(compression)

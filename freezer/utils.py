@@ -20,7 +20,6 @@ Hudson (tjh@cryptsoft.com).
 
 Freezer general utils functions
 """
-
 import logging
 import os
 import time
@@ -368,22 +367,37 @@ def openssl_path():
 
 
 def tar_path():
-    import winutils
-    if winutils.is_windows():
-        # windows bin
+    tar = (get_executable_path('tar') or get_executable_path('gtar') or
+           get_executable_path('gnutar'))
+    if not tar:
+        raise Exception('Please install gnu tar (gtar) as it is a '
+                        'mandatory requirement to use freezer.')
+    return tar
+
+
+def get_executable_path(binary):
+    """
+    This function returns the executable path of a given binary
+    if it is found in the system.
+    :param binary:
+    :type binary: str
+    :rtype: str
+    :return: Absoulte Path to the executable file
+    """
+    from winutils import is_windows
+    if is_windows():
         path_to_binaries = os.path.dirname(os.path.abspath(__file__))
-        return '{0}\\bin\\tar.exe'.format(path_to_binaries)
+        return '{0}\\bin\\{1}.exe'.format(path_to_binaries, binary)
+
     elif 'darwin' in sys.platform or 'bsd' in sys.platform:
-        # If freezer is being used under OSX, please install gnutar and
-        # rename the executable as gnutar
-        path = find_executable('gtar') or find_executable('gnutar')
-        if path:
-            return path
-        else:
-            raise Exception('Please install gnu tar (gtar) as it is a '
-                            'mandatory requirement to use freezer.')
+
+        binary_path = distspawn.find_executable(binary)
+        if binary_path is None:
+            binary_path = distspawn.find_executable(binary,
+                                                    path=':'.join(sys.path))
+            return binary_path
     else:
-        return find_executable('tar')
+        return distspawn.find_executable(binary)
 
 
 def alter_proxy(proxy):
