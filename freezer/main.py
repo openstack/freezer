@@ -37,7 +37,7 @@ from freezer.engine.tar import tar_engine
 from freezer import winutils
 
 # Initialize backup options
-from freezer.validator import Validator
+from freezer import validator
 
 
 def freezer_main(backup_args, arg_parse):
@@ -115,11 +115,10 @@ def freezer_main(backup_args, arg_parse):
     backup_args.__dict__['hostname_backup_name'] = "{0}_{1}".format(
         backup_args.hostname, backup_args.backup_name)
 
-    Validator.validate(backup_args)
+    validator.validate(backup_args)
 
     if backup_args.storage == "swift":
         options = utils.OpenstackOptions.create_from_env()
-        Validator.validate_env(options)
         identity_api_version = (backup_args.os_identity_api_version or
                                 options.identity_api_version)
         client_manager = ClientManager(

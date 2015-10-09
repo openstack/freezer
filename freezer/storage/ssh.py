@@ -66,18 +66,17 @@ class SshStorage(storage.Storage):
         self.ftp = self.ssh.open_sftp()
 
     def prepare(self):
-        if not self.is_ready():
-            self.mkdir_p(self.storage_directory)
+        self.mkdir_p(self.storage_directory)
 
     def get_backups(self):
         backup_names = self.ftp.listdir(self.storage_directory)
         backups = []
         for backup_name in backup_names:
-            backup_dir = utils.joined_path(self.storage_directory, backup_name)
+            backup_dir = utils.path_join(self.storage_directory, backup_name)
             timestamps = self.ftp.listdir(backup_dir)
             for timestamp in timestamps:
                 increments = self.ftp.listdir(
-                    utils.joined_path(backup_dir, timestamp))
+                    utils.path_join(backup_dir, timestamp))
                 backups.extend(storage.Backup.parse_backups(increments))
         return backups
 
@@ -85,18 +84,7 @@ class SshStorage(storage.Storage):
         pass
 
     def backup_dir(self, backup):
-        return "{0}{1}{2}".format(self._zero_backup_dir(backup),
-                                  os.sep, backup)
-
-    def _backup_dir(self, backup):
-        """
-        :param backup:
-        :type backup: freezer.storage.Backup
-        :return:
-        """
-        return "{0}{1}{2}".format(self.storage_directory,
-                                  os.sep,
-                                  backup.hostname_backup_name)
+        return utils.path_join(self._zero_backup_dir(backup), backup)
 
     def _zero_backup_dir(self, backup):
         """
@@ -104,28 +92,22 @@ class SshStorage(storage.Storage):
         :type backup: freezer.storage.Backup
         :return:
         """
-        return "{0}{1}{2}".format(self._backup_dir(backup.full_backup),
-                                  os.sep,
-                                  backup.full_backup.timestamp)
+        return utils.path_join(
+            self.storage_directory, backup.hostname_backup_name,
+            backup.full_backup.timestamp)
 
     def _is_dir(self, check_dir):
         return stat.S_IFMT(self.ftp.stat(check_dir).st_mode) == stat.S_IFDIR
 
-    def rm(self, path):
+    def _rm(self, path):
         files = self.ftp.listdir(path=path)
         for f in files:
-            filepath = os.path.join(path, f)
+            filepath = utils.path_join(path, f)
             if self._is_dir(filepath):
-                self.rm(filepath)
+                self._rm(filepath)
             else:
                 self.ftp.remove(filepath)
         self.ftp.rmdir(path)
-
-    def is_ready(self):
-        try:
-            return self._is_dir(self.storage_directory)
-        except IOError:
-            return False
 
     def mkdir_p(self, remote_directory):
         """Change to this directory, recursively making new folders if needed.
@@ -154,11 +136,11 @@ class SshStorage(storage.Storage):
         """
         utils.create_dir(self.work_dir)
         if backup.level == 0:
-            return "{0}{1}{2}".format(self.work_dir, os.sep, backup.tar())
+            return utils.path_join(self.work_dir, backup.tar())
         meta_backup = backup.full_backup.increments[backup.level - 1]
         zero_backup = self._zero_backup_dir(backup)
-        from_path = "{0}{1}{2}".format(zero_backup, os.sep, meta_backup.tar())
-        to_path = "{0}{1}{2}".format(self.work_dir, os.sep, meta_backup.tar())
+        from_path = utils.path_join(zero_backup, meta_backup.tar())
+        to_path = utils.path_join(self.work_dir, meta_backup.tar())
         if backup.level != 0:
             if os.path.exists(to_path):
                 os.remove(to_path)
@@ -167,7 +149,7 @@ class SshStorage(storage.Storage):
 
     def upload_meta_file(self, backup, meta_file):
         zero_backup = self._zero_backup_dir(backup)
-        to_path = "{0}{1}{2}".format(zero_backup, os.sep, backup.tar())
+        to_path = utils.path_join(zero_backup, backup.tar())
         logging.info("Ssh storage uploading {0} to {1}".format(meta_file,
                                                                to_path))
         self.ftp.put(meta_file, to_path)
@@ -177,7 +159,7 @@ class SshStorage(storage.Storage):
         :type backup: freezer.storage.Backup
         :return:
         """
-        self.rm(self._zero_backup_dir(backup))
+        self._rm(self._zero_backup_dir(backup))
 
     def backup_blocks(self, backup):
         self.init()

@@ -64,7 +64,7 @@ def backup_mode_sql_server(backup_opt_dict):
                 raise Exception('Please indicate a valid SQL Server instance')
 
     try:
-        stop_sql_server(backup_opt_dict)
+        stop_sql_server(backup_opt_dict.sql_server_instance)
         backup(backup_opt_dict, backup_opt_dict.storage,
                backup_opt_dict.engine)
     finally:
