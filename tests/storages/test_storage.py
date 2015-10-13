@@ -76,6 +76,10 @@ class TestBackup(unittest.TestCase):
         b = storage.Storage._find_previous_backup([backup], False, False, 3, 0)
         assert b == i2
 
+    def test_add_increment_raises(self):
+        backup = storage.Backup("name", 1234, level=3)
+        self.assertRaises(ValueError, backup.add_increment, None)
+
     def test_find_all(self):
         t = storage.Storage()
         t.get_backups = mock.Mock()
@@ -183,3 +187,19 @@ class TestBackup(unittest.TestCase):
         t.remove_backup.assert_any_call(r1)
         t.remove_backup.assert_any_call(r2)
         assert t.remove_backup.call_count == 2
+
+    def test_create_backup(self):
+        t = storage.Storage()
+        t.get_backups = mock.Mock()
+        t.get_backups.return_value = []
+        t._find_previous_backup = mock.Mock()
+        t._find_previous_backup.return_value = \
+            storage.Backup("host_backup", 3000, tar_meta=True)
+        t.create_backup("", True, 12, False, False)
+
+    def test_restart_always_level(self):
+        t = storage.Storage()
+        t.get_backups = mock.Mock()
+        t.get_backups.return_value = []
+        backup = storage.Backup("host_backup", 3000, tar_meta=True)
+        t._find_previous_backup([backup], False, None, None, 10)

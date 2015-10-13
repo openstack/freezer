@@ -146,16 +146,13 @@ class Storage(object):
         """:type : freezer.storage.Backup"""
         latest_update = incremental_backup.latest_update
         if max_level and max_level <= latest_update.level:
-            latest_update = None
+            return None
         elif always_level and latest_update.level >= always_level:
-            if latest_update.level > 0:
                 latest_update = \
                     incremental_backup.increments[latest_update.level - 1]
-            else:
-                latest_update = None
         elif restart_always_level and utils.DateTime.now().timestamp > \
                 latest_update.timestamp + restart_always_level * 86400:
-            latest_update = None
+            return None
         return latest_update
 
 
@@ -346,10 +343,6 @@ class BackupRepr:
         self.timestamp = timestamp
         self.level = level
         self.tar_meta = tar_meta
-
-    def repr(self):
-        return "_".join([self.hostname_backup_name, str(self.timestamp),
-                         str(self.level)])
 
     def backup(self, full_backup=None):
         return Backup(self.hostname_backup_name, self.timestamp,

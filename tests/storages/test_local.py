@@ -50,3 +50,8 @@ class TestLocalStorage(object):
         backup_dir, files_dir, work_dir = self.create_dirs(tmpdir)
         storage = local.LocalStorage(backup_dir, work_dir)
         storage.prepare()
+
+    def test_info(self, tmpdir):
+        backup_dir, files_dir, work_dir = self.create_dirs(tmpdir)
+        storage = local.LocalStorage(backup_dir, work_dir)
+        storage.info()

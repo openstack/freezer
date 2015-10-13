@@ -20,36 +20,34 @@ Hudson (tjh@cryptsoft.com).
 
 import os
 import stat
-import logging
 
 import paramiko
 
-from freezer.storage import storage
+from freezer.storage import fslike
+
 from freezer import utils
 
 
-class SshStorage(storage.Storage):
+class SshStorage(fslike.FsLikeStorage):
     """
     :type ftp: paramiko.SFTPClient
     """
     DEFAULT_CHUNK_SIZE = 10000000
 
-    def __init__(self, storage_directory, work_dir,
-                 ssh_key_path, remote_username, remote_ip,
-                 port, chunk_size=DEFAULT_CHUNK_SIZE):
+    def __init__(self, storage_directory, work_dir, ssh_key_path,
+                 remote_username, remote_ip, port,
+                 chunk_size=DEFAULT_CHUNK_SIZE):
         """
-        :param storage_directory: directory of storage
-        :type storage_directory: str
-        :return:
-        """
+            :param storage_directory: directory of storage
+            :type storage_directory: str
+            :return:
+            """
+        super(SshStorage, self).__init__(storage_directory, work_dir,
+                                         chunk_size)
         self.ssh_key_path = ssh_key_path
         self.remote_username = remote_username
         self.remote_ip = remote_ip
-        self.storage_directory = storage_directory
-        self.work_dir = work_dir
-        self.chunk_size = chunk_size
         self.port = port
-        # automatically add keys without requiring human intervention
         self.ssh = None
         self.ftp = None
         self.init()
@@ -65,125 +63,50 @@ class SshStorage(storage.Storage):
         self.ssh = ssh
         self.ftp = self.ssh.open_sftp()
 
-    def prepare(self):
-        self.mkdir_p(self.storage_directory)
-
-    def get_backups(self):
-        backup_names = self.ftp.listdir(self.storage_directory)
-        backups = []
-        for backup_name in backup_names:
-            backup_dir = utils.path_join(self.storage_directory, backup_name)
-            timestamps = self.ftp.listdir(backup_dir)
-            for timestamp in timestamps:
-                increments = self.ftp.listdir(
-                    utils.path_join(backup_dir, timestamp))
-                backups.extend(storage.Backup.parse_backups(increments))
-        return backups
-
-    def info(self):
-        pass
-
-    def backup_dir(self, backup):
-        return utils.path_join(self._zero_backup_dir(backup), backup)
-
-    def _zero_backup_dir(self, backup):
-        """
-        :param backup:
-        :type backup: freezer.storage.Backup
-        :return:
-        """
-        return utils.path_join(
-            self.storage_directory, backup.hostname_backup_name,
-            backup.full_backup.timestamp)
-
     def _is_dir(self, check_dir):
         return stat.S_IFMT(self.ftp.stat(check_dir).st_mode) == stat.S_IFDIR
 
-    def _rm(self, path):
+    def rmtree(self, path):
         files = self.ftp.listdir(path=path)
         for f in files:
             filepath = utils.path_join(path, f)
             if self._is_dir(filepath):
-                self._rm(filepath)
+                self.rmtree(filepath)
             else:
                 self.ftp.remove(filepath)
         self.ftp.rmdir(path)
 
-    def mkdir_p(self, remote_directory):
+    def create_dirs(self, path):
         """Change to this directory, recursively making new folders if needed.
         Returns True if any folders were created."""
-        if remote_directory == '/':
+        if path == '/':
             # absolute path so change directory to root
             self.ftp.chdir('/')
             return
-        if remote_directory == '':
+        if path == '':
             # top-level relative directory must exist
             return
         try:
-            self.ftp.chdir(remote_directory)  # sub-directory exists
+            self.ftp.chdir(path)  # sub-directory exists
         except IOError:
-            dirname, basename = os.path.split(remote_directory.rstrip('/'))
-            self.mkdir_p(dirname)  # make parent directories
+            dirname, basename = os.path.split(path.rstrip('/'))
+            self.create_dirs(dirname)  # make parent directories
             self.ftp.mkdir(basename)  # sub-directory missing, so created it
             self.ftp.chdir(basename)
             return True
 
-    def download_meta_file(self, backup):
-        """
-        :type backup: freezer.storage.Backup
-        :param backup:
-        :return:
-        """
-        utils.create_dir(self.work_dir)
-        if backup.level == 0:
-            return utils.path_join(self.work_dir, backup.tar())
-        meta_backup = backup.full_backup.increments[backup.level - 1]
-        zero_backup = self._zero_backup_dir(backup)
-        from_path = utils.path_join(zero_backup, meta_backup.tar())
-        to_path = utils.path_join(self.work_dir, meta_backup.tar())
-        if backup.level != 0:
-            if os.path.exists(to_path):
-                os.remove(to_path)
-            self.ftp.get(from_path, to_path)
-        return to_path
+    def get_file(self, from_path, to_path):
+        self.ftp.get(from_path, to_path)
 
-    def upload_meta_file(self, backup, meta_file):
-        zero_backup = self._zero_backup_dir(backup)
-        to_path = utils.path_join(zero_backup, backup.tar())
-        logging.info("Ssh storage uploading {0} to {1}".format(meta_file,
-                                                               to_path))
-        self.ftp.put(meta_file, to_path)
+    def put_file(self, from_path, to_path):
+        self.ftp.put(from_path, to_path)
 
-    def remove_backup(self, backup):
-        """
-        :type backup: freezer.storage.Backup
-        :return:
-        """
-        self._rm(self._zero_backup_dir(backup))
+    def listdir(self, directory):
+        return self.ftp.listdir(directory)
+
+    def open(self, filename, mode):
+        return self.ftp.open(filename, mode=mode)
 
     def backup_blocks(self, backup):
-        self.init()
-        filename = self.backup_dir(backup)
-        with self.ftp.open(filename, mode='rb') as backup_file:
-            while True:
-                chunk = backup_file.read(self.chunk_size)
-                if chunk == '':
-                    break
-                if len(chunk):
-                    yield chunk
-
-    def write_backup(self, rich_queue, backup):
-        """
-        Upload object on the remote swift server
-        :type rich_queue: freezer.streaming.RichQueue
-        :type backup: SwiftBackup
-        """
-        filename = self.backup_dir(backup)
-        self.mkdir_p(self._zero_backup_dir(backup))
-        logging.info("SSH write backup enter")
-
-        with self.ftp.open(filename, mode='wb',
-                           bufsize=self.chunk_size) as b_file:
-            logging.debug("SSH write backup getting chunk")
-            for message in rich_queue.get_messages():
-                b_file.write(message)
+        self.init()  # should recreate ssh for new process
+        super(SshStorage, self).backup_blocks(backup)

@@ -152,7 +152,7 @@ class TarCommandRestoreBuilder:
             openssl_cmd = "{openssl_path} enc -aes-256-cfb -pass file:{file}"\
                 .format(openssl_path=self.openssl_path,
                         file=self.encrypt_pass_file)
-            tar_command = '{0} | {1} '.format(openssl_cmd, tar_command)
+            tar_command = '{0} | {1}'.format(openssl_cmd, tar_command)
         return tar_command
 
 
