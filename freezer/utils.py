@@ -367,8 +367,8 @@ def openssl_path():
 
 
 def tar_path():
-    tar = (get_executable_path('tar') or get_executable_path('gtar') or
-           get_executable_path('gnutar'))
+    tar = (get_executable_path('gnutar') or get_executable_path('gtar')
+           or get_executable_path('tar'))
     if not tar:
         raise Exception('Please install gnu tar (gtar) as it is a '
                         'mandatory requirement to use freezer.')
@@ -391,11 +391,8 @@ def get_executable_path(binary):
 
     elif 'darwin' in sys.platform or 'bsd' in sys.platform:
 
-        binary_path = distspawn.find_executable(binary)
-        if binary_path is None:
-            binary_path = distspawn.find_executable(binary,
-                                                    path=':'.join(sys.path))
-            return binary_path
+        return (distspawn.find_executable(binary) or
+                distspawn.find_executable(binary, path=':'.join(sys.path)))
     else:
         return distspawn.find_executable(binary)
 
