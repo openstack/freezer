@@ -109,4 +109,4 @@ class SshStorage(fslike.FsLikeStorage):
 
     def backup_blocks(self, backup):
         self.init()  # should recreate ssh for new process
-        super(SshStorage, self).backup_blocks(backup)
+        return super(SshStorage, self).backup_blocks(backup)
