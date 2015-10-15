@@ -1,5 +1,4 @@
 from freezer import utils
-import pytest
 import datetime
 from commons import *
 

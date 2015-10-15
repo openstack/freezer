@@ -13,3 +13,5 @@ pymongo>=2.6.3,<3.0
 apscheduler
 # Not in global-requirements
 pep3143daemon
+paramiko>=1.13.0
+

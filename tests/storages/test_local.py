@@ -1,11 +1,10 @@
 import tempfile
 import shutil
-import pytest
 
 from freezer.storage import local
 from freezer import utils
 
-@pytest.mark.incremental
+
 class TestLocalStorage(object):
     BACKUP_DIR_PREFIX = "freezer_test_backup_dir"
     FILES_DIR_PREFIX = "freezer_test_files_dir"

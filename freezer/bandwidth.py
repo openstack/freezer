@@ -1,5 +1,5 @@
 import socket
-from time import time, sleep
+import time
 
 
 class ThrottledSocket(object):
@@ -15,15 +15,15 @@ class ThrottledSocket(object):
         return setattr(self._wrappedsock, attr, value)
 
     def recv(self, *args):
-        start = time()
+        start = time.time()
         buf = self._wrappedsock.recv(*args)
-        self._sleep(len(buf), self.download_limit, start, time())
+        self._sleep(len(buf), self.download_limit, start, time.time())
         return buf
 
     def sendall(self, *args):
-        start = time()
+        start = time.time()
         res = self._wrappedsock.send(*args)
-        self._sleep(res, self.upload_limit, start, time())
+        self._sleep(res, self.upload_limit, start, time.time())
 
     @staticmethod
     def _sleep_duration(transmitted, limit, start_time, end_time):
@@ -40,7 +40,7 @@ class ThrottledSocket(object):
                 start_time,
                 end_time)
             if sleep_duration > 0:
-                sleep(sleep_duration)
+                time.sleep(sleep_duration)
 
     def makefile(self, mode='r', bufsize=-1):
         return socket._fileobject(self, mode, bufsize)
