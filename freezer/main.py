@@ -195,4 +195,4 @@ def fail(exit_code, e, quiet, do_log=True):
         sys.stderr.write(msg)
     if do_log:
         logging.critical(msg)
-    sys.exit(exit_code)
+    return exit_code
