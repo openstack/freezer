@@ -49,13 +49,13 @@ class CommandFailed(Exception):
                 "stderr:\n%s" % (self.cmd, self.returncode,
                                  self.stdout, self.stderr))
 
+def execute_freezerc(args, must_fail=False, merge_stderr=False):
+    cmd_freezer = FREEZERC + " " + args
+    return execute(cmd_freezer, must_fail=must_fail, merge_stderr=merge_stderr)
 
 def execute(cmd, must_fail=False, merge_stderr=False):
     """Executes specified command for the given action."""
-    cmd_freezer = FREEZERC + " " + cmd
-    cmdlist = shlex.split(cmd_freezer.encode('utf-8'))
-    result = ''
-    result_err = ''
+    cmdlist = shlex.split(cmd.encode('utf-8'))
     stdout = subprocess.PIPE
     stderr = subprocess.STDOUT if merge_stderr else subprocess.PIPE
     proc = subprocess.Popen(cmdlist, stdout=stdout, stderr=stderr)
@@ -280,9 +280,9 @@ class TestFS(unittest.TestCase):
     def do_backup_and_restore_with_check(self, backup_args, restore_args):
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
-        result = execute(self.dict_to_args(backup_args))
+        result = execute_freezerc(self.dict_to_args(backup_args))
         self.assertIsNotNone(result)
-        result = execute(self.dict_to_args(restore_args))
+        result = execute_freezerc(self.dict_to_args(restore_args))
         self.assertIsNotNone(result)
         self.assertTreesMatch()
         return True
