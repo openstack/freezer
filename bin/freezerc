@@ -30,17 +30,24 @@ Freezer offer the following features:
 [*] Flexible Incremental backup policy
 '''
 
+import sys
+
 from freezer.main import freezer_main, fail
 from freezer.arguments import backup_arguments
 
 
-if __name__ == '__main__':
+def main():
+    """Freezerc binary main execution"""
+
     (backup_args, opt_args) = backup_arguments()
     try:
         freezer_main(backup_args, opt_args)
     except ValueError as err:
-        fail(1, err, backup_args.quiet)
+        return fail(1, err, backup_args.quiet)
     except ImportError as err:
-        fail(1, err, backup_args.quiet)
+        return fail(1, err, backup_args.quiet)
     except Exception as err:
-        fail(1, err, backup_args.quiet)
+        return fail(1, err, backup_args.quiet)
+
+if __name__ == '__main__':
+    sys.exit(main())

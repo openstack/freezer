@@ -1,127 +1,21 @@
-"""Freezer Setup Python file.
-"""
-from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
-import os
-import io
+#(c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+#
+#Licensed under the Apache License, Version 2.0 (the "License");
+#you may not use this file except in compliance with the License.
+#You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+#Unless required by applicable law or agreed to in writing, software
+#distributed under the License is distributed on an "AS IS" BASIS,
+#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#See the License for the specific language governing permissions and
+#limitations under the License.
 
-here = os.path.abspath(os.path.dirname(__file__))
-
-
-class PyTest(TestCommand):
-    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = []
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        import sys
-        errno = pytest.main(self.pytest_args)
-        sys.exit(errno)
-
-
-def read(*filenames, **kwargs):
-    encoding = kwargs.get('encoding', 'utf-8')
-    sep = kwargs.get('sep', '\n')
-    buf = []
-    for filename in filenames:
-        with io.open(filename, encoding=encoding) as f:
-            buf.append(f.read())
-    return sep.join(buf)
-
+from setuptools import setup
 
 setup(
-    name='freezer',
-    version='1.1.3',
-    url='https://github.com/stackforge/freezer',
-    license='Apache Software License',
-    author='Fausto Marzi, Ryszard Chojnacki, Emil Dimitrov',
-    author_email='fausto.marzi@hp.com, ryszard@hp.com, edimitrov@hp.com',
-    maintainer='Fausto Marzi, Ryszard Chojnacki, Emil Dimitrov',
-    maintainer_email='fausto.marzi@hp.com, ryszard@hp.com, edimitrov@hp.com',
-    tests_require=['pytest'],
-    description=('OpenStack incremental backup and restore automation tool '
-                 'for file system, MongoDB, MySQL. LVM snapshot and '
-                 'encryption support'),
-    long_description=open('README.rst').read(),
-    keywords="OpenStack Swift backup restore mongodb mysql lvm snapshot",
-    packages=find_packages(),
-    platforms='Linux, *BSD, OSX',
-    cmdclass={'test': PyTest},
-    scripts=['bin/freezerc', 'freezer/bin/trickle',
-             'freezer/bin/trickle-overload.so'],
-    include_package_data=True,
-    classifiers=[
-        'Programming Language :: Python',
-        'Development Status :: 5 - Production/Stable',
-        'Natural Language :: English',
-        'Environment :: OpenStack',
-        'Intended Audience :: Developers',
-        'Intended Audience :: Financial and Insurance Industry',
-        'Intended Audience :: Information Technology',
-        'Intended Audience :: System Administrators',
-        'Intended Audience :: Telecommunications Industry',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: MacOS',
-        'Operating System :: POSIX :: BSD :: FreeBSD',
-        'Operating System :: POSIX :: BSD :: NetBSD',
-        'Operating System :: POSIX :: BSD :: OpenBSD',
-        'Operating System :: POSIX :: Linux',
-        'Operating System :: Unix',
-        'Topic :: System :: Archiving :: Backup',
-        'Topic :: System :: Archiving :: Compression',
-        'Topic :: System :: Archiving',
-    ],
-    install_requires=[
-        'python-swiftclient>=2.2.0,<2.5.0',
-        'python-keystoneclient>=1.2.0,<1.4.0',
-        'python-cinderclient>=1.1.0,<1.2.0',
-        'python-glanceclient>=0.15.0,<0.18.0',
-        'python-novaclient>=2.22.0,<2.24.0',
-        'python-openstackclient>=1.0.3,<1.1.0',
-        'oslo.utils>=1.4.0,!=1.4.1,<1.5.0',
-        'oslo.i18n>=1.5.0,<1.6.0',
-        'PyMySQL>=0.6.2',
-        'pymongo>=2.6.3,<3.0',
-        'apscheduler',
-        'pep3143daemon',
-        'paramiko>=1.13.0'],
-    extras_require={
-        'testing': ['pytest', 'flake8', 'pylint>=1.3.1'],
-    },
-    entry_points={
-        'console_scripts': [
-            'freezer-scheduler=freezer.scheduler.freezer_scheduler:main'
-        ]
-    },
-    data_files=[('freezer/scripts', ['freezer/scripts/vss.ps1']),
-                ('freezer/bin', ['freezer/bin/bunzip2.exe']),
-                ('freezer/bin', ['freezer/bin/bzcat.exe']),
-                ('freezer/bin', ['freezer/bin/bzip2.exe']),
-                ('freezer/bin', ['freezer/bin/bzip2_LICENSE']),
-                ('freezer/bin', ['freezer/bin/bzip2recover.exe']),
-                ('freezer/bin', ['freezer/bin/find.exe']),
-                ('freezer/bin', ['freezer/bin/LICENSE']),
-                ('freezer/bin', ['freezer/bin/gzip.exe']),
-                ('freezer/bin', ['freezer/bin/tar.exe']),
-                ('freezer/bin', ['freezer/bin/xz.exe']),
-                ('freezer/bin', ['freezer/bin/cygwin1.dll']),
-                ('freezer/bin', ['freezer/bin/cygintl-8.dll']),
-                ('freezer/bin', ['freezer/bin/cygiconv-2.dll']),
-                ('freezer/bin', ['freezer/bin/cygbz2-1.dll']),
-                ('freezer/bin', ['freezer/bin/bzip2-1.0.6.tar.gz']),
-                ('freezer/bin', ['freezer/bin/gzip-1.6-1.src.tar']),
-                ('freezer/bin', ['freezer/bin/tar-1.27.1.tar.xz']),
-                ('freezer/bin', ['freezer/bin/findutils-4.5.12.tar.gz']),
-                ('freezer/bin', ['freezer/bin/xz-5.2.1.tar.gz']),
-                ('freezer/bin', ['freezer/bin/trickle']),
-                ('freezer/bin', ['freezer/bin/trickle-overload.so'])]
+    setup_requires=['pbr'],
+    pbr=True,
 )
+
