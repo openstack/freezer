@@ -30,7 +30,6 @@ from freezer import (restore, backup)
 from freezer.job import Job, InfoJob, AdminJob, BackupJob, RestoreJob, create_job
 import logging
 from mock import patch, Mock
-import pytest
 import unittest
 
 

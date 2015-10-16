@@ -22,8 +22,6 @@ import subprocess
 import os
 import logging
 
-import pytest
-
 
 class TestVss:
 

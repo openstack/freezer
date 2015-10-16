@@ -19,14 +19,14 @@ Hudson (tjh@cryptsoft.com).
 ========================================================================
 """
 
-import sys
 import datetime
+import sys
 import time
 
-from freezer import utils
 from freezer import backup
 from freezer import exec_cmd
 from freezer import restore
+from freezer import utils
 
 import logging
 

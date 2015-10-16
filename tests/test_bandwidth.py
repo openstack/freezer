@@ -1,6 +1,5 @@
 from freezer.bandwidth import ThrottledSocket, monkeypatch_bandwidth
 from commons import FakeSocket
-import pytest
 
 
 class TestBandwidth:

@@ -21,8 +21,6 @@ from freezer import winutils
 from commons import *
 import logging
 
-import pytest
-
 
 class TestWinutils:
 

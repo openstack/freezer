@@ -24,7 +24,6 @@ from commons import FakeSys
 
 from freezer import job
 from freezer.main import freezer_main
-import pytest
 import sys
 
 '''
