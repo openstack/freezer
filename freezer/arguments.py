@@ -309,8 +309,8 @@ def backup_arguments(args_dict={}):
     arg_parser.add_argument(
         '-M', '--max-segment-size', action='store',
         help="Set the maximum file chunk size in bytes to upload to swift\
-        Default 67108864 bytes (64MB)",
-        dest='max_segment_size', type=int, default=67108864)
+        Default 33554432 bytes (32MB)",
+        dest='max_segment_size', type=int, default=33554432)
     arg_parser.add_argument(
         '--restore-abs-path', action='store',
         help=('Set the absolute path where you want your data restored. '

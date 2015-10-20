@@ -56,34 +56,6 @@ class TarBackupEngine(engine.BackupEngine):
         """
         return self._main_storage
 
-    @staticmethod
-    def reader(rich_queue, read_pipe, size=DEFAULT_CHUNK_SIZE):
-        """
-        :param rich_queue:
-        :type rich_queue: freezer.streaming.RichQueue
-        :type
-        :return:
-        """
-        while True:
-            tar_chunk = read_pipe.read(size)
-            if tar_chunk == '':
-                break
-            if tar_chunk:
-                rich_queue.put(tar_chunk)
-        rich_queue.finish()
-
-    @staticmethod
-    def writer(rich_queue, write_pipe):
-        """
-        :param rich_queue:
-        :type rich_queue: freezer.streaming.RichQueue
-        :type
-        :return:
-        """
-        for message in rich_queue.get_messages():
-            logging.debug("Write next chunk to tar stdin")
-            write_pipe.write(message)
-
     def post_backup(self, backup, manifest):
         self.main_storage.upload_meta_file(backup, manifest)
 
@@ -102,19 +74,13 @@ class TarBackupEngine(engine.BackupEngine):
 
         logging.info("Execution command: \n{}".format(command))
 
-        tar_queue = streaming.RichQueue()
         tar_process = subprocess.Popen(command, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, shell=True)
-
-        reader = threading.Thread(target=self.reader,
-                                  args=(tar_queue, tar_process.stdout))
-        reader.daemon = True
-        reader.start()
-        while tar_queue.has_more():
-            try:
-                yield tar_queue.get()
-            except streaming.Wait:
-                pass
+        read_pipe = tar_process.stdout
+        tar_chunk = read_pipe.read(self.chunk_size)
+        while tar_chunk:
+            yield tar_chunk
+            tar_chunk = read_pipe.read(self.chunk_size)
         tar_err = tar_process.communicate()[1]
         if 'error' in tar_err.lower():
             logging.exception('[*] Backup error: {0}'.format(tar_err))
