@@ -13,21 +13,16 @@
 # limitations under the License.
 
 from commons import (FakeDisableFileSystemRedirection, FakeSubProcess,
-    FakeLogging, BackupOpt1, Os, FakeSubProcess3, FakeSubProcess6,
-    fake_create_subprocess, fake_create_subprocess2)
+    FakeSubProcess3, FakeSubProcess6)
 from freezer import vss
 from freezer import winutils
-from freezer import utils
 import subprocess
-import os
-import logging
 
 
 class TestVss:
 
     def test_vss_create_shadow_copy(self, monkeypatch):
         fake_disable_redirection = FakeDisableFileSystemRedirection()
-        fakelogging = FakeLogging()
         fakesubprocess = FakeSubProcess()
         fakesubprocesspopen = fakesubprocess.Popen()
 
@@ -44,8 +39,6 @@ class TestVss:
             winutils.DisableFileSystemRedirection, '__exit__',
             fake_disable_redirection.__exit__)
 
-        monkeypatch.setattr(logging, 'info', fakelogging.info)
-
         assert vss.vss_create_shadow_copy('C:\\') is not False
 
         fakesubprocess = FakeSubProcess3()
@@ -60,9 +53,6 @@ class TestVss:
         pytest.raises(Exception, vss.vss_create_shadow_copy('C:\\'))
 
     def test_vss_delete_shadow_copy(self, monkeypatch):
-        fakelogging = FakeLogging()
-        monkeypatch.setattr(logging, 'info', fakelogging.info)
-
         fake_disable_redirection = FakeDisableFileSystemRedirection()
         monkeypatch.setattr(
             winutils.DisableFileSystemRedirection, '__enter__',

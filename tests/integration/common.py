@@ -62,9 +62,9 @@ def execute(cmd, must_fail=False, merge_stderr=False):
     result, result_err = proc.communicate()
 
     if not must_fail and proc.returncode != 0:
-        raise CommandFailed(proc.returncode, cmd_freezer, result, result_err)
+        raise CommandFailed(proc.returncode, cmd, result, result_err)
     if must_fail and proc.returncode == 0:
-        raise CommandFailed(proc.returncode, cmd_freezer, result, result_err)
+        raise CommandFailed(proc.returncode, cmd, result, result_err)
     return result
 
 

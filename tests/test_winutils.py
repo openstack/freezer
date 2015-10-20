@@ -71,7 +71,6 @@ class TestWinutils:
     def test_start_sql_server(self, monkeypatch):
         fake_disable_redirection = FakeDisableFileSystemRedirection()
         backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
         fakesubprocess = FakeSubProcess()
         fakesubprocesspopen = fakesubprocess.Popen()
 
@@ -86,8 +85,6 @@ class TestWinutils:
         monkeypatch.setattr(
             winutils.DisableFileSystemRedirection, '__exit__',
             fake_disable_redirection.__exit__)
-
-        monkeypatch.setattr(logging, 'info', fakelogging.info)
 
         assert winutils.start_sql_server(backup_opt) is not False
 
@@ -107,7 +104,6 @@ class TestWinutils:
     def test_stop_sql_server(self, monkeypatch):
         fake_disable_redirection = FakeDisableFileSystemRedirection()
         backup_opt = BackupOpt1()
-        fakelogging = FakeLogging()
         fakesubprocess = FakeSubProcess()
         fakesubprocesspopen = fakesubprocess.Popen()
 
@@ -122,8 +118,6 @@ class TestWinutils:
         monkeypatch.setattr(
             winutils.DisableFileSystemRedirection, '__exit__',
             fake_disable_redirection.__exit__)
-
-        monkeypatch.setattr(logging, 'info', fakelogging.info)
 
         assert winutils.start_sql_server(
             backup_opt.sql_server_instance) is not False

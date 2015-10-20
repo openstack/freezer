@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 from mock import MagicMock
-import sys
 
 import swiftclient
 import multiprocessing
 import subprocess
 import time
 import os
-import pymysql as MySQLdb
 import pymongo
 import re
 from glanceclient.common.utils import IterableWithLength
@@ -23,45 +21,9 @@ os.environ['OS_USERNAME'] = 'testusername'
 os.environ['OS_TENANT_NAME'] = 'testtenantename'
 
 
-class FakeLogging:
-
-    def __init__(self):
-        return None
-
-    def __call__(self, *args, **kwargs):
-        return True
-
-    @classmethod
-    def logging(cls, opt1=True):
-        return True
-
-    @classmethod
-    def info(cls, opt1=True):
-        return True
-
-    @classmethod
-    def warning(cls, opt1=True):
-        return True
-
-    @classmethod
-    def critical(cls, opt1=True):
-        return True
-
-    @classmethod
-    def exception(cls, opt1=True):
-        return True
-
-    @classmethod
-    def error(cls, opt1=True):
-        return True
-
-
 class FakeBackup:
     def __init__(self):
         return None
-
-    def fake_backup_mode_fs(self, *args, **kwargs):
-        return True
 
     def fake_backup_mode_mongo(self, *args, **kwargs):
         return True
@@ -317,7 +279,6 @@ class BackupOpt1:
         self.dereference_symlink = 'none'
         self.mysql_conf = '/tmp/freezer-test-conf-file'
         self.backup_media = 'fs'
-        self.mysql_db_inst = FakeMySQLdb()
         self.lvm_auto_snap = '/dev/null'
         self.lvm_volgroup = 'testgroup'
         self.lvm_srcvol = 'testvol'
@@ -355,23 +316,7 @@ class BackupOpt1:
         self.always_level = '20'
         self.remove_from_date = '2014-12-03T23:23:23'
         self.restart_always_level = 100000
-        self.remote_match_backup = [
-            'test-hostname_test-backup-name_1234567_0',
-            'test-hostname_test-backup-name_1234568_1',
-            'test-hostname_test-backup-name_1234569_2',
-            'test-hostname_test-backup-name_1234570_3',
-            'test-hostname_test-backup-name_1234571_4',
-            'test-hostname_test-backup-name_1234572_5',
-            'tar_metadata_test-hostname_test-backup-name_1234572_5',
-            'tar_metadata_test-hostname_test-backup-name_1234571_4',
-            'tar_metadata_test-hostname_test-backup-name_1234570_3',
-            'tar_metadata_test-hostname_test-backup-name_1234569_2',
-            'tar_metadata_test-hostname_test-backup-name_1234568_1',
-            'tar_metadata_test-hostname_test-backup-name_1234567_0']
         self.restore_abs_path = '/tmp'
-        self.containers_list = [
-            {'name' : 'testcontainer1', 'bytes' : 123423, 'count' : 10}
-        ]
         self.list_containers = False
         self.list_objects = False
         self.restore_from_date = '2014-12-03T23:23:23'
@@ -411,39 +356,6 @@ class BackupOpt1:
 
         self.client_manager.get_nova = Mock(return_value=nova_client)
         self.command = None
-
-
-class FakeMySQLdb:
-
-    def __init__(self):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        return self
-
-    @classmethod
-    def connect(cls, host=True, user=True, passwd=True, port=True):
-            return cls
-
-    @classmethod
-    def cursor(cls):
-        return cls
-
-    @classmethod
-    def execute(cls, string=str):
-        return cls
-
-    @classmethod
-    def close(cls):
-        return cls
-
-    @classmethod
-    def commit(cls):
-        return cls
-
-    @classmethod
-    def close(cls):
-        return True
 
 
 class Os:
@@ -555,75 +467,6 @@ class Os:
         raise Exception
 
 
-def fake_get_match_backup(self, backup_opt):
-    #backup_opt = BackupOpt1()
-    backup_opt.remote_match_backup = None
-    return backup_opt
-
-
-class FakeSwift:
-
-    def __init__(self):
-        pass
-
-    def fake_show_containers(self, backup_opt):
-        return True
-
-    def fake_show_objects(self, backup_opt):
-        return True
-
-    def fake_check_container_existance(self, *args, **kwargs):
-        return {'main_container': True, 'container_segments': True}
-
-    def fake_check_container_existance1(self, *args, **kwargs):
-        return {'main_container': False, 'container_segments': False}
-
-    def fake_get_container_content(self, backup_opt):
-        return backup_opt
-
-    def remove_obj_older_than(self, backup_opt):
-        return backup_opt
-
-
-class FakeUtils:
-
-    def __init__(self):
-        return None
-
-    def fake_set_backup_level(self,backup_opt, manifest_meta):
-        return backup_opt, manifest_meta
-
-    def fake_set_backup_level_fs(self, backup_opt, manifest_meta):
-        #backup_opt = BackupOpt1()
-        manifest_meta = {}
-        backup_opt.mode = 'fs'
-        return backup_opt, manifest_meta
-
-    def fake_set_backup_level_mongo(self, backup_opt, manifest_meta):
-        #backup_opt = BackupOpt1()
-        manifest_meta = {}
-        backup_opt.mode = 'mongo'
-        return backup_opt, manifest_meta
-
-    def fake_set_backup_level_mysql(self, backup_opt, manifest_meta):
-        #backup_opt = BackupOpt1()
-        manifest_meta = {}
-        backup_opt.mode = 'mysql'
-        return backup_opt, manifest_meta
-
-    def fake_set_backup_level_none(self, backup_opt, manifest_meta):
-        #backup_opt = BackupOpt1()
-        manifest_meta = {}
-        backup_opt.mode = None
-        return backup_opt, manifest_meta
-
-    def fake_create_subprocess_err(self, cmd):
-        return ['','some err']
-
-    def fake_create_subprocess_raise(self, cmd):
-        raise Exception('')
-
-
 class FakeSocket:
     def __init__(self):
         pass
@@ -635,48 +478,6 @@ class FakeSocket:
         raise Exception("fake send")
 
 
-class FakeJob:
-    def __init__(self, conf_dict):
-        self.conf = conf_dict
-
-    def execute(self):
-        return
-
-
-def fake_create_job(conf):
-    return FakeJob(conf)
-
-
-class FakeVss:
-
-    def __init__(self):
-        return None
-
-    @classmethod
-    def vss_create_shadow_copy(self, volume):
-        return 'ShadowID: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
-
-    @classmethod
-    def vss_create_shadow_copy_error(self, volume):
-        return 'ShadowID: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', 'error'
-
-    @classmethod
-    def vss_get_shadow_copy(self, shadow_id):
-        return 'Shadow Copy Volume: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
-
-    @classmethod
-    def vss_get_shadow_copy_error(self, shadow_id):
-        return 'Shadow Copy Volume: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', ''
-
-    @classmethod
-    def vss_delete_shadow_copy(self, shadow_id):
-        return True
-
-    @classmethod
-    def vss_delete_shadow_copy_error(self, shadow_id):
-        return '', 'error'
-
-
 class FakeDisableFileSystemRedirection:
     success = True
 
@@ -686,24 +487,3 @@ class FakeDisableFileSystemRedirection:
     def __exit__(self, type, value, traceback):
         if self.success:
             return True
-
-
-def fake_create_subprocess(cmd):
-    return True, ''
-
-
-def fake_create_subprocess2(cmd):
-    return True, 'Error'
-
-class FakeSys:
-
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def fake_sys_argv():
-        return ['', '', '']
-
-    # @staticmethod
-    def fake_sys_exit(self, status_code):
-        raise SystemExit(status_code)
