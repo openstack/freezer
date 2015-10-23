@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Fixed bug on setup.cfg and added author and changelog
 * Fixed and improved tox.ini, added subunit as dep
 * Update .gitreview for new namespace
 * fix integration tests
