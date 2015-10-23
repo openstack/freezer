@@ -28,11 +28,7 @@ import tempfile
 import unittest
 import paramiko
 
-INTEGRATION_DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_DIR = os.path.normpath(os.path.join(INTEGRATION_DIR, '..'))
-COMMON_DIR = os.path.normpath(os.path.join(TEST_DIR, '..'))
-FREEZER_BIN_DIR = os.path.normpath(os.path.join(COMMON_DIR, 'bin'))
-FREEZERC = os.path.normpath(os.path.join(FREEZER_BIN_DIR, 'freezerc '))
+FREEZERC = distutils.spawn.find_executable('freezerc')
 
 class CommandFailed(Exception):
 

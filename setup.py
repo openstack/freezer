@@ -13,9 +13,27 @@
 #limitations under the License.
 
 from setuptools import setup
+import sys
+import subprocess
+
+# All this Machinery unfortunately is needed to support win32 platform.
+# We follow the advice from pbr as:
+# Note that we do nott support the easy_install aspects of setuptools:
+# while we depend on setup_requires, for any install_requires we recommend
+# that they be installed prior to running setup.py install - either by hand,
+# or by using an install tool such as pip.
+install_requires = ''
+if sys.platform.startswith('linux'):
+    install_requires = 'pep3143daemon'
+elif sys.platform.startswith('win32'):
+    install_requires = 'pywin32'
+
+subprocess.call(['easy_install', 'pip'])
+if install_requires:
+  subprocess.call(['pip', 'install', install_requires])
 
 setup(
-    setup_requires=['pbr>=0.6,!=0.7,<1.0'],
-    pbr=True,
+    setup_requires='pbr',
+    pbr=True
 )
 
