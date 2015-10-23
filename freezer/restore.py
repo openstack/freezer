@@ -108,7 +108,7 @@ class RestoreOs:
         logging.info("[*] Deleting temporary image")
         self.client_manager.get_glance().images.delete(image)
 
-    def restore_nova(self, restore_from_timestamp, instance_id):
+    def restore_nova(self, instance_id, restore_from_timestamp):
         """
         :param restore_from_timestamp:
         :type restore_from_timestamp: int
@@ -117,6 +117,6 @@ class RestoreOs:
         """
         (info, image) = self._create_image(instance_id, restore_from_timestamp)
         nova = self.client_manager.get_nova()
-        flavor = nova.flavors.get(info['x-object-meta-tenant-id'])
+        flavor = nova.flavors.get(info['x-object-meta-flavor-id'])
         logging.info("[*] Creation an instance")
         nova.servers.create(info['x-object-meta-name'], image, flavor)

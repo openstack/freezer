@@ -164,7 +164,7 @@ class SwiftStorage(storage.Storage):
     def add_stream(self, stream, package_name, headers=None):
         i = 0
         for el in stream:
-            self.upload_chunk("{0}/{1}".format(package_name, "%08d" % i), el)
+            self.upload_chunk(el, "{0}/{1}".format(package_name, "%08d" % i))
             i += 1
         if not headers:
             headers = {}

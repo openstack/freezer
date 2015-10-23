@@ -200,17 +200,22 @@ class BackupOs:
             time.sleep(5)
             instance = nova.servers.get(instance)
 
-        image = instance.create_image("snapshot_of_%s" % instance_id)
-        image = glance.images.get(image)
+        image_id = nova.servers.create_image(instance,
+                                             "snapshot_of_%s" % instance_id)
+
+        image = glance.images.get(image_id)
         while image.status != 'active':
             time.sleep(5)
-            image = glance.images.get(image)
+            try:
+                image = glance.images.get(image_id)
+            except Exception as e:
+                logging.error(e)
 
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(instance_id, utils.DateTime.now().timestamp)
         logging.info("[*] Uploading image to swift")
         headers = {"x-object-meta-name": instance._info['name'],
-                   "x-object-meta-tenant_id": instance._info['tenant_id']}
+                   "x-object-meta-flavor-id": instance._info['flavor']['id']}
         self.storage.add_stream(stream, package, headers)
         logging.info("[*] Deleting temporary image")
         glance.images.delete(image)

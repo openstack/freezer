@@ -249,7 +249,7 @@ class FakeSwiftClient:
 
             def get_object(self, *args, **kwargs):
                 return [{'x-object-meta-length': "123",
-                         'x-object-meta-tenant-id': "12",
+                         'x-object-meta-flavor-id': "12",
                          'x-object-meta-name': "name"}, "abc"]
 
 

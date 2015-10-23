@@ -22,6 +22,7 @@ class ClientManager:
         """
         Creates manager of connections to swift, nova, glance and cinder
         :param options: OpenstackOptions
+        :type options: freezer.utils.OpenstackOptions
         :param insecure:
         :param swift_auth_version:
         :param dry_run:
@@ -136,7 +137,8 @@ class ClientManager:
                   endpoint_type=options.endpoint_type,
                   force_auth=False))
 
-        self.glance = gclient.Client(endpoint=endpoint, token=token)
+        self.glance = gclient.Client(version="1",
+                                     endpoint=endpoint, token=token)
         return self.glance
 
     def create_nova(self):
@@ -152,10 +154,8 @@ class ClientManager:
             username=options.user_name,
             api_key=options.password,
             project_id=options.tenant_name,
-            project_name=options.project_name,
             auth_url=options.auth_url,
             region_name=options.region_name,
-            endpoint_type=options.endpoint_type,
             insecure=self.insecure)
 
         return self.nova

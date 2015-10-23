@@ -4,7 +4,8 @@ def validate(conf):
             'no-incremental option is not compatible '
             'with backup level options')
 
-    if conf.action == "restore" and not conf.restore_abs_path:
+    if conf.action == "restore" and not conf.restore_abs_path and \
+            not conf.nova_inst_id:
         raise Exception("Please provide restore_abs_path")
 
     if conf.restore_abs_path and not conf.action == "restore":

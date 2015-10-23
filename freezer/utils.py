@@ -309,8 +309,8 @@ class ReSizeStream:
         return self
 
     def next(self):
-        logging.info("Transmitted (%s) of (%s)" % (self.transmitted,
-                                                   self.length))
+        logging.info("Transmitted {0} of {1}".format(self.transmitted,
+                                                     self.length))
         chunk_size = self.chunk_size
         if len(self.reminder) > chunk_size:
             result = self.reminder[:chunk_size]
