@@ -367,6 +367,12 @@ def openssl_path():
 
 
 def tar_path():
+    """This function returns tar binary path"""
+    from winutils import is_windows
+    if is_windows():
+        path_to_binaries = os.path.dirname(os.path.abspath(__file__))
+        return '{0}\\bin\\tar.exe'.format(path_to_binaries)
+
     tar = (get_executable_path('gnutar') or get_executable_path('gtar')
            or get_executable_path('tar'))
     if not tar:

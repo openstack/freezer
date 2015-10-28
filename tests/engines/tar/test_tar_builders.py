@@ -47,9 +47,9 @@ class TestTarCommandBuilder(unittest.TestCase):
         self.assertEquals(
             self.builder.build(),
             'gnutar -c -z --incremental --unlink-first --ignore-zeros '
-            '--force-local --hard-dereference '
-            '--listed-incremental=listed-file.tar --exclude="excluded_files"'
-            ' . | openssl enc -aes-256-cfb -pass file:encrypt_pass_file')
+            '--hard-dereference --listed-incremental=listed-file.tar '
+            '--exclude="excluded_files" . '
+            '| openssl enc -aes-256-cfb -pass file:encrypt_pass_file')
 
 
 class TestTarCommandRestoreBuilder(unittest.TestCase):
@@ -83,9 +83,8 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
         self.builder.set_encryption("encrypt_pass_file", "openssl")
         self.assertEquals(
             self.builder.build(),
-            'openssl enc -aes-256-cfb -pass file:encrypt_pass_file | '
-            'gnutar -x -z --incremental --unlink-first --ignore-zeros '
-            '-force-local')
+            'openssl enc -aes-256-cfb -pass file:encrypt_pass_file '
+            '| gnutar -x -z --incremental --unlink-first --ignore-zeros')
 
     def test_get_tar_flag_from_algo(self):
         assert tar_builders.get_tar_flag_from_algo('gzip') == '-z'

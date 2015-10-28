@@ -37,7 +37,7 @@ class TarCommandBuilder:
     # local windows template
     WINDOWS_TEMPLATE = (
         "{gnutar_path} -c {algo} --incremental --unlink-first "
-        "--ignore-zeros --force-local")
+        "--ignore-zeros")
 
     LISTED_TEMPLATE = "{tar_command} --listed-incremental={listed_incremental}"
 
@@ -110,7 +110,7 @@ class TarCommandBuilder:
 
 class TarCommandRestoreBuilder:
     WINDOWS_TEMPLATE = '{0} -x {1} --incremental --unlink-first ' \
-        '--ignore-zeros -force-local'
+        '--ignore-zeros'
     DRY_RUN_TEMPLATE = '{0} {1} --incremental --list ' \
         '--ignore-zeros --warning=none'
     UNIX_TEMPLATE = '{0} {1} --incremental --extract --unlink-first ' \
