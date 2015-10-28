@@ -35,16 +35,8 @@ import unittest
 
 class TestJob:
 
-
     def do_monkeypatch(self, monkeypatch):
-        fakelogging = FakeLogging()
-        self.fakeswift = fakeswift = FakeSwift()
-        self.fakeutils = FakeUtils()
         self.fakebackup = FakeBackup()
-        monkeypatch.setattr(logging, 'critical', fakelogging.critical)
-        monkeypatch.setattr(logging, 'warning', fakelogging.warning)
-        monkeypatch.setattr(logging, 'exception', fakelogging.exception)
-        monkeypatch.setattr(logging, 'error', fakelogging.error)
 
     def test_execute(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
@@ -123,17 +115,14 @@ class TestExecJob(TestJob):
         self.mock_popen.return_value.communicate = Mock()
         self.mock_popen.return_value.communicate.return_value = ['some stderr']
 
-
     def tearDown(self):
         self.popen.stop()
-
 
     def test_execute_nothing_to_do(self, monkeypatch):
         self.do_monkeypatch(monkeypatch)
         backup_opt = BackupOpt1()
         job = ExecJob(backup_opt)
         assert job.execute() is False
-
 
     def test_execute_script(self, monkeypatch):
         self.setUp()
@@ -144,7 +133,6 @@ class TestExecJob(TestJob):
         job = ExecJob(backup_opt)
         assert job.execute() is True
         self.tearDown()
-
 
     def test_execute_raise(self, monkeypatch):
         self.setUp()

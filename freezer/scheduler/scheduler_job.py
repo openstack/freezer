@@ -42,11 +42,7 @@ class StopState(object):
 
     @staticmethod
     def abort(job, doc):
-        job.job_doc = doc
-        job.event = Job.NO_EVENT
-        job.job_doc_status = Job.STOP_STATUS
-        job.scheduler.update_job(job.id, job.job_doc)
-        return Job.NO_EVENT
+        return StopState.stop(job, doc)
 
     @staticmethod
     def start(job, doc):

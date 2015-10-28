@@ -322,7 +322,8 @@ def backup_arguments(args_dict={}):
         from. If you want to restore data in the same host where the backup
         was executed just type from your shell: "$ hostname" and the output is
         the value that needs to be passed to this option. Mandatory with
-        Restore Default False.''', dest='restore_from_host', default=False)
+        Restore Default False. (Deprecated use "hostname" instead) ''',
+        dest='hostname', default=False)
     arg_parser.add_argument(
         '--restore-from-date', action='store',
         help='''Set the absolute path where you want your data restored.

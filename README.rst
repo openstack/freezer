@@ -328,7 +328,7 @@ adminui.git::
 
     $ sudo freezerc --action restore --container freezer_foobar-container-2
     --backup-name adminui.git
-    --restore-from-host git-HP-DL380-host-001 --restore-abs-path
+    --hostname git-HP-DL380-host-001 --restore-abs-path
     /home/git/repositories/adminui.git/
     --restore-from-date "2014-05-23T23:23:23"
 
@@ -342,7 +342,7 @@ Let's stop mysql service first::
 Execute Restore::
 
     $ sudo freezerc --action restore --container freezer_foobar-container-2
-    --backup-name mysq-prod --restore-from-host db-HP-DL380-host-001
+    --backup-name mysq-prod --hostname db-HP-DL380-host-001
     --restore-abs-path /var/lib/mysql --restore-from-date "2014-05-23T23:23:23"
 
 And finally restart mysql::
@@ -352,7 +352,7 @@ And finally restart mysql::
 Execute a MongoDB restore of the backup name mongobigdata::
 
     $ sudo freezerc --action restore --container freezer_foobar-container-2
-    --backup-name mongobigdata --restore-from-host db-HP-DL380-host-001
+    --backup-name mongobigdata --hostname db-HP-DL380-host-001
     --restore-abs-path /var/lib/mongo --restore-from-date "2014-05-23T23:23:23"
 
 
@@ -391,7 +391,7 @@ Local storage restore execution:
 
     $ sudo freezerc --action restore --container /local_backup_storage/
     --backup-name adminui.git
-    --restore-from-host git-HP-DL380-host-001 --restore-abs-path
+    --hostname git-HP-DL380-host-001 --restore-abs-path
     /home/git/repositories/adminui.git/
     --restore-from-date "2014-05-23T23:23:23"
     --storage local
@@ -688,42 +688,47 @@ Please check the FAQ to: FAQ.rst
 
 Available options::
 
-    $ freezerc
-
-          usage: freezerc [-h] [--config CONFIG] [--action {backup,restore,info,admin}]
-                    [-F PATH_TO_BACKUP] [-N BACKUP_NAME] [-m MODE] [-C CONTAINER]
-                    [-L] [-l] [-o GET_OBJECT] [-d DST_FILE]
-                    [--lvm-auto-snap LVM_AUTO_SNAP] [--lvm-srcvol LVM_SRCVOL]
-                    [--lvm-snapname LVM_SNAPNAME] [--lvm-snapsize LVM_SNAPSIZE]
-                    [--lvm-dirmount LVM_DIRMOUNT] [--lvm-volgroup LVM_VOLGROUP]
-                    [--max-level MAX_LEVEL] [--always-level ALWAYS_LEVEL]
-                    [--restart-always-level RESTART_ALWAYS_LEVEL]
-                    [-R REMOVE_OLDER_THAN] [--remove-from-date REMOVE_FROM_DATE]
-                    [--no-incremental] [--hostname HOSTNAME]
-                    [--mysql-conf MYSQL_CONF] [--log-file LOG_FILE]
-                    [--exclude EXCLUDE]
-                    [--dereference-symlink {none,soft,hard,all}] [-U]
-                    [--encrypt-pass-file ENCRYPT_PASS_FILE] [-M MAX_SEGMENT_SIZE]
-                    [--restore-abs-path RESTORE_ABS_PATH]
-                    [--restore-from-host RESTORE_FROM_HOST]
-                    [--restore-from-date RESTORE_FROM_DATE] [--max-priority] [-V]
-                    [-q] [--insecure] [--os-auth-ver {1,2,3}] [--proxy PROXY]
-                    [--dry-run] [--upload-limit UPLOAD_LIMIT]
-                    [--cinder-vol-id CINDER_VOL_ID] [--nova-inst-id NOVA_INST_ID]
-                    [--cindernative-vol-id CINDERNATIVE_VOL_ID]
-                    [--download-limit DOWNLOAD_LIMIT]
-                    [--sql-server-conf SQL_SERVER_CONF] [--vssadmin VSSADMIN]
+usage: freezerc [-h] [--config CONFIG]
+                [--action {backup,restore,info,admin,exec}]
+                [-F PATH_TO_BACKUP] [-N BACKUP_NAME] [-m MODE] [-C CONTAINER]
+                [-L] [-l] [-o GET_OBJECT] [-d DST_FILE] [-s]
+                [--lvm-auto-snap LVM_AUTO_SNAP] [--lvm-srcvol LVM_SRCVOL]
+                [--lvm-snapname LVM_SNAPNAME] [--lvm-snap-perm {ro,rw}]
+                [--lvm-snapsize LVM_SNAPSIZE] [--lvm-dirmount LVM_DIRMOUNT]
+                [--lvm-volgroup LVM_VOLGROUP] [--max-level MAX_LEVEL]
+                [--always-level ALWAYS_LEVEL]
+                [--restart-always-level RESTART_ALWAYS_LEVEL]
+                [-R REMOVE_OLDER_THAN] [--remove-from-date REMOVE_FROM_DATE]
+                [--no-incremental] [--hostname HOSTNAME]
+                [--mysql-conf MYSQL_CONF] [--metadata-out METADATA_OUT]
+                [--log-file LOG_FILE] [--exclude EXCLUDE]
+                [--dereference-symlink {none,soft,hard,all}] [-U]
+                [--encrypt-pass-file ENCRYPT_PASS_FILE] [-M MAX_SEGMENT_SIZE]
+                [--restore-abs-path RESTORE_ABS_PATH]
+                [--restore-from-host HOSTNAME]
+                [--restore-from-date RESTORE_FROM_DATE] [--max-priority] [-V]
+                [-q] [--insecure] [--os-auth-ver {1,2,2.0,3}] [--proxy PROXY]
+                [--dry-run] [--upload-limit UPLOAD_LIMIT]
+                [--cinder-vol-id CINDER_VOL_ID] [--nova-inst-id NOVA_INST_ID]
+                [--cindernative-vol-id CINDERNATIVE_VOL_ID]
+                [--download-limit DOWNLOAD_LIMIT]
+                [--sql-server-conf SQL_SERVER_CONF] [--vssadmin VSSADMIN]
+                [--command COMMAND] [--compression {gzip,bzip2,xz}]
+                [--storage {local,swift,ssh}] [--ssh-key SSH_KEY]
+                [--ssh-username SSH_USERNAME] [--ssh-host SSH_HOST]
+                [--ssh-port SSH_PORT]
 
     optional arguments:
       -h, --help            show this help message and exit
       --config CONFIG       Config file abs path. Option arguments are provided
                             from config file. When config file is used any option
                             from command line provided take precedence.
-      --action {backup,restore,info,admin}
+      --action {backup,restore,info,admin,exec}
                             Set the action to be taken. backup and restore are
                             self explanatory, info is used to retrieve info from
-                            the storage media, while admin is used to delete old
-                            backups and other admin actions. Default backup.
+                            the storage media, exec is used to execute a script,
+                            while admin is used to delete old backups and other
+                            admin actions. Default backup.
       -F PATH_TO_BACKUP, --path-to-backup PATH_TO_BACKUP, --file-to-backup PATH_TO_BACKUP
                             The file or directory you want to back up to Swift
       -N BACKUP_NAME, --backup-name BACKUP_NAME
@@ -733,7 +738,8 @@ Available options::
                             (filesystem), mongo (MongoDB), mysql (MySQL),
                             sqlserver (SQL Server) Default set to fs
       -C CONTAINER, --container CONTAINER
-                            The Swift container used to upload files to
+                            The Swift container (or path to local storage) used to
+                            upload files to
       -L, --list-containers
                             List the Swift containers on remote Object Storage
                             Server
@@ -745,6 +751,9 @@ Available options::
       -d DST_FILE, --dst-file DST_FILE
                             The file name used to save the object on your local
                             disk and upload file in swift
+      -s, --snapshot        Create a snapshot of the fs containing the resource to
+                            backup. When used, the lvm parameters will be guessed
+                            and/or the default values will be used
       --lvm-auto-snap LVM_AUTO_SNAP
                             Automatically guess the volume group and volume name
                             for given PATH.
@@ -755,13 +764,18 @@ Available options::
                             Set the lvm snapshot name to use. If the snapshot name
                             already exists, the old one will be used a no new one
                             will be created. Default freezer_backup_snap.
+      --lvm-snap-perm {ro,rw}
+                            Set the lvm snapshot permission to use. If the
+                            permission is set to ro The snapshot will be immutable
+                            - read only -. If the permission is set to rw it will
+                            be mutable
       --lvm-snapsize LVM_SNAPSIZE
                             Set the lvm snapshot size when creating a new
                             snapshot. Please add G for Gigabytes or M for
-                            Megabytes, i.e. 500M or 8G. Default 5G.
+                            Megabytes, i.e. 500M or 8G. Default 1G.
       --lvm-dirmount LVM_DIRMOUNT
                             Set the directory you want to mount the lvm snapshot
-                            to. Default not set
+                            to. Default to /var/lib/freezer
       --lvm-volgroup LVM_VOLGROUP
                             Specify the volume group of your logical volume. This
                             is important to mount your snapshot volume. Default
@@ -810,9 +824,12 @@ Available options::
                             Set the MySQL configuration file where freezer
                             retrieve important information as db_name, user,
                             password, host, port. Following is an example of
-                            config file: # cat ~/.freezer/backup_mysql_conf host =
-                            <db-host> user = <mysqluser> password = <mysqlpass>
-                            port = <db-port>
+                            config file: # backup_mysql_conf host = <db-host> user
+                            = <mysqluser> password = <mysqlpass> port = <db-port>
+      --metadata-out METADATA_OUT
+                            Set the filename to which write the metadata regarding
+                            the backup metrics. Use "-" to output to standard
+                            output.
       --log-file LOG_FILE   Set log file. By default logs to
                             /var/log/freezer.logIf that file is not writable,
                             freezer tries to logto ~/.freezer/freezer.log
@@ -834,18 +851,19 @@ Available options::
       --restore-abs-path RESTORE_ABS_PATH
                             Set the absolute path where you want your data
                             restored. Default False.
-      --restore-from-host RESTORE_FROM_HOST
+      --restore-from-host HOSTNAME
                             Set the hostname used to identify the data you want to
                             restore from. If you want to restore data in the same
                             host where the backup was executed just type from your
                             shell: "$ hostname" and the output is the value that
                             needs to be passed to this option. Mandatory with
-                            Restore Default False.
+                            Restore Default False. (Deprecated use "hostname"
+                            instead)
       --restore-from-date RESTORE_FROM_DATE
                             Set the absolute path where you want your data
                             restored. Please provide datetime in format "YYYY-MM-
                             DDThh:mm:ss" i.e. "1979-10-03T23:23:23". Make sure the
-                            "T" is between date and time Default False.
+                            "T" is between date and time Default None.
       --max-priority        Set the cpu process to the highest priority (i.e. -20
                             on Linux) and real-time for I/O. The process priority
                             will be set only if nice and ionice are installed
@@ -854,8 +872,8 @@ Available options::
       -q, --quiet           Suppress error messages
       --insecure            Allow to access swift servers without checking SSL
                             certs.
-      --os-auth-ver {1,2,3}
-                            Swift auth version, could be 1, 2 or 3
+      --os-auth-ver {1,2,2.0,3}, --os-identity-api-version {1,2,2.0,3}
+                            Openstack identity api version, can be 1, 2, 2.0 or 3
       --proxy PROXY         Enforce proxy that alters system HTTP_PROXY and
                             HTTPS_PROXY, use '' to eliminate all system proxies
       --dry-run             Do everything except writing or removing objects
@@ -877,4 +895,17 @@ Available options::
                             example of config file: instance = <db-instance>
       --vssadmin VSSADMIN   Create a backup using a snapshot on windows using
                             vssadmin. Options are: True and False, default is True
-
+      --command COMMAND     Command executed by exec action
+      --compression {gzip,bzip2,xz}
+                            compression algorithm to use. gzip is default
+                            algorithm
+      --storage {local,swift,ssh}
+                            Storage for backups. Can be Swift or Local now. Swift
+                            is defaultstorage now. Local stores backups on the
+                            same defined path andswift will store files in
+                            container.
+      --ssh-key SSH_KEY     Path to ssh-key for ssh storage only
+      --ssh-username SSH_USERNAME
+                            Remote username for ssh storage only
+      --ssh-host SSH_HOST   Remote host for ssh storage only
+      --ssh-port SSH_PORT   Remote port for ssh storage only (default 22)
