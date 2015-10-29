@@ -76,3 +76,34 @@ FAQ
 19) **What applications are supported in Windows for  consisten backups?**
     SQL Server (--mode sqlserver)
 
+20) **Are there examples of OpenStack projects that use Freezer that I can look at?**
+    Not currently
+
+21) **My service has it's own task scheduler. What is the recommended way to schedule Freezer runs?**
+    If you want to use the freezer-api and freezer-web-ui in horizon, you need to use the freezer-scheduler.
+    If you do not need the api and web ui, you can just execute the freezer-agent from crontab or any other scheduler.
+
+22) **What are the benefits of using the API and Web UI?**
+    - You can start backup and restore jobs on any node from the Web UI
+    - Backup jobs can be synchronized across multiple nodes
+    - The UI provides metrics and other info
+
+23) **How can I run user-defined scripts before and after a backup run?**
+    A simple solution is to implement your own script locally and execute
+    freezer-agent from it.
+    We recommend instead creating "exec"-type jobs in the UI and set up job
+    dependencies.
+
+24) **What are the options for backing up MySQL/Percona?**
+    a. Make use of filesystem snapshots (LVM) using the "--mode mysql" option.  It's supported natively by Freezer and suitable for large databases.
+        This instructs freezer to execute the following steps:
+        - flush tables and lock the DB
+        - take an LVM snapshot
+        - release the DB (so it's usable again very quiclky)
+        - backup the consistent DB image from the snapshot
+        - release the snapshot
+    b. Manual process - It does not require LVM and provides incremental backup.
+        - manually flush tables and lock the DB: "flush tables with read lock"
+        - backup the DB folder, usually /var/lib/mysql (--mode fs --path-to-backup /var/lib/mysql --max-level 14)
+        - manually unlock the DB
+    Using mysqldump is not recommended for speed and reliability reasons.
