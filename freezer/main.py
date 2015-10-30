@@ -26,6 +26,7 @@ import logging
 import sys
 import json
 
+from freezer.arguments import backup_arguments
 from freezer.bandwidth import monkeypatch_socket_bandwidth
 from freezer import job
 from freezer.osclients import ClientManager
@@ -90,14 +91,6 @@ def freezer_main(backup_args, arg_parse):
             ])
         except Exception as priority_error:
             logging.warning('[*] Priority: {0}'.format(priority_error))
-
-    if backup_args.version:
-        print "freezer version {0}".format(backup_args.__version__)
-        sys.exit(1)
-
-    if len(sys.argv) < 2:
-        arg_parse.print_help()
-        sys.exit(1)
 
     try:
         log_file_name = configure_log_file_using_defaults()
@@ -196,3 +189,26 @@ def fail(exit_code, e, quiet, do_log=True):
     if do_log:
         logging.critical(msg)
     return exit_code
+
+
+def main():
+    """Freezerc binary main execution"""
+
+    (backup_args, opt_args) = backup_arguments()
+    try:
+        if backup_args.version:
+            print "freezer version {0}".format(backup_args.__version__)
+            sys.exit(1)
+
+        if len(sys.argv) < 2:
+            opt_args.print_help()
+            sys.exit(1)
+
+        freezer_main(backup_args, opt_args)
+
+    except ValueError as err:
+        return fail(1, err, backup_args.quiet)
+    except ImportError as err:
+        return fail(1, err, backup_args.quiet)
+    except Exception as err:
+        return fail(1, err, backup_args.quiet)
