@@ -5,7 +5,8 @@ def validate(conf):
             'with backup level options')
 
     if conf.action == "restore" and not conf.restore_abs_path and \
-            not conf.nova_inst_id:
+            not conf.nova_inst_id and not conf.cinder_vol_id and \
+            not conf.cindernative_vol_id:
         raise Exception("Please provide restore_abs_path")
 
     if conf.restore_abs_path and not conf.action == "restore":
