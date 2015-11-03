@@ -43,6 +43,33 @@ Requirements
 -  sync
 -  At least 128 MB of memory reserved for Freezer
 
+Windows Requirements
+====================
+
+- Cygwin
+
+The following components support Windowd OS Platform:
+
+- freezer-agent
+- freezer-scheduler
+
+However Cygwin is required to execute backup and restore. The following
+binaries and dll needs to be installed:
+
+-  bunzip2.exe
+-  bzcat.exe
+-  bzip2.exe
+-  bzip2recover.exe
+-  cygbz2-1.dll
+-  cygiconv-2.dll
+-  cygintl-8.dll
+-  cygwin1.dll
+-  find.exe
+-  gzip.exe
+-  tar.exe
+
+The .dll needs to on the Windows System Path.
+
 Installation & Env Setup
 ========================
 
