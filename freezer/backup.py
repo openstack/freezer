@@ -232,24 +232,25 @@ class BackupOs:
         cinder = client_manager.get_cinder()
 
         volume = cinder.volumes.get(volume_id)
-        logging.info("[*] Creation temporary snapshot")
+        logging.debug("Creation temporary snapshot")
         snapshot = client_manager.provide_snapshot(
             volume, "backup_snapshot_for_volume_%s" % volume_id)
-        logging.info("[*] Creation temporary volume")
+        logging.debug("Creation temporary volume")
         copied_volume = client_manager.do_copy_volume(snapshot)
-        logging.info("[*] Creation temporary glance image")
+        logging.debug("Creation temporary glance image")
         image = client_manager.make_glance_image("name", copied_volume)
+        logging.debug("Download temporary glance image {0}".format(image.id))
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(volume_id, utils.DateTime.now().timestamp)
-        logging.info("[*] Uploading image to swift")
+        logging.debug("Uploading image to swift")
         headers = {}
         self.storage.add_stream(stream, package, headers=headers)
-        logging.info("[*] Deleting temporary snapshot")
+        logging.debug("Deleting temporary snapshot")
         client_manager.clean_snapshot(snapshot)
-        logging.info("[*] Deleting temporary volume")
+        logging.debug("Deleting temporary volume")
         cinder.volumes.delete(copied_volume)
-        logging.info("[*] Deleting temporary image")
-        client_manager.get_glance().images.delete(image)
+        logging.debug("Deleting temporary image")
+        client_manager.get_glance().images.delete(image.id)
 
     def backup_cinder(self, volume_id, name=None, description=None):
         client_manager = self.client_manager
@@ -353,6 +354,6 @@ def backup(backup_opt_dict, storage, engine):
         backup_os.backup_cinder(backup_opt_dict.cindernative_vol_id)
     elif backup_media == 'cinder':
         logging.info('[*] Executing cinder snapshot')
-        backup_os.backup_cinder_by_glance(backup_opt_dict.cindernative_vol_id)
+        backup_os.backup_cinder_by_glance(backup_opt_dict.cinder_vol_id)
     else:
         raise Exception('unknown parameter backup_media %s' % backup_media)

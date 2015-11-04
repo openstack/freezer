@@ -86,7 +86,7 @@ class RestoreOs:
             backup = min(backups, key=lambda x: x.created_at)
             cinder.restores.restore(backup_id=backup.id)
 
-    def restore_cinder_by_glance(self, restore_from_timestamp, volume_id):
+    def restore_cinder_by_glance(self, volume_id, restore_from_timestamp):
         """
         1) Define swift directory
         2) Download and upload to glance

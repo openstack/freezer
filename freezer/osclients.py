@@ -89,7 +89,7 @@ class ClientManager:
             auth_url=options.auth_url,
             region_name=options.region_name,
             insecure=self.insecure,
-            endpoint_type=options.endpoint_type,
+            endpoint_type=options.endpoint_type or 'publicURL',
             service_type="volume")
         return self.cinder
 
@@ -172,16 +172,19 @@ class ClientManager:
             display_name=snapshot_name,
             force=True)
 
+        logging.debug("Snapshot for volume with id {0}".format(volume.id))
+
         while snapshot.status != "available":
             try:
-                logging.info("[*] Snapshot status: " + snapshot.status)
+                logging.debug("Snapshot status: " + snapshot.status)
                 snapshot = self.get_cinder().volume_snapshots.get(snapshot.id)
                 if snapshot.status == "error":
-                    logging.error("snapshot have error state")
-                    exit(1)
+                    raise Exception("snapshot has error state")
                 time.sleep(5)
             except Exception as e:
-                logging.info(e)
+                if e.message == "snapshot has error state":
+                    raise e
+                logging.exception(e)
         return snapshot
 
     def do_copy_volume(self, snapshot):
@@ -200,8 +203,8 @@ class ClientManager:
                 volume = self.get_cinder().volumes.get(volume.id)
                 time.sleep(5)
             except Exception as e:
-                logging.info(e)
-                logging.info("[*] Exception getting volume status")
+                logging.exception(e)
+                logging.warn("[*] Exception getting volume status")
         return volume
 
     def make_glance_image(self, image_volume_name, copy_volume):
@@ -211,12 +214,26 @@ class ClientManager:
         :param copy_volume: volume to make an image
         :return: Glance image object
         """
-        return self.get_cinder().volumes.upload_to_image(
+        image_id = self.get_cinder().volumes.upload_to_image(
             volume=copy_volume,
             force=True,
             image_name=image_volume_name,
             container_format="bare",
-            disk_format="raw")
+            disk_format="raw")[1]["os-volume_upload_image"]["image_id"]
+        image = self.get_glance().images.get(image_id)
+        while image.status != "active":
+            try:
+                time.sleep(5)
+                logging.info("Image status: " + image.status)
+                image = self.get_glance().images.get(image.id)
+                if image.status in ("killed", "deleted"):
+                    raise Exception("Image have killed state")
+            except Exception as e:
+                if image.status in ("killed", "deleted"):
+                    raise e
+                logging.exception(e)
+                logging.warn("Exception getting image status")
+        return image
 
     def clean_snapshot(self, snapshot):
         """
@@ -232,8 +249,10 @@ class ClientManager:
         :param image: Image object for downloading
         :return: stream of image data
         """
-        stream = self.get_glance().images.data(image)
-        return ReSizeStream(stream, len(stream), 1000000)
+        logging.debug("Download image enter")
+        stream = self.get_glance().images.data(image.id)
+        logging.debug("Stream with size {0}".format(image.size))
+        return ReSizeStream(stream, image.size, 1000000)
 
 
 class DryRunSwiftclientConnectionWrapper:

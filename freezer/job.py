@@ -136,9 +136,9 @@ class RestoreJob(Job):
         if conf.backup_media == 'nova':
             res.restore_nova(conf.nova_inst_id, restore_timestamp)
         elif conf.backup_media == 'cinder':
-            res.restore_cinder_by_glance(conf.cinder, restore_timestamp)
+            res.restore_cinder_by_glance(conf.cinder_vol_id, restore_timestamp)
         elif conf.backup_media == 'cindernative':
-            res.restore_cinder(conf.cinder_vol_id, restore_timestamp)
+            res.restore_cinder(conf.cindernative_vol_id, restore_timestamp)
         else:
             raise Exception("unknown backup type: %s" % conf.backup_media)
 
