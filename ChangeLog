@@ -1,6 +1,16 @@
 CHANGES
 =======
 
+* Fixes for cinder backup
+* Removed freezer/bin directory from the repo
+* Add cygwin source of cygwin .dll
+* Fixed tar command for windows
+* Improved freezerc and freezer-agent script management
+* Fixed bug on requierments and deps
+* Fix nova backup
+* Add some FAQ items
+* Test coverage improvement
+* swift backup should respect chunk size
 * Fixed bug on setup.cfg and added author and changelog
 * Fixed and improved tox.ini, added subunit as dep
 * Update .gitreview for new namespace
