@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This product includes cryptographic software written by Eric Young
-# (eay@cryptsoft.com). This product includes software written by Tim
-# Hudson (tjh@cryptsoft.com).
-# ========================================================================
+
 
 if [ "X$(python -mplatform | grep Ubuntu)" == "X" ]; then
     echo "Only Ubunu support!";
