@@ -105,7 +105,9 @@ class BackupJob(Job):
                   'container', 'container_segments',
                   'dry_run', 'hostname', 'path_to_backup', 'max_level',
                   'mode', 'backup_name', 'hostname',
-                  'time_stamp']
+                  'time_stamp', 'log_file', 'storage', 'mode',
+                  'os_auth_version', 'proxy', 'compression', 'ssh_key',
+                  'ssh_username', 'ssh_host', 'ssh_port']
         for field_name in fields:
             metadata[field_name] = self.conf.__dict__.get(field_name, '') or ''
         return metadata
