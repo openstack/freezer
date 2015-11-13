@@ -16,35 +16,33 @@
 from freezer import  exec_cmd
 from mock import patch, Mock
 import subprocess
+import unittest
 
-from __builtin__ import True
+class TestExec(unittest.TestCase):
+    def test_exec_cmd(self):
+        cmd="echo test > test.txt"
+        popen=patch('freezer.exec_cmd.subprocess.Popen')
+        mock_popen=popen.start()
+        mock_popen.return_value = Mock()
+        mock_popen.return_value.communicate = Mock()
+        mock_popen.return_value.communicate.return_value = ['some stderr']
+        mock_popen.return_value.returncode = 0
+        exec_cmd.execute(cmd)
+        assert (mock_popen.call_count == 1)
+        mock_popen.assert_called_with(['echo', 'test', '>', 'test.txt'],
+                                       shell=False,
+                                       stderr=subprocess.PIPE,
+                                       stdout=subprocess.PIPE)
+        popen.stop()
 
-
-def test_exec_cmd(monkeypatch):
-    cmd="echo test > test.txt"
-    popen=patch('freezer.exec_cmd.subprocess.Popen')
-    mock_popen=popen.start()
-    mock_popen.return_value = Mock()
-    mock_popen.return_value.communicate = Mock()
-    mock_popen.return_value.communicate.return_value = ['some stderr']
-    mock_popen.return_value.returncode = 0
-    exec_cmd.execute(cmd)
-    assert (mock_popen.call_count == 1)
-    mock_popen.assert_called_with(['echo', 'test', '>', 'test.txt'],
-                                   shell=False,
-                                   stderr=subprocess.PIPE,
-                                   stdout=subprocess.PIPE)
-    popen.stop()
-
-
-def test__exec_cmd_with_pipe(monkeypatch):
-    cmd="echo test|wc -l"
-    popen=patch('freezer.exec_cmd.subprocess.Popen')
-    mock_popen=popen.start()
-    mock_popen.return_value = Mock()
-    mock_popen.return_value.communicate = Mock()
-    mock_popen.return_value.communicate.return_value = ['some stderr']
-    mock_popen.return_value.returncode = 0
-    exec_cmd.execute(cmd)
-    assert (mock_popen.call_count == 2)
-    popen.stop()
+    def test__exec_cmd_with_pipe(self):
+        cmd="echo test|wc -l"
+        popen=patch('freezer.exec_cmd.subprocess.Popen')
+        mock_popen=popen.start()
+        mock_popen.return_value = Mock()
+        mock_popen.return_value.communicate = Mock()
+        mock_popen.return_value.communicate.return_value = ['some stderr']
+        mock_popen.return_value.returncode = 0
+        exec_cmd.execute(cmd)
+        assert (mock_popen.call_count == 2)
+        popen.stop()

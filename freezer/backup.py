@@ -28,6 +28,7 @@ from freezer.winutils import start_sql_server
 from freezer.winutils import stop_sql_server
 from freezer.winutils import use_shadow
 from freezer.winutils import is_windows
+from freezer import config
 
 home = expanduser("~")
 
@@ -41,31 +42,18 @@ def backup_mode_sql_server(backup_opt_dict, storage):
     uploaded. A sql_server.conf_file is required for this operation.
     """
     with open(backup_opt_dict.sql_server_conf, 'r') as sql_conf_file_fd:
-        for line in sql_conf_file_fd:
-            line = line.strip().split('#', 1)[0]
-            if not line:
-                continue
-
-            key, value = line.split('=')
-            # remove white spaces
-            key = key.strip()
-            value = value.strip()
-
-            if key == 'instance':
-                db_instance = utils.dequote(value)
-                backup_opt_dict.sql_server_instance = db_instance
-                continue
-            else:
-                raise Exception('Please indicate a valid SQL Server instance')
-
+        parsed_config = config.ini_parse(sql_conf_file_fd.read())
+    sql_server_instance = parsed_config["instance"]
+    # Dirty hack - please remove any modification of backup_opt_dict
+    backup_opt_dict.sql_server_instance = sql_server_instance
     try:
-        stop_sql_server(backup_opt_dict.sql_server_instance)
+        stop_sql_server(sql_server_instance)
         backup(backup_opt_dict, storage, backup_opt_dict.engine)
     finally:
         if not backup_opt_dict.vssadmin:
             # if vssadmin is false, wait until the backup is complete
             # to start sql server again
-            start_sql_server(backup_opt_dict.sql_server_instance)
+            start_sql_server(sql_server_instance)
 
 
 def backup_mode_mysql(backup_opt_dict, storage):
@@ -86,47 +74,17 @@ def backup_mode_mysql(backup_opt_dict, storage):
 
     if not backup_opt_dict.mysql_conf:
         raise ValueError('MySQL: please provide a valid config file')
-    # Open the file provided in backup_args.mysql_conf and extract the
-    # db host, name, user, password and port.
-    db_user = db_host = db_pass = False
-    # Use the default mysql port if not provided
-    db_port = 3306
     with open(backup_opt_dict.mysql_conf, 'r') as mysql_file_fd:
-        for line in mysql_file_fd:
-            line = line.strip().split('#', 1)[0]
-            if not line:
-                continue
-
-            key, value = line.split('=')
-            # remove white spaces
-            key = key.strip()
-            value = value.strip()
-
-            if key == 'host':
-                db_host = utils.dequote(value)
-                continue
-
-            if key == 'user':
-                db_user = utils.dequote(value)
-                continue
-
-            if key == 'password':
-                db_pass = utils.dequote(value)
-                continue
-
-            if key == 'port':
-                db_port = utils.dequote(value)
-                try:
-                    db_port = int(db_port)
-                except ValueError:
-                    raise ValueError('[*] MySQL port should be integer')
-                continue
+        parsed_config = config.ini_parse(mysql_file_fd.read())
 
     # Initialize the DB object and connect to the db according to
     # the db mysql backup file config
     try:
         backup_opt_dict.mysql_db_inst = MySQLdb.connect(
-            host=db_host, port=db_port, user=db_user, passwd=db_pass)
+            host=parsed_config.get("host", False),
+            port=int(parsed_config.get("port", 3306)),
+            user=parsed_config.get("user", False),
+            passwd=parsed_config.get("password", False))
     except Exception as error:
         raise Exception('[*] MySQL: {0}'.format(error))
 
@@ -298,7 +256,7 @@ def backup(backup_opt_dict, storage, engine):
 
     :param backup_opt_dict:
     :param storage:
-    :type storage: freezer.storage.Storage
+    :type storage: freezer.storage.base.Storage
     :param engine: Backup Engine
     :type engine: freezer.engine.engine.BackupEngine
     :return:

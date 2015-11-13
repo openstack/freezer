@@ -597,6 +597,56 @@ allows create a glance image from volume and upload to swift.
 To use standard cinder backups please provide --cindernative-vol-id argument.
 
 
+Parallel backup
+---------------
+
+Parallel backup can be executed only by config file. In config file you
+should create n additional sections that start with "storage:"
+
+Example [storage:my_storage1], [storage:ssh], [storage:storage3]
+
+Each storage section should have 'container' argument and all parameters
+related to the storage
+
+Example: ssh-username, ssh-port
+
+For swift storage you should provide additional parameter called 'osrc'
+Osrc should be a path to file with Openstack Credentials like:
+
+unset OS_DOMAIN_NAME
+export OS_AUTH_URL=http://url:5000/v3
+export OS_PROJECT_NAME=project_name
+export OS_USERNAME=username
+export OS_PASSWORD=secret_password
+export OS_PROJECT_DOMAIN_NAME=Default
+export OS_USER_DOMAIN_NAME=Default
+export OS_IDENTITY_API_VERSION=3
+export OS_AUTH_VERSION=3
+export OS_CACERT=/etc/ssl/certs/ca-certificates.crt
+export OS_ENDPOINT_TYPE=internalURL
+
+Example of Config file for two local storages and one swift storage:
+
+[default]
+action = backup
+mode = fs
+path_to_backup = /foo/
+backup_name = mytest6
+always_level = 2
+max_segment_size = 67108864
+container = /tmp/backup/
+storage = local
+[storage:first]
+storage=local
+container = /tmp/backup1/
+[storage:second]
+storage=local
+container = /tmp/backup2/
+[storage:swift]
+storage=swift
+container = test
+osrc = openrc.osrc
+
 freezer-scheduler
 -----------------
 The freezer-scheduler is one of the two freezer components which is run on

@@ -13,27 +13,33 @@
 # limitations under the License.
 
 
-from freezer.storage import storage
+from freezer.storage import base
 from freezer import utils
-import os
 
 
-class FsLikeStorage(storage.Storage):
+class FsLikeStorage(base.Storage):
     DEFAULT_CHUNK_SIZE = 10000000
 
     def __init__(self, storage_directory, work_dir,
-                 chunk_size=DEFAULT_CHUNK_SIZE):
+                 chunk_size=DEFAULT_CHUNK_SIZE, skip_prepare=False):
         self.storage_directory = storage_directory
-        self.work_dir = work_dir
         self.chunk_size = chunk_size
+        super(FsLikeStorage, self).__init__(work_dir,
+                                            skip_prepare=skip_prepare)
 
     def backup_to_file_path(self, backup):
+        """
+
+        :param backup:
+        :type backup: freezer.storage.base.Backup
+        :return:
+        """
         return utils.path_join(self._zero_backup_dir(backup), backup)
 
     def _zero_backup_dir(self, backup):
         """
         :param backup:
-        :type backup: freezer.storage.Backup
+        :type backup: freezer.storage.base.Backup
         :return:
         """
         return utils.path_join(self.storage_directory,
@@ -46,44 +52,37 @@ class FsLikeStorage(storage.Storage):
     def info(self):
         pass
 
-    def download_meta_file(self, backup):
-        """
-        :type backup: freezer.storage.Backup
-        :param backup:
-        :return:
-        """
-        utils.create_dir(self.work_dir)
-        if backup.level == 0:
-            return utils.path_join(self.work_dir, backup.tar())
-        meta_backup = backup.full_backup.increments[backup.level - 1]
+    def meta_file_abs_path(self, backup):
         zero_backup = self._zero_backup_dir(backup)
-        from_path = utils.path_join(zero_backup, meta_backup.tar())
-        to_path = utils.path_join(self.work_dir, meta_backup.tar())
-        if os.path.exists(to_path):
-            os.remove(to_path)
-        self.get_file(from_path, to_path)
-        return to_path
+        return utils.path_join(zero_backup, backup.tar())
 
     def upload_meta_file(self, backup, meta_file):
+        """
+
+        :param backup:
+        :type backup: freezer.storage.base.Backup
+        :param meta_file:
+        :return:
+        """
         zero_backup = self._zero_backup_dir(backup)
         to_path = utils.path_join(zero_backup, backup.tar())
         self.put_file(meta_file, to_path)
 
-    def get_backups(self):
-        backup_names = self.listdir(self.storage_directory)
+    def find_all(self, hostname_backup_name):
         backups = []
-        for backup_name in backup_names:
-            backup_dir = utils.path_join(self.storage_directory, backup_name)
-            timestamps = self.listdir(backup_dir)
-            for timestamp in timestamps:
-                increments = \
-                    self.listdir(utils.path_join(backup_dir, timestamp))
-                backups.extend(storage.Backup.parse_backups(increments))
+        backup_dir = utils.path_join(self.storage_directory,
+                                     hostname_backup_name)
+        utils.create_dir_tree(backup_dir)
+        timestamps = self.listdir(backup_dir)
+        for timestamp in timestamps:
+            increments = \
+                self.listdir(utils.path_join(backup_dir, timestamp))
+            backups.extend(base.Backup.parse_backups(increments, self))
         return backups
 
     def remove_backup(self, backup):
         """
-        :type backup: freezer.storage.Backup
+        :type backup: freezer.storage.base.Backup
         :return:
         """
         self.rmtree(self._zero_backup_dir(backup))
@@ -92,7 +91,7 @@ class FsLikeStorage(storage.Storage):
         """
         Stores backup in storage
         :type rich_queue: freezer.streaming.RichQueue
-        :type backup: freezer.storage.storage.Backup
+        :type backup: freezer.storage.base.Backup
         """
         filename = self.backup_to_file_path(backup)
         if backup.level == 0:
@@ -103,6 +102,12 @@ class FsLikeStorage(storage.Storage):
                 b_file.write(message)
 
     def backup_blocks(self, backup):
+        """
+
+        :param backup:
+        :type backup: freezer.storage.base.Backup
+        :return:
+        """
         filename = self.backup_to_file_path(backup)
         with self.open(filename, 'rb') as backup_file:
             while True:
@@ -113,9 +118,6 @@ class FsLikeStorage(storage.Storage):
                     yield chunk
 
     def listdir(self, directory):
-        raise NotImplementedError("Should have implemented this")
-
-    def get_file(self, from_path, to_path):
         raise NotImplementedError("Should have implemented this")
 
     def put_file(self, from_path, to_path):

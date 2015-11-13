@@ -39,8 +39,6 @@ class SshStorage(fslike.FsLikeStorage):
             :type storage_directory: str
             :return:
             """
-        super(SshStorage, self).__init__(storage_directory, work_dir,
-                                         chunk_size)
         self.ssh_key_path = ssh_key_path
         self.remote_username = remote_username
         self.remote_ip = remote_ip
@@ -48,6 +46,8 @@ class SshStorage(fslike.FsLikeStorage):
         self.ssh = None
         self.ftp = None
         self.init()
+        super(SshStorage, self).__init__(storage_directory, work_dir,
+                                         chunk_size)
 
     def init(self):
         ssh = paramiko.SSHClient()

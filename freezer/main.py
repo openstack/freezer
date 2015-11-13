@@ -23,11 +23,13 @@ import json
 
 from freezer.arguments import backup_arguments
 from freezer.bandwidth import monkeypatch_socket_bandwidth
+from freezer import config
 from freezer import job
 from freezer.osclients import ClientManager
 from freezer.storage import swift
 from freezer.storage import local
 from freezer.storage import ssh
+from freezer.storage import multiple
 from freezer import utils
 from freezer.engine.tar import tar_engine
 from freezer import winutils
@@ -105,30 +107,17 @@ def freezer_main(backup_args):
 
     validator.validate(backup_args)
 
-    if backup_args.storage == "swift":
-        options = utils.OpenstackOptions.create_from_env()
-        identity_api_version = (backup_args.os_identity_api_version or
-                                options.identity_api_version)
-        client_manager = ClientManager(
-            options=options,
-            insecure=backup_args.insecure,
-            swift_auth_version=identity_api_version,
-            dry_run=backup_args.dry_run)
-
-        storage = swift.SwiftStorage(
-            client_manager, backup_args.container, backup_args.work_dir,
-            backup_args.max_segment_size)
-        backup_args.__dict__['client_manager'] = client_manager
-    elif backup_args.storage == "local":
-        storage = local.LocalStorage(backup_args.container,
-                                     backup_args.work_dir)
-    elif backup_args.storage == "ssh":
-        storage = ssh.SshStorage(
-            backup_args.container, backup_args.work_dir, backup_args.ssh_key,
-            backup_args.ssh_username, backup_args.ssh_host,
-            backup_args.ssh_port)
+    work_dir = backup_args.work_dir
+    os_identity = backup_args.os_identity_api_version
+    max_segment_size = backup_args.max_segment_size
+    if backup_args.storages:
+        storage = multiple.MultipleStorage(
+            work_dir,
+            [storage_from_dict(x, work_dir, max_segment_size, os_identity)
+             for x in backup_args.storages])
     else:
-        raise Exception("Not storage found for name " + backup_args.storage)
+        storage = storage_from_dict(backup_args.__dict__, work_dir,
+                                    max_segment_size, os_identity)
 
     backup_args.__dict__['engine'] = tar_engine.TarBackupEngine(
         backup_args.compression,
@@ -183,6 +172,44 @@ def fail(exit_code, e, quiet, do_log=True):
     if do_log:
         logging.critical(msg)
     return exit_code
+
+
+def parse_osrc(file_name):
+    with open(file_name, 'r') as osrc_file:
+        return config.osrc_parse(osrc_file.read())
+
+
+def storage_from_dict(backup_args, work_dir, max_segment_size,
+                      os_identity_api_version=None):
+    storage_name = backup_args['storage']
+    container = backup_args['container']
+    if storage_name == "swift":
+        if "osrc" in backup_args:
+            options = utils.OpenstackOptions.create_from_dict(
+                parse_osrc(backup_args['osrc']))
+        else:
+            options = utils.OpenstackOptions.create_from_env()
+        identity_api_version = (os_identity_api_version or
+                                options.identity_api_version)
+        client_manager = ClientManager(
+            options=options,
+            insecure=backup_args.get('insecure') or False,
+            swift_auth_version=identity_api_version,
+            dry_run=backup_args.get('dry_run') or False)
+
+        storage = swift.SwiftStorage(
+            client_manager, container, work_dir,max_segment_size)
+        backup_args['client_manager'] = client_manager
+    elif storage_name == "local":
+        storage = local.LocalStorage(container, work_dir)
+    elif storage_name == "ssh":
+        storage = ssh.SshStorage(
+            container, work_dir,
+            backup_args['ssh_key'], backup_args['ssh_username'],
+            backup_args['ssh_host'], int(backup_args.get('ssh_port', 22)))
+    else:
+        raise Exception("Not storage found for name " + backup_args['storage'])
+    return storage
 
 
 def main():

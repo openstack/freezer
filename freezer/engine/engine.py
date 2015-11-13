@@ -18,6 +18,7 @@ Freezer general utils functions
 import logging
 import multiprocessing
 import time
+from freezer.streaming import RichQueue, QueuedThread
 
 from freezer import streaming
 from freezer import utils
@@ -55,20 +56,6 @@ class BackupEngine(object):
             tar it is a thread that creates gnutar subprocess and feeds chunks
             to stdin of this thread.
     """
-    @property
-    def main_storage(self):
-        """
-        Currently it is storage for restore, we can have multiple storages and
-        do a parallel backup on them, but when we are doing a restore, we need
-        to have one specified storage.
-
-        PS. Should be changed to select the most up-to-date storage from
-        existing ones
-        :rtype: freezer.storage.storage.Storage
-        :return:
-        """
-        raise NotImplementedError("Should have implemented this")
-
     def backup_stream(self, backup_path, rich_queue, manifest_path):
         """
         :param rich_queue:
@@ -78,17 +65,27 @@ class BackupEngine(object):
         """
         rich_queue.put_messages(self.backup_data(backup_path, manifest_path))
 
-    def backup(self, backup_path, backup):
+    def backup(self, backup_path, backup, queue_size=2):
         """
         Here we now location of all interesting artifacts like metadata
         Should return stream for storing data.
         :return: stream
         """
-        manifest = self.main_storage.download_meta_file(backup)
-        streaming.stream(
-            self.backup_stream,
-            {"backup_path": backup_path, "manifest_path": manifest},
-            self.main_storage.write_backup, {"backup": backup})
+        manifest = backup.storage.download_meta_file(backup)
+        input_queue = RichQueue(queue_size)
+        read_stream = QueuedThread(self.backup_stream,
+                                   input_queue,
+                                   kwargs={"backup_path": backup_path,
+                                           "manifest_path": manifest})
+        write_stream = QueuedThread(backup.storage.write_backup,
+                                    input_queue,
+                                    kwargs={"backup": backup})
+        read_stream.daemon = True
+        write_stream.daemon = True
+        read_stream.start()
+        write_stream.start()
+        read_stream.join()
+        write_stream.join()
         self.post_backup(backup, manifest)
 
     def post_backup(self, backup, manifest_file):
@@ -104,7 +101,7 @@ class BackupEngine(object):
         # Chunk size is set by RESP_CHUNK_SIZE and sent to che write
         # pipe
         read_pipe.close()
-        for block in self.main_storage.backup_blocks(backup):
+        for block in backup.storage.backup_blocks(backup):
             write_pipe.send_bytes(block)
 
         # Closing the pipe after checking no data

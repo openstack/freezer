@@ -17,7 +17,7 @@ import unittest
 from freezer import osclients
 from freezer import utils
 from freezer.storage import swift
-from freezer.storage import storage
+from freezer.storage import base
 
 
 class TestSwiftStorage(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestSwiftStorage(unittest.TestCase):
             ),
             "freezer_ops-aw1ops1-gerrit0001.aw1.hpcloud.net",
             "/tmp/",
-            100
+            100, skip_prepare=True
         )
 
         self.files = [
@@ -56,44 +56,50 @@ class TestSwiftStorage(unittest.TestCase):
             "hostname_backup_4000_1",
         ]
 
-        self.backup = storage.Backup("hostname_backup", 1000, tar_meta=True)
-        self.backup_2 = storage.Backup("hostname_backup", 3000, tar_meta=True)
-        self.increment = storage.Backup("hostname_backup", 2000,
-                                        full_backup=self.backup,
-                                        level=1,
-                                        tar_meta=True)
-        self.increment_2 = storage.Backup("hostname_backup", 4000,
-                                          full_backup=self.backup_2,
-                                          level=1,
-                                          tar_meta=True)
+        self.backup = base.Backup(self.storage,
+                                  "hostname_backup", 1000, tar_meta=True,)
+        self.backup_2 = base.Backup(self.storage,
+                                    "hostname_backup", 3000, tar_meta=True)
+        self.increment = base.Backup(self.storage,
+                                     "hostname_backup", 2000,
+                                     full_backup=self.backup,
+                                     level=1,
+                                     tar_meta=True)
+        self.increment_2 = base.Backup(self.storage,
+                                       "hostname_backup", 4000,
+                                       full_backup=self.backup_2,
+                                       level=1,
+                                       tar_meta=True)
 
     def test__get_backups(self):
-        backups = storage.Backup.parse_backups(self.files)
+        backups = base.Backup.parse_backups(self.files, self.storage)
         self.assertEqual(len(backups), 1)
         backup = backups[0]
         self.assertEqual(backup, self.backup)
 
     def test__get_backups_with_tar_only(self):
-        backups = storage.Backup.parse_backups(
-            ["tar_metadata_hostname_backup_1000_0"])
+        backups = base.Backup.parse_backups(
+            ["tar_metadata_hostname_backup_1000_0"], self.storage)
         self.assertEqual(len(backups), 0)
 
     def test__get_backups_without_tar(self):
-        backups = storage.Backup.parse_backups(["hostname_backup_1000_0"])
+        backups = base.Backup.parse_backups(["hostname_backup_1000_0"],
+                                            self.storage)
         self.assertEqual(len(backups), 1)
         self.backup.tar_meta = False
         backup = backups[0]
         self.assertEqual(backup, self.backup)
 
     def test__get_backups_increment(self):
-        backups = storage.Backup.parse_backups(self.increments)
+        backups = base.Backup.parse_backups(self.increments, self.storage)
         self.assertEqual(len(backups), 1)
         self.backup.add_increment(self.increment)
         backup = backups[0]
         self.assertEqual(backup, self.backup)
 
     def test__get_backups_increments(self):
-        backups = storage.Backup.parse_backups(self.cycles_increments)
+        backups = base.Backup.parse_backups(self.cycles_increments,
+                                            self.storage)
         self.assertEqual(len(backups), 2)
         self.backup.add_increment(self.increment)
         self.backup_2.add_increment(self.increment_2)

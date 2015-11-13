@@ -16,8 +16,8 @@
 from freezer import utils
 import datetime
 from commons import *
+
 import unittest
-import mock
 
 class TestUtils(unittest.TestCase):
 
@@ -26,24 +26,20 @@ class TestUtils(unittest.TestCase):
         dir1 = '/tmp'
         dir2 = '/tmp/testnoexistent1234'
         dir3 = '~'
-        fakeos = Os()
-
         assert utils.create_dir(dir1) is None
         assert utils.create_dir(dir2) is None
         os.rmdir(dir2)
         assert utils.create_dir(dir3) is None
-        os.makedirs = fakeos.makedirs2
-        self.assertRaises(Exception, utils.create_dir, dir2)
 
-    # @mock.patch("os.path")
-    # @mock.patch("re.search")
-    # def test_get_vol_fs_type(self, exists_mock, re_mock):
-    #     self.assertRaises(Exception, utils.get_vol_fs_type, "test")
-    #     exists_mock.exists.return_value = True
+    # def test_get_vol_fs_type(self):
     #     self.assertRaises(Exception, utils.get_vol_fs_type, "test")
     #
-    #     re_mock.return_value = FakeRe()
+    #     fakeos = Os()
+    #     os.path.exists = fakeos.exists
+    #     self.assertRaises(Exception, utils.get_vol_fs_type, "test")
     #
+    #     fakere = FakeRe()
+    #     re.search = fakere.search
     #     assert type(utils.get_vol_fs_type("test")) is str
 
     def test_get_mount_from_path(self):
@@ -52,6 +48,8 @@ class TestUtils(unittest.TestCase):
         assert type(utils.get_mount_from_path(dir1)[0]) is str
         assert type(utils.get_mount_from_path(dir1)[1]) is str
         self.assertRaises(Exception, utils.get_mount_from_path, dir2)
+
+        # pytest.raises(Exception, utils.get_mount_from_path, dir2)
 
     def test_human2bytes(self):
         assert utils.human2bytes('0 B') == 0
@@ -93,8 +91,8 @@ class TestUtils(unittest.TestCase):
 
     def test_date_to_timestamp(self):
         # ensure that timestamp is check with appropriate timezone offset
-        assert (1417649003 + time.timezone) == utils.date_to_timestamp(
-            "2014-12-03T23:23:23")
+        assert (1417649003+time.timezone) == \
+               utils.date_to_timestamp("2014-12-03T23:23:23")
 
     def prepare_env(self):
         os.environ["HTTP_PROXY"] = 'http://proxy.original.domain:8080'
@@ -116,8 +114,8 @@ class TestUtils(unittest.TestCase):
         assert os.environ["HTTPS_PROXY"] == test_proxy
 
 
-class TestDateTime(unittest.TestCase):
-    def setUp(self):
+class TestDateTime:
+    def setup(self):
         d = datetime.datetime(2015, 3, 7, 17, 47, 44, 716799)
         self.datetime = utils.DateTime(d)
 

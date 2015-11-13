@@ -269,23 +269,6 @@ class FakeSwiftClient:
                          'x-object-meta-name': "name"}, "abc"]
 
 
-class FakeRe:
-
-    def __init__(self):
-        return None
-
-    @classmethod
-    def search(self, opt1=True, opt2=True, opt3=True):
-        return self
-
-    @classmethod
-    def group(self, opt1=True, opt2=True):
-        if opt1 == 1:
-            return 'testgroup'
-        else:
-            return '10'
-
-
 class BackupOpt1:
 
     def __init__(self):

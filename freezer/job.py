@@ -77,7 +77,6 @@ class BackupJob(Job):
                 logging.error('Error while sync exec: {0}'.format(err))
         except Exception as error:
             logging.error('Error while sync exec: {0}'.format(error))
-        self.storage.prepare()
 
         if self.conf.mode == 'fs':
             backup.backup(self.conf, self.storage, self.engine)

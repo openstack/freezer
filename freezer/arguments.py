@@ -16,7 +16,11 @@
 
 from __future__ import print_function
 
+from freezer import winutils
+from freezer import config
+
 import argparse
+
 try:
     import configparser
 except ImportError:
@@ -31,7 +35,6 @@ from distutils import spawn as distspawn
 
 from oslo_utils import encodeutils
 
-from freezer import winutils
 from tempfile import NamedTemporaryFile
 
 home = expanduser("~")
@@ -106,7 +109,11 @@ def backup_arguments():
               "from command line provided take precedence."))
 
     args, remaining_argv = conf_parser.parse_known_args()
-    defaults = enrich_defaults(args.config)
+    defaults = DEFAULT_PARAMS.copy()
+    conf = None
+    if args.config:
+        conf = config.Config.parse(args.config)
+        defaults.update(conf.default)
 
     # Generate a new argparse istance and inherit options from config parse
     arg_parser = argparse.ArgumentParser(
@@ -431,16 +438,6 @@ def backup_arguments():
             print(encodeutils.safe_decode(
                 '{}'.format(err_msg)), file=sys.stderr)
 
-    # The containers used by freezer to executed backups needs to have
-    # freezer_ prefix in the name. If the user provider container doesn't
-    # have the prefix, it is automatically added also to the container
-    # segments name. This is done to quickly identify the containers
-    # that contain freezer generated backups
-    if not backup_args.container.startswith('freezer_') and \
-            backup_args.storage == 'swift':
-        backup_args.container = 'freezer_{0}'.format(
-            backup_args.container)
-
     # If hostname is not set, hostname of the current node will be used
     if not backup_args.hostname:
         backup_args.__dict__['hostname'] = socket.gethostname()
@@ -452,6 +449,9 @@ def backup_arguments():
 
     # MySQLdb object
     backup_args.__dict__['mysql_db_inst'] = ''
+    backup_args.__dict__['storages'] = None
+    if conf and conf.storages:
+        backup_args.__dict__['storages'] = conf.storages
 
     # Windows volume
     backup_args.__dict__['shadow'] = ''
@@ -463,7 +463,7 @@ def backup_arguments():
                 backup_args.path_to_backup[:3]
 
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.1.3'
+    backup_args.__dict__['__version__'] = '1.2.0'
 
     # todo(enugaev) move it to new command line param backup_media
     backup_media = 'fs'

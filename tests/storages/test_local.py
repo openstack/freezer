@@ -15,12 +15,13 @@
 
 import tempfile
 import shutil
+import unittest
 
 from freezer.storage import local
 from freezer import utils
 
 
-class TestLocalStorage(object):
+class TestLocalStorage(unittest.TestCase):
     BACKUP_DIR_PREFIX = "freezer_test_backup_dir"
     FILES_DIR_PREFIX = "freezer_test_files_dir"
     WORK_DIR_PREFIX = "freezer_work_dir"
@@ -32,8 +33,8 @@ class TestLocalStorage(object):
         f.write(text)
         f.close()
 
-    def create_dirs(self, tmpdir):
-        tmpdir = tmpdir.strpath
+    def create_dirs(self):
+        tmpdir = tempfile.mkdtemp()
         if self.temp:
             backup_dir = tempfile.mkdtemp(
                 dir=tmpdir, prefix=self.BACKUP_DIR_PREFIX)
@@ -60,12 +61,12 @@ class TestLocalStorage(object):
     def remove_storage(self, backup_dir):
         shutil.rmtree(backup_dir)
 
-    def test_prepare(self, tmpdir):
-        backup_dir, files_dir, work_dir = self.create_dirs(tmpdir)
+    def test_prepare(self):
+        backup_dir, files_dir, work_dir = self.create_dirs()
         storage = local.LocalStorage(backup_dir, work_dir)
         storage.prepare()
 
-    def test_info(self, tmpdir):
-        backup_dir, files_dir, work_dir = self.create_dirs(tmpdir)
+    def test_info(self):
+        backup_dir, files_dir, work_dir = self.create_dirs()
         storage = local.LocalStorage(backup_dir, work_dir)
         storage.info()
