@@ -62,7 +62,7 @@ DEFAULT_PARAMS = {
     'dry_run': False, 'lvm_snapsize': DEFAULT_LVM_SNAPSIZE,
     'restore_abs_path': False, 'log_file': None,
     'upload': True, 'mode': 'fs', 'action': 'backup',
-    'vssadmin': True, 'shadow': '', 'shadow_path': '',
+    'vssadmin': False, 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
     'ssh_port': 22, 'compression': 'gzip'
@@ -395,10 +395,10 @@ def backup_arguments(args_dict={}):
         instance = <db-instance>''',
         dest='sql_server_conf', default=False)
     arg_parser.add_argument(
-        '--vssadmin', action='store',
+        '--vssadmin', action='store_true',
         help='''Create a backup using a snapshot on windows
         using vssadmin. Options are: True and False, default is True''',
-        dest='vssadmin', default=True)
+        dest='vssadmin', default=False)
     arg_parser.add_argument(
         '--command', action='store',
         help='Command executed by exec action',
@@ -485,9 +485,6 @@ def backup_arguments(args_dict={}):
         if backup_args.path_to_backup:
             backup_args.__dict__['windows_volume'] = \
                 backup_args.path_to_backup[:3]
-
-        if backup_args.vssadmin == 'False' or backup_args.vssadmin == 'false':
-            backup_args.vssadmin = False
 
     # Freezer version
     backup_args.__dict__['__version__'] = '1.1.3'

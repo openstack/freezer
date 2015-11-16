@@ -58,6 +58,9 @@ def vss_create_shadow_copy(windows_volume):
     """
     shadow_path = None
     shadow_id = None
+
+    vss_delete_symlink(windows_volume)
+
     with DisableFileSystemRedirection():
         path = os.path.dirname(os.path.abspath(__file__))
         script = '{0}\\scripts\\vss.ps1'.format(path)
@@ -97,14 +100,21 @@ def vss_delete_shadow_copy(shadow_id, windows_volume):
             raise Exception('[*] Error deleting shadow copy with id {0}'
                             ', error {1}' .format(shadow_id, err))
 
-        try:
-            os.rmdir(os.path.join(windows_volume, 'freezer_shadowcopy'))
-        except Exception:
-            logging.error('Failed to delete shadow copy symlink {0}'.
-                          format(os.path.join(windows_volume,
-                                              'freezer_shadowcopy')))
+        vss_delete_symlink(windows_volume)
 
         logging.info('[*] Deleting shadow copy {0}'.
                      format(shadow_id))
 
         return True
+
+
+def vss_delete_symlink(windows_volume):
+    """Delete shadow copy symlink on the file system"""
+    path = os.path.join(windows_volume, 'freezer_shadowcopy')
+    try:
+        if os.path.exists(path):
+            os.rmdir(path)
+    except Exception:
+        logging.error('Failed to delete shadow copy symlink {0}'.
+                          format(os.path.join(windows_volume,
+                                              'freezer_shadowcopy')))
