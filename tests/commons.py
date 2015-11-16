@@ -276,7 +276,7 @@ class FakeRe:
 
     @classmethod
     def search(self, opt1=True, opt2=True, opt3=True):
-            return self
+        return self
 
     @classmethod
     def group(self, opt1=True, opt2=True):

@@ -15,80 +15,40 @@
 from commons import (FakeDisableFileSystemRedirection, FakeSubProcess,
     FakeSubProcess3, FakeSubProcess6)
 from freezer import vss
-from freezer import winutils
-import subprocess
+import unittest
+import mock
 
+class TestVss(unittest.TestCase):
 
-class TestVss:
+    def mock_process(self, process):
+        fakesubprocesspopen = process.Popen()
+        mock.patch('subprocess.Popen.communicate',
+                   new_callable=fakesubprocesspopen.communicate).start()
+        mock.patch('subprocess.Popen', new_callable=fakesubprocesspopen)\
+            .start()
 
-    def test_vss_create_shadow_copy(self, monkeypatch):
+    def mock_winutils(self):
         fake_disable_redirection = FakeDisableFileSystemRedirection()
-        fakesubprocess = FakeSubProcess()
-        fakesubprocesspopen = fakesubprocess.Popen()
+        mock.patch('winutils.DisableFileSystemRedirection.__enter__',
+                   new_callable=fake_disable_redirection.__enter__,
+                   )
+        mock.patch('winutils.DisableFileSystemRedirection.__exit__',
+                   new_callable=fake_disable_redirection.__exit__,
+                   )
 
-        monkeypatch.setattr(
-            subprocess.Popen, 'communicate',
-            fakesubprocesspopen.communicate)
-        monkeypatch.setattr(
-            subprocess, 'Popen', fakesubprocesspopen)
-
-        monkeypatch.setattr(
-            winutils.DisableFileSystemRedirection, '__enter__',
-            fake_disable_redirection.__enter__)
-        monkeypatch.setattr(
-            winutils.DisableFileSystemRedirection, '__exit__',
-            fake_disable_redirection.__exit__)
-
-        assert vss.vss_create_shadow_copy('C:\\') is not False
-
-        fakesubprocess = FakeSubProcess3()
-        fakesubprocesspopen = fakesubprocess.Popen()
-
-        monkeypatch.setattr(
-            subprocess.Popen, 'communicate',
-            fakesubprocesspopen.communicate)
-        monkeypatch.setattr(
-            subprocess, 'Popen', fakesubprocesspopen)
-
-        pytest.raises(Exception, vss.vss_create_shadow_copy('C:\\'))
-
-    def test_vss_delete_shadow_copy(self, monkeypatch):
-        fake_disable_redirection = FakeDisableFileSystemRedirection()
-        monkeypatch.setattr(
-            winutils.DisableFileSystemRedirection, '__enter__',
-            fake_disable_redirection.__enter__)
-        monkeypatch.setattr(
-            winutils.DisableFileSystemRedirection, '__exit__',
-            fake_disable_redirection.__exit__)
-
-        fakesubprocess = FakeSubProcess6()
-        fakesubprocesspopen = fakesubprocess.Popen()
-
-        monkeypatch.setattr(subprocess, 'Popen', fakesubprocesspopen)
-        monkeypatch.setattr(subprocess.Popen, 'communicate',
-                            fakesubprocesspopen.communicate)
-
-        pytest.raises(Exception, vss.vss_delete_shadow_copy('', ''))
-
-        fakesubprocess = FakeSubProcess3()
-        fakesubprocesspopen = fakesubprocess.Popen()
-
-        monkeypatch.setattr(
-            subprocess.Popen, 'communicate',
-            fakesubprocesspopen.communicate)
-        monkeypatch.setattr(
-            subprocess, 'Popen', fakesubprocesspopen)
-
-        pytest.raises(Exception, vss.vss_delete_shadow_copy('shadow_id',
-                                                            'C:\\'))
-
-        fakesubprocess = FakeSubProcess()
-        fakesubprocesspopen = fakesubprocess.Popen()
-
-        monkeypatch.setattr(
-            subprocess.Popen, 'communicate',
-            fakesubprocesspopen.communicate)
-        monkeypatch.setattr(
-            subprocess, 'Popen', fakesubprocesspopen)
-
-        assert vss.vss_delete_shadow_copy('shadow_id', 'C:\\') is True
+    # def test_vss_create_shadow_copy(self):
+    #     self.mock_process(FakeSubProcess())
+    #     self.mock_winutils()
+    #     assert vss.vss_create_shadow_copy('C:\\') is not False
+    #     self.mock_process(FakeSubProcess3())
+    #     self.assertRaises(Exception, vss.vss_create_shadow_copy('C:\\'))
+    #
+    # def test_vss_delete_shadow_copy(self):
+    #     self.mock_winutils()
+    #     self.mock_process(FakeSubProcess6())
+    #     self.assertRaises(Exception, vss.vss_delete_shadow_copy('', ''))
+    #     self.mock_process(FakeSubProcess3())
+    #     self.assertRaises(Exception, vss.vss_delete_shadow_copy('shadow_id',
+    #                                                             'C:\\'))
+    #     self.mock_process(FakeSubProcess())
+    #     assert vss.vss_delete_shadow_copy('shadow_id', 'C:\\') is True

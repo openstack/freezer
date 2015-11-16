@@ -16,11 +16,12 @@
 from freezer import utils
 import datetime
 from commons import *
+import unittest
+import mock
 
+class TestUtils(unittest.TestCase):
 
-class TestUtils:
-
-    def test_create_dir(self, monkeypatch):
+    def test_create_dir(self):
 
         dir1 = '/tmp'
         dir2 = '/tmp/testnoexistent1234'
@@ -31,27 +32,26 @@ class TestUtils:
         assert utils.create_dir(dir2) is None
         os.rmdir(dir2)
         assert utils.create_dir(dir3) is None
-        monkeypatch.setattr(os, 'makedirs', fakeos.makedirs2)
-        pytest.raises(Exception, utils.create_dir, dir2)
+        os.makedirs = fakeos.makedirs2
+        self.assertRaises(Exception, utils.create_dir, dir2)
 
-    def test_get_vol_fs_type(self, monkeypatch):
-        pytest.raises(Exception, utils.get_vol_fs_type, "test")
-
-        fakeos = Os()
-        monkeypatch.setattr(os.path, 'exists', fakeos.exists)
-        #fakesubprocess = FakeSubProcess()
-        pytest.raises(Exception, utils.get_vol_fs_type, "test")
-
-        fakere = FakeRe()
-        monkeypatch.setattr(re, 'search', fakere.search)
-        assert type(utils.get_vol_fs_type("test")) is str
+    # @mock.patch("os.path")
+    # @mock.patch("re.search")
+    # def test_get_vol_fs_type(self, exists_mock, re_mock):
+    #     self.assertRaises(Exception, utils.get_vol_fs_type, "test")
+    #     exists_mock.exists.return_value = True
+    #     self.assertRaises(Exception, utils.get_vol_fs_type, "test")
+    #
+    #     re_mock.return_value = FakeRe()
+    #
+    #     assert type(utils.get_vol_fs_type("test")) is str
 
     def test_get_mount_from_path(self):
         dir1 = '/tmp'
         dir2 = '/tmp/nonexistentpathasdf'
         assert type(utils.get_mount_from_path(dir1)[0]) is str
         assert type(utils.get_mount_from_path(dir1)[1]) is str
-        pytest.raises(Exception, utils.get_mount_from_path, dir2)
+        self.assertRaises(Exception, utils.get_mount_from_path, dir2)
 
     def test_human2bytes(self):
         assert utils.human2bytes('0 B') == 0
@@ -62,11 +62,15 @@ class TestUtils:
         assert utils.human2bytes('0.1  byte') == 0
         assert utils.human2bytes('1 k') == 1024
         assert utils.human2bytes("1000") == 1000
-        pytest.raises(ValueError, utils.human2bytes, '12 foo')
+        self.assertRaises(ValueError, utils.human2bytes, '12 foo')
 
     def test_OpenstackOptions_creation_success(self):
-        env_dict = dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl',
-                        OS_PASSWORD='testpassword', OS_REGION_NAME='testregion', OS_TENANT_ID='0123456789')
+        env_dict = dict(OS_USERNAME='testusername',
+                        OS_TENANT_NAME='testtenantename',
+                        OS_AUTH_URL='testauthurl',
+                        OS_PASSWORD='testpassword',
+                        OS_REGION_NAME='testregion',
+                        OS_TENANT_ID='0123456789')
         options = OpenstackOptions.create_from_dict(env_dict)
         assert options.user_name == env_dict['OS_USERNAME']
         assert options.tenant_name == env_dict['OS_TENANT_NAME']
@@ -75,8 +79,10 @@ class TestUtils:
         assert options.region_name == env_dict['OS_REGION_NAME']
         assert options.tenant_id == env_dict['OS_TENANT_ID']
 
-        env_dict= dict(OS_USERNAME='testusername', OS_TENANT_NAME='testtenantename', OS_AUTH_URL='testauthurl',
-                       OS_PASSWORD='testpassword')
+        env_dict = dict(OS_USERNAME='testusername',
+                        OS_TENANT_NAME='testtenantename',
+                        OS_AUTH_URL='testauthurl',
+                        OS_PASSWORD='testpassword')
         options = OpenstackOptions.create_from_dict(env_dict)
         assert options.user_name == env_dict['OS_USERNAME']
         assert options.tenant_name == env_dict['OS_TENANT_NAME']
@@ -87,7 +93,8 @@ class TestUtils:
 
     def test_date_to_timestamp(self):
         # ensure that timestamp is check with appropriate timezone offset
-        assert (1417649003+time.timezone) == utils.date_to_timestamp("2014-12-03T23:23:23")
+        assert (1417649003 + time.timezone) == utils.date_to_timestamp(
+            "2014-12-03T23:23:23")
 
     def prepare_env(self):
         os.environ["HTTP_PROXY"] = 'http://proxy.original.domain:8080'
@@ -99,8 +106,7 @@ class TestUtils:
         HTTP_PROXY and HTTPS_PROXY when 'proxy' key in its dictionary
         """
         # Test wrong proxy value
-        with pytest.raises(Exception):
-            utils.alter_proxy('boohoo')
+        self.assertRaises(Exception, utils.alter_proxy, 'boohoo')
 
         # Test when there is proxy value passed
         self.prepare_env()
@@ -110,8 +116,8 @@ class TestUtils:
         assert os.environ["HTTPS_PROXY"] == test_proxy
 
 
-class TestDateTime:
-    def setup(self):
+class TestDateTime(unittest.TestCase):
+    def setUp(self):
         d = datetime.datetime(2015, 3, 7, 17, 47, 44, 716799)
         self.datetime = utils.DateTime(d)
 

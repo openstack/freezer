@@ -34,12 +34,13 @@ class DisableFileSystemRedirection:
     version (C:/Windows/SysWow64), if you really do need to access the
     contents of System32, you need to disable the file system redirector first.
     """
-    if is_windows():
-        _disable = ctypes.windll.kernel32.Wow64DisableWow64FsRedirection
-        _revert = ctypes.windll.kernel32.Wow64RevertWow64FsRedirection
-    else:
-        _disable = ''
-        _revert = ''
+
+    def __init__(self):
+        if is_windows():
+            self._disable = ctypes.windll.kernel32.Wow64DisableWow64FsRedirection
+            self._revert = ctypes.windll.kernel32.Wow64RevertWow64FsRedirection
+        else:
+            raise Exception("Useless if not windows")
 
     def __enter__(self):
         self.old_value = ctypes.c_long()

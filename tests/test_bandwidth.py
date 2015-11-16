@@ -16,8 +16,10 @@
 from freezer.bandwidth import ThrottledSocket, monkeypatch_bandwidth
 from commons import FakeSocket
 
+import unittest
 
-class TestBandwidth:
+
+class TestBandwidth(unittest.TestCase):
 
     def test_throttled_socket_recv(self):
         fake = FakeSocket()
@@ -27,9 +29,7 @@ class TestBandwidth:
     def test_throttled_socket_send(self):
         fake = FakeSocket()
         throttled = ThrottledSocket(100, 100, fake)
-        with pytest.raises(Exception) as excinfo:
-            throttled.sendall()
-        assert "fake send" in excinfo.value
+        self.assertRaises(Exception, throttled.sendall)
 
     def test_sleep_duration(self):
         assert ThrottledSocket._sleep_duration(10, 5, 5, 6) == 1.0

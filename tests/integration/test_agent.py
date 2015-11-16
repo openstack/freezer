@@ -29,7 +29,8 @@ class TestSimpleExecution(common.TestFS):
         self.assertIsNotNone(result)
 
     def test_freezerc_fails_with_wrong_params(self):
-        result = common.execute_freezerc('--blabla', must_fail=True,  merge_stderr=True)
+        result = common.execute_freezerc('--blabla', must_fail=True,
+                                         merge_stderr=True)
         self.assertIn('unrecognized arguments', result)
 
 

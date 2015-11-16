@@ -390,8 +390,7 @@ def get_executable_path(binary):
         path_to_binaries = os.path.dirname(os.path.abspath(__file__))
         return '{0}\\bin\\{1}.exe'.format(path_to_binaries, binary)
 
-    elif 'darwin' in sys.platform or 'bsd' in sys.platform:
-
+    elif is_bsd():
         return (distspawn.find_executable(binary) or
                 distspawn.find_executable(binary, path=':'.join(sys.path)))
     else:
@@ -418,3 +417,6 @@ def alter_proxy(proxy):
         os.environ['HTTPS_PROXY'] = str(proxy_value)
     else:
         raise Exception('Proxy has unknown scheme')
+
+def is_bsd():
+    return 'darwin' in sys.platform or 'bsd' in sys.platform

@@ -15,6 +15,7 @@
 
 import unittest
 from freezer.engine.tar import tar_builders
+from freezer import utils
 
 
 class TestTarCommandBuilder(unittest.TestCase):
@@ -104,4 +105,5 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
     def test_get_tar_flag_from_algo(self):
         assert tar_builders.get_tar_flag_from_algo('gzip') == '-z'
         assert tar_builders.get_tar_flag_from_algo('bzip2') == '-j'
-        assert tar_builders.get_tar_flag_from_algo('xz') == '-J'
+        if not utils.is_bsd():
+            assert tar_builders.get_tar_flag_from_algo('xz') == '-J'

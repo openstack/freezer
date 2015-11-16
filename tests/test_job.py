@@ -17,38 +17,31 @@ limitations under the License.
 """
 
 from commons import *
-from freezer import (restore, backup, exec_cmd)
-from freezer.job import (
-    Job, InfoJob, AdminJob, BackupJob, RestoreJob, ExecJob, create_job)
-from freezer import (restore, backup)
+from freezer.job import ExecJob
+from freezer import backup
 
-from freezer.job import Job, InfoJob, AdminJob, BackupJob, RestoreJob, create_job
-import logging
+from freezer.job import Job, InfoJob, AdminJob, BackupJob, RestoreJob, \
+    create_job
 from mock import patch, Mock
 import unittest
 
 
-class TestJob:
+class TestJob(unittest.TestCase):
+    fakebackup = FakeBackup()
 
-    def do_monkeypatch(self, monkeypatch):
-        self.fakebackup = FakeBackup()
-
-    def test_execute(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
+    def test_execute(self):
         job = Job(BackupOpt1())
         assert job.execute() is None
 
 
 class TestInfoJob(TestJob):
 
-    def test_execute_nothing_to_do(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
+    def test_execute_nothing_to_do(self):
         backup_opt = BackupOpt1()
         job = InfoJob(backup_opt)
         job.execute()
 
-    def test_execute_list_containers(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
+    def test_execute_list_containers(self):
         backup_opt = BackupOpt1()
         backup_opt.list_containers = True
         job = InfoJob(backup_opt)
@@ -57,44 +50,39 @@ class TestInfoJob(TestJob):
 
 class TestBackupJob(TestJob):
 
-    def test_execute_backup_fs_no_incremental_and_backup_level_raise(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
+    def test_execute_backup_fs_no_incremental_and_backup_level_raise(self):
         backup_opt = BackupOpt1()
         backup_opt.mode = 'fs'
         backup_opt.no_incremental = True
         job = BackupJob(backup_opt)
-        pytest.raises(Exception, job.execute)
+        self.assertRaises(Exception, job.execute)
 
-    def test_execute_backup_mongo(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(backup, 'backup_mode_mongo', self.fakebackup.fake_backup_mode_mongo)
+    def test_execute_backup_mongo(self):
+        backup.backup_mode_mongo = self.fakebackup.fake_backup_mode_mongo
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
         backup_opt.mode = 'mongo'
         job = BackupJob(backup_opt)
         assert job.execute() is None
 
-    def test_execute_backup_mysql(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
-        monkeypatch.setattr(backup, 'backup_mode_mysql', self.fakebackup.fake_backup_mode_mysql)
+    def test_execute_backup_mysql(self):
+        backup.backup_mode_mysql = self.fakebackup.fake_backup_mode_mysql
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
         backup_opt.mode = 'mysql'
         job = BackupJob(backup_opt)
         assert job.execute() is None
 
-    def test_execute_raise(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
+    def test_execute_raise(self):
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
         backup_opt.mode = None
         job = BackupJob(backup_opt)
-        pytest.raises(ValueError, job.execute)
+        self.assertRaises(ValueError, job.execute)
 
 
 class TestAdminJob(TestJob):
-    def test_execute(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
+    def test_execute(self):
         backup_opt = BackupOpt1()
         job = AdminJob(backup_opt)
         assert job.execute() is None
@@ -113,55 +101,48 @@ class TestExecJob(TestJob):
     def tearDown(self):
         self.popen.stop()
 
-    def test_execute_nothing_to_do(self, monkeypatch):
-        self.do_monkeypatch(monkeypatch)
+    def test_execute_nothing_to_do(self):
         backup_opt = BackupOpt1()
         job = ExecJob(backup_opt)
         assert job.execute() is False
 
-    def test_execute_script(self, monkeypatch):
-        self.setUp()
-        self.do_monkeypatch(monkeypatch)
+    def test_execute_script(self):
         self.mock_popen.return_value.returncode = 0
         backup_opt = BackupOpt1()
         backup_opt.command='echo test'
         job = ExecJob(backup_opt)
         assert job.execute() is True
-        self.tearDown()
 
-    def test_execute_raise(self, monkeypatch):
-        self.setUp()
-        self.do_monkeypatch(monkeypatch)
-        popen=patch('freezer.exec_cmd.subprocess.Popen')
+    def test_execute_raise(self):
+        self.popen=patch('freezer.exec_cmd.subprocess.Popen')
+        self.mock_popen=self.popen.start()
         self.mock_popen.return_value.returncode = 1
         backup_opt = BackupOpt1()
-        backup_opt.command='echo test'
+        backup_opt.command = 'echo test'
         job = ExecJob(backup_opt)
-        pytest.raises(Exception, job.execute)
-        self.tearDown()
+        self.assertRaises(Exception, job.execute)
 
+    def test_create_job(self):
+        backup_opt = BackupOpt1()
+        backup_opt.action = None
+        self.assertRaises(Exception, create_job, backup_opt)
 
-def test_create_job():
-    backup_opt = BackupOpt1()
-    backup_opt.action = None
-    pytest.raises(Exception, create_job, backup_opt)
+        backup_opt.action = 'backup'
+        job = create_job(backup_opt)
+        assert isinstance(job, BackupJob)
 
-    backup_opt.action = 'backup'
-    job = create_job(backup_opt)
-    assert isinstance(job, BackupJob)
+        backup_opt.action = 'restore'
+        job = create_job(backup_opt)
+        assert isinstance(job, RestoreJob)
 
-    backup_opt.action = 'restore'
-    job = create_job(backup_opt)
-    assert isinstance(job, RestoreJob)
+        backup_opt.action = 'info'
+        job = create_job(backup_opt)
+        assert isinstance(job, InfoJob)
 
-    backup_opt.action = 'info'
-    job = create_job(backup_opt)
-    assert isinstance(job, InfoJob)
+        backup_opt.action = 'admin'
+        job = create_job(backup_opt)
+        assert isinstance(job, AdminJob)
 
-    backup_opt.action = 'admin'
-    job = create_job(backup_opt)
-    assert isinstance(job, AdminJob)
-
-    backup_opt.action = 'exec'
-    job = create_job(backup_opt)
-    assert isinstance(job, ExecJob)
+        backup_opt.action = 'exec'
+        job = create_job(backup_opt)
+        assert isinstance(job, ExecJob)
