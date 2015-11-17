@@ -30,7 +30,8 @@ class TestJob(unittest.TestCase):
     fakebackup = FakeBackup()
 
     def test_execute(self):
-        job = Job(BackupOpt1())
+        opt = BackupOpt1()
+        job = Job(opt, opt.storage)
         assert job.execute() is None
 
 
@@ -38,13 +39,13 @@ class TestInfoJob(TestJob):
 
     def test_execute_nothing_to_do(self):
         backup_opt = BackupOpt1()
-        job = InfoJob(backup_opt)
+        job = InfoJob(backup_opt, backup_opt.storage)
         job.execute()
 
     def test_execute_list_containers(self):
         backup_opt = BackupOpt1()
         backup_opt.list_containers = True
-        job = InfoJob(backup_opt)
+        job = InfoJob(backup_opt, backup_opt.storage)
         job.execute()
 
 
@@ -54,7 +55,7 @@ class TestBackupJob(TestJob):
         backup_opt = BackupOpt1()
         backup_opt.mode = 'fs'
         backup_opt.no_incremental = True
-        job = BackupJob(backup_opt)
+        job = BackupJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)
 
     def test_execute_backup_mongo(self):
@@ -62,7 +63,7 @@ class TestBackupJob(TestJob):
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
         backup_opt.mode = 'mongo'
-        job = BackupJob(backup_opt)
+        job = BackupJob(backup_opt, backup_opt.storage)
         assert job.execute() is None
 
     def test_execute_backup_mysql(self):
@@ -70,21 +71,21 @@ class TestBackupJob(TestJob):
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
         backup_opt.mode = 'mysql'
-        job = BackupJob(backup_opt)
+        job = BackupJob(backup_opt, backup_opt.storage)
         assert job.execute() is None
 
     def test_execute_raise(self):
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
         backup_opt.mode = None
-        job = BackupJob(backup_opt)
+        job = BackupJob(backup_opt, backup_opt.storage)
         self.assertRaises(ValueError, job.execute)
 
 
 class TestAdminJob(TestJob):
     def test_execute(self):
         backup_opt = BackupOpt1()
-        job = AdminJob(backup_opt)
+        job = AdminJob(backup_opt, backup_opt.storage)
         assert job.execute() is None
 
 
@@ -103,14 +104,14 @@ class TestExecJob(TestJob):
 
     def test_execute_nothing_to_do(self):
         backup_opt = BackupOpt1()
-        job = ExecJob(backup_opt)
+        job = ExecJob(backup_opt, backup_opt.storage)
         assert job.execute() is False
 
     def test_execute_script(self):
         self.mock_popen.return_value.returncode = 0
         backup_opt = BackupOpt1()
         backup_opt.command='echo test'
-        job = ExecJob(backup_opt)
+        job = ExecJob(backup_opt, backup_opt.storage)
         assert job.execute() is True
 
     def test_execute_raise(self):
@@ -119,7 +120,7 @@ class TestExecJob(TestJob):
         self.mock_popen.return_value.returncode = 1
         backup_opt = BackupOpt1()
         backup_opt.command = 'echo test'
-        job = ExecJob(backup_opt)
+        job = ExecJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)
 
     def test_create_job(self):
@@ -128,21 +129,21 @@ class TestExecJob(TestJob):
         self.assertRaises(Exception, create_job, backup_opt)
 
         backup_opt.action = 'backup'
-        job = create_job(backup_opt)
+        job = create_job(backup_opt, backup_opt.storage)
         assert isinstance(job, BackupJob)
 
         backup_opt.action = 'restore'
-        job = create_job(backup_opt)
+        job = create_job(backup_opt, backup_opt.storage)
         assert isinstance(job, RestoreJob)
 
         backup_opt.action = 'info'
-        job = create_job(backup_opt)
+        job = create_job(backup_opt, backup_opt.storage)
         assert isinstance(job, InfoJob)
 
         backup_opt.action = 'admin'
-        job = create_job(backup_opt)
+        job = create_job(backup_opt, backup_opt.storage)
         assert isinstance(job, AdminJob)
 
         backup_opt.action = 'exec'
-        job = create_job(backup_opt)
+        job = create_job(backup_opt, backup_opt.storage)
         assert isinstance(job, ExecJob)

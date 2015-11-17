@@ -33,9 +33,9 @@ class Job:
     :type engine: freezer.engine.engine.BackupEngine
     """
 
-    def __init__(self, conf_dict):
+    def __init__(self, conf_dict, storage):
         self.conf = conf_dict
-        self.storage = conf_dict.storage
+        self.storage = storage
         self.engine = conf_dict.engine
 
     def execute(self):
@@ -77,16 +77,16 @@ class BackupJob(Job):
                 logging.error('Error while sync exec: {0}'.format(err))
         except Exception as error:
             logging.error('Error while sync exec: {0}'.format(error))
-        self.conf.storage.prepare()
+        self.storage.prepare()
 
         if self.conf.mode == 'fs':
             backup.backup(self.conf, self.storage, self.engine)
         elif self.conf.mode == 'mongo':
-            backup.backup_mode_mongo(self.conf)
+            backup.backup_mode_mongo(self.conf, self.storage)
         elif self.conf.mode == 'mysql':
-            backup.backup_mode_mysql(self.conf)
+            backup.backup_mode_mysql(self.conf, self.storage)
         elif self.conf.mode == 'sqlserver':
-            backup.backup_mode_sql_server(self.conf)
+            backup.backup_mode_sql_server(self.conf, self.storage)
         else:
             raise ValueError('Please provide a valid backup mode')
 
@@ -169,15 +169,15 @@ class ExecJob(Job):
         return True
 
 
-def create_job(conf):
+def create_job(conf, storage):
     if conf.action == 'backup':
-        return BackupJob(conf)
+        return BackupJob(conf, storage)
     if conf.action == 'restore':
-        return RestoreJob(conf)
+        return RestoreJob(conf, storage)
     if conf.action == 'info':
-        return InfoJob(conf)
+        return InfoJob(conf, storage)
     if conf.action == 'admin':
-        return AdminJob(conf)
+        return AdminJob(conf, storage)
     if conf.action == 'exec':
-        return ExecJob(conf)
+        return ExecJob(conf, storage)
     raise Exception('Action "{0}" not supported'.format(conf.action))

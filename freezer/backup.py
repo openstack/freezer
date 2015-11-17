@@ -32,7 +32,7 @@ from freezer.winutils import is_windows
 home = expanduser("~")
 
 
-def backup_mode_sql_server(backup_opt_dict):
+def backup_mode_sql_server(backup_opt_dict, storage):
     """
     Execute a SQL Server DB backup. Currently only backups with shadow
     copy are supported. This mean, as soon as the shadow copy is created
@@ -60,8 +60,7 @@ def backup_mode_sql_server(backup_opt_dict):
 
     try:
         stop_sql_server(backup_opt_dict.sql_server_instance)
-        backup(backup_opt_dict, backup_opt_dict.storage,
-               backup_opt_dict.engine)
+        backup(backup_opt_dict, storage, backup_opt_dict.engine)
     finally:
         if not backup_opt_dict.vssadmin:
             # if vssadmin is false, wait until the backup is complete
@@ -69,7 +68,7 @@ def backup_mode_sql_server(backup_opt_dict):
             start_sql_server(backup_opt_dict.sql_server_instance)
 
 
-def backup_mode_mysql(backup_opt_dict):
+def backup_mode_mysql(backup_opt_dict, storage):
     """
     Execute a MySQL DB backup. currently only backup with lvm snapshots
     are supported. This mean, just before the lvm snap vol is created,
@@ -132,10 +131,10 @@ def backup_mode_mysql(backup_opt_dict):
         raise Exception('[*] MySQL: {0}'.format(error))
 
     # Execute backup
-    backup(backup_opt_dict, backup_opt_dict.storage, backup_opt_dict.engine)
+    backup(backup_opt_dict, storage, backup_opt_dict.engine)
 
 
-def backup_mode_mongo(backup_opt_dict):
+def backup_mode_mongo(backup_opt_dict, storage):
     """
     Execute the necessary tasks for file system backup mode
     """
@@ -156,8 +155,7 @@ def backup_mode_mongo(backup_opt_dict):
     mongo_primary = master_dict['primary']
 
     if mongo_me == mongo_primary:
-        backup(backup_opt_dict, backup_opt_dict.storage,
-               backup_opt_dict.engine)
+        backup(backup_opt_dict, storage, backup_opt_dict.engine)
     else:
         logging.warning('[*] localhost {0} is not Master/Primary,\
         exiting...'.format(local_hostname))

@@ -130,7 +130,6 @@ def freezer_main(backup_args, arg_parse):
     else:
         raise Exception("Not storage found for name " + backup_args.storage)
 
-    backup_args.__dict__['storage'] = storage
     backup_args.__dict__['engine'] = tar_engine.TarBackupEngine(
         backup_args.compression,
         backup_args.dereference_symlink,
@@ -145,7 +144,7 @@ def freezer_main(backup_args, arg_parse):
             if int(os.environ.get("tricklecount")) > 1:
                 logging.critical("[*] Trickle seems to be not working,"
                                  " Switching to normal mode ")
-                run_job(backup_args)
+                run_job(backup_args, storage)
 
         freezer_command = '{0} {1}'.format(backup_args.trickle_command,
                                            ' '.join(sys.argv))
@@ -160,14 +159,14 @@ def freezer_main(backup_args, arg_parse):
         if process.returncode:
             logging.error("[*] Trickle Error: {0}".format(error))
             logging.critical("[*] Switching to work without trickle ...")
-            run_job(backup_args)
+            run_job(backup_args, storage)
 
     else:
-        run_job(backup_args)
+        run_job(backup_args, storage)
 
 
-def run_job(backup_args):
-    freezer_job = job.create_job(backup_args)
+def run_job(backup_args, storage):
+    freezer_job = job.create_job(backup_args, storage)
     freezer_job.execute()
 
     if backup_args.metadata_out == '-':
