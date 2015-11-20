@@ -11,6 +11,7 @@ oslo.i18n>=1.5.0,<1.6.0
 
 PyMySQL>=0.6.2  # MIT License
 pymongo>=2.6.3,<3.0
+paramiko>=1.13.0
+
 # Not in global-requirements
 apscheduler
-paramiko>=1.13.0

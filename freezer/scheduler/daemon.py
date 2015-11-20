@@ -24,7 +24,7 @@ from tempfile import gettempdir
 from time import sleep
 
 
-from pep3143daemon import DaemonContext, PidFile
+from freezer.lib.pep3143daemon import DaemonContext, PidFile
 from freezer.utils import create_dir
 
 
