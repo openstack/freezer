@@ -46,29 +46,24 @@ Requirements
 Windows Requirements
 ====================
 
-- Cygwin
+  - Python 2.7
+  - GNU Tar (we recommend to follow [this guide](https://github.com/memogarcia/freezer-windows-binaries#windows-binaries-for-freezer) to install them)
+  - [OpenSSL pre-compiled for windows](https://wiki.openssl.org/index.php/Binaries) or [direct download](https://indy.fulgan.com/SSL/openssl-1.0.1-i386-win32.zip)
+  - [Sync](https://technet.microsoft.com/en-us/sysinternals/bb897438.aspx)
+  - [Microsoft Visual C++ Compiler for Python 2.7](http://aka.ms/vcpython27)
+  - [PyWin32 for python 2.7](http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/)
+
+Add binaries to Windows Path
+----------------------------
+Go to **Control Panel\System and Security\System** and then **Advanced System Settings**, and click **Environment Variables** under **System Variables** edit **Path** and append in the end.
+  - ;C:\Sync
+  - ;C:\OpenSSL-Win64\bin
+  - ;C:\Python27;C:\Python27\Lib\site-packages\;C:\Python27\Scripts\
 
 The following components support Windowd OS Platform:
 
 - freezer-agent
 - freezer-scheduler
-
-However Cygwin is required to execute backup and restore. The following
-binaries and dll needs to be installed:
-
--  bunzip2.exe
--  bzcat.exe
--  bzip2.exe
--  bzip2recover.exe
--  cygbz2-1.dll
--  cygiconv-2.dll
--  cygintl-8.dll
--  cygwin1.dll
--  find.exe
--  gzip.exe
--  tar.exe
-
-The .dll needs to on the Windows System Path.
 
 Installation & Env Setup
 ========================
@@ -130,14 +125,6 @@ data inconsistencies and corruption.*
 
 Windows
 -------
-
-Install OpenSSL binaries from http://www.openssl.org/related/binaries.html and add
-it to Path:
-
-Install sync binaries from https://technet.microsoft.com/en-us/sysinternals/bb897438 and add
-it to Path
-
-
 General packages::
 
     > easy_install -U pip
