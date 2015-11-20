@@ -15,7 +15,3 @@ paramiko>=1.13.0
 
 # Not in global-requirements
 apscheduler
-
-# Platform specific
-pywin32; sys_platform == 'win32'
-pep3143daemon; sys_platform != 'win32'
