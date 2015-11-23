@@ -45,24 +45,34 @@ Requirements
 Windows Requirements
 ====================
 
-  - Python 2.7
-  - GNU Tar binaries (we recommend to follow [this guide](https://github.com/memogarcia/freezer-windows-binaries#windows-binaries-for-freezer) to install them)
-  - [OpenSSL pre-compiled for windows](https://wiki.openssl.org/index.php/Binaries) or [direct download](https://indy.fulgan.com/SSL/openssl-1.0.1-i386-win32.zip)
-  - [Sync](https://technet.microsoft.com/en-us/sysinternals/bb897438.aspx)
-  - [Microsoft Visual C++ Compiler for Python 2.7](http://aka.ms/vcpython27)
-  - [PyWin32 for python 2.7](http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/)
+- Python 2.7
+- GNU Tar binaries (we recommend to follow [this guide](https://github.com/memogarcia/freezer-windows-binaries#windows-binaries-for-freezer) to install them)
+- [OpenSSL pre-compiled for windows](https://wiki.openssl.org/index.php/Binaries) or [direct download](https://indy.fulgan.com/SSL/openssl-1.0.1-i386-win32.zip)
+- [Sync](https://technet.microsoft.com/en-us/sysinternals/bb897438.aspx)
+- [Microsoft Visual C++ Compiler for Python 2.7](http://aka.ms/vcpython27)
+- [PyWin32 for python 2.7](http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/)
 
 Add binaries to Windows Path
 ----------------------------
 Go to **Control Panel\System and Security\System** and then **Advanced System Settings**, and click **Environment Variables** under **System Variables** edit **Path** and append in the end.
-  - ;C:\Sync
-  - ;C:\OpenSSL-Win64\bin
-  - ;C:\Python27;C:\Python27\Lib\site-packages\;C:\Python27\Scripts\
+- ;C:\Sync
+- ;C:\OpenSSL-Win64\bin
+- ;C:\Python27;C:\Python27\Lib\site-packages\;C:\Python27\Scripts\
 
 The following components support Windows OS Platform:
 
 - freezer-agent
 - freezer-scheduler
+
+Install Windows Scheduler
+-------------------------
+
+Freezer scheduler on windows run as a windows service and it needs to be installed as a user service.
+
+- open cmd as admin
+- whoami
+- cd C:\Python27\Lib\site-packages\freezer\scheduler
+- python win_service.py --username {whoami} --password {pc-password} install
 
 
 Installation & Env Setup

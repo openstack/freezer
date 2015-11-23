@@ -25,6 +25,8 @@ import time
 
 from ConfigParser import ConfigParser
 
+from freezer import utils
+
 
 class StopState(object):
 
@@ -279,11 +281,12 @@ class Job(object):
         freezer_action = job_action.get('freezer_action', {})
         max_retries_interval = job_action.get('max_retries_interval', 60)
         action_name = freezer_action.get('action', '')
+        config_file_name = None
         while tries:
 
-            with tempfile.NamedTemporaryFile() as config_file:
+            with tempfile.NamedTemporaryFile(delete=False) as config_file:
                 self.save_action_to_file(freezer_action, config_file)
-
+                config_file_name = config_file.name
                 freezer_command = '{0} --metadata-out - --config {1}'.\
                     format(self.executable, config_file.name)
                 self.process = subprocess.Popen(freezer_command.split(),
@@ -291,6 +294,8 @@ class Job(object):
                                                 stderr=subprocess.PIPE,
                                                 env=os.environ.copy())
                 output, error = self.process.communicate()
+                # ensure the tempfile gets deleted
+                utils.delete_file(config_file_name)
 
             if error:
                 logging.error("[*] Freezer client error: {0}".format(error))
@@ -316,6 +321,7 @@ class Job(object):
                 return Job.SUCCESS_RESULT
         logging.error('[*] Job {0} action {1} failed after {2} tries'
                       .format(self.id, action_name, max_retries))
+
         return Job.FAIL_RESULT
 
     def execute(self):

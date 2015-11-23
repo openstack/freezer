@@ -14,8 +14,6 @@
 
 from freezer.winutils import is_windows
 from freezer.winutils import use_shadow
-from freezer.winutils import clean_tar_command
-from freezer.winutils import add_gzip_to_command
 from freezer.winutils import DisableFileSystemRedirection
 from freezer import winutils
 from commons import *
@@ -53,26 +51,6 @@ class TestWinutils(unittest.TestCase):
 
         # test if the volume format is incorrect
         self.assertRaises(Exception, use_shadow(path, test_volume))
-
-    def test_clean_tar_command(self):
-        test_tar_command = 'tar --create -z --warning=none ' \
-                           '--no-check-device --one-file-system ' \
-                           '--preserve-permissions --same-owner --seek ' \
-                           '--ignore-failed-read '
-        expected = 'tar --create    --one-file-system --preserve-permissions ' \
-                   '--same-owner  --ignore-failed-read '
-
-        assert clean_tar_command(test_tar_command) == expected
-
-    def test_add_gzip_to_command(self):
-        test_command = 'tar --create    --one-file-system ' \
-                       '--preserve-permissions --same-owner ' \
-                       '--ignore-failed-read '
-        expected = 'tar --create    --one-file-system ' \
-                   '--preserve-permissions --same-owner ' \
-                   '--ignore-failed-read  | gzip -7'
-
-        assert add_gzip_to_command(test_command) == expected
 
     # def test_start_sql_server(self):
     #     backup_opt = BackupOpt1()

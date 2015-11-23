@@ -1,6 +1,23 @@
 CHANGES
 =======
 
+* Freezer Scheduler for Windows
+* Import pep3134daemon as local module
+* Freezer instructions for Windows
+* Fix metadata storage
+* Updated python-keystoneclient requirement
+* Updated requirements to match Liberty's one
+* Fix tests
+* Improvements for windows snapshots
+* Fix versions for Liberty
+
+1.1.3
+-----
+
+* Add backup metadata fields
+* Updated LICENSE file and headers
+* PBR version needs to be explicitly set on setup.py
+* Fix bug on setup.cfg after bin removal
 * Fixes for cinder backup
 * Removed freezer/bin directory from the repo
 * Add cygwin source of cygwin .dll

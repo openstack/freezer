@@ -16,6 +16,8 @@
 import ctypes
 import logging
 import sys
+import os
+import json
 
 from freezer.utils import create_subprocess
 
@@ -57,21 +59,6 @@ def use_shadow(to_backup, windows_volume):
                              .format(windows_volume))
 
 
-def clean_tar_command(tar_cmd):
-    """ Delete tar arguments that are not supported by GnuWin32 tar"""
-    tar_cmd = tar_cmd.replace('--hard-dereference', '')
-    tar_cmd = tar_cmd.replace('--no-check-device', '')
-    tar_cmd = tar_cmd.replace('--warning=none', '')
-    tar_cmd = tar_cmd.replace('--seek', '')
-    tar_cmd = tar_cmd.replace('-z', '')
-    return tar_cmd
-
-
-def add_gzip_to_command(tar_cmd):
-    gzip_cmd = 'gzip -7'
-    return '{0} | {1}'.format(tar_cmd, gzip_cmd)
-
-
 def stop_sql_server(sql_server_instance):
     """ Stop a SQL Server instance to perform the backup of the db files """
 
@@ -95,3 +82,24 @@ def start_sql_server(sql_server_instance):
             raise Exception('[*] Error while starting SQL Server'
                             ', error {0}'.format(err))
         logging.info('[*] SQL Server back to normal')
+
+
+def save_environment(home):
+    """Read the environment from the terminal where the scheduler is
+    initialized and save the environment variables to be reused within the
+    windows service
+    """
+    env_path = os.path.join(home, 'env.json')
+    with open(env_path, 'wb') as tmp:
+        json.dump(os.environ.copy(), tmp)
+
+
+def set_environment(home):
+    """Read the environment variables saved by the win_daemon and restore it
+    here for the windows service
+    """
+    json_env = os.path.join(home, 'env.json')
+    with open(json_env, 'rb') as fp:
+        env = json.loads(fp.read())
+        for k, v in env.iteritems():
+            os.environ[str(k).strip()] = str(v).strip()

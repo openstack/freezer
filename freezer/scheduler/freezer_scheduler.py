@@ -30,7 +30,11 @@ import arguments
 import shell
 import utils
 
-from daemon import Daemon, NoDaemon
+from freezer import winutils
+if winutils.is_windows():
+    from win_daemon import Daemon, NoDaemon
+else:
+    from daemon import Daemon, NoDaemon
 from scheduler_job import Job
 
 
@@ -176,7 +180,7 @@ def main():
 
     if args.action is None:
         print ('No action')
-        return os.EX_DATAERR
+        return 65  # os.EX_DATAERR
 
     apiclient = None
 
@@ -184,13 +188,17 @@ def main():
         apiclient = client.Client(opts=args)
         if args.client_id:
             apiclient.client_id = args.client_id
+    else:
+        if winutils.is_windows():
+            print("--no-api mode is not available on windows")
+            return 69  # os.EX_UNAVAILABLE
 
     if args.action in doers:
         try:
             return doers[args.action](apiclient, args)
         except Exception as e:
             print ('ERROR {0}'.format(e))
-            return os.EX_SOFTWARE
+            return 70  # os.EX_SOFTWARE
 
     freezer_scheduler = FreezerScheduler(apiclient=apiclient,
                                          interval=int(args.interval),
@@ -200,7 +208,12 @@ def main():
         print ('Freezer Scheduler running in no-daemon mode')
         daemon = NoDaemon(daemonizable=freezer_scheduler)
     else:
-        daemon = Daemon(daemonizable=freezer_scheduler)
+        if winutils.is_windows():
+            daemon = Daemon(daemonizable=freezer_scheduler,
+                            interval=int(args.interval),
+                            job_path=args.jobs_dir)
+        else:
+            daemon = Daemon(daemonizable=freezer_scheduler)
 
     if args.action == 'start':
         daemon.start(log_file=args.log_file)
@@ -211,7 +224,9 @@ def main():
     elif args.action == 'status':
         daemon.status()
 
-    return os.EX_OK
+    # os.RETURN_CODES are only available to posix like systems, on windows
+    # we need to translate the code to an actual number which is the equivalent
+    return 0  # os.EX_OK
 
 
 if __name__ == '__main__':

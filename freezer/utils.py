@@ -26,6 +26,8 @@ from ConfigParser import ConfigParser
 from distutils import spawn as distspawn
 import sys
 
+from functools import wraps
+
 
 class OpenstackOptions:
     """
@@ -420,3 +422,23 @@ def alter_proxy(proxy):
 
 def is_bsd():
     return 'darwin' in sys.platform or 'bsd' in sys.platform
+
+
+def shield(func):
+    """Remove try except boilerplate code from functions"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as error:
+            logging.error(error)
+    return wrapper
+
+
+def delete_file(path_to_file):
+    """Delete a file from the file system
+    """
+    try:
+        os.remove(path_to_file)
+    except Exception:
+        logging.warning("Error deleting file {0}".format(path_to_file))

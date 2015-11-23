@@ -19,8 +19,12 @@ import argparse
 import os
 
 from freezer.apiclient import client as api_client
+from freezer import winutils
 
-DEFAULT_FREEZER_SCHEDULER_CONF_D = '/etc/freezer/scheduler/conf.d'
+if winutils.is_windows():
+    DEFAULT_FREEZER_SCHEDULER_CONF_D = r'C:\.freezer\scheduler\conf.d'
+else:
+    DEFAULT_FREEZER_SCHEDULER_CONF_D = '/etc/freezer/scheduler/conf.d'
 
 
 def base_parser(parser):

@@ -35,8 +35,8 @@ def do_register(client, args=None):
         except freezer.apiclient.exceptions.ApiClientException as e:
             if e.status_code == 409:
                 print "Client already registered"
-            return os.EX_CANTCREAT
-        return os.EX_OK
+            return 73  # os.EX_CANTCREAT
+        return 0  # os.EX_OK
 
 
 def find_config_files(path):
