@@ -140,7 +140,7 @@ class TestSessionManager(unittest.TestCase):
         retval = self.session_manager.add_job(session_id, job_id)
 
         self.assertEqual(retval, None)
-        mock_requests.put.assert_called_with(endpoint, headers=self.headers)
+        mock_requests.put.assert_called_with(endpoint, headers=self.headers, verify=True)
 
     @patch('freezer.apiclient.sessions.requests')
     def test_add_job_raise_ApiClientException_when_api_return_error_code(self, mock_requests):
@@ -159,7 +159,7 @@ class TestSessionManager(unittest.TestCase):
         retval = self.session_manager.remove_job(session_id, job_id)
 
         self.assertEqual(retval, None)
-        mock_requests.delete.assert_called_with(endpoint, headers=self.headers)
+        mock_requests.delete.assert_called_with(endpoint, headers=self.headers, verify=True)
 
     @patch('freezer.apiclient.sessions.requests')
     def test_remove_job_raise_ApiClientException_when_api_return_error_code(self, mock_requests):

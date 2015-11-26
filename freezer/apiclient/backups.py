@@ -22,9 +22,10 @@ import exceptions
 
 class BackupsManager(object):
 
-    def __init__(self, client):
+    def __init__(self, client, verify=True):
         self.client = client
         self.endpoint = self.client.endpoint + '/v1/backups/'
+        self.verify = verify
 
     @property
     def headers(self):
@@ -33,7 +34,8 @@ class BackupsManager(object):
     def create(self, backup_metadata):
         r = requests.post(self.endpoint,
                           data=json.dumps(backup_metadata),
-                          headers=self.headers)
+                          headers=self.headers,
+                          verify=self.verify)
         if r.status_code != 201:
             raise exceptions.ApiClientException(r)
         backup_id = r.json()['backup_id']
@@ -41,7 +43,7 @@ class BackupsManager(object):
 
     def delete(self, backup_id):
         endpoint = self.endpoint + backup_id
-        r = requests.delete(endpoint, headers=self.headers)
+        r = requests.delete(endpoint, headers=self.headers, verify=self.verify)
         if r.status_code != 204:
             raise exceptions.ApiClientException(r)
 
@@ -61,7 +63,7 @@ class BackupsManager(object):
         data = json.dumps(search) if search else None
         query = {'limit': int(limit), 'offset': int(offset)}
         r = requests.get(self.endpoint, headers=self.headers,
-                         params=query, data=data)
+                         params=query, data=data, verify=self.verify)
         if r.status_code != 200:
             raise exceptions.ApiClientException(r)
 
@@ -69,7 +71,7 @@ class BackupsManager(object):
 
     def get(self, backup_id):
         endpoint = self.endpoint + backup_id
-        r = requests.get(endpoint, headers=self.headers)
+        r = requests.get(endpoint, headers=self.headers, verify=self.verify)
         if r.status_code == 200:
             return r.json()
         if r.status_code == 404:

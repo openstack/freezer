@@ -65,13 +65,15 @@ class Daemon(object):
     """Daemon interface to start a windows service with a freezer-scheduler
     instance
     """
-    def __init__(self, daemonizable=None, interval=None, job_path=None):
+    def __init__(self, daemonizable=None, interval=None, job_path=None,
+                 insecure=False):
         self.service_name = 'FreezerService'
         self.home = r'C:\.freezer'
         # this is only need it in order to have the same interface as in linux
         self.daemonizable = daemonizable
         self.interval = interval or 60
         self.job_path = job_path or r'C:\.freezer\scheduler\conf.d'
+        self.insecure = insecure
 
     @shield
     def start(self, log_file=None):
@@ -81,9 +83,13 @@ class Daemon(object):
 
         create_dir(self.home)
 
+        if self.insecure:
+            os.environ['SERVICE_INSECURE'] = 'True'
+
         # send arguments info to the windows service
         os.environ['SERVICE_JOB_PATH'] = self.job_path
         os.environ['SERVICE_INTERVAL'] = str(self.interval)
+
         save_environment(self.home)
 
         print('Freezer Service is starting')

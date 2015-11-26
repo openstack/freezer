@@ -94,6 +94,13 @@ def base_parser(parser):
         help=('location of log file'),
         dest='log_file', default=None)
 
+    parser.add_argument(
+        '--insecure',
+        action='store_true',
+        help='Initialize freezer scheduler with insecure mode',
+        dest='insecure', default=False
+    )
+
     return parser
 
 

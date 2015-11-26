@@ -22,9 +22,10 @@ import exceptions
 
 class RegistrationManager(object):
 
-    def __init__(self, client):
+    def __init__(self, client, verify=True):
         self.client = client
         self.endpoint = self.client.endpoint + '/v1/clients/'
+        self.verify = verify
 
     @property
     def headers(self):
@@ -33,7 +34,8 @@ class RegistrationManager(object):
     def create(self, client_info):
         r = requests.post(self.endpoint,
                           data=json.dumps(client_info),
-                          headers=self.headers)
+                          headers=self.headers,
+                          verify=self.verify)
         if r.status_code != 201:
             raise exceptions.ApiClientException(r)
         client_id = r.json()['client_id']
@@ -41,7 +43,8 @@ class RegistrationManager(object):
 
     def delete(self, client_id):
         endpoint = self.endpoint + client_id
-        r = requests.delete(endpoint, headers=self.headers)
+        r = requests.delete(endpoint, headers=self.headers,
+                            verify=self.verify)
         if r.status_code != 204:
             raise exceptions.ApiClientException(r)
 
@@ -65,14 +68,14 @@ class RegistrationManager(object):
         data = json.dumps(search) if search else None
         query = {'limit': int(limit), 'offset': int(offset)}
         r = requests.get(self.endpoint, headers=self.headers,
-                         params=query, data=data)
+                         params=query, data=data, verify=self.verify)
         if r.status_code != 200:
             raise exceptions.ApiClientException(r)
         return r.json()['clients']
 
     def get(self, client_id):
         endpoint = self.endpoint + client_id
-        r = requests.get(endpoint, headers=self.headers)
+        r = requests.get(endpoint, headers=self.headers, verify=self.verify)
         if r.status_code == 200:
             return r.json()
         if r.status_code == 404:

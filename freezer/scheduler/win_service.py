@@ -32,7 +32,7 @@ class PySvc(win32serviceutil.ServiceFramework):
         # create an event to listen for stop requests on
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         self.home = r'C:\.freezer'
-
+        self.verify = True
 
     def SvcDoRun(self):
         """Run the windows service and start the scheduler in the background
@@ -67,13 +67,35 @@ class PySvc(win32serviceutil.ServiceFramework):
 
         set_environment(self.home)
 
-        client = freezer.apiclient.client.Client(
-            version='2',
-            username=os.environ['OS_USERNAME'],
-            password=os.environ['OS_PASSWORD'],
-            tenant_name=os.environ['OS_TENANT_NAME'],
-            auth_url=os.environ['OS_AUTH_URL'],
-            endpoint=os.environ['OS_BACKUP_URL'])
+        if os.environ.get('SERVICE_INSECURE'):
+            self.verify = False
+
+        # Add support for keystone v2 and v3
+        credentials = {}
+        if os.environ['OS_IDENTITY_API_VERSION'] == 2:
+            credentials = {
+                'version': 2,
+                'username': os.environ['OS_USERNAME'],
+                'password': os.environ['OS_PASSWORD'],
+                'auth_url': os.environ['OS_AUTH_URL'],
+                'endpoint': os.environ['OS_BACKUP_URL'],
+                'tenant_name': os.environ['OS_TENANT_NAME'],
+                'verify': self.verify
+            }
+        elif os.environ['OS_IDENTITY_API_VERSION'] == 3:
+            credentials = {
+                'version': 3,
+                'username': os.environ['OS_USERNAME'],
+                'password': os.environ['OS_PASSWORD'],
+                'auth_url': os.environ['OS_AUTH_URL'],
+                'endpoint': os.environ['OS_BACKUP_URL'],
+                'project_name': os.environ['OS_PROJECT_NAME'],
+                'user_domain_name': os.environ['OS_USER_DOMAIN_NAME'],
+                'project_domain_name': os.environ['OS_PROJECT_DOMAIN_NAME'],
+                'verify': self.verify
+            }
+
+        client = freezer.apiclient.client.Client(**credentials)
 
         scheduler = FreezerScheduler(
             apiclient=client, interval=int(os.environ['SERVICE_INTERVAL']),

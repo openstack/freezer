@@ -22,9 +22,10 @@ import exceptions
 
 class SessionManager(object):
 
-    def __init__(self, client):
+    def __init__(self, client, verify=True):
         self.client = client
         self.endpoint = self.client.endpoint + '/v1/sessions/'
+        self.verify = verify
 
     @property
     def headers(self):
@@ -35,7 +36,8 @@ class SessionManager(object):
         endpoint = self.endpoint + session_id
         r = requests.post(endpoint,
                           data=json.dumps(doc),
-                          headers=self.headers)
+                          headers=self.headers,
+                          verify=self.verify)
         if r.status_code != 201:
             raise exceptions.ApiClientException(r)
         session_id = r.json()['session_id']
@@ -43,7 +45,7 @@ class SessionManager(object):
 
     def delete(self, session_id):
         endpoint = self.endpoint + session_id
-        r = requests.delete(endpoint, headers=self.headers)
+        r = requests.delete(endpoint, headers=self.headers, verify=self.verify)
         if r.status_code != 204:
             raise exceptions.ApiClientException(r)
 
@@ -51,7 +53,7 @@ class SessionManager(object):
         data = json.dumps(search) if search else None
         query = {'limit': int(limit), 'offset': int(offset)}
         r = requests.get(self.endpoint, headers=self.headers,
-                         params=query, data=data)
+                         params=query, data=data, verify=self.verify)
         if r.status_code != 200:
             raise exceptions.ApiClientException(r)
         return r.json()['sessions']
@@ -63,7 +65,7 @@ class SessionManager(object):
 
     def get(self, session_id):
         endpoint = self.endpoint + session_id
-        r = requests.get(endpoint, headers=self.headers)
+        r = requests.get(endpoint, headers=self.headers, verify=self.verify)
         if r.status_code == 200:
             return r.json()
         if r.status_code == 404:
@@ -74,7 +76,8 @@ class SessionManager(object):
         endpoint = self.endpoint + session_id
         r = requests.patch(endpoint,
                            headers=self.headers,
-                           data=json.dumps(update_doc))
+                           data=json.dumps(update_doc),
+                           verify=self.verify)
         if r.status_code != 200:
             raise exceptions.ApiClientException(r)
         return r.json()['version']
@@ -83,7 +86,7 @@ class SessionManager(object):
         # endpoint /v1/sessions/{sessions_id}/jobs/{job_id}
         endpoint = '{0}{1}/jobs/{2}'.format(self.endpoint, session_id, job_id)
         r = requests.put(endpoint,
-                         headers=self.headers)
+                         headers=self.headers, verify=self.verify)
         if r.status_code != 204:
             raise exceptions.ApiClientException(r)
         return
@@ -95,7 +98,7 @@ class SessionManager(object):
         r = ''
         while retry:
             r = requests.delete(endpoint,
-                                headers=self.headers)
+                                headers=self.headers, verify=self.verify)
             if r.status_code == 204:
                 return
             retry -= 1
@@ -126,7 +129,8 @@ class SessionManager(object):
             }}
         r = requests.post(endpoint,
                           headers=self.headers,
-                          data=json.dumps(doc))
+                          data=json.dumps(doc),
+                          verify=self.verify)
         if r.status_code != 202:
             raise exceptions.ApiClientException(r)
         return r.json()
@@ -151,7 +155,8 @@ class SessionManager(object):
             }}
         r = requests.post(endpoint,
                           headers=self.headers,
-                          data=json.dumps(doc))
+                          data=json.dumps(doc),
+                          verify=self.verify)
         if r.status_code != 202:
             raise exceptions.ApiClientException(r)
         return r.json()

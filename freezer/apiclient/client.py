@@ -187,7 +187,11 @@ class Client(object):
                  auth_url=None,
                  session=None,
                  endpoint=None,
-                 opts=None):
+                 opts=None,
+                 project_name=None,
+                 user_domain_name=None,
+                 project_domain_name=None,
+                 verify=True):
 
         self.opts = opts or build_os_option_parser(
             argparse.ArgumentParser(description='Freezer Client')
@@ -204,22 +208,32 @@ class Client(object):
             self.opts.os_auth_url = auth_url
         if endpoint:
             self.opts.os_backup_url = endpoint
+        if project_name:
+            self.opts.os_project_name = project_name
+        if user_domain_name:
+            self.opts.user_domain_name = user_domain_name
+        if project_domain_name:
+            self.opts.project_domain_name = project_domain_name
+
+        # flag to initialize freezer-scheduler with insecure mode
+        self.verify = verify
 
         self._session = session
         self.version = version
 
-        self.backups = BackupsManager(self)
-        self.registration = RegistrationManager(self)
-        self.jobs = JobManager(self)
-        self.actions = ActionManager(self)
-        self.sessions = SessionManager(self)
+        self.backups = BackupsManager(self, verify=verify)
+        self.registration = RegistrationManager(self, verify=verify)
+        self.jobs = JobManager(self, verify=verify)
+        self.actions = ActionManager(self, verify=verify)
+        self.sessions = SessionManager(self, verify=verify)
+
 
     @cached_property
     def session(self):
         if self._session:
             return self._session
         auth_plugin = get_auth_plugin(self.opts)
-        return ksc_session.Session(auth=auth_plugin)
+        return ksc_session.Session(auth=auth_plugin, verify=self.verify)
 
     @cached_property
     def endpoint(self):

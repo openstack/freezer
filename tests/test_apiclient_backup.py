@@ -116,7 +116,8 @@ class TestBackupManager(unittest.TestCase):
             'http://testendpoint:9999/v1/backups/',
             params={'limit': 5, 'offset': 5},
             data='{"time_before": 1428529956}',
-            headers={'X-Auth-Token': 'testtoken'})
+            headers={'X-Auth-Token': 'testtoken'},
+            verify=True)
         self.assertEqual(retval, backup_list)
 
     @patch('freezer.apiclient.backups.requests')

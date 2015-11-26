@@ -183,9 +183,12 @@ def main():
         return 65  # os.EX_DATAERR
 
     apiclient = None
+    verify = True
+    if args.insecure:
+        verify = False
 
     if args.no_api is False:
-        apiclient = client.Client(opts=args)
+        apiclient = client.Client(opts=args, verify=verify)
         if args.client_id:
             apiclient.client_id = args.client_id
     else:
@@ -211,7 +214,8 @@ def main():
         if winutils.is_windows():
             daemon = Daemon(daemonizable=freezer_scheduler,
                             interval=int(args.interval),
-                            job_path=args.jobs_dir)
+                            job_path=args.jobs_dir,
+                            insecure=args.insecure)
         else:
             daemon = Daemon(daemonizable=freezer_scheduler)
 

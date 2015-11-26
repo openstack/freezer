@@ -22,9 +22,10 @@ import exceptions
 
 class JobManager(object):
 
-    def __init__(self, client):
+    def __init__(self, client, verify=True):
         self.client = client
         self.endpoint = self.client.endpoint + '/v1/jobs/'
+        self.verify = verify
 
     @property
     def headers(self):
@@ -36,7 +37,8 @@ class JobManager(object):
         doc['client_id'] = doc.get('client_id', '') or self.client.client_id
         r = requests.post(endpoint,
                           data=json.dumps(doc),
-                          headers=self.headers)
+                          headers=self.headers,
+                          verify=self.verify)
         if r.status_code != 201:
             raise exceptions.ApiClientException(r)
         job_id = r.json()['job_id']
@@ -44,7 +46,7 @@ class JobManager(object):
 
     def delete(self, job_id):
         endpoint = self.endpoint + job_id
-        r = requests.delete(endpoint, headers=self.headers)
+        r = requests.delete(endpoint, headers=self.headers, verify=self.verify)
         if r.status_code != 204:
             raise exceptions.ApiClientException(r)
 
@@ -52,7 +54,7 @@ class JobManager(object):
         data = json.dumps(search) if search else None
         query = {'limit': int(limit), 'offset': int(offset)}
         r = requests.get(self.endpoint, headers=self.headers,
-                         params=query, data=data)
+                         params=query, data=data, verify=self.verify)
         if r.status_code != 200:
             raise exceptions.ApiClientException(r)
         return r.json()['jobs']
@@ -66,7 +68,7 @@ class JobManager(object):
 
     def get(self, job_id):
         endpoint = self.endpoint + job_id
-        r = requests.get(endpoint, headers=self.headers)
+        r = requests.get(endpoint, headers=self.headers, verify=self.verify)
         if r.status_code == 200:
             return r.json()
         if r.status_code == 404:
@@ -77,7 +79,8 @@ class JobManager(object):
         endpoint = self.endpoint + job_id
         r = requests.patch(endpoint,
                            headers=self.headers,
-                           data=json.dumps(update_doc))
+                           data=json.dumps(update_doc),
+                           verify=self.verify)
         if r.status_code != 200:
             raise exceptions.ApiClientException(r)
         return r.json()['version']
@@ -97,7 +100,8 @@ class JobManager(object):
         doc = {"start": None}
         r = requests.post(endpoint,
                           headers=self.headers,
-                          data=json.dumps(doc))
+                          data=json.dumps(doc),
+                          verify=self.verify)
         if r.status_code != 202:
             raise exceptions.ApiClientException(r)
         return r.json()
@@ -117,7 +121,8 @@ class JobManager(object):
         doc = {"stop": None}
         r = requests.post(endpoint,
                           headers=self.headers,
-                          data=json.dumps(doc))
+                          data=json.dumps(doc),
+                          verify=self.verify)
         if r.status_code != 202:
             raise exceptions.ApiClientException(r)
         return r.json()
@@ -137,7 +142,8 @@ class JobManager(object):
         doc = {"abort": None}
         r = requests.post(endpoint,
                           headers=self.headers,
-                          data=json.dumps(doc))
+                          data=json.dumps(doc),
+                          verify=self.verify)
         if r.status_code != 202:
             raise exceptions.ApiClientException(r)
         return r.json()
