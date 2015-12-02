@@ -29,6 +29,9 @@ from registration import RegistrationManager
 from jobs import JobManager
 from actions import ActionManager
 from sessions import SessionManager
+from oslo_config import cfg
+
+CONF = cfg.CONF
 
 
 FREEZER_SERVICE_TYPE = 'backup'
@@ -55,84 +58,82 @@ class cached_property(object):
         return value
 
 
-def build_os_option_parser(parser):
-    parser.add_argument(
-        '--os-username', action='store',
-        help=('Name used for authentication with the OpenStack '
-              'Identity service. Defaults to env[OS_USERNAME].'),
-        dest='os_username', default=env('OS_USERNAME'))
-    parser.add_argument(
-        '--os-password', action='store',
-        help=('Password used for authentication with the OpenStack '
-              'Identity service. Defaults to env[OS_PASSWORD].'),
-        dest='os_password', default=env('OS_PASSWORD'))
-    parser.add_argument(
-        '--os-project-name', action='store',
-        help=('Project name to scope to. Defaults to '
-              'env[OS_PROJECT_NAME].'),
-        dest='os_project_name',
-        default=env('OS_PROJECT_NAME', default='default'))
-    parser.add_argument(
-        '--os-project-domain-name', action='store',
-        help=('Domain name containing project. Defaults to '
-              'env[OS_PROJECT_DOMAIN_NAME].'),
-        dest='os_project_domain_name', default=env('OS_PROJECT_DOMAIN_NAME',
-                                                   default='default'))
-    parser.add_argument(
-        '--os-user-domain-name', action='store',
-        help=('User\'s domain name. Defaults to '
-              'env[OS_USER_DOMAIN_NAME].'),
-        dest='os_user_domain_name', default=env('OS_USER_DOMAIN_NAME',
-                                                default='default'))
-    parser.add_argument(
-        '--os-tenant-name', action='store',
-        help=('Tenant to request authorization on. Defaults to '
-              'env[OS_TENANT_NAME].'),
-        dest='os_tenant_name', default=env('OS_TENANT_NAME'))
-    parser.add_argument(
-        '--os-tenant-id', action='store',
-        help=('Tenant to request authorization on. Defaults to '
-              'env[OS_TENANT_ID].'),
-        dest='os_tenant_id', default=env('OS_TENANT_ID'))
-    parser.add_argument(
-        '--os-auth-url', action='store',
-        help=('Specify the Identity endpoint to use for '
-              'authentication. Defaults to env[OS_AUTH_URL].'),
-        dest='os_auth_url', default=env('OS_AUTH_URL'))
-    parser.add_argument(
-        '--os-backup-url', action='store',
-        help=('Specify the Freezer backup service endpoint to use. '
-              'Defaults to env[OS_BACKUP_URL].'),
-        dest='os_backup_url', default=env('OS_BACKUP_URL'))
-    parser.add_argument(
-        '--os-region-name', action='store',
-        help=('Specify the region to use. Defaults to '
-              'env[OS_REGION_NAME].'),
-        dest='os_region_name', default=env('OS_REGION_NAME'))
-    parser.add_argument(
-        '--os-token', action='store',
-        help=('Specify an existing token to use instead of retrieving'
-              ' one via authentication (e.g. with username & password). '
-              'Defaults to env[OS_TOKEN].'),
-        dest='os_token', default=env('OS_TOKEN'))
-    parser.add_argument(
-        '--os-identity-api-version', action='store',
-        help=('Identity API version: 2.0 or 3. '
-              'Defaults to env[OS_IDENTITY_API_VERSION]'),
-        dest='os_identity_api_version',
-        default=env('OS_IDENTITY_API_VERSION'))
-    parser.add_argument(
-        '--os-endpoint-type', action='store',
-        choices=['public', 'publicURL', 'internal', 'internalURL',
-                 'admin', 'adminURL'],
-        help=('Endpoint type to select. '
-              'Valid endpoint types: "public" or "publicURL", '
-              '"internal" or "internalURL", "admin" or "adminURL". '
-              'Defaults to env[OS_ENDPOINT_TYPE] or "public"'),
-        dest='os_endpoint_type',
-        default=env('OS_ENDPOINT_TYPE', default='public'))
+def build_os_options():
+    osclient_opts = [
+        cfg.StrOpt('os-username',
+                   default=env('OS_USERNAME'),
+                   help='Name used for authentication with the OpenStack '
+                        'Identity service. Defaults to env[OS_USERNAME].',
+                   dest='os_username'),
+        cfg.StrOpt('os-password',
+                   default=env('OS_PASSWORD'),
+                   help='Password used for authentication with the OpenStack '
+                        'Identity service. Defaults to env[OS_PASSWORD].',
+                   dest='os_password'),
+        cfg.StrOpt('os-project-name',
+                   default=env('OS_PROJECT_NAME'),
+                   help='Project name to scope to. Defaults to '
+                        'env[OS_PROJECT_NAME].',
+                   dest='os_project_name'),
+        cfg.StrOpt('os-project-domain-name',
+                   default=env('OS_PROJECT_DOMAIN_NAME'),
+                   help='Domain name containing project. Defaults to '
+                        'env[OS_PROJECT_DOMAIN_NAME].',
+                   dest='os_project_domain_name'),
+        cfg.StrOpt('os-user-domain-name',
+                   default=env('OS_USER_DOMAIN_NAME'),
+                   help='User\'s domain name. Defaults to '
+                        'env[OS_USER_DOMAIN_NAME].',
+                   dest='os_user_domain_name'),
+        cfg.StrOpt('os-tenant-name',
+                   default=env('OS_TENANT_NAME'),
+                   help='Tenant to request authorization on. Defaults to '
+                        'env[OS_TENANT_NAME].',
+                   dest='os_tenant_name'),
+        cfg.StrOpt('os-tenant-id',
+                   default=env('OS_TENANT_ID'),
+                   help='Tenant to request authorization on. Defaults to '
+                        'env[OS_TENANT_ID].',
+                   dest='os_tenant_id'),
+        cfg.StrOpt('os-auth-url',
+                   default=env('OS_AUTH_URL'),
+                   help='Specify the Identity endpoint to use for '
+                        'authentication. Defaults to env[OS_AUTH_URL].',
+                   dest='os_auth_url'),
+        cfg.StrOpt('os-backup-url',
+                   default=env('OS_BACKUP_URL'),
+                   help='Specify the Freezer backup service endpoint to use. '
+                        'Defaults to env[OS_BACKUP_URL].',
+                   dest='os_backup_url'),
+        cfg.StrOpt('os-region-name',
+                   default=env('OS_REGION_NAME'),
+                   help='Specify the region to use. Defaults to '
+                        'env[OS_REGION_NAME].',
+                   dest='os_region_name'),
+        cfg.StrOpt('os-token',
+                   default=env('OS_TOKEN'),
+                   help='Specify an existing token to use instead of retrieving'
+                        ' one via authentication (e.g. with username & '
+                        'password). Defaults to env[OS_TOKEN].',
+                   dest='os_token'),
+        cfg.StrOpt('os-identity-api-version',
+                   default=env('OS_IDENTITY_API_VERSION'),
+                   help='Identity API version: 2.0 or 3. '
+                        'Defaults to env[OS_IDENTITY_API_VERSION]',
+                   dest='os_identity_api_version'),
+        cfg.StrOpt('os-endpoint-type',
+                   choices=['public', 'publicURL', 'internal', 'internalURL',
+                            'admin', 'adminURL'],
+                   default=env('OS_ENDPOINT_TYPE') or 'public',
+                   help='Endpoint type to select. Valid endpoint types: '
+                        '"public" or "publicURL", "internal" or "internalURL",'
+                        ' "admin" or "adminURL". Defaults to '
+                        'env[OS_ENDPOINT_TYPE] or "public"',
+                   dest='os_endpoint_type'),
 
-    return parser
+    ]
+
+    return osclient_opts
 
 
 def guess_auth_version(opts):
@@ -193,9 +194,7 @@ class Client(object):
                  project_domain_name=None,
                  verify=True):
 
-        self.opts = opts or build_os_option_parser(
-            argparse.ArgumentParser(description='Freezer Client')
-        ).parse_known_args()[0]
+        self.opts = opts
         if token:
             self.opts.os_token = token
         if username:

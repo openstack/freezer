@@ -35,17 +35,6 @@ class TestSupportFunctions(unittest.TestCase):
         var = client.env('TEST_ENV_VAR')
         self.assertEquals(var, '')
 
-    @patch('freezer.apiclient.client.env')
-    def test_build_os_option_parser(self, mock_env):
-        mock_env.return_value = ''
-        mock_parser = Mock()
-        mock_parser._me = 'test12345'
-        retval = client.build_os_option_parser(mock_parser)
-        self.assertEquals(retval._me, 'test12345')
-
-        call_count = mock_parser.add_argument.call_count
-        self.assertGreater(call_count, 10)
-
     def test_guess_auth_version_returns_none(self):
         mock_opts = Mock()
         mock_opts.os_identity_api_version = ''
