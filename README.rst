@@ -720,8 +720,7 @@ Available options::
     usage: freezerc [-h] [--config CONFIG]
                     [--action {backup,restore,info,admin,exec}]
                     [-F PATH_TO_BACKUP] [-N BACKUP_NAME] [-m MODE] [-C CONTAINER]
-                    [-L] [-l] [-o GET_OBJECT] [-d DST_FILE] [-s]
-                    [--lvm-auto-snap LVM_AUTO_SNAP] [--lvm-srcvol LVM_SRCVOL]
+                    [-s] [--lvm-auto-snap LVM_AUTO_SNAP] [--lvm-srcvol LVM_SRCVOL]
                     [--lvm-snapname LVM_SNAPNAME] [--lvm-snap-perm {ro,rw}]
                     [--lvm-snapsize LVM_SNAPSIZE] [--lvm-dirmount LVM_DIRMOUNT]
                     [--lvm-volgroup LVM_VOLGROUP] [--max-level MAX_LEVEL]
@@ -731,7 +730,7 @@ Available options::
                     [--no-incremental] [--hostname HOSTNAME]
                     [--mysql-conf MYSQL_CONF] [--metadata-out METADATA_OUT]
                     [--log-file LOG_FILE] [--exclude EXCLUDE]
-                    [--dereference-symlink {none,soft,hard,all}] [-U]
+                    [--dereference-symlink {none,soft,hard,all}]
                     [--encrypt-pass-file ENCRYPT_PASS_FILE] [-M MAX_SEGMENT_SIZE]
                     [--restore-abs-path RESTORE_ABS_PATH]
                     [--restore-from-host HOSTNAME]
@@ -741,88 +740,77 @@ Available options::
                     [--cinder-vol-id CINDER_VOL_ID] [--nova-inst-id NOVA_INST_ID]
                     [--cindernative-vol-id CINDERNATIVE_VOL_ID]
                     [--download-limit DOWNLOAD_LIMIT]
-                    [--sql-server-conf SQL_SERVER_CONF] [--vssadmin VSSADMIN]
+                    [--sql-server-conf SQL_SERVER_CONF] [--vssadmin]
                     [--command COMMAND] [--compression {gzip,bzip2,xz}]
                     [--storage {local,swift,ssh}] [--ssh-key SSH_KEY]
                     [--ssh-username SSH_USERNAME] [--ssh-host SSH_HOST]
                     [--ssh-port SSH_PORT]
-
-        optional arguments:
-          -h, --help            show this help message and exit
-          --config CONFIG       Config file abs path. Option arguments are provided
-                                from config file. When config file is used any option
-                                from command line provided take precedence.
-          --action {backup,restore,info,admin,exec}
-                                Set the action to be taken. backup and restore are
-                                self explanatory, info is used to retrieve info from
-                                the storage media, exec is used to execute a script,
-                                while admin is used to delete old backups and other
-                                admin actions. Default backup.
-          -F PATH_TO_BACKUP, --path-to-backup PATH_TO_BACKUP, --file-to-backup PATH_TO_BACKUP
-                                The file or directory you want to back up to Swift
-          -N BACKUP_NAME, --backup-name BACKUP_NAME
-                                The backup name you want to use to identify your
-                                backup on Swift
-          -m MODE, --mode MODE  Set the technology to back from. Options are, fs
-                                (filesystem), mongo (MongoDB), mysql (MySQL),
-                                sqlserver (SQL Server) Default set to fs
-          -C CONTAINER, --container CONTAINER
-                                The Swift container (or path to local storage) used to
-                                upload files to
-          -L, --list-containers
-                                List the Swift containers on remote Object Storage
-                                Server
-          -l, --list-objects    List the Swift objects stored in a container on remote
-                                Object Storage Server.
-          -o GET_OBJECT, --get-object GET_OBJECT
-                                The Object name you want to download on the local file
-                                system.
-          -d DST_FILE, --dst-file DST_FILE
-                                The file name used to save the object on your local
-                                disk and upload file in swift
-          -s, --snapshot        Create a snapshot of the fs containing the resource to
-                                backup. When used, the lvm parameters will be guessed
-                                and/or the default values will be used
-          --lvm-auto-snap LVM_AUTO_SNAP
-                                Automatically guess the volume group and volume name
-                                for given PATH.
-          --lvm-srcvol LVM_SRCVOL
-                                Set the lvm volume you want to take a snaphost from.
-                                Default no volume
-          --lvm-snapname LVM_SNAPNAME
-                                Set the lvm snapshot name to use. If the snapshot name
-                                already exists, the old one will be used a no new one
-                                will be created. Default freezer_backup_snap.
-          --lvm-snap-perm {ro,rw}
-                                Set the lvm snapshot permission to use. If the
-                                permission is set to ro The snapshot will be immutable
-                                - read only -. If the permission is set to rw it will
-                                be mutable
-          --lvm-snapsize LVM_SNAPSIZE
-                                Set the lvm snapshot size when creating a new
-                                snapshot. Please add G for Gigabytes or M for
-                                Megabytes, i.e. 500M or 8G. Default 1G.
-          --lvm-dirmount LVM_DIRMOUNT
-                                Set the directory you want to mount the lvm snapshot
-                                to. Default to /var/lib/freezer
-          --lvm-volgroup LVM_VOLGROUP
-                                Specify the volume group of your logical volume. This
-                                is important to mount your snapshot volume. Default
-                                not set
-          --max-level MAX_LEVEL
-                                Set the backup level used with tar to implement
-                                incremental backup. If a level 1 is specified but no
-                                level 0 is already available, a level 0 will be done
-                                and subsequently backs to level 1. Default 0 (No
-                                Incremental)
-          --always-level ALWAYS_LEVEL
-                                Set backup maximum level used with tar to implement
-                                incremental backup. If a level 3 is specified, the
-                                backup will be executed from level 0 to level 3 and to
-                                that point always a backup level 3 will be executed.
-                                It will not restart from level 0. This option has
-                                precedence over --max-backup-level. Default False
-                                (Disabled)
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      --config CONFIG       Config file abs path. Option arguments are provided
+                            from config file. When config file is used any option
+                            from command line provided take precedence.
+      --action {backup,restore,info,admin,exec}
+                            Set the action to be taken. backup and restore are
+                            self explanatory, info is used to retrieve info from
+                            the storage media, exec is used to execute a script,
+                            while admin is used to delete old backups and other
+                            admin actions. Default backup.
+      -F PATH_TO_BACKUP, --path-to-backup PATH_TO_BACKUP, --file-to-backup PATH_TO_BACKUP
+                            The file or directory you want to back up to Swift
+      -N BACKUP_NAME, --backup-name BACKUP_NAME
+                            The backup name you want to use to identify your
+                            backup on Swift
+      -m MODE, --mode MODE  Set the technology to back from. Options are, fs
+                            (filesystem), mongo (MongoDB), mysql (MySQL),
+                            sqlserver (SQL Server) Default set to fs
+      -C CONTAINER, --container CONTAINER
+                            The Swift container (or path to local storage) used to
+                            upload files to
+      -s, --snapshot        Create a snapshot of the fs containing the resource to
+                            backup. When used, the lvm parameters will be guessed
+                            and/or the default values will be used
+      --lvm-auto-snap LVM_AUTO_SNAP
+                            Automatically guess the volume group and volume name
+                            for given PATH.
+      --lvm-srcvol LVM_SRCVOL
+                            Set the lvm volume you want to take a snaphost from.
+                            Default no volume
+      --lvm-snapname LVM_SNAPNAME
+                            Set the lvm snapshot name to use. If the snapshot name
+                            already exists, the old one will be used a no new one
+                            will be created. Default freezer_backup_snap.
+      --lvm-snap-perm {ro,rw}
+                            Set the lvm snapshot permission to use. If the
+                            permission is set to ro The snapshot will be immutable
+                            - read only -. If the permission is set to rw it will
+                            be mutable
+      --lvm-snapsize LVM_SNAPSIZE
+                            Set the lvm snapshot size when creating a new
+                            snapshot. Please add G for Gigabytes or M for
+                            Megabytes, i.e. 500M or 8G. Default 1G.
+      --lvm-dirmount LVM_DIRMOUNT
+                            Set the directory you want to mount the lvm snapshot
+                            to. Default to /var/lib/freezer
+      --lvm-volgroup LVM_VOLGROUP
+                            Specify the volume group of your logical volume. This
+                            is important to mount your snapshot volume. Default
+                            not set
+      --max-level MAX_LEVEL
+                            Set the backup level used with tar to implement
+                            incremental backup. If a level 1 is specified but no
+                            level 0 is already available, a level 0 will be done
+                            and subsequently backs to level 1. Default 0 (No
+                            Incremental)
+      --always-level ALWAYS_LEVEL
+                            Set backup maximum level used with tar to implement
+                            incremental backup. If a level 3 is specified, the
+                            backup will be executed from level 0 to level 3 and to
+                            that point always a backup level 3 will be executed.
+                            It will not restart from level 0. This option has
+                            precedence over --max-backup-level. Default False
+                            (Disabled)
       --restart-always-level RESTART_ALWAYS_LEVEL
                             Restart the backup from level 0 after n days. Valid
                             only if --always-level option if set. If --always-
@@ -868,15 +856,13 @@ Available options::
       --dereference-symlink {none,soft,hard,all}
                             Follow hard and soft links and archive and dump the
                             files they refer to. Default False.
-      -U, --upload          Upload to Swift the destination file passed to the -d
-                            option. Default upload the data
       --encrypt-pass-file ENCRYPT_PASS_FILE
                             Passing a private key to this option, allow you to
                             encrypt the files before to be uploaded in Swift.
                             Default do not encrypt.
       -M MAX_SEGMENT_SIZE, --max-segment-size MAX_SEGMENT_SIZE
                             Set the maximum file chunk size in bytes to upload to
-                            swift Default 67108864 bytes (64MB)
+                            swift Default 33554432 bytes (32MB)
       --restore-abs-path RESTORE_ABS_PATH
                             Set the absolute path where you want your data
                             restored. Default False.
@@ -886,7 +872,7 @@ Available options::
                             host where the backup was executed just type from your
                             shell: "$ hostname" and the output is the value that
                             needs to be passed to this option. Mandatory with
-                            Restore Default False. (Deprecated use "hostname"
+                            Restore Default False. (Deprecated use "hostname" 
                             instead)
       --restore-from-date RESTORE_FROM_DATE
                             Set the absolute path where you want your data
@@ -922,7 +908,7 @@ Available options::
                             Set the SQL Server configuration file where freezer
                             retrieve the sql server instance. Following is an
                             example of config file: instance = <db-instance>
-      --vssadmin VSSADMIN   Create a backup using a snapshot on windows using
+      --vssadmin            Create a backup using a snapshot on windows using
                             vssadmin. Options are: True and False, default is True
       --command COMMAND     Command executed by exec action
       --compression {gzip,bzip2,xz}

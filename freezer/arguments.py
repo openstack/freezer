@@ -41,27 +41,27 @@ DEFAULT_LVM_SNAPSIZE = '1G'
 DEFAULT_LVM_DIRMOUNT = '/var/lib/freezer'
 
 DEFAULT_PARAMS = {
-    'os_identity_api_version': None, 'list_objects': False,
-    'get_object': False, 'lvm_auto_snap': False, 'lvm_volgroup': False,
+    'os_identity_api_version': None,
+    'lvm_auto_snap': False, 'lvm_volgroup': False,
     'exclude': False, 'sql_server_conf': False,
     'backup_name': False, 'quiet': False,
     'container': 'freezer_backups', 'no_incremental': False,
     'max_segment_size': 67108864, 'lvm_srcvol': False,
     'download_limit': None, 'hostname': False, 'remove_from_date': False,
     'restart_always_level': False, 'lvm_dirmount': DEFAULT_LVM_DIRMOUNT,
-    'dst_file': False, 'dereference_symlink': '',
+    'dereference_symlink': '',
     'restore_from_host': False, 'config': False, 'mysql_conf': False,
     'insecure': False, 'lvm_snapname': DEFAULT_LVM_SNAPNAME,
     'lvm_snapperm': 'ro', 'snapshot': False,
     'max_priority': False, 'max_level': False, 'path_to_backup': False,
     'encrypt_pass_file': False, 'volume': False, 'proxy': False,
     'cinder_vol_id': '', 'cindernative_vol_id': '',
-    'nova_inst_id': '', 'list_containers': False,
+    'nova_inst_id': '',
     'remove_older_than': None, 'restore_from_date': False,
     'upload_limit': None, 'always_level': False, 'version': False,
     'dry_run': False, 'lvm_snapsize': DEFAULT_LVM_SNAPSIZE,
     'restore_abs_path': False, 'log_file': None,
-    'upload': True, 'mode': 'fs', 'action': 'backup',
+    'mode': 'fs', 'action': 'backup',
     'vssadmin': False, 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
@@ -141,22 +141,6 @@ def backup_arguments(args_dict={}):
         help="The Swift container (or path to local storage) "
              "used to upload files to",
         dest='container', default='freezer_backups')
-    arg_parser.add_argument(
-        '-L', '--list-containers', action='store_true',
-        help='''List the Swift containers on remote Object Storage Server''',
-        dest='list_containers', default=False)
-    arg_parser.add_argument(
-        '-l', '--list-objects', action='store_true',
-        help='''List the Swift objects stored in a container on remote Object\
-        Storage Server.''', dest='list_objects', default=False)
-    arg_parser.add_argument(
-        '-o', '--get-object', action='store',
-        help="The Object name you want to download on the local file system.",
-        dest='get_object', default=False)
-    arg_parser.add_argument(
-        '-d', '--dst-file', action='store',
-        help="The file name used to save the object on your local disk and\
-        upload file in swift", dest='dst_file', default=False)
     arg_parser.add_argument(
         '-s', '--snapshot', action='store_true',
         help=('Create a snapshot of the fs containing the resource to backup.'
@@ -293,10 +277,6 @@ def backup_arguments(args_dict={}):
             "Follow hard and soft links and archive and dump the files they "
             " refer to. Default False."),
         dest='dereference_symlink', default='')
-    arg_parser.add_argument(
-        '-U', '--upload', action='store_true',
-        help="Upload to Swift the destination file passed to the -d option.\
-            Default upload the data", dest='upload', default=True)
     arg_parser.add_argument(
         '--encrypt-pass-file', action='store',
         help="Passing a private key to this option, allow you to encrypt the \
