@@ -88,7 +88,7 @@ def enrich_defaults(config_path):
     return defaults
 
 
-def backup_arguments(args_dict={}):
+def backup_arguments():
     """
     Default arguments and command line options interface. The function return
     a name space called backup_args.
@@ -435,10 +435,6 @@ def backup_arguments(args_dict={}):
 
     arg_parser.set_defaults(**defaults)
     backup_args = arg_parser.parse_args()
-
-    # Intercept command line arguments if you are not using the CLIvss
-    if args_dict:
-        backup_args.__dict__.update(args_dict)
 
     # Set default working directory to ~/.freezer. If the directory
     # does not exists it is created

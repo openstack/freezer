@@ -36,7 +36,7 @@ from freezer import winutils
 from freezer import validator
 
 
-def freezer_main(backup_args, arg_parse):
+def freezer_main(backup_args):
     """Freezer main loop for job execution.
     """
 
@@ -198,7 +198,7 @@ def main():
             opt_args.print_help()
             sys.exit(1)
 
-        freezer_main(backup_args, opt_args)
+        freezer_main(backup_args)
 
     except ValueError as err:
         return fail(1, err, backup_args.quiet)
