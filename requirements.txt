@@ -1,3 +1,4 @@
+astroid<1.4.0 # breaks pylint 1.4.4
 setuptools>=16.0
 pbr>=1.6
 python-swiftclient>=2.2.0
