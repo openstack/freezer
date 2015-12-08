@@ -325,7 +325,6 @@ class BackupOpt1:
         self.time_stamp = 123456789
         self.container = 'test-container'
         self.work_dir = '/tmp'
-        self.upload = 'true'
         self.sw_connector = fakeswclient
         self.max_level = '20'
         self.encrypt_pass_file = '/dev/random'
@@ -333,8 +332,6 @@ class BackupOpt1:
         self.remove_from_date = '2014-12-03T23:23:23'
         self.restart_always_level = 100000
         self.restore_abs_path = '/tmp'
-        self.list_containers = False
-        self.list_objects = False
         self.restore_from_date = '2014-12-03T23:23:23'
         self.restore_from_host = 'test-hostname'
         self.action = 'info'

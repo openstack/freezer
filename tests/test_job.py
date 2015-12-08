@@ -44,7 +44,6 @@ class TestInfoJob(TestJob):
 
     def test_execute_list_containers(self):
         backup_opt = BackupOpt1()
-        backup_opt.list_containers = True
         job = InfoJob(backup_opt, backup_opt.storage)
         job.execute()
 
