@@ -671,7 +671,7 @@ The first step to use the scheduler is creating a document with the job::
         "schedule_interval": "4 hours",
         "schedule_start_date": "2015-08-16T17:58:00"
     },
-    "description": "my scheduled backup 6"
+    "description": "schedule_backups 6"
   }
 
 Then upload that job into the api::
