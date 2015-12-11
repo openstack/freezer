@@ -15,8 +15,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-
-import logging
 import os
 import sys
 import threading
@@ -36,17 +34,24 @@ if winutils.is_windows():
 else:
     from daemon import Daemon, NoDaemon
 from scheduler_job import Job
+from oslo_config import cfg
+from oslo_log import log
+
+
+CONF = cfg.CONF
+LOG = log.getLogger(__name__)
 
 
 class FreezerScheduler(object):
     def __init__(self, apiclient, interval, job_path):
         # config_manager
         self.client = apiclient
-        self.freezerc_executable = spawn.find_executable('freezerc')
+        self.freezerc_executable = spawn.find_executable('freezer-agent')
         if self.freezerc_executable is None:
             # Needed in the case of a non-activated virtualenv
             self.freezerc_executable = spawn.find_executable(
-                'freezerc', path=':'.join(sys.path))
+                'freezer-agent', path=':'.join(sys.path))
+        LOG.debug('Freezer-agent found at {0}'.format(self.freezerc_executable))
         self.job_path = job_path
         self._client = None
         self.lock = threading.Lock()
@@ -70,7 +75,7 @@ class FreezerScheduler(object):
             try:
                 utils.save_jobs_to_disk(job_doc_list, self.job_path)
             except Exception as e:
-                logging.error('Unable to save jobs to {0}. '
+                LOG.error('Unable to save jobs to {0}. '
                               '{1}'.format(self.job_path, e))
             return job_doc_list
         else:
@@ -107,7 +112,7 @@ class FreezerScheduler(object):
             try:
                 return self.client.jobs.update(job_id, job_doc)
             except Exception as e:
-                logging.error("[*] Job update error: {0}".format(e))
+                LOG.error("[*] Job update error: {0}".format(e))
 
     def update_job_status(self, job_id, status):
         doc = {'job_schedule': {'status': status}}
@@ -120,14 +125,14 @@ class FreezerScheduler(object):
         job = Job.create(self, self.freezerc_executable, job_doc)
         if job:
             self.jobs[job.id] = job
-            logging.info("Created job {0}".format(job.id))
+            LOG.info("Created job {0}".format(job.id))
         return job
 
     def poll(self):
         try:
             work_job_doc_list = self.get_jobs()
         except Exception as e:
-            logging.error("[*] Unable to get jobs: {0}".format(e))
+            LOG.error("[*] Unable to get jobs: {0}".format(e))
             return
 
         work_job_id_list = []
@@ -158,7 +163,7 @@ class FreezerScheduler(object):
             pass
 
     def reload(self):
-        logging.warning("reload not supported")
+        LOG.warning("reload not supported")
 
 
 def _get_doers(module):
@@ -176,56 +181,64 @@ def main():
 
     possible_actions = doers.keys() + ['start', 'stop', 'status']
 
-    args = arguments.get_args(possible_actions)
+    arguments.parse_args(possible_actions)
+    arguments.setup_logging()
 
-    if args.action is None:
-        print ('No action')
+    if CONF.action is None:
+        CONF.print_help()
         return 65  # os.EX_DATAERR
 
     apiclient = None
     verify = True
-    if args.insecure:
+    if CONF.insecure:
         verify = False
 
-    if args.no_api is False:
-        apiclient = client.Client(opts=args, verify=verify)
-        if args.client_id:
-            apiclient.client_id = args.client_id
+    if CONF.no_api is False:
+        try:
+            apiclient = client.Client(opts=CONF, verify=verify)
+            if CONF.client_id:
+                apiclient.client_id = CONF.client_id
+        except Exception as e:
+            LOG.error(e)
+            print e
+            sys.exit(1)
     else:
         if winutils.is_windows():
             print("--no-api mode is not available on windows")
             return 69  # os.EX_UNAVAILABLE
 
-    if args.action in doers:
+    if CONF.action in doers:
         try:
-            return doers[args.action](apiclient, args)
+            return doers[CONF.action](apiclient, CONF)
         except Exception as e:
+            LOG.error(e)
             print ('ERROR {0}'.format(e))
             return 70  # os.EX_SOFTWARE
 
     freezer_scheduler = FreezerScheduler(apiclient=apiclient,
-                                         interval=int(args.interval),
-                                         job_path=args.jobs_dir)
+                                         interval=int(CONF.interval),
+                                         job_path=CONF.jobs_dir)
 
-    if args.no_daemon:
+    if CONF.no_daemon:
         print ('Freezer Scheduler running in no-daemon mode')
+        LOG.debug('Freezer Scheduler running in no-daemon mode')
         daemon = NoDaemon(daemonizable=freezer_scheduler)
     else:
         if winutils.is_windows():
             daemon = Daemon(daemonizable=freezer_scheduler,
-                            interval=int(args.interval),
-                            job_path=args.jobs_dir,
-                            insecure=args.insecure)
+                            interval=int(CONF.interval),
+                            job_path=CONF.jobs_dir,
+                            insecure=CONF.insecure)
         else:
             daemon = Daemon(daemonizable=freezer_scheduler)
 
-    if args.action == 'start':
-        daemon.start(log_file=args.log_file)
-    elif args.action == 'stop':
+    if CONF.action == 'start':
+        daemon.start(log_file=CONF.log_file)
+    elif CONF.action == 'stop':
         daemon.stop()
-    elif args.action == 'reload':
+    elif CONF.action == 'reload':
         daemon.reload()
-    elif args.action == 'status':
+    elif CONF.action == 'status':
         daemon.status()
 
     # os.RETURN_CODES are only available to posix like systems, on windows

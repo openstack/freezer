@@ -17,6 +17,14 @@ limitations under the License.
 
 import argparse
 import os
+from oslo_config import cfg
+from oslo_log import log
+from freezer import __version__ as FREEZER_VERSION
+import sys
+CONF = cfg.CONF
+_LOG = log.getLogger(__name__)
+
+
 
 from freezer.apiclient import client as api_client
 from freezer import winutils
@@ -27,88 +35,102 @@ else:
     DEFAULT_FREEZER_SCHEDULER_CONF_D = '/etc/freezer/scheduler/conf.d'
 
 
-def base_parser(parser):
+def getCommonOpts():
     scheduler_conf_d = os.environ.get('FREEZER_SCHEDULER_CONF_D',
                                       DEFAULT_FREEZER_SCHEDULER_CONF_D)
-    parser.add_argument(
-        '-j', '--job', action='store',
-        help=('name or ID of the job'),
-        dest='job_id', default=None)
-    parser.add_argument(
-        '-s', '--session', action='store',
-        help=('name or ID of the session'),
-        dest='session_id', default=None)
-    parser.add_argument(
-        '--file', action='store',
-        help=('Local file that contains the resource '
-              'to be uploaded/downloaded'),
-        dest='fname', default=None)
-    parser.add_argument(
-        '-c', '--client-id', action='store',
-        help=('Specifies the client_id used when contacting the service.'
-              'If not specified it will be automatically created'
-              'using the tenant-id and the machine hostname.'),
-        dest='client_id', default=None)
-    parser.add_argument(
-        '-n', '--no-api', action='store_true',
-        help='Prevents the scheduler from using the api service',
-        dest='no_api', default=False)
-    parser.add_argument(
-        '-a', '--active-only', action='store_true',
-        help='Filter only active jobs/session',
-        dest='active_only', default=False)
-    parser.add_argument(
-        '-f', '--conf', action='store',
-        help=('Used to store/retrieve files on local storage, including '
-              'those exchanged with the api service. '
-              'Default value is {0} '
-              '(Env: FREEZER_SCHEDULER_CONF_D)'.format(scheduler_conf_d)),
-        dest='jobs_dir', default=scheduler_conf_d)
-    parser.add_argument(
-        '-i', '--interval', action='store',
-        help=('Specifies the api-polling interval in seconds.'
-              'Defaults to 60 seconds'),
-        dest='interval', default=60)
 
-    parser.add_argument(
-        '-v', '--verbose',
-        action='count',
-        dest='verbose_level',
-        default=1,
-        help='Increase verbosity of output. Can be repeated.',
-    )
-    parser.add_argument(
-        '--debug',
-        default=False,
-        action='store_true',
-        help='show tracebacks on errors',
-    )
-    parser.add_argument(
-        '--no-daemon',
-        action='store_true',
-        help='Prevents the scheduler from running in daemon mode',
-        dest='no_daemon', default=False
-    )
-    parser.add_argument(
-        '-l', '--log-file', action='store',
-        help=('location of log file'),
-        dest='log_file', default=None)
+    common_opts = [
+    cfg.StrOpt('job',
+               default=None,
+               dest='job_id',
+               short='j',
+               help='Name or ID of the job'),
+    cfg.StrOpt('session',
+               default=None,
+               dest='session_id',
+               short='s',
+               help='Name or ID of the session'),
+    cfg.StrOpt('file',
+               default=None,
+               dest='fname',
+               help='Local file that contains the resource to be '
+                    'uploaded/downloaded'),
+    cfg.StrOpt('client-id',
+               default=None,
+               dest='client_id',
+               short='c',
+               help='Specifies the client_id used when contacting the service.'
+                    '\n If not specified it will be automatically created \n'
+                    'using the tenant-id and the machine hostname.'),
+    cfg.BoolOpt('no-api',
+               default=False,
+               dest='no_api',
+               short='n',
+               help='Prevents the scheduler from using the api service'),
+    cfg.BoolOpt('active-only',
+               default=False,
+               dest='active_only',
+               short='a',
+               help='Filter only active jobs/session'),
+    cfg.StrOpt('conf',
+               default=scheduler_conf_d,
+               dest='jobs_dir',
+               short='f',
+               help='Used to store/retrieve files on local storage, including '
+                    'those exchanged with the api service.Default value is {0} '
+                    '(Env: FREEZER_SCHEDULER_CONF_D)'.format(scheduler_conf_d)),
+    cfg.IntOpt('interval',
+               default=60,
+               dest='interval',
+               short='i',
+               help='Specifies the api-polling interval in seconds. '
+                    'Defaults to 60 seconds'),
+    cfg.BoolOpt('no-daemon',
+               default=False,
+               dest='no_daemon',
+               help='Prevents the scheduler from running in daemon mode'),
+    cfg.BoolOpt('insecure',
+               default=False,
+               dest='insecure',
+               help='Initialize freezer scheduler with insecure mode'),
+    ]
 
-    parser.add_argument(
-        '--insecure',
-        action='store_true',
-        help='Initialize freezer scheduler with insecure mode',
-        dest='insecure', default=False
-    )
-
-    return parser
+    return common_opts
 
 
-def get_args(choices):
-    parser = base_parser(
-        api_client.build_os_option_parser(
-            argparse.ArgumentParser(description='Freezer Scheduler')
-        ))
-    parser.add_argument(
-        'action', action='store', default=None, choices=choices, help='')
-    return parser.parse_args()
+def parse_args(choices):
+    default_conf = cfg.find_config_files('freezer', 'freezer-scheduler',
+                                         '.conf')
+    CONF.register_cli_opts(api_client.build_os_options())
+    CONF.register_cli_opts(getCommonOpts())
+    log.register_options(CONF)
+
+    positional = [
+        cfg.StrOpt('action',
+                   choices=choices,
+                   default=None,
+                   help='{0}'.format(choices), positional=True),
+
+    ]
+    CONF.register_cli_opts(positional)
+    CONF(args=sys.argv[1:],
+         project='freezer-scheduler',
+         default_config_files=default_conf,
+         version=FREEZER_VERSION
+         )
+
+
+def setup_logging():
+    _DEFAULT_LOG_LEVELS = ['amqp=WARN', 'amqplib=WARN', 'boto=WARN',
+                       'qpid=WARN', 'stevedore=WARN',
+                       'oslo_log=INFO', 'iso8601=WARN',
+                       'requests.packages.urllib3.connectionpool=WARN',
+                       'urllib3.connectionpool=WARN', 'websocket=WARN',
+                       'keystonemiddleware=WARN', 'freezer=INFO']
+
+    _DEFAULT_LOGGING_CONTEXT_FORMAT = ('%(asctime)s.%(msecs)03d %(process)d '
+                                       '%(levelname)s %(name)s [%(request_id)s '
+                                       '%(user_identity)s] %(instance)s'
+                                       '%(message)s')
+    log.set_defaults(_DEFAULT_LOGGING_CONTEXT_FORMAT, _DEFAULT_LOG_LEVELS)
+    log.setup(CONF, 'freezer-scheduler', version=FREEZER_VERSION)
