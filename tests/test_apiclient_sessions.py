@@ -139,7 +139,7 @@ class TestSessionManager(unittest.TestCase):
 
         retval = self.session_manager.add_job(session_id, job_id)
 
-        self.assertEqual(retval, None)
+        self.assertIsNone(retval)
         mock_requests.put.assert_called_with(endpoint, headers=self.headers, verify=True)
 
     @patch('freezer.apiclient.sessions.requests')
@@ -158,7 +158,7 @@ class TestSessionManager(unittest.TestCase):
 
         retval = self.session_manager.remove_job(session_id, job_id)
 
-        self.assertEqual(retval, None)
+        self.assertIsNone(retval)
         mock_requests.delete.assert_called_with(endpoint, headers=self.headers, verify=True)
 
     @patch('freezer.apiclient.sessions.requests')
