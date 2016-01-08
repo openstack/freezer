@@ -30,6 +30,7 @@ from jobs import JobManager
 from actions import ActionManager
 from sessions import SessionManager
 from oslo_config import cfg
+from freezer.utils import Namespace
 
 CONF = cfg.CONF
 
@@ -195,6 +196,10 @@ class Client(object):
                  verify=True):
 
         self.opts = opts
+        # this creates a namespace for self.opts when the client is
+        # created from other method rather than command line arguments.
+        if self.opts is None:
+            self.opts = Namespace({})
         if token:
             self.opts.os_token = token
         if username:
