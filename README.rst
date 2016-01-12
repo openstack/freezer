@@ -10,14 +10,14 @@ The following features are available:
 -  Backup your filesystem using point in time snapshot
 -  Strong encryption supported: AES-256-CFB
 -  Backup your file system tree directly (without volume snapshot)
--  Backup your journaled MongoDB directory tree using lvm snap to swift
+-  Backup your journaled MongoDB directory tree using lvm snapshot to swift
 -  Backup MySQL DB with lvm snapshot
 -  Restore your data from a specific date automatically to your file system
 -  Low storage consumption as the backup are uploaded as a stream
 -  Flexible backup policy (incremental and differential)
 -  Data is archived in GNU Tar format for file based incremental
 -  Multiple compression algorithm support (zlib, bzip2, xz)
--  Remove old backup automatically according the provided parameters
+-  Remove old backup automatically according to the provided parameters
 -  Multiple storage media support (Swift, local file system, ssh)
 -  Flush kernel buffered memory to disk
 -  Multi platform (Linux, Windows, \*BSD, OSX)
@@ -108,7 +108,7 @@ OR::
 The basic Swift account configuration is needed to use freezer. Make
 sure python-swiftclient is installed.
 
-Also the following ENV var are needed you can put them in ~/.bashrc::
+Also the following ENV vars are needed. You can put them in ~/.bashrc::
 
     export OS_REGION_NAME=region-a.geo-1
     export OS_TENANT_ID=<account tenant>
@@ -128,8 +128,8 @@ Let's say you have a container called freezer_foobar-container, by executing
 
 These are just use case example using Swift in the HP Cloud.
 
-*Is strongly advised to use execute a backup using LVM snapshot, so
-freezer will execute a backup on point-in-time data. This avoid risks of
+*Is strongly advised to execute backups using LVM snapshot, so
+freezer will execute a backup on point-in-time data. This avoids the risk of
 data inconsistencies and corruption.*
 
 
@@ -155,10 +155,10 @@ Usage Example
 
 Freezer will automatically add the prefix "freezer_" to the container name,
 where it is provided by the user and doesn't already start with this prefix.
-If no container name is provided, the default is freezer_backups.
+If no container name is provided, the default is "freezer_backups".
 
-The execution arguments can be set from command line and/or config file
-in ini format. there's an example of the job config file available in
+The execution options can be set from the command line and/or config file
+in ini format. There's an example of the job config file available in
 freezer/freezer/specs/job-backup.conf.example. Command line options
 always override the same options in the config file.
 
@@ -178,7 +178,7 @@ The most simple backup execution is a direct file system backup::
 By default --mode fs is set. The command would generate a compressed tar
 gzip file of the directory /data/dir/to/backup. The generated file will
 be segmented in stream and uploaded in the swift container called
-freezer_new-data-backup, with backup name my-backup-name
+freezer_new-data-backup, with backup name my-backup-name.
 
 Now check if your backup is executing correctly looking at
 /var/log/freezer.log
@@ -186,12 +186,12 @@ Now check if your backup is executing correctly looking at
 Execute a MongoDB backup using lvm snapshot:
 
 We need to check before on which volume group and logical volume our
-mongo data is. These information can be obtained as per following::
+mongo data is. This information can be obtained as per following::
 
     $ mount
     [...]
 
-Once we know the volume where our Mongo data is mounted on, we can get
+Once we know the volume on which our Mongo data is mounted, we can get
 the volume group and logical volume info::
 
     $ sudo vgdisplay
@@ -206,10 +206,10 @@ is "mongo"::
     --lvm-volgroup mongo --file-to-backup /var/lib/snapshot-backup/mongod_ops2
     --container freezer_mongodb-backup-prod --exclude "*.lock" --mode mongo --backup-name mongod-ops2
 
-Now freezerc create a lvm snapshot of the volume /dev/mongo/mongolv. If
-no options are provided, default snapshot name is freezer\_backup\_snap.
-The snap vol will be mounted automatically on /var/lib/snapshot-backup
-and the backup meta and segments will be upload in the container
+Now freezerc creates an lvm snapshot of the volume /dev/mongo/mongolv. If
+no options are provided, the default snapshot name is "freezer\_backup\_snap".
+The snapshot vol will be mounted automatically on /var/lib/snapshot-backup
+and the backup metadata and segments will be uploaded in the container
 mongodb-backup-prod with the name mongod-ops2.
 
 Execute a file system backup using lvm snapshot::
@@ -242,7 +242,7 @@ Cinder backups
 
 To make a cinder backup you should provide cinder-vol-id or cindernative-vol-id
 parameter in command line arguments. Freezer doesn't do any additional checks
-and assumes that making backup of that image will be sufficient to restore your
+and assumes that making a backup of that image will be sufficient to restore your
 data in future.
 
 Execute a cinder backup::
@@ -258,8 +258,8 @@ Execute a mysql backup with cinder::
 
 Nova backups
 
-To make a nova backup you should provide nova parameter in arguments.
-Freezer doesn't do any additional checks and assumes that making backup
+To make a nova backup you should provide a nova parameter in the arguments.
+Freezer doesn't do any additional checks and assumes that making a backup
 of that instance will be sufficient to restore your data in future.
 
 Execute a nova backup::
@@ -276,12 +276,12 @@ Execute a mysql backup with nova::
 All the freezerc activities are logged into /var/log/freezer.log.
 
 
-Swift, Local and SSH Storages
+Swift, Local and SSH Storage
 -----------------------------
 
 Freezer can use:
 
- local storage - folder that is available in the same os (may be mounted)
+ local storage - folder that is available in the same OS (may be mounted)
 
  To use local storage specify "--storage local"
  And use "--container %path-to-folder-with-backups%"
@@ -319,7 +319,7 @@ Freezer can use:
  To use ssh storage specify "--storage ssh"
  And use "--container %path-to-folder-with-backups-on-remote-machine%"
  Also you should specify ssh-username, ssh-key and ssh-host parameters.
- ssh-port is optional parameter, default is 22
+ ssh-port is optional parameter, default is 22.
 
  ssh-username for user ubuntu should be "--ssh-username ubuntu"
  ssh-key should be path to your secret ssh key "--ssh-key %path-to-secret-key%"
@@ -343,7 +343,7 @@ Restore
 -------
 
 As a general rule, when you execute a restore, the application that
-write or read data should be stopped.
+writes or reads data should be stopped.
 
 There are 3 main options that need to be set for data restore
 
@@ -396,9 +396,9 @@ Remove backups older then 1 day::
     $ freezerc --action admin --container freezer_dev-test --remove-older-then 1 --backup-name dev-test-01
 
 
-Cinder restore currently creates a volume with content of saved one, but
-doesn't implement deattach of existing volume and attach the new one to the
-vm. You should implement this steps manually. To create new volume from
+Cinder restore currently creates a volume with the contents of the saved one, but
+doesn't implement deattach of existing volume and attach of the new one to the
+vm. You should implement these steps manually. To create a new volume from
 existing content run next command:
 
 Execute a cinder restore::
@@ -406,8 +406,8 @@ Execute a cinder restore::
     $ freezerc --action restore --cinder-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
     $ freezerc --action restore --cindernative-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
-Nova restore currently creates an instance with content of saved one, but the
-ip address of vm will be different as well as it's id.
+Nova restore currently creates an instance with the content of saved one, but the
+ip address of the vm will be different as well as it's id.
 
 Execute a nova restore::
 
@@ -429,11 +429,11 @@ Architecture
 Freezer architectural components are the following:
 
 -  OpenStack Swift (the storage)
--  freezer client running on the node you want to execute the backups or
+-  freezer client running on the node where you want to execute the backups or
    restore
 
-Freezer use GNU Tar under the hood to execute incremental backup and
-restore. When a key is provided, it uses OpenSSL to encrypt data
+Freezer uses GNU Tar under the hood to execute incremental backup and
+restore. When a key is provided, it uses OpenSSL to encrypt data.
 (AES-256-CFB)
 =============
 Freezer architecture is composed by the following components:
@@ -441,46 +441,47 @@ Freezer architecture is composed by the following components:
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Component         | Description                                                                                                                                    |
 +===================+================================================================================================================================================+
-| Freezer Web UI    | Web interface that interact with the Freezer API to configure, change settings.                                                                |
-|                   | It provides most of the feature from the freezerc CLI, advanced scheduler settings as multi-node backup synchronization, metrics and reporting.|
+| Freezer Web UI    | Web interface that interacts with the Freezer API to configure and change settings.                                                            |
+|                   | It provides most of the features from the freezerc CLI, advanced scheduler settings such as multi-node backup synchronization,                 |
+|                   | metrics, and reporting.                                                                                                                        |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| Freezer Scheduler | A client side component, running on the node where the data backup has to be executed.                                                         |
-|                   | It consist of a daemon that retrieve the data from the freezer API and execute jobs (i.e. backups, restore, admin actions, info actions,       |
+| Freezer Scheduler | A client side component, running on the node where the data backup is to be executed.                                                          |
+|                   | It consists of a daemon that retrieves the data from the freezer API and executes jobs (i.e. backups, restore, admin actions, info actions,    |
 |                   | pre and/or post job scripts) by running the Freezer Agent.                                                                                     |
 |                   | The metrics and exit codes returned by the freezer agent are captured and sent to the Freezer API.                                             |
-|                   | The scheduler manage the execution and synchronization of multiple jobs executed on a single or multiple nodes.                                |
+|                   | The scheduler manages the execution and synchronization of multiple jobs executed on a single or multiple nodes.                               |
 |                   | The status of the execution of all the nodes is saved through the API.                                                                         |
-|                   | The Freezer scheduler take care of uploading jobs to the API by reading job files on the file system.                                          |
-|                   | It also have its own configuration file where job session or other settings like the freezer API polling interval can be configured.           |
-|                   | The Freezer scheduler manage jobs, for more information about jobs please refer to: freezer_api/README.rst under JOB the sections              |
+|                   | The Freezer scheduler takes care of uploading jobs to the API by reading job files on the file system.                                         |
+|                   | It also has its own configuration file where job session or other settings like the freezer API polling interval can be configured.            |
+|                   | The Freezer scheduler manages jobs, for more information about jobs please refer to: freezer_api/README.rst under JOB the sections             |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| Freezer Agent     | Multiprocessing Python software that runs at client side, where the data backup has to be executed.                                            |
+| Freezer Agent     | Multiprocessing Python software that runs on the client side, where the data backup is to be executed.                                         |
 |                   | It can be executed standalone or by the Freezer Scheduler.                                                                                     |
-|                   | The freezerc provide flexible way to execute backup, restore and other actions on a running system.                                            |
-|                   | In order to provide flexibility in terms of data integrity, speed, performance, resources usage etc the freezer agent offer a                  |
+|                   | The freezerc provides a flexible way to execute backup, restore and other actions on a running system.                                         |
+|                   | In order to provide flexibility in terms of data integrity, speed, performance, resources usage, etc the freezer agent offers a                |
 |                   | wide range of options to execute optimized backup according the available resources as:                                                        |
 |                   |                                                                                                                                                |
 |                   |   - Segments size (the amount of memory used)                                                                                                  |
-|                   |   - Queues size (optimize backups where I/O, bandwidth, memory or CPU is a constraints)                                                        |
+|                   |   - Queues size (optimize backups where I/O, bandwidth, memory or CPU is a constraint)                                                         |
 |                   |   - I/O Affinity and process priority (it can be used with real time I/O and maximum user level process priority)                              |
 |                   |   - Bandwidth limitation                                                                                                                       |
 |                   |   - Client side Encryption (AES-256-CFB)                                                                                                       |
 |                   |   - Compression (multiple algorithms supported as zlib, bzip2, xz/lzma)                                                                        |
-|                   |   - Parallel upload to pluggable storage media (i.e. upload backup to swift and to a remote node by ssh,                                       |
+|                   |   - Parallel upload to pluggable storage media (i.e., upload backup to swift and to a remote node by ssh,                                      |
 |                   |     or upload to two or more independent swift instances with different credentials, etc)                                                      |
 |                   |   - Execute file based incremental (like tar), block based incremental (like rsync algorithm) and differential based backup and restore        |
 |                   |   - Multiplatform as it can be run on Linux, Windows, \*BSD and OSX                                                                            |
 |                   |   - Automatic removal of old backups                                                                                                           |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| Freezer API       | API are used to store and provide metadata to the Freezer Web UI and to the Freezer Scheduler.                                                 |
-|                   | Also the API are used to store session information for multi node backup synchronization. No workload data is stored in the API.               |
+| Freezer API       | The API is used to store and provide metadata to the Freezer Web UI and to the Freezer Scheduler.                                              |
+|                   | Also the API is used to store session information for multi node backup synchronization. No workload data is stored in the API.                |
 |                   | For more information to the API please refer to: freezer_api/README.rst                                                                        |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| DB Elasticsearch  | Backend used by the API to store and retrieve metrics, metadata sessions information job status, etc.                                          |
+| DB Elasticsearch  | Backend used by the API to store and retrieve metrics, metadata sessions information, job status, etc.                                         |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 
-Freezer currently use GNU Tar under the hood to execute incremental backup and
-restore. When a key is provided, it uses OpenSSL to encrypt data (AES-256-CFB)
+Freezer currently uses GNU Tar under the hood to execute incremental backup and
+restore. When a key is provided, it uses OpenSSL to encrypt data (AES-256-CFB).
 
 The following diagrams can help to better understand the solution:
 
@@ -518,47 +519,47 @@ The following diagrams can help to better understand the solution:
 Low resources requirement
 -------------------------
 
-Freezer is designed to reduce at the minimum I/O, CPU and Memory Usage.
+Freezer is designed to reduce to the minimum I/O, CPU and Memory Usage.
 This is achieved by generating a data stream from tar (for archiving)
-and gzip (for compressing). Freezer segment the stream in a configurable
+and gzip (for compressing). Freezer segments the stream in a configurable
 chunk size (with the option --max-seg-size). The default segment size is
 64MB, so it can be safely stored in memory, encrypted if the key is
-provided, and uploaded to Swift as segment.
+provided, and uploaded to Swift as a segment.
 
 Multiple segments are sequentially uploaded using the Swift Manifest.
 All the segments are uploaded first, and then the Manifest file is
 uploaded too, so the data segments cannot be accessed directly. This
-ensue data consistency.
+ensures data consistency.
 
-By keeping small segments in memory, I/O usage is reduced. Also as
+By keeping the segments small, in-memory, I/O usage is reduced. Also as
 there's no need to store locally the final compressed archive
 (tar-gziped), no additional or dedicated storage is required for the
 backup execution. The only additional storage needed is the LVM snapshot
 size (set by default at 5GB). The lvm snapshot size can be set with the
-option --lvm-snapsize. It is important to not specify a too small snap
-size, because in case a quantity of data is being wrote to the source
+option --lvm-snapsize. It is important to not specify a too small snapshot
+size, because in case a quantity of data is being written to the source
 volume and consequently the lvm snapshot is filled up, then the data is
 corrupted.
 
-If the more memory is available for the backup process, the maximum
-segment size can be increased, this will speed up the process. Please
-note, the segments must be smaller then 5GB, is that is the maximum
+If more memory is available for the backup process, the maximum
+segment size can be increased. This will speed up the process. Please
+note that the segments must be smaller then 5GB, since that is the maximum
 object size in the Swift server.
 
-Au contraire, if a server have small memory availability, the
+On the other hand, if a server has small memory availability, the
 --max-seg-size option can be set to lower values. The unit of this
 option is in bytes.
 
 How the incremental works
 -------------------------
 
-The incremental backups is one of the most crucial feature. The
-following basic logic happens when Freezer execute:
+The incremental backups is one of the most crucial features. The
+following basic logic happens when Freezer executes:
 
-1) Freezer start the execution and check if the provided backup name for
-   the current node already exist in Swift
+1) Freezer starts the execution and checks if the provided backup name for
+   the current node already exists in Swift.
 
-2) If the backup exists, the Manifest file is retrieved. This is
+2) If the backup exists, then the Manifest file is retrieved. This is
    important as the Manifest file contains the information of the
    previous Freezer execution.
 
@@ -571,12 +572,12 @@ file backup using nova snapshots or volume backups.
 
 Nova backups:
 
-If you provide nova argument in parameters freezer assume that all
+If you provide nova argument in parameters, freezer assumes that all
 necessary data is located on instance disk and it can be successfully stored
 using nova snapshot mechanism.
 
 For example if we want to store our mysql located on instance disk, we
-will execute the same actions like in case of lvm or tar snapshots, but
+will execute the same actions like in the case of lvm or tar snapshots, but
 we will invoke nova snapshot instead of lvm or tar.
 
 After that we will place snapshot to swift container as dynamic large object.
@@ -591,8 +592,8 @@ terminated manually.
 
 Cinder backups:
 
-Cinder has it's own mechanism for backups and freezer supports it. But it also
-allows create a glance image from volume and upload to swift.
+Cinder has its own mechanism for backups, and freezer supports it. But it also
+allows creating a glance image from volume and uploading to swift.
 
 To use standard cinder backups please provide --cindernative-vol-id argument.
 
@@ -650,9 +651,9 @@ osrc = openrc.osrc
 freezer-scheduler
 -----------------
 The freezer-scheduler is one of the two freezer components which is run on
-the client nodes, the other one being the freezer-agent.
+the client nodes; the other one being the freezer-agent.
 It has a double role: it is used both to start the scheduler process, and as
-a cli-tool which allows the user to interact with the api.
+a cli-tool which allows the user to interact with the API.
 
 The freezer-scheduler process can be started/stopped in daemon mode using the usual
 positional arguments::
@@ -663,18 +664,18 @@ It can be also be started as a foreground process using the --no-daemon flag::
 
   freezer-scheduler --no-daemon start
 
-This can be useful for testing purposes or when launched in a Docker container
+This can be useful for testing purposes, when launched in a Docker container,
 or by a babysitting process such as systemd.
 
-The cli-tool version is used to manage the jobs in the api.
-A "job" is basically a container, a document which contains one
+The cli-tool version is used to manage the jobs in the API.
+A "job" is basically a container; a document which contains one
 or more "actions".
-An action contains the instructions for the freezer-agent. They are the same parameter
-that would be passed to the agent on the command line, for example:
+An action contains the instructions for the freezer-agent. They are the same parameters
+that would be passed to the agent on the command line. For example:
 "backup_name", "path_to_backup", "max_level"
 
 To sum it up, a job is a sequence of parameters that the scheduler pulls
-from the api and passes to a newly spawned freezer-agent process at the
+from the API and passes to a newly spawned freezer-agent process at the
 right time.
 
 The scheduler understands the "scheduling" part of the job document,
@@ -682,9 +683,9 @@ which it uses to actually schedule the job, while the rest of the parameters
 are substantially opaque.
 
 It may also be useful to use the "-c" parameter to specify the client-id that
-the scheduler will use when interacting with the api.
+the scheduler will use when interacting with the API.
 
-The purpose of the *client-id* is that of associate a job with the
+The purpose of the *client-id* is to associate a job with the
 scheduler instance which is supposed to execute that job.
 
 A single openstack user could manage different resources on different nodes
@@ -693,9 +694,9 @@ on the same node with different local privileges, for example),
 and the client-id allows him to associate the specific scheduler instance
 with its specific jobs.
 
-When not provided with a custom client-id, the scheduler falls to the default
-which is composed from the tenant-is and the hostname of the machine it is
-running on.
+When not provided with a custom client-id, the scheduler falls back to the default
+which is composed from the tenant-id and the hostname of the machine on which it is
+running.
 
 
 The first step to use the scheduler is creating a document with the job::
@@ -724,7 +725,7 @@ The first step to use the scheduler is creating a document with the job::
     "description": "schedule_backups 6"
   }
 
-Then upload that job into the api::
+Then upload that job into the API::
 
   freezer-scheduler -c node12 job-create --file test_job.json
 
@@ -746,7 +747,7 @@ The scheduler can be started on the target node with::
 
   freezer-scheduler -c node12 -i 15 -f ~/job_dir start
 
-The scheduler could have already been started. As soon as the freezer-scheduler contacts the api,
+The scheduler could have already been started. As soon as the freezer-scheduler contacts the API,
 it fetches the job and schedules it.
 
 
@@ -760,8 +761,8 @@ from local path
 rather than pip. This generated many issues
 as the package is not in the global-requirements.txt
 of kilo and liberty. Also pbr in the kilo release
-does not support env markers which further complitated
-the installation
+does not support env markers which further complicated
+the installation.
 
 Please check the FAQ to: FAQ.rst
 
