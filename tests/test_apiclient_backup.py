@@ -32,8 +32,8 @@ class TestBackupManager(unittest.TestCase):
 
     @patch('freezer.apiclient.backups.requests')
     def test_create(self, mock_requests):
-        self.assertEqual(self.b.endpoint, 'http://testendpoint:9999/v1/backups/')
-        self.assertEqual(self.b.headers, {'X-Auth-Token': 'testtoken'})
+        self.assertEqual('http://testendpoint:9999/v1/backups/', self.b.endpoint)
+        self.assertEqual({'X-Auth-Token': 'testtoken'}, self.b.headers)
 
     @patch('freezer.apiclient.backups.requests')
     def test_create_ok(self, mock_requests):
@@ -42,7 +42,7 @@ class TestBackupManager(unittest.TestCase):
         mock_response.json.return_value = {'backup_id': 'qwerqwer'}
         mock_requests.post.return_value = mock_response
         retval = self.b.create(backup_metadata={'backup': 'metadata'})
-        self.assertEqual(retval, 'qwerqwer')
+        self.assertEqual('qwerqwer', retval)
 
     @patch('freezer.apiclient.backups.requests')
     def test_create_fail_when_api_return_error_code(self, mock_requests):
@@ -73,7 +73,7 @@ class TestBackupManager(unittest.TestCase):
         mock_response.json.return_value = {'backup_id': 'qwerqwer'}
         mock_requests.get.return_value = mock_response
         retval = self.b.get('test_backup_id')
-        self.assertEqual(retval, {'backup_id': 'qwerqwer'})
+        self.assertEqual({'backup_id': 'qwerqwer'}, retval)
 
     @patch('freezer.apiclient.backups.requests')
     def test_get_none(self, mock_requests):
@@ -99,7 +99,7 @@ class TestBackupManager(unittest.TestCase):
         mock_response.json.return_value = {'backups': backup_list}
         mock_requests.get.return_value = mock_response
         retval = self.b.list()
-        self.assertEqual(retval, backup_list)
+        self.assertEqual(backup_list, retval)
 
 
     @patch('freezer.apiclient.backups.requests')
@@ -118,7 +118,7 @@ class TestBackupManager(unittest.TestCase):
             data='{"time_before": 1428529956}',
             headers={'X-Auth-Token': 'testtoken'},
             verify=True)
-        self.assertEqual(retval, backup_list)
+        self.assertEqual(backup_list, retval)
 
     @patch('freezer.apiclient.backups.requests')
     def test_list_error(self, mock_requests):

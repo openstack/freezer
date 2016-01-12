@@ -36,8 +36,8 @@ class TestJobManager(unittest.TestCase):
 
     @patch('freezer.apiclient.jobs.requests')
     def test_create(self, mock_requests):
-        self.assertEqual(self.job_manager.endpoint, 'http://testendpoint:9999/v1/jobs/')
-        self.assertEqual(self.job_manager.headers, {'X-Auth-Token': 'testtoken'})
+        self.assertEqual('http://testendpoint:9999/v1/jobs/', self.job_manager.endpoint)
+        self.assertEqual({'X-Auth-Token': 'testtoken'}, self.job_manager.headers)
 
     @patch('freezer.apiclient.jobs.requests')
     def test_create_ok(self, mock_requests):
@@ -45,7 +45,7 @@ class TestJobManager(unittest.TestCase):
         self.mock_response.json.return_value = {'job_id': 'qwerqwer'}
         mock_requests.post.return_value = self.mock_response
         retval = self.job_manager.create({'job': 'metadata'})
-        self.assertEqual(retval, 'qwerqwer')
+        self.assertEqual('qwerqwer', retval)
 
     @patch('freezer.apiclient.jobs.json')
     @patch('freezer.apiclient.jobs.requests')
@@ -59,7 +59,7 @@ class TestJobManager(unittest.TestCase):
 
         mock_json.dumps.assert_called_with({'job': 'metadata',
                                             'client_id': 'test_client_id_78900987'})
-        self.assertEqual(retval, 'qwerqwer')
+        self.assertEqual('qwerqwer', retval)
 
     @patch('freezer.apiclient.jobs.json')
     @patch('freezer.apiclient.jobs.requests')
@@ -73,7 +73,7 @@ class TestJobManager(unittest.TestCase):
 
         mock_json.dumps.assert_called_with({'job': 'metadata',
                                             'client_id': 'parmenide'})
-        self.assertEqual(retval, 'qwerqwer')
+        self.assertEqual('qwerqwer', retval)
 
     @patch('freezer.apiclient.jobs.requests')
     def test_create_fail_when_api_return_error_code(self, mock_requests):
@@ -100,7 +100,7 @@ class TestJobManager(unittest.TestCase):
         self.mock_response.json.return_value = {'job_id': 'qwerqwer'}
         mock_requests.get.return_value = self.mock_response
         retval = self.job_manager.get('test_job_id')
-        self.assertEqual(retval, {'job_id': 'qwerqwer'})
+        self.assertEqual({'job_id': 'qwerqwer'}, retval)
 
     @patch('freezer.apiclient.jobs.requests')
     def test_get_fails_on_error_different_from_404(self, mock_requests):
@@ -122,7 +122,7 @@ class TestJobManager(unittest.TestCase):
         self.mock_response.json.return_value = {'jobs': job_list}
         mock_requests.get.return_value = self.mock_response
         retval = self.job_manager.list()
-        self.assertEqual(retval, job_list)
+        self.assertEqual(job_list, retval)
 
     @patch('freezer.apiclient.jobs.requests')
     def test_list_error(self, mock_requests):
@@ -142,7 +142,7 @@ class TestJobManager(unittest.TestCase):
         }
         mock_requests.patch.return_value = self.mock_response
         retval = self.job_manager.update('d454beec-1f3c-4d11-aa1a-404116a40502', {'status': 'bamboozled'})
-        self.assertEqual(retval, 12)
+        self.assertEqual(12, retval)
 
     @patch('freezer.apiclient.jobs.requests')
     def test_update_raise_MetadataUpdateFailure_when_api_return_error_code(self, mock_requests):
@@ -169,7 +169,7 @@ class TestJobManager(unittest.TestCase):
         endpoint = '{0}/v1/jobs/{1}/event'.format(self.mock_client.endpoint, job_id)
         data = {"start": None}
         retval = self.job_manager.start_job(job_id)
-        self.assertEqual(retval, {'result': 'success'})
+        self.assertEqual({'result': 'success'}, retval)
 
         args = mock_requests.post.call_args[0]
         kwargs = mock_requests.post.call_args[1]
@@ -196,7 +196,7 @@ class TestJobManager(unittest.TestCase):
         endpoint = '{0}/v1/jobs/{1}/event'.format(self.mock_client.endpoint, job_id)
         data = {"stop": None}
         retval = self.job_manager.stop_job(job_id)
-        self.assertEqual(retval, {'result': 'success'})
+        self.assertEqual({'result': 'success'}, retval)
 
         args = mock_requests.post.call_args[0]
         kwargs = mock_requests.post.call_args[1]
@@ -223,7 +223,7 @@ class TestJobManager(unittest.TestCase):
         endpoint = '{0}/v1/jobs/{1}/event'.format(self.mock_client.endpoint, job_id)
         data = {"abort": None}
         retval = self.job_manager.abort_job(job_id)
-        self.assertEqual(retval, {'result': 'success'})
+        self.assertEqual({'result': 'success'}, retval)
 
         args = mock_requests.post.call_args[0]
         kwargs = mock_requests.post.call_args[1]

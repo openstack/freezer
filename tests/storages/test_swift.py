@@ -73,35 +73,35 @@ class TestSwiftStorage(unittest.TestCase):
 
     def test__get_backups(self):
         backups = base.Backup.parse_backups(self.files, self.storage)
-        self.assertEqual(len(backups), 1)
+        self.assertEqual(1, len(backups))
         backup = backups[0]
-        self.assertEqual(backup, self.backup)
+        self.assertEqual(self.backup, backup)
 
     def test__get_backups_with_tar_only(self):
         backups = base.Backup.parse_backups(
             ["tar_metadata_hostname_backup_1000_0"], self.storage)
-        self.assertEqual(len(backups), 0)
+        self.assertEqual(0, len(backups))
 
     def test__get_backups_without_tar(self):
         backups = base.Backup.parse_backups(["hostname_backup_1000_0"],
                                             self.storage)
-        self.assertEqual(len(backups), 1)
+        self.assertEqual(1, len(backups))
         self.backup.tar_meta = False
         backup = backups[0]
-        self.assertEqual(backup, self.backup)
+        self.assertEqual(self.backup, backup)
 
     def test__get_backups_increment(self):
         backups = base.Backup.parse_backups(self.increments, self.storage)
-        self.assertEqual(len(backups), 1)
+        self.assertEqual(1, len(backups))
         self.backup.add_increment(self.increment)
         backup = backups[0]
-        self.assertEqual(backup, self.backup)
+        self.assertEqual(self.backup, backup)
 
     def test__get_backups_increments(self):
         backups = base.Backup.parse_backups(self.cycles_increments,
                                             self.storage)
-        self.assertEqual(len(backups), 2)
+        self.assertEqual(2, len(backups))
         self.backup.add_increment(self.increment)
         self.backup_2.add_increment(self.increment_2)
-        self.assertEqual(backups[0], self.backup)
-        self.assertEqual(backups[1], self.backup_2)
+        self.assertEqual(self.backup, backups[0])
+        self.assertEqual(self.backup_2, backups[1])
