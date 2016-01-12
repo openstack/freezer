@@ -26,13 +26,13 @@ class TestLogging(unittest.TestCase):
     @patch('freezer.scheduler.daemon.logging')
     def test_setup_logging_default(self, mock_logging):
         res = daemon.setup_logging(None)
-        self.assertEqual(res, '/var/log/freezer-scheduler.log')
+        self.assertEqual('/var/log/freezer-scheduler.log', res)
 
     @patch('freezer.scheduler.daemon.create_dir')
     @patch('freezer.scheduler.daemon.logging')
     def test_setup_logging_userdefined(self, mock_logging, mock_createdir):
         res = daemon.setup_logging('mylogfile')
-        self.assertEqual(res, 'mylogfile')
+        self.assertEqual('mylogfile', res)
 
 
 class TestNoDaemon(unittest.TestCase):
@@ -107,8 +107,8 @@ class TestDaemon(unittest.TestCase):
 
     def test_signal_map_handlers(self):
         signal_map = self.daemon.signal_map
-        self.assertEqual(signal_map[signal.SIGTERM], self.daemon.handle_program_exit)
-        self.assertEqual(signal_map[signal.SIGHUP], self.daemon.handle_reload)
+        self.assertEqual(self.daemon.handle_program_exit, signal_map[signal.SIGTERM])
+        self.assertEqual(self.daemon.handle_reload, signal_map[signal.SIGHUP])
 
     @patch('freezer.scheduler.daemon.gettempdir')
     @patch('freezer.scheduler.daemon.os.path.expanduser')

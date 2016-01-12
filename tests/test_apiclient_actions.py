@@ -34,8 +34,8 @@ class TestActionManager(unittest.TestCase):
 
     @patch('freezer.apiclient.actions.requests')
     def test_create(self, mock_requests):
-        self.assertEqual(self.action_manager.endpoint, 'http://testendpoint:9999/v1/actions/')
-        self.assertEqual(self.action_manager.headers, {'X-Auth-Token': 'testtoken'})
+        self.assertEqual('http://testendpoint:9999/v1/actions/', self.action_manager.endpoint)
+        self.assertEqual({'X-Auth-Token': 'testtoken'}, self.action_manager.headers)
 
     @patch('freezer.apiclient.actions.requests')
     def test_create_ok(self, mock_requests):
@@ -43,7 +43,7 @@ class TestActionManager(unittest.TestCase):
         self.mock_response.json.return_value = {'action_id': 'qwerqwer'}
         mock_requests.post.return_value = self.mock_response
         retval = self.action_manager.create({'action': 'metadata'})
-        self.assertEqual(retval, 'qwerqwer')
+        self.assertEqual('qwerqwer', retval)
 
     @patch('freezer.apiclient.actions.requests')
     def test_create_fail_when_api_return_error_code(self, mock_requests):
@@ -70,7 +70,7 @@ class TestActionManager(unittest.TestCase):
         self.mock_response.json.return_value = {'action_id': 'qwerqwer'}
         mock_requests.get.return_value = self.mock_response
         retval = self.action_manager.get('test_action_id')
-        self.assertEqual(retval, {'action_id': 'qwerqwer'})
+        self.assertEqual({'action_id': 'qwerqwer'}, retval)
 
     @patch('freezer.apiclient.actions.requests')
     def test_get_fails_on_error_different_from_404(self, mock_requests):
@@ -92,7 +92,7 @@ class TestActionManager(unittest.TestCase):
         self.mock_response.json.return_value = {'actions': action_list}
         mock_requests.get.return_value = self.mock_response
         retval = self.action_manager.list()
-        self.assertEqual(retval, action_list)
+        self.assertEqual(action_list, retval)
 
     @patch('freezer.apiclient.actions.requests')
     def test_list_error(self, mock_requests):
@@ -112,7 +112,7 @@ class TestActionManager(unittest.TestCase):
         }
         mock_requests.patch.return_value = self.mock_response
         retval = self.action_manager.update('d454beec-1f3c-4d11-aa1a-404116a40502', {'status': 'bamboozled'})
-        self.assertEqual(retval, 12)
+        self.assertEqual(12, retval)
 
     @patch('freezer.apiclient.actions.requests')
     def test_update_raise_MetadataUpdateFailure_when_api_return_error_code(self, mock_requests):

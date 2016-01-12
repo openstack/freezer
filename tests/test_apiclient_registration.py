@@ -32,8 +32,8 @@ class TestRegistrationManager(unittest.TestCase):
 
     @patch('freezer.apiclient.registration.requests')
     def test_create(self, mock_requests):
-        self.assertEqual(self.r.endpoint, 'http://testendpoint:9999/v1/clients/')
-        self.assertEqual(self.r.headers, {'X-Auth-Token': 'testtoken'})
+        self.assertEqual('http://testendpoint:9999/v1/clients/', self.r.endpoint)
+        self.assertEqual({'X-Auth-Token': 'testtoken'}, self.r.headers)
 
     @patch('freezer.apiclient.registration.requests')
     def test_create_ok(self, mock_requests):
@@ -42,7 +42,7 @@ class TestRegistrationManager(unittest.TestCase):
         mock_response.json.return_value = {'client_id': 'qwerqwer'}
         mock_requests.post.return_value = mock_response
         retval = self.r.create(client_info={'client': 'metadata'})
-        self.assertEqual(retval, 'qwerqwer')
+        self.assertEqual('qwerqwer', retval)
 
     @patch('freezer.apiclient.registration.requests')
     def test_create_fail_when_api_return_error_code(self, mock_requests):
@@ -73,7 +73,7 @@ class TestRegistrationManager(unittest.TestCase):
         mock_response.json.return_value = {'client_id': 'qwerqwer'}
         mock_requests.get.return_value = mock_response
         retval = self.r.get('test_client_id')
-        self.assertEqual(retval, {'client_id': 'qwerqwer'})
+        self.assertEqual({'client_id': 'qwerqwer'}, retval)
 
     @patch('freezer.apiclient.registration.requests')
     def test_get_none(self, mock_requests):
@@ -98,7 +98,7 @@ class TestRegistrationManager(unittest.TestCase):
         mock_response.json.return_value = {'clients': client_list}
         mock_requests.get.return_value = mock_response
         retval = self.r.list()
-        self.assertEqual(retval, client_list)
+        self.assertEqual(client_list, retval)
 
     @patch('freezer.apiclient.registration.requests')
     def test_list_error(self, mock_requests):
