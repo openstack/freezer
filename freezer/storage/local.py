@@ -15,9 +15,9 @@ limitations under the License.
 
 """
 
+import io
 import os
 import shutil
-import io
 
 from freezer.storage import fslike
 from freezer import utils

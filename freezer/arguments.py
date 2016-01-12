@@ -16,28 +16,26 @@
 
 from __future__ import print_function
 
-from freezer import winutils
-from freezer import config
 
 import argparse
-
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
 import logging
 import os
-from os.path import expanduser
 import socket
 import sys
-from freezer import utils
+
 from distutils import spawn as distspawn
-
 from oslo_utils import encodeutils
-
 from tempfile import NamedTemporaryFile
 
-home = expanduser("~")
+from freezer import config
+from freezer import utils
+from freezer import winutils
+
+home = os.path.expanduser("~")
 
 DEFAULT_LVM_SNAPNAME = 'freezer_backup_snap'
 DEFAULT_LVM_SNAPSIZE = '1G'
@@ -63,7 +61,7 @@ DEFAULT_PARAMS = {
     'remove_older_than': None, 'restore_from_date': False,
     'upload_limit': None, 'always_level': False, 'version': False,
     'dry_run': False, 'lvm_snapsize': DEFAULT_LVM_SNAPSIZE,
-    'restore_abs_path': False, 'log_file': None,
+    'restore_abs_path': False, 'log_file': None, 'log_level': "info",
     'mode': 'fs', 'action': 'backup',
     'vssadmin': False, 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
@@ -273,6 +271,12 @@ def backup_arguments():
                  'If that file is not writable, freezer tries to log'
                  'to ~/.freezer/freezer.log',
             dest='log_file', default=None)
+    arg_parser.add_argument(
+        '--log-level', action='store', dest="log_level",
+        default=DEFAULT_PARAMS['log_level'],
+        choices=['all', 'debug', 'info', 'warn', 'error', 'critical'],
+        help='Set logging level. Can be all, debug, info, warn,'
+             'error, critical. Default value - info')
     arg_parser.add_argument(
         '--exclude', action='store', help="Exclude files,\
         given as a PATTERN.Ex: --exclude '*.log' will exclude any file \

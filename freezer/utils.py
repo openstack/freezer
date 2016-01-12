@@ -15,20 +15,18 @@ limitations under the License.
 
 Freezer general utils functions
 """
+import datetime
+import errno
 import logging
 import os
-import time
-import datetime
 import re
 import subprocess
-import errno
+import sys
+import time
+
 from ConfigParser import ConfigParser
 from distutils import spawn as distspawn
-import sys
-
 from functools import wraps
-
-from collections import Mapping, Sequence
 
 
 class OpenstackOptions:
@@ -142,7 +140,7 @@ class DateTime(object):
             fmt = '%Y-%m-%dT%H:%M:%S'
             try:
                 self.date_time = datetime.datetime.strptime(value, fmt)
-            except:
+            except Exception:
                 raise Exception('bad datetime format: "{0}'.format(value))
 
     @property

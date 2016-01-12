@@ -15,27 +15,25 @@ limitations under the License.
 
 Freezer main execution function
 """
+import json
+import logging
 import os
 import subprocess
-import logging
 import sys
-import json
 
-from freezer.arguments import backup_arguments
-from freezer.bandwidth import monkeypatch_socket_bandwidth
+from freezer import arguments
+from freezer import bandwidth
 from freezer import config
-from freezer import job
-from freezer.osclients import ClientManager
-from freezer.storage import swift
-from freezer.storage import local
-from freezer.storage import ssh
-from freezer.storage import multiple
-from freezer import utils
 from freezer.engine.tar import tar_engine
-from freezer import winutils
-
-# Initialize backup options
+from freezer import job
+from freezer import osclients
+from freezer.storage import local
+from freezer.storage import multiple
+from freezer.storage import ssh
+from freezer.storage import swift
+from freezer import utils
 from freezer import validator
+from freezer import winutils
 
 
 def freezer_main(backup_args):
@@ -49,23 +47,33 @@ def freezer_main(backup_args):
         if backup_args.dry_run:
             dry_run_message = '[DRY_RUN] '
 
-        def configure_logging(file_name):
-            expanded_file_name = os.path.expanduser(file_name)
+        def configure_logging(log_file, str_level):
+            levels = {
+                'all': logging.NOTSET,
+                'debug': logging.DEBUG,
+                'warn': logging.WARN,
+                'info': logging.INFO,
+                'error': logging.ERROR,
+                'critical': logging.CRITICAL
+            }
+
+            expanded_file_name = os.path.expanduser(log_file)
             expanded_dir_name = os.path.dirname(expanded_file_name)
             utils.create_dir(expanded_dir_name, do_log=False)
             logging.basicConfig(
                 filename=expanded_file_name,
-                level=logging.INFO,
+                level=levels[str_level],
                 format=('%(asctime)s %(name)s %(levelname)s {0}%(message)s'.
                         format(dry_run_message)))
             return expanded_file_name
 
         if backup_args.log_file:
-            return configure_logging(backup_args.log_file)
+            return configure_logging(backup_args.log_file,
+                                     backup_args.log_level)
 
         for file_name in ['/var/log/freezer.log', '~/.freezer/freezer.log']:
             try:
-                return configure_logging(file_name)
+                return configure_logging(file_name, backup_args.log_level)
             except IOError:
                 pass
 
@@ -100,7 +108,7 @@ def freezer_main(backup_args):
     if backup_args.max_priority:
         set_max_process_priority()
 
-    monkeypatch_socket_bandwidth(backup_args)
+    bandwidth.monkeypatch_socket_bandwidth(backup_args)
 
     backup_args.__dict__['hostname_backup_name'] = "{0}_{1}".format(
         backup_args.hostname, backup_args.backup_name)
@@ -142,7 +150,7 @@ def freezer_main(backup_args):
                                    stderr=subprocess.PIPE,
                                    env=os.environ.copy())
         while process.poll() is None:
-            print process.stdout.readline().rstrip()
+            print(process.stdout.readline().rstrip())
         output, error = process.communicate()
 
         if process.returncode:
@@ -191,7 +199,7 @@ def storage_from_dict(backup_args, work_dir, max_segment_size,
             options = utils.OpenstackOptions.create_from_env()
         identity_api_version = (os_identity_api_version or
                                 options.identity_api_version)
-        client_manager = ClientManager(
+        client_manager = osclients.ClientManager(
             options=options,
             insecure=backup_args.get('insecure') or False,
             swift_auth_version=identity_api_version,
@@ -215,10 +223,10 @@ def storage_from_dict(backup_args, work_dir, max_segment_size,
 def main():
     """Freezerc binary main execution"""
 
-    (backup_args, opt_args) = backup_arguments()
+    (backup_args, opt_args) = arguments.backup_arguments()
     try:
         if backup_args.version:
-            print "freezer version {0}".format(backup_args.__version__)
+            print("freezer version {0}".format(backup_args.__version__))
             sys.exit(1)
 
         if len(sys.argv) < 2:

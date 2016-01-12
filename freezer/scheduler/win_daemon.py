@@ -14,15 +14,11 @@
 
 import logging
 import os
-import signal
-import subprocess
 
 import win32serviceutil
 
-from freezer.utils import shield
-from freezer.utils import create_subprocess
-from freezer.utils import create_dir
-from freezer.winutils import save_environment
+from freezer import utils
+from freezer import winutils
 
 
 def setup_logging(log_file):
@@ -34,7 +30,7 @@ def setup_logging(log_file):
     def configure_logging(file_name):
         expanded_file_name = os.path.expanduser(file_name)
         expanded_dir_name = os.path.dirname(expanded_file_name)
-        create_dir(expanded_dir_name, do_log=False)
+        utils.create_dir(expanded_dir_name, do_log=False)
         logging.basicConfig(
             filename=expanded_file_name,
             level=logging.INFO,
@@ -75,13 +71,13 @@ class Daemon(object):
         self.job_path = job_path or r'C:\.freezer\scheduler\conf.d'
         self.insecure = insecure
 
-    @shield
+    @utils.shield
     def start(self, log_file=None):
         """Initialize freezer-scheduler instance inside a windows service
         """
         setup_logging(log_file)
 
-        create_dir(self.home)
+        utils.create_dir(self.home)
 
         if self.insecure:
             os.environ['SERVICE_INSECURE'] = 'True'
@@ -90,18 +86,18 @@ class Daemon(object):
         os.environ['SERVICE_JOB_PATH'] = self.job_path
         os.environ['SERVICE_INTERVAL'] = str(self.interval)
 
-        save_environment(self.home)
+        winutils.save_environment(self.home)
 
         print('Freezer Service is starting')
         win32serviceutil.StartService(self.service_name)
 
-    @shield
+    @utils.shield
     def reload(self):
         """Reload the windows service
         """
         win32serviceutil.RestartService(self.service_name)
 
-    @shield
+    @utils.shield
     def stop(self):
         """Stop the windows service by using sc queryex command, if we use
         win32serviceutil.StoptService(self.service_name) it never gets stopped
@@ -109,17 +105,17 @@ class Daemon(object):
         prevents any new signal to reach the service.
         """
         query = 'sc queryex {0}'.format(self.service_name)
-        out = create_subprocess(query)[0]
+        out = utils.create_subprocess(query)[0]
         pid = None
         for line in out.split('\n'):
             if 'PID' in line:
                 pid = line.split(':')[1].strip()
 
         command = 'taskkill /f /pid {0}'.format(pid)
-        create_subprocess(command)
+        utils.create_subprocess(command)
         print('Freezer Service has stopped')
 
-    @shield
+    @utils.shield
     def status(self):
         """Return running status of Freezer Service
         by querying win32serviceutil.QueryServiceStatus()
@@ -142,7 +138,7 @@ class NoDaemon(object):
         # this is only need it in order to have the same interface as in linux
         self.daemonizable = daemonizable
 
-    @shield
+    @utils.shield
     def stop(self):
         self.daemonizable.stop()
 
@@ -156,6 +152,6 @@ class NoDaemon(object):
         """
         pass
 
-    @shield
+    @utils.shield
     def start(self, log_file=None):
         self.daemonizable.start()

@@ -38,7 +38,7 @@ class ApiClientException(Exception):
             message = "[*] Error {0}: {1}".format(
                 r.status_code,
                 body['description'])
-        except:
+        except Exception:
             message = None
         return message
 
@@ -55,7 +55,7 @@ class ApiClientException(Exception):
             message = "[*] Error {0}: {1}".format(
                 r.status_code,
                 r.text)
-        except:
+        except Exception:
             message = None
         return message
 
@@ -65,6 +65,6 @@ class ApiClientException(Exception):
             str(r)
         try:
             self.status_code = r.status_code
-        except:
+        except Exception:
             self.status_code = None
         super(ApiClientException, self).__init__(message)

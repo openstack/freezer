@@ -18,7 +18,6 @@ Freezer general utils functions
 import logging
 import multiprocessing
 import time
-from freezer.streaming import RichQueue, QueuedThread
 
 from freezer import streaming
 from freezer import utils
@@ -72,14 +71,13 @@ class BackupEngine(object):
         :return: stream
         """
         manifest = backup.storage.download_meta_file(backup)
-        input_queue = RichQueue(queue_size)
-        read_stream = QueuedThread(self.backup_stream,
-                                   input_queue,
-                                   kwargs={"backup_path": backup_path,
-                                           "manifest_path": manifest})
-        write_stream = QueuedThread(backup.storage.write_backup,
-                                    input_queue,
-                                    kwargs={"backup": backup})
+        input_queue = streaming.RichQueue(queue_size)
+        read_stream = streaming.QueuedThread(
+            self.backup_stream, input_queue,
+            kwargs={"backup_path": backup_path, "manifest_path": manifest})
+        write_stream = streaming.QueuedThread(
+            backup.storage.write_backup, input_queue,
+            kwargs={"backup": backup})
         read_stream.daemon = True
         write_stream.daemon = True
         read_stream.start()

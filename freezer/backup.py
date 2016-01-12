@@ -17,20 +17,15 @@ Freezer Backup modes related functions
 """
 import logging
 import os
-from os.path import expanduser
 import time
 
-from freezer import utils
-from freezer import lvm
-from freezer.vss import vss_create_shadow_copy
-from freezer.vss import vss_delete_shadow_copy
-from freezer.winutils import start_sql_server
-from freezer.winutils import stop_sql_server
-from freezer.winutils import use_shadow
-from freezer.winutils import is_windows
 from freezer import config
+from freezer import lvm
+from freezer import utils
+from freezer import vss
+from freezer import winutils
 
-home = expanduser("~")
+home = os.path.expanduser("~")
 
 
 def backup_mode_sql_server(backup_opt_dict, storage):
@@ -47,13 +42,13 @@ def backup_mode_sql_server(backup_opt_dict, storage):
     # Dirty hack - please remove any modification of backup_opt_dict
     backup_opt_dict.sql_server_instance = sql_server_instance
     try:
-        stop_sql_server(sql_server_instance)
+        winutils.stop_sql_server(sql_server_instance)
         backup(backup_opt_dict, storage, backup_opt_dict.engine)
     finally:
         if not backup_opt_dict.vssadmin:
             # if vssadmin is false, wait until the backup is complete
             # to start sql server again
-            start_sql_server(sql_server_instance)
+            winutils.start_sql_server(sql_server_instance)
 
 
 def backup_mode_mysql(backup_opt_dict, storage):
@@ -217,22 +212,22 @@ def snapshot_create(backup_opt_dict):
     :return: boolean value, True if snapshot has been taken, false otherwise
     """
 
-    if is_windows():
+    if winutils.is_windows():
         # vssadmin is to be deprecated in favor of the --snapshot flag
         if backup_opt_dict.snapshot:
             backup_opt_dict.vssadmin = True
         if backup_opt_dict.vssadmin:
             # Create a shadow copy.
             backup_opt_dict.shadow_path, backup_opt_dict.shadow = \
-                vss_create_shadow_copy(backup_opt_dict.windows_volume)
+                vss.vss_create_shadow_copy(backup_opt_dict.windows_volume)
 
-            backup_opt_dict.path_to_backup = use_shadow(
+            backup_opt_dict.path_to_backup = winutils.use_shadow(
                 backup_opt_dict.path_to_backup,
                 backup_opt_dict.windows_volume)
 
             # execute this after the snapshot creation
             if backup_opt_dict.mode == 'sqlserver':
-                start_sql_server(backup_opt_dict.sql_server_instance)
+                winutils.start_sql_server(backup_opt_dict.sql_server_instance)
 
             return True
         return False
@@ -243,9 +238,9 @@ def snapshot_create(backup_opt_dict):
 
 
 def snapshot_remove(backup_opt_dict, shadow, windows_volume):
-    if is_windows():
+    if winutils.is_windows():
         # Delete the shadow copy after the backup
-        vss_delete_shadow_copy(shadow, windows_volume)
+        vss.vss_delete_shadow_copy(shadow, windows_volume)
     else:
         # Unmount and remove lvm snapshot volume
         lvm.lvm_snap_remove(backup_opt_dict)

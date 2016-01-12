@@ -16,20 +16,19 @@ limitations under the License.
 client interface to the Freezer API
 """
 
-import argparse
 import os
 import socket
 
 from keystoneclient.auth.identity import v2
 from keystoneclient.auth.identity import v3
 from keystoneclient import session as ksc_session
-
-from backups import BackupsManager
-from registration import RegistrationManager
-from jobs import JobManager
-from actions import ActionManager
-from sessions import SessionManager
 from oslo_config import cfg
+
+from freezer.apiclient import actions
+from freezer.apiclient import backups
+from freezer.apiclient import jobs
+from freezer.apiclient import registration
+from freezer.apiclient import sessions
 from freezer.utils import Namespace
 
 CONF = cfg.CONF
@@ -225,11 +224,11 @@ class Client(object):
         self._session = session
         self.version = version
 
-        self.backups = BackupsManager(self, verify=verify)
-        self.registration = RegistrationManager(self, verify=verify)
-        self.jobs = JobManager(self, verify=verify)
-        self.actions = ActionManager(self, verify=verify)
-        self.sessions = SessionManager(self, verify=verify)
+        self.backups = backups.BackupsManager(self, verify=verify)
+        self.registration = registration.RegistrationManager(self, verify=verify)
+        self.jobs = jobs.JobManager(self, verify=verify)
+        self.actions = actions.ActionManager(self, verify=verify)
+        self.sessions = sessions.SessionManager(self, verify=verify)
 
 
     @cached_property

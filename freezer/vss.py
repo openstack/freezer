@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from freezer.winutils import DisableFileSystemRedirection
-from freezer.utils import create_subprocess
-
 import logging
 import os
+
+from freezer import utils
+from freezer import winutils
 
 
 def vss_create_shadow_copy(windows_volume):
@@ -61,13 +61,12 @@ def vss_create_shadow_copy(windows_volume):
 
     vss_delete_symlink(windows_volume)
 
-    with DisableFileSystemRedirection():
+    with winutils.DisableFileSystemRedirection():
         path = os.path.dirname(os.path.abspath(__file__))
         script = '{0}\\scripts\\vss.ps1'.format(path)
-        (out, err) = create_subprocess(['powershell.exe',
-                                        '-executionpolicy', 'unrestricted',
-                                        '-command', script,
-                                        '-volume', windows_volume])
+        (out, err) = utils.create_subprocess(
+            ['powershell.exe', '-executionpolicy', 'unrestricted',
+             '-command', script, '-volume', windows_volume])
         if err != '':
             raise Exception('[*] Error creating a new shadow copy on {0}'
                             ', error {1}' .format(windows_volume, err))
@@ -92,10 +91,10 @@ def vss_delete_shadow_copy(shadow_id, windows_volume):
     :return: bool
     """
 
-    with DisableFileSystemRedirection():
+    with winutils.DisableFileSystemRedirection():
         cmd = ['vssadmin', 'delete', 'shadows',
                '/shadow={0}'.format(shadow_id), '/quiet']
-        (out, err) = create_subprocess(cmd)
+        (out, err) = utils.create_subprocess(cmd)
         if err != '':
             raise Exception('[*] Error deleting shadow copy with id {0}'
                             ', error {1}' .format(shadow_id, err))

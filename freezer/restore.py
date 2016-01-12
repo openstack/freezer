@@ -17,6 +17,7 @@ Freezer restore modes related functions
 """
 
 import logging
+
 from freezer import utils
 
 

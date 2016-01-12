@@ -15,12 +15,13 @@ limitations under the License.
 
 """
 
-import argparse
 import os
 from oslo_config import cfg
 from oslo_log import log
-from freezer import __version__ as FREEZER_VERSION
 import sys
+
+from freezer import __version__ as FREEZER_VERSION
+
 CONF = cfg.CONF
 _LOG = log.getLogger(__name__)
 

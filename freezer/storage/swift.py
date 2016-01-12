@@ -16,8 +16,8 @@ limitations under the License.
 """
 
 import json
-import time
 import logging
+import time
 
 from freezer.storage import base
 
@@ -134,16 +134,16 @@ class SwiftStorage(base.Storage):
         ordered_container = {}
         containers = self.swift().get_account()[1]
         for container in containers:
-            print container
+            print(container)
             ordered_container['container_name'] = container['name']
             size = '{0}'.format((int(container['bytes']) / 1024) / 1024)
             if size == '0':
                 size = '1'
             ordered_container['size'] = '{0}MB'.format(size)
             ordered_container['objects_count'] = container['count']
-            print json.dumps(
+            print(json.dumps(
                 ordered_container, indent=4,
-                separators=(',', ': '), sort_keys=True)
+                separators=(',', ': '), sort_keys=True))
 
     def meta_file_abs_path(self, backup):
         return backup.tar()

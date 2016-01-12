@@ -434,7 +434,7 @@ class Job(object):
         try:
             # already executing job are not present in the apscheduler list
             self.scheduler.remove_job(job_id=self.id)
-        except:
+        except Exception:
             pass
         self.event = Job.NO_EVENT
         self.job_doc_status = Job.STOP_STATUS

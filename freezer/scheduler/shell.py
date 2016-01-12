@@ -19,15 +19,16 @@ limitations under the License.
 import json
 import os
 import utils
-from freezer.utils import create_dir
 
 from prettytable import PrettyTable
 
 try:
     from betterprint import pprint
-except:
+except Exception:
     def pprint(doc):
         print(json.dumps(doc, indent=4))
+
+from freezer.utils import create_dir
 
 
 def do_session_remove_job(client, args):
@@ -92,7 +93,7 @@ def do_session_create(client, args):
         raise Exception("Parameter --file required")
     session_doc = utils.load_doc_from_json_file(args.fname)
     session_id = client.sessions.create(session_doc)
-    print "Created session {0}".format(session_id)
+    print ("Created session {0}".format(session_id))
 
 
 def do_session_get(client, args):
@@ -178,7 +179,7 @@ def do_job_download(client, args):
                                  format(args.jobs_dir, doc['job_id']))
         try:
             utils.save_doc_to_json_file(doc, fname)
-        except:
+        except Exception:
             print("Unable to write to file {0}".format(fname))
 
 

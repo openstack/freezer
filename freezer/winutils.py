@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import ctypes
-import logging
-import sys
-import os
 import json
+import logging
+import os
+import sys
 
 from freezer.utils import create_subprocess
 

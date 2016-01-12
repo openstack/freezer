@@ -15,28 +15,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-import os
 import sys
 import threading
-from distutils import spawn
 
 from apscheduler.schedulers.blocking import BlockingScheduler
-
-from freezer.apiclient import client
-
-import arguments
-import shell
-import utils
-
-from freezer import winutils
-if winutils.is_windows():
-    from win_daemon import Daemon, NoDaemon
-else:
-    from daemon import Daemon, NoDaemon
-from scheduler_job import Job
+from distutils import spawn
 from oslo_config import cfg
 from oslo_log import log
 
+from freezer.apiclient import client
+from freezer.scheduler import arguments
+from freezer.scheduler import scheduler_job
+from freezer.scheduler import shell
+from freezer.scheduler import utils
+from freezer import winutils
+
+
+if winutils.is_windows():
+    from win_daemon import Daemon
+    from win_daemon import NoDaemon
+else:
+    from daemon import Daemon
+    from daemon import NoDaemon
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
@@ -122,7 +122,7 @@ class FreezerScheduler(object):
         return self.scheduler.get_job(job_id) is not None
 
     def create_job(self, job_doc):
-        job = Job.create(self, self.freezerc_executable, job_doc)
+        job = scheduler_job.Job.create(self, self.freezerc_executable, job_doc)
         if job:
             self.jobs[job.id] = job
             LOG.info("Created job {0}".format(job.id))
@@ -159,7 +159,7 @@ class FreezerScheduler(object):
     def stop(self):
         try:
             self.scheduler.shutdown(wait=False)
-        except:
+        except Exception:
             pass
 
     def reload(self):
@@ -200,7 +200,7 @@ def main():
                 apiclient.client_id = CONF.client_id
         except Exception as e:
             LOG.error(e)
-            print e
+            print(e)
             sys.exit(1)
     else:
         if winutils.is_windows():

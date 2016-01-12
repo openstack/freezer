@@ -15,8 +15,8 @@ limitations under the License.
 
 Freezer general utils functions
 """
-import threading
 import Queue
+import threading
 
 
 class Wait(Exception):

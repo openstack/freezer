@@ -16,12 +16,12 @@ limitations under the License.
 Freezer LVM related functions
 """
 
-from freezer import utils
-
-import re
-import os
-import subprocess
 import logging
+import os
+import re
+import subprocess
+
+from freezer import utils
 
 
 def lvm_snap_remove(backup_opt_dict):

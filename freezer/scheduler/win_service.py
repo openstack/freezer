@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import os
-import sys
 import servicemanager
+import sys
+import win32event
 import win32service
 import win32serviceutil
-import win32event
 
 from freezer.winutils import set_environment
 
