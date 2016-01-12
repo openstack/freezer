@@ -74,7 +74,7 @@ Quick script to set OS variables:
   export OS_REGION_NAME=RegionOne
   export OS_PASSWORD=quiet
   export OS_AUTH_URL=http://${ADDR}:5000/v2.0
-  export OS_TENANT_ID=`keystone tenant-list | awk -v tenant="$OS_TENANT_NAME" '$4==tenant {print $2}'`
+  export OS_TENANT_ID=`openstack project list | awk -v tenant="$OS_TENANT_NAME" '$4==tenant {print $2}'`
   env | grep OS_
 
 1.1.2 register freezer service in keystone
@@ -82,28 +82,26 @@ Quick script to set OS variables:
 ::
 
     export my_devstack_machine=192.168.20.100
-    keystone user-create --name freezer --pass FREEZER_PWD
-    keystone user-role-add --user freezer --tenant service --role admin
+    openstack user create --password FREEZER_PWD freezer
+    openstack role add --user freezer --project service admin
 
-    keystone service-create --name freezer --type backup \
-      --description "Freezer Backup Service"
+    openstack service create --name freezer \
+      --description "Freezer Backup Service" backup
 
-    keystone endpoint-create \
-      --service-id $(keystone service-list | awk '/ backup / {print $2}') \
+    openstack endpoint create --region regionOne \
       --publicurl http://${my_devstack_machine}:9090 \
       --internalurl http://${my_devstack_machine}:9090 \
-      --adminurl http://${my_devstack_machine}:9090 \
-      --region regionOne
+      --adminurl http://${my_devstack_machine}:9090 backup
 
 1.1.3 add a user for the tests in keystone
 ------------------------------------------
 ::
 
   source os_variables
-  keystone tenant-create --name fproject --description "Testing project for Freezer"
-  keystone user-create --name fuser --pass quiet
-  keystone user-role-add --tenant fproject --user fuser --role Member
-  keystone user-role-add --tenant fproject --user fuser --role admin
+  openstack project create --description "Testing project for Freezer" fproject
+  openstack user create --password quiet fuser
+  openstack role add --project fproject --user fuser Member
+  openstack role add --project fproject --user fuser admin
 
 
 1.2 Elasticsearch
