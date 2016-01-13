@@ -424,7 +424,7 @@ Execute a nova restore::
 
     $ freezer-agent --action restore --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
-Local storage restore execution:
+Local storage restore execution::
 
     $ sudo freezer-agent --action restore --container /local_backup_storage/
     --backup-name adminui.git
@@ -624,41 +624,41 @@ related to the storage
 Example: ssh-username, ssh-port
 
 For swift storage you should provide additional parameter called 'osrc'
-Osrc should be a path to file with Openstack Credentials like:
+Osrc should be a path to file with Openstack Credentials like::
 
-unset OS_DOMAIN_NAME
-export OS_AUTH_URL=http://url:5000/v3
-export OS_PROJECT_NAME=project_name
-export OS_USERNAME=username
-export OS_PASSWORD=secret_password
-export OS_PROJECT_DOMAIN_NAME=Default
-export OS_USER_DOMAIN_NAME=Default
-export OS_IDENTITY_API_VERSION=3
-export OS_AUTH_VERSION=3
-export OS_CACERT=/etc/ssl/certs/ca-certificates.crt
-export OS_ENDPOINT_TYPE=internalURL
+  unset OS_DOMAIN_NAME
+  export OS_AUTH_URL=http://url:5000/v3
+  export OS_PROJECT_NAME=project_name
+  export OS_USERNAME=username
+  export OS_PASSWORD=secret_password
+  export OS_PROJECT_DOMAIN_NAME=Default
+  export OS_USER_DOMAIN_NAME=Default
+  export OS_IDENTITY_API_VERSION=3
+  export OS_AUTH_VERSION=3
+  export OS_CACERT=/etc/ssl/certs/ca-certificates.crt
+  export OS_ENDPOINT_TYPE=internalURL
 
-Example of Config file for two local storages and one swift storage:
+Example of Config file for two local storages and one swift storage::
 
-[default]
-action = backup
-mode = fs
-path_to_backup = /foo/
-backup_name = mytest6
-always_level = 2
-max_segment_size = 67108864
-container = /tmp/backup/
-storage = local
-[storage:first]
-storage=local
-container = /tmp/backup1/
-[storage:second]
-storage=local
-container = /tmp/backup2/
-[storage:swift]
-storage=swift
-container = test
-osrc = openrc.osrc
+  [default]
+  action = backup
+  mode = fs
+  path_to_backup = /foo/
+  backup_name = mytest6
+  always_level = 2
+  max_segment_size = 67108864
+  container = /tmp/backup/
+  storage = local
+  [storage:first]
+  storage=local
+  container = /tmp/backup1/
+  [storage:second]
+  storage=local
+  container = /tmp/backup2/
+  [storage:swift]
+  storage=swift
+  container = test
+  osrc = openrc.osrc
 
 freezer-scheduler
 -----------------
