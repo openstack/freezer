@@ -62,8 +62,7 @@ DEFAULT_PARAMS = {
     'upload_limit': None, 'always_level': False, 'version': False,
     'dry_run': False, 'lvm_snapsize': DEFAULT_LVM_SNAPSIZE,
     'restore_abs_path': False, 'log_file': None, 'log_level': "info",
-    'mode': 'fs', 'action': 'backup',
-    'vssadmin': False, 'shadow': '', 'shadow_path': '',
+    'mode': 'fs', 'action': 'backup', 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
     'ssh_port': 22, 'compression': 'gzip'
@@ -150,7 +149,8 @@ def backup_arguments():
         '-s', '--snapshot', action='store_true',
         help=('Create a snapshot of the fs containing the resource to backup.'
               ' When used, the lvm parameters will be guessed and/or the '
-              'default values will be used'),
+              'default values will be used, on windows it will invoke '
+              'vssadmin'),
         dest='snapshot', default=False)
     arg_parser.add_argument(
         '--lvm-auto-snap', action='store',
@@ -385,11 +385,6 @@ def backup_arguments():
         Following is an example of config file:
         instance = <db-instance>''',
         dest='sql_server_conf', default=False)
-    arg_parser.add_argument(
-        '--vssadmin', action='store_true',
-        help='''Create a backup using a snapshot on windows
-        using vssadmin. Options are: True and False, default is True''',
-        dest='vssadmin', default=False)
     arg_parser.add_argument(
         '--command', action='store',
         help='Command executed by exec action',

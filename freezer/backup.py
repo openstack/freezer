@@ -45,8 +45,8 @@ def backup_mode_sql_server(backup_opt_dict, storage):
         winutils.stop_sql_server(sql_server_instance)
         backup(backup_opt_dict, storage, backup_opt_dict.engine)
     finally:
-        if not backup_opt_dict.vssadmin:
-            # if vssadmin is false, wait until the backup is complete
+        if not backup_opt_dict.snapshot:
+            # if snapshot is false, wait until the backup is complete
             # to start sql server again
             winutils.start_sql_server(sql_server_instance)
 
@@ -213,10 +213,7 @@ def snapshot_create(backup_opt_dict):
     """
 
     if winutils.is_windows():
-        # vssadmin is to be deprecated in favor of the --snapshot flag
         if backup_opt_dict.snapshot:
-            backup_opt_dict.vssadmin = True
-        if backup_opt_dict.vssadmin:
             # Create a shadow copy.
             backup_opt_dict.shadow_path, backup_opt_dict.shadow = \
                 vss.vss_create_shadow_copy(backup_opt_dict.windows_volume)

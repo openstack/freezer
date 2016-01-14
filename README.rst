@@ -798,7 +798,7 @@ Available options::
                     [--cinder-vol-id CINDER_VOL_ID] [--nova-inst-id NOVA_INST_ID]
                     [--cindernative-vol-id CINDERNATIVE_VOL_ID]
                     [--download-limit DOWNLOAD_LIMIT]
-                    [--sql-server-conf SQL_SERVER_CONF] [--vssadmin]
+                    [--sql-server-conf SQL_SERVER_CONF]
                     [--command COMMAND] [--compression {gzip,bzip2,xz}]
                     [--storage {local,swift,ssh}] [--ssh-key SSH_KEY]
                     [--ssh-username SSH_USERNAME] [--ssh-host SSH_HOST]
@@ -966,8 +966,6 @@ Available options::
                             Set the SQL Server configuration file where freezer
                             retrieve the sql server instance. Following is an
                             example of config file: instance = <db-instance>
-      --vssadmin            Create a backup using a snapshot on windows using
-                            vssadmin. Options are: True and False, default is True
       --command COMMAND     Command executed by exec action
       --compression {gzip,bzip2,xz}
                             compression algorithm to use. gzip is default
