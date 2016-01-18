@@ -24,7 +24,7 @@ if is_service_enabled freezer; then
         install_freezer
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         echo_summary "Configuring Freezer"
-        configure_freezer
+        configure_freezer_scheduler
     elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
         echo_summary "Initializing Freezer Scheduler"
         init_freezer_scheduler
