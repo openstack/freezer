@@ -24,9 +24,9 @@ import subprocess
 import sys
 import time
 
-from ConfigParser import ConfigParser
 from distutils import spawn as distspawn
 from functools import wraps
+from six.moves import configparser
 
 
 class OpenstackOptions:
@@ -122,7 +122,7 @@ def create_dir(directory, do_log=True):
 
 
 def save_config_to_file(config, f, section='freezer_default'):
-    parser = ConfigParser()
+    parser = configparser.ConfigParser()
     parser.add_section(section)
     for option, option_value in config.items():
         parser.set(section, option, option_value)
@@ -233,7 +233,7 @@ def human2bytes(s):
     When unable to recognize the format ValueError is raised.
     """
     if s.isdigit():
-        return long(s)
+        return int(s)
 
     if s in (False, None, '-1'):
         return -1
@@ -356,7 +356,7 @@ def find_executable(name):
 
 
 def openssl_path():
-    import winutils
+    from freezer import winutils
     if winutils.is_windows():
         return 'openssl'
     else:
@@ -365,8 +365,8 @@ def openssl_path():
 
 def tar_path():
     """This function returns tar binary path"""
-    from winutils import is_windows
-    if is_windows():
+    from freezer import winutils
+    if winutils.is_windows():
         path_to_binaries = os.path.dirname(os.path.abspath(__file__))
         return '{0}\\bin\\tar.exe'.format(path_to_binaries)
 
@@ -387,8 +387,8 @@ def get_executable_path(binary):
     :rtype: str
     :return: Absoulte Path to the executable file
     """
-    from winutils import is_windows
-    if is_windows():
+    from freezer import winutils
+    if winutils.is_windows():
         path_to_binaries = os.path.dirname(os.path.abspath(__file__))
         return '{0}\\bin\\{1}.exe'.format(path_to_binaries, binary)
 

@@ -15,7 +15,7 @@ limitations under the License.
 
 Freezer general utils functions
 """
-import Queue
+from six.moves import queue
 import threading
 
 
@@ -32,7 +32,7 @@ class RichQueue:
         :type size: int
         :return:
         """
-        self.data_queue = Queue.Queue(maxsize=size)
+        self.data_queue = queue.Queue(maxsize=size)
         # transmission changes in atomic way so no synchronization needed
         self.finish_transmission = False
         self.is_force_stop = False
@@ -51,7 +51,7 @@ class RichQueue:
             res = self.data_queue.get(timeout=1)
             self.data_queue.task_done()
             return res
-        except Queue.Empty:
+        except queue.Empty:
             raise Wait()
 
     def check_stop(self):
@@ -72,7 +72,7 @@ class RichQueue:
             try:
                 self.data_queue.put(message, timeout=1)
                 break
-            except Queue.Full:
+            except queue.Full:
                 self.check_stop()
 
     def get_messages(self):

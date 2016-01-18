@@ -18,7 +18,7 @@ limitations under the License.
 import unittest
 
 from freezer import restore
-import commons
+from freezer.tests import commons
 
 
 class TestRestore(unittest.TestCase):

@@ -16,7 +16,7 @@ limitations under the License.
 
 """
 
-from commons import *
+from freezer.tests.commons import *
 from freezer.job import ExecJob
 from freezer import backup
 
@@ -24,6 +24,18 @@ from freezer.job import Job, InfoJob, AdminJob, BackupJob, RestoreJob, \
     create_job
 from mock import patch, Mock
 import unittest
+
+
+
+class FakeBackup:
+    def __init__(self):
+        pass
+
+    def fake_backup_mode_mongo(self, *args, **kwargs):
+        return True
+
+    def fake_backup_mode_mysql(self, *args, **kwargs):
+        return True
 
 
 class TestJob(unittest.TestCase):

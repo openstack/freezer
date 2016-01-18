@@ -15,6 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
+import six
 import sys
 import threading
 
@@ -146,7 +147,7 @@ class FreezerScheduler(object):
                 job.process_event(job_doc)
 
         # request removal of any job that has been removed in the api
-        for job_id, job in self.jobs.iteritems():
+        for job_id, job in six.iteritems(self.jobs):
             if job_id not in work_job_id_list:
                 job.remove()
 

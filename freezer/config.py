@@ -14,14 +14,11 @@
 
 from freezer import utils
 
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 import logging
 import os
 import re
-import StringIO
+from six.moves import configparser
+from six.moves import cStringIO
 
 class Config:
 
@@ -83,7 +80,7 @@ def ini_parse(lines):
     :return:
     """
     try:
-        fd = StringIO.StringIO(lines)
+        fd = cStringIO.StringIO(lines)
         parser = configparser.ConfigParser()
         parser.readfp(fd)
         return dict(parser.items('default'))

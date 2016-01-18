@@ -16,14 +16,10 @@
 
 from __future__ import print_function
 
-
 import argparse
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 import logging
 import os
+from six.moves import configparser
 import socket
 import sys
 
@@ -451,7 +447,7 @@ def backup_arguments():
                 backup_args.path_to_backup[:3]
 
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.2.5'
+    backup_args.__dict__['__version__'] = '1.2.6'
 
     # todo(enugaev) move it to new command line param backup_media
     backup_media = 'fs'

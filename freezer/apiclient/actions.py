@@ -18,7 +18,7 @@ limitations under the License.
 import json
 import requests
 
-import exceptions
+from freezer.apiclient import exceptions
 
 
 class ActionManager(object):

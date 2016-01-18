@@ -22,7 +22,7 @@ FREEZER_CONF_DIR=${FREEZER_CONF_DIR:-/etc}
 FREEZER_LOG_DIR=$DEST/logs
 
 # Freezer API repository
-FREEZER_REPO=${FREEZER_REPO:-${GIT_BASE}/stackforge/freezer.git}
+FREEZER_REPO=${FREEZER_REPO:-${GIT_BASE}/openstack/freezer.git}
 FREEZER_BRANCH=${FREEZER_BRANCH:-master}
 
 enable_service freezer

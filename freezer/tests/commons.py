@@ -37,17 +37,6 @@ os.environ['OS_USERNAME'] = 'testusername'
 os.environ['OS_TENANT_NAME'] = 'testtenantename'
 
 
-class FakeBackup:
-    def __init__(self):
-        return None
-
-    def fake_backup_mode_mongo(self, *args, **kwargs):
-        return True
-
-    def fake_backup_mode_mysql(self, *args, **kwargs):
-        return True
-
-
 class FakeSubProcess:
     def __init__(self, opt1=True, stdin=True, stdout=True,
             stderr=True, shell=True, executable=True, env={},
@@ -379,10 +368,6 @@ class Os:
         raise Exception
 
     @classmethod
-    def exists(cls, directory=True):
-        return 'testdir'
-
-    @classmethod
     def expanduser(cls, directory=True, opt2=True):
         return 'testdir'
 
@@ -417,10 +402,6 @@ class Os:
     @classmethod
     def expandvars(cls, directory=True):
         return True
-
-    @classmethod
-    def expanduser(cls, directory=True, opt2=True):
-        return 'testdir'
 
     @classmethod
     def normcase(cls, directory=True, opt2=True):
@@ -461,18 +442,6 @@ class Os:
     @classmethod
     def chdir2(cls, directory1=True):
         raise Exception
-
-
-class FakeSocket:
-    def __init__(self):
-        pass
-
-    def recv(self):
-        return "abcdef"
-
-    def send(self):
-        raise Exception("fake send")
-
 
 class FakeDisableFileSystemRedirection:
     success = True
