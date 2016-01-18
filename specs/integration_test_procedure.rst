@@ -133,7 +133,7 @@ Not required, but recommended
 ::
 
   cd ~ && source ~/.venv/bin/activate
-  git clone https://github.com/stackforge/freezer.git
+  git clone https://github.com/openstack/freezer.git
   cd freezer/freezer_api
   pip install -r requirements.txt
   python setup.py install
@@ -179,7 +179,7 @@ Quick start the api for test:
 ===========================
 ::
 
-  git clone https://github.com/stackforge/freezer.git
+  git clone https://github.com/openstack/freezer.git
   cd freezer
   pip install -r requirements.txt
   python setup.py install
