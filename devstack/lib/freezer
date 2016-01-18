@@ -55,7 +55,7 @@ function is_freezer_enabled {
 
 
 # executed during: stack install
-function install_freezer{
+function install_freezer {
 
     git_clone $FREEZER_REPO $FREEZER_DIR $FREEZER_BRANCH
     setup_develop $FREEZER_DIR
