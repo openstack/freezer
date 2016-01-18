@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+
+# (c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Install and start Freezer service
+
+# add the following to localrc:
+#   enable_service freezer
+#
+# Dependencies:
+# - functions
+# - OS_AUTH_URL for auth in api
+# - DEST set to the destination directory
+# - SERVICE_PASSWORD, SERVICE_TENANT_NAME for auth in api
+# - STACK_USER service user
+
+# functions called by the plugin.sh script
+# source plugin.sh <mode> [phase]
+# ---------
+# - <stack>
+#   - <stack> [pre-install]
+#   - <stack> [install]
+#     - install_freezer
+#   - <stack> [extra]
+#     - init_freezer_scheduler
+#     - start_freezer_scheduler
+# - <unstack>
+#   - stop_freezer_scheduler
+# - <clean>
+#   - cleanup_freezer_scheduler
+
+# Save trace setting
+XTRACE=$(set +o | grep xtrace)
+set +o xtrace
+
+
+# Functions
+# ---------
+
+function is_freezer_enabled {
+    [[ ,${ENABLED_SERVICES} =~ ,"freezer" ]] && return 0
+}
+
+
+# executed during: stack install
+function install_freezer{
+
+    git_clone $FREEZER_REPO $FREEZER_DIR $FREEZER_BRANCH
+    setup_develop $FREEZER_DIR
+}
+
+# executed during: stack post-config
+function configure_freezer_scheduler {
+
+    [ ! -d $FREEZER_CONF_DIR ] && sudo mkdir -m 755 -p $FREEZER_CONF_DIR
+    sudo chown $USER $FREEZER_CONF_DIR
+
+    [ ! -d $FREEZER_LOG_DIR ] &&  sudo mkdir -m 755 -p $FREEZER_LOG_DIR
+    sudo chown $USER $FREEZER_LOG_DIR
+
+}
+
+
+# executed during: stack extra
+function init_freezer_scheduler {
+# Add scheduler settings here
+    :
+}
+
+
+# executed during: stack extra
+function start_freezer_scheduler {
+# Add scheduler starts here
+    :
+}
+
+
+# executed during: stop
+function stop_freezer_scheduler {
+    stop_process freezer-scheduler
+}
+
+
+# utility function
+function get_id {
+    echo `"$@" | awk '/ id / { print $4 }'`
+}
+
+# Restore xtrace
+$XTRACE
