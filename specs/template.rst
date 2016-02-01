@@ -42,7 +42,7 @@ Projects
 
 List the projects that this spec effects. (for now only Freezer) For example:
 
-* /stackforge/freezer
+* /openstack/freezer
 
 
 Implementation
