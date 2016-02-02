@@ -51,7 +51,7 @@ DEFAULT_PARAMS = {
     'download_limit': None, 'hostname': False, 'remove_from_date': False,
     'restart_always_level': False, 'lvm_dirmount': DEFAULT_LVM_DIRMOUNT,
     'dereference_symlink': '',
-    'restore_from_host': False, 'config': False, 'mysql_conf': False,
+    'config': False, 'mysql_conf': False,
     'insecure': False, 'lvm_snapname': DEFAULT_LVM_SNAPNAME,
     'lvm_snapperm': 'ro', 'snapshot': False,
     'max_priority': False, 'max_level': False, 'path_to_backup': False,
@@ -67,25 +67,6 @@ DEFAULT_PARAMS = {
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
     'ssh_port': 22, 'compression': 'gzip'
 }
-
-
-def enrich_defaults(config_path):
-    defaults = DEFAULT_PARAMS.copy()
-    if config_path:
-        if not os.path.exists(config_path):
-            logging.error("[*] Critical Error: Configuration file {0} not"
-                          " found".format(config_path))
-            raise Exception("Configuration file {0} not found !".format(
-                config_path))
-        config = configparser.SafeConfigParser()
-        config.read([config_path])
-        section = config.sections()[0]
-        for option in config.options(section):
-            option_value = config.get(section, option)
-            if option_value in ('False', 'None'):
-                option_value = False
-            defaults[option] = option_value
-    return defaults
 
 
 def backup_arguments():
@@ -111,6 +92,9 @@ def backup_arguments():
     if args.config:
         conf = config.Config.parse(args.config)
         defaults.update(conf.default)
+        # TODO: restore_from_host is deprecated and to be removed
+        defaults['hostname'] = conf.default.get('hostname') or \
+            conf.default.get('restore_from_host')
 
     # Generate a new argparse istance and inherit options from config parse
     arg_parser = argparse.ArgumentParser(
