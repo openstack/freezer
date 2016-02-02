@@ -84,6 +84,9 @@ def enrich_defaults(config_path):
             if option_value in ('False', 'None'):
                 option_value = False
             defaults[option] = option_value
+        # TODO: restore_from_host is deprecated and to be removed
+        if not defaults.get('hostname'):
+            defaults['hostname'] = defaults.get('restore_from_host')
     return defaults
 
 
@@ -489,7 +492,7 @@ def backup_arguments(args_dict={}):
             backup_args.vssadmin = False
 
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.1.3'
+    backup_args.__dict__['__version__'] = '1.1.7'
 
     # todo(enugaev) move it to new command line param backup_media
     backup_media = 'fs'
