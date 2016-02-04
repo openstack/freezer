@@ -18,6 +18,8 @@ coverage.xml
 .testrepository
 subunit.log
 .eggs
+AUTHORS
+ChangeLog
 
 # Django files that get created during the test runs
 .secret_key_store
