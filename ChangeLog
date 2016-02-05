@@ -1,6 +1,28 @@
 CHANGES
 =======
 
+* Add check for name=='__main__'
+* Adding devstack plugin for freezer gate job
+* Command for changing logging level. And pep8 fixing (suddenly this pull request was rejected by jenkins and pep8. so this commit also contains some small style changes for pep8.)
+* Fix the parameter order of assertEqual
+* Parallel backup
+* Fix grammatical and spelling errors in the README.rst file
+* Add default namespace to apiclient
+* Updated Windows installer and binaries documentation
+* use openstack command to create user and project
+* Pass proxy enviroment varibles in tox
+* Blueprint specs for python-freezerclient repo
+* Replace assertEqual(*, None) with assertIsNone in tests
+* Drop MANIFEST.in - Because it's already use PBR
+* Design specs and considerations for tenant based backups
+* Deprecated tox -downloadcache option removed
+* Switch freezer-scheduler to oslo.config and oslo.log switch freezer-scheduler to use oslo.config and switch from native python logging module to oslo.log This commit includes: - using oslo.config for parsing cli and config files options - using oslo.log instead of native python logging module - this applied only on freezer-scheduler Implements: blueprint using-oslo-libs
+* Removing old integration tests
+* Removing obsolete parameters from freezer args (swift related)
+* Delete python bytecode before every test run
+* Fix typo: my scheduled backup 6 => schedule_backups 6
+* Fixed astroid version to fix pylint
+* Initialize freezer-scheduler with insecure mode for keystone v3
 * Freezer Scheduler for Windows
 * Import pep3134daemon as local module
 * Freezer instructions for Windows
