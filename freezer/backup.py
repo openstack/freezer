@@ -201,7 +201,8 @@ class BackupOs:
     def backup_cinder(self, volume_id, name=None, description=None):
         client_manager = self.client_manager
         cinder = client_manager.get_cinder()
-        cinder.backups.create(volume_id, self.container, name, description)
+        cinder.backups.create(volume_id, self.container, name, description,
+                              incremental=True, force=True)
 
 
 def snapshot_create(backup_opt_dict):

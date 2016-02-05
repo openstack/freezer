@@ -97,7 +97,7 @@ class ClientManager:
         options = self.options
         logging.info("[*] Creation of cinder client")
         self.cinder = cclient.Client(
-            version="1",
+            version="2",
             username=options.user_name,
             api_key=options.password,
             project_id=options.tenant_name,
