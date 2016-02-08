@@ -21,6 +21,8 @@ import os
 import six
 import utils
 
+from freezer.utils.utils import DateTime
+
 from prettytable import PrettyTable
 
 try:
@@ -191,21 +193,22 @@ def do_job_upload(client, args):
 
 
 def _job_list(client, args):
+    list_func = client.jobs.list_all if args.all else client.jobs.list
     search = {}
     if args.active_only:
         search = {"match_not": [{"status": "completed"}]}
-    client_docs = client.jobs.list(search=search)
+    client_docs = list_func(search=search)
     offset = 0
     while client_docs:
         offset += len(client_docs)
         for doc in client_docs:
             yield doc
-        client_docs = client.jobs.list(offset=offset, search=search)
+        client_docs = list_func(offset=offset, search=search)
     raise StopIteration
 
 
 def do_job_list(client, args):
-    table = PrettyTable(["job_id", "description", "# actions",
+    table = PrettyTable(["job_id", "client-id", "description", "# actions",
                          "status", "event", "result", "session_id"])
     for doc in _job_list(client, args):
         job_scheduling = doc.get('job_schedule', {})
@@ -213,6 +216,7 @@ def do_job_list(client, args):
         job_event = job_scheduling.get('event', '')
         job_result = job_scheduling.get('result', '')
         table.add_row([doc['job_id'],
+                       doc.get('client_id'),
                        doc.get('description', ''),
                        len(doc.get('job_actions', [])),
                        job_status,
@@ -234,4 +238,42 @@ def do_client_list(client, args):
                            client_doc.get('hostname', ''),
                            client_doc.get('description', '')])
         l = client.registration.list(offset=offset)
+    print(table)
+
+
+def do_backup_list(client, args):
+    list_func = client.backups.list_all if args.all else client.backups.list
+    if args.long:
+        fields = ["backup uuid", "job-id", "client-id", "container",
+                  "hostname", "backup name", "timestamp", "level", "path"]
+    else:
+        fields = ["backup uuid", "container", "backup name", "timestamp",
+                  "level", "path"]
+    table = PrettyTable(fields)
+    l = list_func()
+    offset = 0
+    while l:
+        offset += len(l)
+        for doc in l:
+            metadata_doc = doc['backup_metadata']
+            timestamp = int(metadata_doc.get('time_stamp', 0))
+            if args.long:
+                row = [doc['backup_uuid'],
+                       metadata_doc.get('job_id', ''),
+                       metadata_doc.get('client_id', ''),
+                       metadata_doc.get('container', ''),
+                       metadata_doc.get('hostname', ''),
+                       metadata_doc.get('backup_name', ''),
+                       str(DateTime(timestamp)),
+                       metadata_doc.get('curr_backup_level', ''),
+                       metadata_doc.get('fs_real_path', '')]
+            else:
+                row = [doc['backup_uuid'],
+                       metadata_doc.get('container', ''),
+                       metadata_doc.get('backup_name', ''),
+                       str(DateTime(timestamp)),
+                       metadata_doc.get('curr_backup_level', ''),
+                       metadata_doc.get('fs_real_path', '')]
+            table.add_row(row)
+        l = list_func(offset=offset)
     print(table)

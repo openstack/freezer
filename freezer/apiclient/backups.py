@@ -32,6 +32,8 @@ class BackupsManager(object):
         return {'X-Auth-Token': self.client.auth_token}
 
     def create(self, backup_metadata):
+        if not backup_metadata.get('client_id', ''):
+            backup_metadata['client_id'] = self.client.client_id
         r = requests.post(self.endpoint,
                           data=json.dumps(backup_metadata),
                           headers=self.headers,
@@ -48,7 +50,7 @@ class BackupsManager(object):
         if r.status_code != 204:
             raise exceptions.ApiClientException(r)
 
-    def list(self, limit=10, offset=0, search=None):
+    def list_all(self, limit=10, offset=0, search=None):
         """
         Retrieves a list of backup infos
 
@@ -69,6 +71,13 @@ class BackupsManager(object):
             raise exceptions.ApiClientException(r)
 
         return r.json()['backups']
+
+    def list(self, limit=10, offset=0, search={}, client_id=None):
+        client_id = client_id or self.client.client_id
+        new_search = search.copy()
+        new_search['match'] = search.get('match', [])
+        new_search['match'].append({'client_id': client_id})
+        return self.list_all(limit, offset, new_search)
 
     def get(self, backup_id):
         endpoint = self.endpoint + backup_id

@@ -275,6 +275,7 @@ class Job(object):
         try:
             metadata = json.loads(metadata_string)
             if metadata:
+                metadata['job_id'] = self.id
                 self.scheduler.upload_metadata(metadata)
                 logging.info("[*] Job {0}, freezer action metadata uploaded"
                              .format(self.id))

@@ -105,7 +105,16 @@ def get_common_opts():
                     default=False,
                     dest='disable_exec',
                     help='Allow Freezer Scheduler to deny jobs that execute '
-                         'commands for security reasons')
+                         'commands for security reasons'),
+        cfg.BoolOpt('all',
+                    default=False,
+                    dest='all',
+                    help='Used when querying the API, to retrieve any '
+                         'document regardless of the client-id'),
+        cfg.BoolOpt('long',
+                    default=False,
+                    dest='long',
+                    help='List additional fields in output')
     ]
 
     return _COMMON

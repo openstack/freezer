@@ -15,6 +15,7 @@ limitations under the License.
 
 """
 
+import json
 import unittest
 from mock import Mock, patch
 
@@ -22,10 +23,30 @@ from freezer.apiclient import exceptions
 from freezer.apiclient import backups
 
 
+class CallArgs(object):
+
+    def __init__(self, mock_obj=Mock()):
+        self.args = mock_obj.call_args[0]
+        self.kwargs = mock_obj.call_args[1]
+
+    def _check_arg(self, arg, value, load_json):
+        if load_json:
+            arg = json.loads(arg)
+        if (arg != value):
+            raise Exception("Argument doesn't match: {0} != {1}".format(arg, value))
+        return
+
+    def check_arg(self, pos, value, load_json=False):
+        if isinstance(pos, int):
+            return self._check_arg(self.args[pos], value, load_json)
+        return self._check_arg(self.kwargs[pos], value, load_json)
+
+
 class TestBackupManager(unittest.TestCase):
 
     def setUp(self):
         self.mock_client = Mock()
+        self.mock_client.client_id = "jumpingjack"
         self.mock_client.endpoint = 'http://testendpoint:9999'
         self.mock_client.auth_token = 'testtoken'
         self.b = backups.BackupsManager(self.mock_client)
@@ -42,6 +63,25 @@ class TestBackupManager(unittest.TestCase):
         mock_response.json.return_value = {'backup_id': 'qwerqwer'}
         mock_requests.post.return_value = mock_response
         retval = self.b.create(backup_metadata={'backup': 'metadata'})
+        ca = CallArgs(mock_requests.post)
+        ca.check_arg(0, 'http://testendpoint:9999/v1/backups/')
+        ca.check_arg('data', {"backup": "metadata", "client_id": "jumpingjack"}, load_json=True)
+        ca.check_arg('headers', {'X-Auth-Token': 'testtoken'})
+        ca.check_arg('verify', True)
+        self.assertEqual('qwerqwer', retval)
+
+    @patch('freezer.apiclient.backups.requests')
+    def test_create_ok_with_client_id(self, mock_requests):
+        mock_response = Mock()
+        mock_response.status_code = 201
+        mock_response.json.return_value = {'backup_id': 'qwerqwer'}
+        mock_requests.post.return_value = mock_response
+        retval = self.b.create(backup_metadata={'backup': 'metadata', 'client_id': 'wahwah'})
+        ca = CallArgs(mock_requests.post)
+        ca.check_arg(0, 'http://testendpoint:9999/v1/backups/')
+        ca.check_arg('data', {"backup": "metadata", "client_id": "wahwah"}, load_json=True)
+        ca.check_arg('headers', {'X-Auth-Token': 'testtoken'})
+        ca.check_arg('verify', True)
         self.assertEqual('qwerqwer', retval)
 
     @patch('freezer.apiclient.backups.requests')
@@ -112,12 +152,11 @@ class TestBackupManager(unittest.TestCase):
         retval = self.b.list(limit=5,
                              offset=5,
                              search={"time_before": 1428529956})
-        mock_requests.get.assert_called_with(
-            'http://testendpoint:9999/v1/backups/',
-            params={'limit': 5, 'offset': 5},
-            data='{"time_before": 1428529956}',
-            headers={'X-Auth-Token': 'testtoken'},
-            verify=True)
+        ca = CallArgs(mock_requests.get)
+        ca.check_arg(0, 'http://testendpoint:9999/v1/backups/')
+        ca.check_arg('data', {"time_before": 1428529956, "match": [{"client_id": "jumpingjack"}]}, load_json=True)
+        ca.check_arg('headers', {'X-Auth-Token': 'testtoken'})
+        ca.check_arg('verify', True)
         self.assertEqual(backup_list, retval)
 
     @patch('freezer.apiclient.backups.requests')
