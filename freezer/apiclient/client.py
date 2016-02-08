@@ -192,7 +192,8 @@ class Client(object):
                  project_name=None,
                  user_domain_name=None,
                  project_domain_name=None,
-                 verify=True):
+                 verify=True,
+                 cacert=False):
 
         self.opts = opts
         # this creates a namespace for self.opts when the client is
@@ -214,9 +215,9 @@ class Client(object):
         if project_name:
             self.opts.os_project_name = project_name
         if user_domain_name:
-            self.opts.user_domain_name = user_domain_name
+            self.opts.os_user_domain_name = user_domain_name
         if project_domain_name:
-            self.opts.project_domain_name = project_domain_name
+            self.opts.os_project_domain_name = project_domain_name
 
         # flag to initialize freezer-scheduler with insecure mode
         self.verify = verify
