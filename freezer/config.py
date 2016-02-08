@@ -21,6 +21,7 @@ except ImportError:
 import logging
 import os
 import re
+import StringIO
 
 class Config:
 
@@ -65,7 +66,7 @@ class Config:
 EXPORT = re.compile(r"^\s*export\s+([^=^#^\s]+)\s*=\s*([^#^\n]*)\s*$",
                     re.MULTILINE)
 
-INI = re.compile(r"^\s*([^=#\s]+)\s*=[\t]*([^#\n]*)\s*$")
+INI = re.compile(r"^\s*([^=#\s]+)\s*=[\t]*([^#\n]*)\s*$", re.MULTILINE)
 
 def osrc_parse(lines):
     """
@@ -76,7 +77,27 @@ def osrc_parse(lines):
     return find_all(EXPORT, lines)
 
 def ini_parse(lines):
-    return find_all(INI, lines)
+    """
+    :param lines:
+    :type lines: str
+    :return:
+    """
+    try:
+        fd = StringIO.StringIO(lines)
+        parser = configparser.ConfigParser()
+        parser.readfp(fd)
+        return dict(parser.items('default'))
+    except Exception as e:
+        try:
+            # TODO: Remove the parsing of ini-like file via regex
+            conf = find_all(INI, lines)
+            logging.warning("Using non-INI files for database configuration"
+                            "file is deprecated. Falling back to Regex.")
+            logging.warning("INI parser error was: {}".format(str(e)))
+            return conf
+        except Exception:
+            logging.warning("Couldn't parse non-INI config file using Regex")
+            raise
 
 def find_all(regex, lines):
     return dict([(k.strip(), utils.dequote(v.strip())) for k, v in
