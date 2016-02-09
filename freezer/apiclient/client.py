@@ -24,10 +24,10 @@ from keystoneclient.auth.identity import v2
 from keystoneclient.auth.identity import v3
 from keystoneclient import session as ksc_session
 
-from backups import BackupsManager
-from registration import RegistrationManager
-from jobs import JobManager
 from actions import ActionManager
+from backups import BackupsManager
+from jobs import JobManager
+from registration import RegistrationManager
 from sessions import SessionManager
 
 

@@ -15,21 +15,21 @@ limitations under the License.
 
 Freezer main execution function
 """
+import json
+import logging
 import os
 import subprocess
-import logging
 import sys
-import json
 
 from freezer.arguments import backup_arguments
 from freezer.bandwidth import monkeypatch_socket_bandwidth
+from freezer.engine.tar import tar_engine
 from freezer import job
 from freezer.osclients import ClientManager
-from freezer.storage import swift
 from freezer.storage import local
 from freezer.storage import ssh
+from freezer.storage import swift
 from freezer import utils
-from freezer.engine.tar import tar_engine
 from freezer import winutils
 
 # Initialize backup options
@@ -153,7 +153,7 @@ def freezer_main(backup_args, arg_parse):
                                    stderr=subprocess.PIPE,
                                    env=os.environ.copy())
         while process.poll() is None:
-            print process.stdout.readline().rstrip()
+            print(process.stdout.readline().rstrip())
         output, error = process.communicate()
 
         if process.returncode:
@@ -191,7 +191,7 @@ def main():
     (backup_args, opt_args) = backup_arguments()
     try:
         if backup_args.version:
-            print "freezer version {0}".format(backup_args.__version__)
+            print("freezer version {0}".format(backup_args.__version__))
             sys.exit(1)
 
         if len(sys.argv) < 2:

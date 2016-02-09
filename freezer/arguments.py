@@ -17,6 +17,7 @@
 from __future__ import print_function
 
 import argparse
+from distutils import spawn as distspawn
 try:
     import configparser
 except ImportError:
@@ -24,15 +25,13 @@ except ImportError:
 import logging
 import os
 from os.path import expanduser
+from oslo_utils import encodeutils
 import socket
 import sys
-from freezer import utils
-from distutils import spawn as distspawn
-
-from oslo_utils import encodeutils
-
-from freezer import winutils
 from tempfile import NamedTemporaryFile
+
+from freezer import utils
+from freezer import winutils
 
 home = expanduser("~")
 

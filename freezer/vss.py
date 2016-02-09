@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from freezer.winutils import DisableFileSystemRedirection
-from freezer.utils import create_subprocess
-
 import logging
 import os
+
+from freezer.utils import create_subprocess
+from freezer.winutils import DisableFileSystemRedirection
 
 
 def vss_create_shadow_copy(windows_volume):

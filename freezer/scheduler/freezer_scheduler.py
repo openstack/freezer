@@ -16,11 +16,11 @@ limitations under the License.
 
 """
 
+from distutils import spawn
 import logging
 import os
 import sys
 import threading
-from distutils import spawn
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -30,7 +30,8 @@ import arguments
 import shell
 import utils
 
-from daemon import Daemon, NoDaemon
+from daemon import Daemon
+from daemon import NoDaemon
 from scheduler_job import Job
 
 
@@ -150,7 +151,7 @@ class FreezerScheduler(object):
     def stop(self):
         try:
             self.scheduler.shutdown(wait=False)
-        except:
+        except Exception:
             pass
 
     def reload(self):

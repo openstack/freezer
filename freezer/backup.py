@@ -20,14 +20,14 @@ import os
 from os.path import expanduser
 import time
 
-from freezer import utils
 from freezer import lvm
+from freezer import utils
 from freezer.vss import vss_create_shadow_copy
 from freezer.vss import vss_delete_shadow_copy
+from freezer.winutils import is_windows
 from freezer.winutils import start_sql_server
 from freezer.winutils import stop_sql_server
 from freezer.winutils import use_shadow
-from freezer.winutils import is_windows
 
 home = expanduser("~")
 

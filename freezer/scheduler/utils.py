@@ -18,8 +18,10 @@ limitations under the License.
 import json
 import os
 import socket
-import freezer.apiclient.exceptions
 import uuid
+
+import freezer.apiclient.exceptions
+
 
 CONFIG_FILE_EXT = '.conf'
 
@@ -34,7 +36,7 @@ def do_register(client, args=None):
             client.registration.create(client_info)
         except freezer.apiclient.exceptions.ApiClientException as e:
             if e.status_code == 409:
-                print "Client already registered"
+                print("Client already registered")
             return os.EX_CANTCREAT
         return os.EX_OK
 
@@ -60,7 +62,7 @@ def load_doc_from_json_file(fname, debug=False):
         except Exception as e:
             raise Exception("Unable to load conf file. {0}".format(e))
         if debug:
-            print "File {0} loaded: ".format(fname)
+            print("File {0} loaded: ".format(fname))
         return doc
 
 
@@ -68,7 +70,7 @@ def save_doc_to_json_file(doc, fname, debug=False):
     with open(fname, 'w') as fd:
         json.dump(doc, fd, indent=4)
     if debug:
-        print 'Saved doc to file: {0}'.format(fname)
+        print('Saved doc to file: {0}'.format(fname))
 
 
 def get_jobs_from_disk(path):
