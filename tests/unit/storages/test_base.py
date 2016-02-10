@@ -183,7 +183,6 @@ class TestBackup(unittest.TestCase):
         t.remove_older_than(3000, "host_backup")
         t.remove_backup.assert_any_call(r1)
         t.remove_backup.assert_any_call(r2)
-        print t.remove_backup.call_count
         assert t.remove_backup.call_count == 2
 
     def test_create_backup(self):

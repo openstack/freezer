@@ -16,14 +16,10 @@
 
 from __future__ import print_function
 
-
 import argparse
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 import logging
 import os
+from six.moves import configparser
 import socket
 import sys
 

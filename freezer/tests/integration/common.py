@@ -16,15 +16,17 @@
 import distutils.spawn
 import hashlib
 import json
+import itertools
 import os
-import shlex
 import shutil
+import six
 import subprocess
 import tempfile
 import unittest
 import paramiko
 
 FREEZERC = distutils.spawn.find_executable('freezerc')
+
 
 class CommandFailed(Exception):
 
@@ -41,22 +43,43 @@ class CommandFailed(Exception):
                 "stderr:\n%s" % (self.cmd, self.returncode,
                                  self.stdout, self.stderr))
 
-def execute_freezerc(args, must_fail=False, merge_stderr=False):
-    cmd_freezer = FREEZERC + " " + args
-    return execute(cmd_freezer, must_fail=must_fail, merge_stderr=merge_stderr)
 
-def execute(cmd, must_fail=False, merge_stderr=False):
-    """Executes specified command for the given action."""
-    cmdlist = shlex.split(cmd.encode('utf-8'))
+def dict_to_args(d):
+    l = [['--' + k.replace('_', '-'), v] for k, v in six.iteritems(d)]
+    return list(itertools.chain.from_iterable(l))
+
+
+def execute_freezerc(dict, must_fail=False, merge_stderr=False):
+    """
+
+    :param dict:
+    :type dict: dict[str, str]
+    :param must_fail:
+    :param merge_stderr:
+    :return:
+    """
+    return execute([FREEZERC] + dict_to_args(dict), must_fail=must_fail,
+                   merge_stderr=merge_stderr)
+
+
+def execute(args, must_fail=False, merge_stderr=False):
+    """
+    Executes specified command for the given action.
+    :param args:
+    :type args: list[str]
+    :param must_fail:
+    :param merge_stderr:
+    :return:
+    """
     stdout = subprocess.PIPE
     stderr = subprocess.STDOUT if merge_stderr else subprocess.PIPE
-    proc = subprocess.Popen(cmdlist, stdout=stdout, stderr=stderr)
+    proc = subprocess.Popen(args, stdout=stdout, stderr=stderr)
     result, result_err = proc.communicate()
 
     if not must_fail and proc.returncode != 0:
-        raise CommandFailed(proc.returncode, cmd, result, result_err)
+        raise CommandFailed(proc.returncode, ' '.join(args), result, result_err)
     if must_fail and proc.returncode == 0:
-        raise CommandFailed(proc.returncode, cmd, result, result_err)
+        raise CommandFailed(proc.returncode, ' '.join(args), result, result_err)
     return result
 
 
@@ -65,7 +88,8 @@ class Temp_Tree(object):
     def __init__(self, suffix='', dir=None, create=True):
         self.create = create
         if create:
-            self.path = tempfile.mkdtemp(dir=dir, prefix='__freezer_', suffix=suffix)
+            self.path = tempfile.mkdtemp(dir=dir, prefix='__freezer_',
+                                         suffix=suffix)
         else:
             self.path = dir
         self.files = []
@@ -89,10 +113,11 @@ class Temp_Tree(object):
         :param size: size of files
         :return: None
         """
-        for x in xrange(ndir):
+        for x in range(ndir):
             subdir_path = tempfile.mkdtemp(dir=self.path)
-            for y in xrange(nfile):
-                abs_pathname = self.create_file_with_random_data(dir_path=subdir_path, size=size)
+            for y in range(nfile):
+                abs_pathname = self.create_file_with_random_data(
+                    dir_path=subdir_path, size=size)
                 rel_path_name = abs_pathname[len(self.path)+1:]
                 self.files.append(rel_path_name)
 
@@ -152,7 +177,8 @@ class Temp_Tree(object):
             return False
         for fname in lh_files:
             if os.path.isfile(fname):
-                if self.get_file_hash(fname) != other_tree.get_file_hash(fname):
+                if self.get_file_hash(fname) != \
+                        other_tree.get_file_hash(fname):
                     return False
         return True
 
@@ -163,13 +189,15 @@ class TestFS(unittest.TestCase):
 
     Type of tests depends (also) on the environment variables defined.
 
-    To enable the ssh storage testing, the following environment variables need to be defined:
+    To enable the ssh storage testing, the following environment
+    variables need to be defined:
      - FREEZER_TEST_SSH_KEY
      - FREEZER_TEST_SSH_USERNAME
      - FREEZER_TEST_SSH_HOST
      - FREEZER_TEST_CONTAINER
 
-    To enable the swift storage testing, the following environment variables need to be defined:
+    To enable the swift storage testing, the following environment
+    variables need to be defined:
      - FREEZER_TEST_OS_TENANT_NAME
      - FREEZER_TEST_OS_USERNAME
      - FREEZER_TEST_OS_REGION_NAME
@@ -213,7 +241,8 @@ class TestFS(unittest.TestCase):
         self.dest_tree = Temp_Tree()
         if TestFS.use_ssh:
             self.ssh_client = paramiko.SSHClient()
-            self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.ssh_client.set_missing_host_key_policy(
+                paramiko.AutoAddPolicy())
             self.ssh_client.connect(TestFS.ssh_host,
                                     username=TestFS.ssh_username,
                                     key_filename=TestFS.ssh_key)
@@ -228,12 +257,6 @@ class TestFS(unittest.TestCase):
     def assertTreesMatchNot(self):
         self.assertFalse(self.source_tree.is_equal(self.dest_tree))
 
-    def dict_to_args(self, d):
-        arg_string = ''
-        for k, v in d.iteritems():
-            arg_string += ' --{0} {1}'.format(k.replace('_', '-'), v)
-        return arg_string
-
     def get_file_list_ssh(self, sub_path=''):
         ftp = self.ssh_client.open_sftp()
         path = '{0}/{1}'.format(self.container, sub_path)
@@ -245,36 +268,33 @@ class TestFS(unittest.TestCase):
 
     def get_file_list_openstack(self, container):
         if self.openstack_executable:
-            cmd = '{0} object list {1} -f json'.format(
-                self.openstack_executable, container)
-            json_result = execute(cmd)
+            json_result = execute([self.openstack_executable, 'object', 'list',
+                                   container, '-f', json])
             result = json.loads(json_result)
             return [x['Name'] for x in result]
         if self.swift_executable:
-            cmd = '{0} list {1}'.format(self.swift_executable, container)
-            result = execute(cmd)
+            result = execute([self.swift_executable, 'list', container])
             return result.split()
-        raise Exception("Unable to get container list using openstackclient/swiftclient")
+        raise Exception(
+            "Unable to get container list using openstackclient/swiftclient")
 
     def remove_swift_container(self, container):
         if self.openstack_executable:
-            execute('{0} container delete {1}'.format(self.openstack_executable,
-                                                      container))
-            execute('{0} container delete {1}_segments'.format(self.openstack_executable,
-                                                               container))
+            execute([self.openstack_executable, 'container',
+                     'delete', container])
+            execute([self.openstack_executable, 'container',
+                     'delete', container + '_segments'])
         elif self.swift_executable:
-            execute('{0} delete {1}'.format(self.swift_executable,
-                                            container))
-            execute('{0} delete {1}_segments'.format(self.swift_executable,
-                                                     container))
+            execute([self.swift_executable, 'delete', container])
+            execute([self.swift_executable, 'delete', container + '_segments'])
         return True
 
     def do_backup_and_restore_with_check(self, backup_args, restore_args):
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
-        result = execute_freezerc(self.dict_to_args(backup_args))
+        result = execute_freezerc(backup_args)
         self.assertIsNotNone(result)
-        result = execute_freezerc(self.dict_to_args(restore_args))
+        result = execute_freezerc(restore_args)
         self.assertIsNotNone(result)
         self.assertTreesMatch()
         return True

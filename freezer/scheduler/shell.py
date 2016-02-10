@@ -18,6 +18,7 @@ limitations under the License.
 
 import json
 import os
+import six
 import utils
 
 from prettytable import PrettyTable
@@ -68,7 +69,7 @@ def do_session_list_job(client, args):
     session_doc = client.sessions.get(args.session_id)
     jobs = session_doc.get('jobs', {})
     table = PrettyTable(["job_id", "status", "result", "client_id"])
-    for job_id, job_data in jobs.iteritems():
+    for job_id, job_data in six.iteritems(jobs):
         table.add_row([job_id,
                        job_data['status'],
                        job_data['result'],

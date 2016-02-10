@@ -13,11 +13,12 @@
 # limitations under the License.
 
 
-from freezer import utils
 import datetime
-from commons import *
-
 import unittest
+
+from freezer.tests.commons import *
+from freezer import utils
+
 
 class TestUtils(unittest.TestCase):
 

@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from freezer.tests.commons import *
 from freezer.winutils import is_windows
 from freezer.winutils import use_shadow
 from freezer.winutils import DisableFileSystemRedirection
 from freezer import winutils
-from commons import *
 import unittest
 import mock
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from commons import (FakeDisableFileSystemRedirection, FakeSubProcess,
+from freezer.tests.commons import (FakeDisableFileSystemRedirection, FakeSubProcess,
     FakeSubProcess3, FakeSubProcess6)
 from freezer import vss
 import unittest

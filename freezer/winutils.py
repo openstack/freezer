@@ -16,6 +16,7 @@ import ctypes
 import json
 import logging
 import os
+import six
 import sys
 
 from freezer.utils import create_subprocess
@@ -100,5 +101,5 @@ def set_environment(home):
     json_env = os.path.join(home, 'env.json')
     with open(json_env, 'rb') as fp:
         env = json.loads(fp.read())
-        for k, v in env.iteritems():
+        for k, v in six.iteritems(env):
             os.environ[str(k).strip()] = str(v).strip()

@@ -21,8 +21,7 @@ from glanceclient import client as gclient
 from novaclient import client as nclient
 import swiftclient
 
-from utils import Bunch
-from utils import ReSizeStream
+from freezer import utils
 
 
 class ClientManager:
@@ -143,14 +142,14 @@ class ClientManager:
         logging.info("[*] Creation of glance client")
 
         endpoint, token = OpenStackImagesShell()._get_endpoint_and_token(
-            Bunch(os_username=options.user_name,
-                  os_password=options.password,
-                  os_tenant_name=options.tenant_name,
-                  os_project_name=options.project_name,
-                  os_auth_url=options.auth_url,
-                  os_region_name=options.region_name,
-                  endpoint_type=options.endpoint_type,
-                  force_auth=False))
+            utils.Bunch(os_username=options.user_name,
+                        os_password=options.password,
+                        os_tenant_name=options.tenant_name,
+                        os_project_name=options.project_name,
+                        os_auth_url=options.auth_url,
+                        os_region_name=options.region_name,
+                        endpoint_type=options.endpoint_type,
+                        force_auth=False))
 
         self.glance = gclient.Client(version="1",
                                      endpoint=endpoint, token=token)
@@ -197,7 +196,7 @@ class ClientManager:
                     raise Exception("snapshot has error state")
                 time.sleep(5)
             except Exception as e:
-                if e.message == "snapshot has error state":
+                if str(e) == "snapshot has error state":
                     raise e
                 logging.exception(e)
         return snapshot
@@ -267,7 +266,7 @@ class ClientManager:
         logging.debug("Download image enter")
         stream = self.get_glance().images.data(image.id)
         logging.debug("Stream with size {0}".format(image.size))
-        return ReSizeStream(stream, image.size, 1000000)
+        return utils.ReSizeStream(stream, image.size, 1000000)
 
 
 class DryRunSwiftclientConnectionWrapper:

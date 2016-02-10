@@ -11,39 +11,47 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-from freezer.bandwidth import ThrottledSocket, monkeypatch_bandwidth
-from commons import FakeSocket
-
 import unittest
+
+from freezer import bandwidth
+
+
+class FakeSocket:
+    def __init__(self):
+        pass
+
+    def recv(self):
+        return "abcdef"
+
+    def send(self):
+        raise Exception("fake send")
 
 
 class TestBandwidth(unittest.TestCase):
 
     def test_throttled_socket_recv(self):
         fake = FakeSocket()
-        throttled = ThrottledSocket(100, 100, fake)
+        throttled = bandwidth.ThrottledSocket(100, 100, fake)
         assert throttled.recv() == fake.recv()
 
     def test_throttled_socket_send(self):
         fake = FakeSocket()
-        throttled = ThrottledSocket(100, 100, fake)
+        throttled = bandwidth.ThrottledSocket(100, 100, fake)
         self.assertRaises(Exception, throttled.sendall)
 
     def test_sleep_duration(self):
-        assert ThrottledSocket._sleep_duration(10, 5, 5, 6) == 1.0
-        assert ThrottledSocket._sleep_duration(10, 5, 5, 5.5) == 1.5
-        assert ThrottledSocket._sleep_duration(10, 5, 5, 6.5) == 0.5
-        assert ThrottledSocket._sleep_duration(10, 5, 5, 7) == 0.0
+        assert bandwidth.ThrottledSocket._sleep_duration(10, 5, 5, 6) == 1.0
+        assert bandwidth.ThrottledSocket._sleep_duration(10, 5, 5, 5.5) == 1.5
+        assert bandwidth.ThrottledSocket._sleep_duration(10, 5, 5, 6.5) == 0.5
+        assert bandwidth.ThrottledSocket._sleep_duration(10, 5, 5, 7) == 0.0
 
     def test_sleep(self):
-        ThrottledSocket._sleep(10, 5, 5, 7)
+        bandwidth.ThrottledSocket._sleep(10, 5, 5, 7)
 
     def test_monkeypatch(self):
-        monkeypatch_bandwidth(100, 100)
+        bandwidth.monkeypatch_bandwidth(100, 100)
 
     def test_set(self):
         fake = FakeSocket()
-        ThrottledSocket(100, 100, fake).__setattr__("test", 12)
-        ThrottledSocket(100, 100, fake).__getattr__("test")
+        bandwidth.ThrottledSocket(100, 100, fake).__setattr__("test", 12)
+        bandwidth.ThrottledSocket(100, 100, fake).__getattr__("test")

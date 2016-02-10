@@ -19,11 +19,10 @@ import datetime
 import json
 import logging
 import os
+from six.moves import configparser
 import subprocess
 import tempfile
 import time
-
-from ConfigParser import ConfigParser
 
 from freezer import utils
 
@@ -199,7 +198,7 @@ class Job(object):
 
     @staticmethod
     def save_action_to_file(action, f):
-        parser = ConfigParser()
+        parser = configparser.ConfigParser()
         parser.add_section('action')
         for action_k, action_v in action.items():
             parser.set('action', action_k, action_v)
