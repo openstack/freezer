@@ -104,7 +104,8 @@ class ClientManager:
             region_name=options.region_name,
             insecure=self.insecure,
             endpoint_type=options.endpoint_type or 'publicURL',
-            service_type="volume")
+            service_type="volume",
+            cacert=options.cert)
         return self.cinder
 
     def create_swift(self):
@@ -122,7 +123,8 @@ class ClientManager:
             tenant_name=options.tenant_name,
             os_options=options.os_options,
             auth_version=self.swift_auth_version,
-            insecure=self.insecure, retries=6)
+            insecure=self.insecure, retries=6,
+            cacert=options.cert)
 
         if self.dry_run:
             self.swift = DryRunSwiftclientConnectionWrapper(self.swift)
@@ -149,7 +151,8 @@ class ClientManager:
                         os_auth_url=options.auth_url,
                         os_region_name=options.region_name,
                         endpoint_type=options.endpoint_type,
-                        force_auth=False))
+                        force_auth=False,
+                        cacert=options.cert))
 
         self.glance = gclient.Client(version="1",
                                      endpoint=endpoint, token=token)
@@ -170,7 +173,8 @@ class ClientManager:
             project_id=options.tenant_name,
             auth_url=options.auth_url,
             region_name=options.region_name,
-            insecure=self.insecure)
+            insecure=self.insecure,
+            cacert=options.cert)
 
         return self.nova
 

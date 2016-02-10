@@ -190,13 +190,13 @@ def main():
         return 65  # os.EX_DATAERR
 
     apiclient = None
-    verify = True
+    insecure = False
     if CONF.insecure:
-        verify = False
+        insecure = True
 
     if CONF.no_api is False:
         try:
-            apiclient = client.Client(opts=CONF, verify=verify)
+            apiclient = client.Client(opts=CONF, insecure=insecure)
             if CONF.client_id:
                 apiclient.client_id = CONF.client_id
         except Exception as e:
