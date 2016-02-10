@@ -130,7 +130,16 @@ def build_os_options():
                         ' "admin" or "adminURL". Defaults to '
                         'env[OS_ENDPOINT_TYPE] or "public"',
                    dest='os_endpoint_type'),
-
+        cfg.StrOpt('os-cert',
+                   default=env('OS_CERT'),
+                   help='Specify a cert file to use in verifying a TLS '
+                        '(https) server certificate',
+                   dest='os_cert'),
+        cfg.StrOpt('os-cacert',
+                   default=env('OS_CACERT'),
+                   help='Specify a CA bundle file to use in verifying a TLS '
+                        '(https) server certificate. Defaults to',
+                   dest='os_cacert'),
     ]
 
     return osclient_opts
@@ -192,8 +201,9 @@ class Client(object):
                  project_name=None,
                  user_domain_name=None,
                  project_domain_name=None,
-                 verify=True,
-                 cacert=False):
+                 cert=False,
+                 cacert=False,
+                 insecure=False):
 
         self.opts = opts
         # this creates a namespace for self.opts when the client is
@@ -218,18 +228,25 @@ class Client(object):
             self.opts.os_user_domain_name = user_domain_name
         if project_domain_name:
             self.opts.os_project_domain_name = project_domain_name
-
-        # flag to initialize freezer-scheduler with insecure mode
-        self.verify = verify
+        if insecure:
+            self.verify = False
+        elif cacert:
+            # verify arg in keystone sessions could be True/False/Path to cert
+            self.verify = cacert
+        else:
+            self.verify = True
+        if cert:
+            self.opts.os_cert = cert
 
         self._session = session
         self.version = version
 
-        self.backups = backups.BackupsManager(self, verify=verify)
-        self.registration = registration.RegistrationManager(self, verify=verify)
-        self.jobs = jobs.JobManager(self, verify=verify)
-        self.actions = actions.ActionManager(self, verify=verify)
-        self.sessions = sessions.SessionManager(self, verify=verify)
+        self.backups = backups.BackupsManager(self, verify=self.verify)
+        self.registration = registration.RegistrationManager(
+                self, verify=self.verify)
+        self.jobs = jobs.JobManager(self, verify=self.verify)
+        self.actions = actions.ActionManager(self, verify=self.verify)
+        self.sessions = sessions.SessionManager(self, verify=self.verify)
 
 
     @cached_property

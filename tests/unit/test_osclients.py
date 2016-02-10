@@ -24,7 +24,8 @@ class TestOsClients(unittest.TestCase):
 
     fake_options = utils.OpenstackOptions(
         user_name="user", tenant_name="tenant", project_name="project",
-        auth_url="url", password="password", identity_api_version="3")
+        auth_url="url", password="password", identity_api_version="3",
+        insecure=False, cert='cert', verify=True)
 
     def test_init(self):
         osclients.ClientManager(self.fake_options, None, None, None)
@@ -45,7 +46,8 @@ class TestOsClients(unittest.TestCase):
         options = utils.OpenstackOptions(
             user_name="user", tenant_name="tenant", project_name="project",
             auth_url="url", password="password", identity_api_version="3",
-            endpoint_type="adminURL")
+            endpoint_type="adminURL", insecure=False, cert='cert',
+            verify=True)
         client = osclients.ClientManager(options, None, None, None)
         client.create_swift()
 

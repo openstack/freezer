@@ -130,6 +130,8 @@ class TestClientMock(unittest.TestCase):
                   'session': 'foxtrot',
                   'endpoint': 'golf',
                   'version': 'hotel',
+                  'cert': 'india',
+                  'insecure': 'juliet',
                   'opts': Mock()}
         c = client.Client(**kwargs)
         self.assertIsInstance(c, client.Client)

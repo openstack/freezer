@@ -39,7 +39,8 @@ class OpenstackOptions:
     """
     def __init__(self, user_name, tenant_name, project_name, auth_url,
                  password, identity_api_version, tenant_id=None,
-                 region_name=None, endpoint_type=None):
+                 region_name=None, endpoint_type=None, cert=None,
+                 insecure=False, verify=True):
         self.user_name = user_name
         self.tenant_name = tenant_name
         self.auth_url = auth_url
@@ -49,6 +50,9 @@ class OpenstackOptions:
         self.identity_api_version = identity_api_version
         self.region_name = region_name
         self.endpoint_type = endpoint_type
+        self.cert = cert
+        self.insecure = insecure
+        self.verify = verify
         if not (self.password and self.user_name and self.auth_url and
            (self.tenant_name or self.project_name)):
             raise Exception("Please set up in your env:"
@@ -85,7 +89,8 @@ class OpenstackOptions:
             password=src_dict.get('OS_PASSWORD', None),
             tenant_id=src_dict.get('OS_TENANT_ID', None),
             region_name=src_dict.get('OS_REGION_NAME', None),
-            endpoint_type=src_dict.get('OS_ENDPOINT_TYPE', None)
+            endpoint_type=src_dict.get('OS_ENDPOINT_TYPE', None),
+            cert=src_dict.get('OS_CERT', None)
         )
 
 

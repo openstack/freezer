@@ -16,17 +16,12 @@ limitations under the License.
 """
 
 import os
-from oslo_config import cfg
-from oslo_log import log
 import sys
 
+from oslo_config import cfg
+from oslo_log import log
+
 from freezer import __version__ as FREEZER_VERSION
-
-CONF = cfg.CONF
-_LOG = log.getLogger(__name__)
-
-
-
 from freezer.apiclient import client as api_client
 from freezer import winutils
 
@@ -34,6 +29,10 @@ if winutils.is_windows():
     DEFAULT_FREEZER_SCHEDULER_CONF_D = r'C:\.freezer\scheduler\conf.d'
 else:
     DEFAULT_FREEZER_SCHEDULER_CONF_D = '/etc/freezer/scheduler/conf.d'
+
+
+CONF = cfg.CONF
+_LOG = log.getLogger(__name__)
 
 
 def getCommonOpts():
@@ -64,15 +63,15 @@ def getCommonOpts():
                     '\n If not specified it will be automatically created \n'
                     'using the tenant-id and the machine hostname.'),
     cfg.BoolOpt('no-api',
-               default=False,
-               dest='no_api',
-               short='n',
-               help='Prevents the scheduler from using the api service'),
+                default=False,
+                dest='no_api',
+                short='n',
+                help='Prevents the scheduler from using the api service'),
     cfg.BoolOpt('active-only',
-               default=False,
-               dest='active_only',
-               short='a',
-               help='Filter only active jobs/session'),
+                default=False,
+                dest='active_only',
+                short='a',
+                help='Filter only active jobs/session'),
     cfg.StrOpt('conf',
                default=scheduler_conf_d,
                dest='jobs_dir',
@@ -87,13 +86,14 @@ def getCommonOpts():
                help='Specifies the api-polling interval in seconds. '
                     'Defaults to 60 seconds'),
     cfg.BoolOpt('no-daemon',
-               default=False,
-               dest='no_daemon',
-               help='Prevents the scheduler from running in daemon mode'),
+                default=False,
+                dest='no_daemon',
+                help='Prevents the scheduler from running in daemon mode'),
     cfg.BoolOpt('insecure',
-               default=False,
-               dest='insecure',
-               help='Initialize freezer scheduler with insecure mode'),
+                default=False,
+                short='K',
+                dest='insecure',
+                help='Initialize freezer scheduler with insecure mode'),
     ]
 
     return common_opts
