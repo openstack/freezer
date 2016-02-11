@@ -210,7 +210,7 @@ class SwiftStorage(base.Storage):
         :return:
         """
         for chunk in self.swift().get_object(
-                self.container, backup, resp_chunk_size=self.chunk_size)[1]:
+                self.container, str(backup), resp_chunk_size=self.chunk_size)[1]:
             yield chunk
 
     def write_backup(self, rich_queue, backup):
