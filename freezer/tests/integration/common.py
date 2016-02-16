@@ -297,4 +297,3 @@ class TestFS(unittest.TestCase):
         result = execute_freezerc(restore_args)
         self.assertIsNotNone(result)
         self.assertTreesMatch()
-        return True

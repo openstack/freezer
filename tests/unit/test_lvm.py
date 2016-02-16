@@ -161,41 +161,6 @@ class Test_lvm_snap(unittest.TestCase):
 
         self.assertTrue(lvm.lvm_snap(backup_opt))
 
-
-    @patch('freezer.lvm.subprocess.Popen')
-    @patch('freezer.lvm.utils.get_vol_fs_type')
-    @patch('freezer.lvm.get_lvm_info')
-    @patch('freezer.lvm.utils.create_dir')
-    def test_mysql_mode_locks_unlocks_tables(self, mock_create_dir, mock_get_lvm_info, mock_get_vol_fs_type, mock_popen):
-        mock_get_vol_fs_type.return_value = 'xfs'
-        mock_get_lvm_info.return_value = {
-            'volgroup': 'lvm_volgroup',
-            'srcvol': 'lvm_device',
-            'snap_path': 'snap_path'}
-        mock_process = Mock()
-        mock_process.communicate.return_value = '', ''
-        mock_process.returncode = 0
-        mock_popen.return_value = mock_process
-
-        backup_opt = Mock()
-        backup_opt.snapshot = True
-        backup_opt.lvm_auto_snap = ''
-        backup_opt.path_to_backup = '/just/a/path'
-        backup_opt.lvm_dirmount = '/var/mountpoint'
-        backup_opt.lvm_snapperm = 'ro'
-        backup_opt.mode = 'mysql'
-        backup_opt.mysql_db_inst = Mock()
-        mock_cursor = Mock()
-        backup_opt.mysql_db_inst.cursor.return_value = mock_cursor
-
-        self.assertTrue(lvm.lvm_snap(backup_opt))
-
-        first_call = call('FLUSH TABLES WITH READ LOCK')
-        second_call = call('UNLOCK TABLES')
-        self.assertEquals(first_call, mock_cursor.execute.call_args_list[0])
-        self.assertEquals(second_call, mock_cursor.execute.call_args_list[1])
-
-
     @patch('freezer.lvm.lvm_snap_remove')
     @patch('freezer.lvm.subprocess.Popen')
     @patch('freezer.lvm.utils.get_vol_fs_type')

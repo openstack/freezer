@@ -18,7 +18,6 @@ Freezer Backup modes related functions
 import os
 import time
 
-from freezer import config
 from freezer import lvm
 from freezer import utils
 from freezer import vss
@@ -29,93 +28,6 @@ from oslo_log import log
 CONF = cfg.CONF
 logging = log.getLogger(__name__)
 home = os.path.expanduser("~")
-
-
-def backup_mode_sql_server(backup_opt_dict, storage):
-    """
-    Execute a SQL Server DB backup. Currently only backups with shadow
-    copy are supported. This mean, as soon as the shadow copy is created
-    the db writes will be blocked and a checkpoint will be created, as soon
-    as the backup finish the db will be unlocked and the backup will be
-    uploaded. A sql_server.conf_file is required for this operation.
-    """
-    with open(backup_opt_dict.sql_server_conf, 'r') as sql_conf_file_fd:
-        parsed_config = config.ini_parse(sql_conf_file_fd.read())
-    sql_server_instance = parsed_config["instance"]
-    # Dirty hack - please remove any modification of backup_opt_dict
-    backup_opt_dict.sql_server_instance = sql_server_instance
-    try:
-        winutils.stop_sql_server(sql_server_instance)
-        return backup(backup_opt_dict, storage, backup_opt_dict.engine)
-    finally:
-        if not backup_opt_dict.snapshot:
-            # if snapshot is false, wait until the backup is complete
-            # to start sql server again
-            winutils.start_sql_server(sql_server_instance)
-
-
-def backup_mode_mysql(backup_opt_dict, storage):
-    """
-    Execute a MySQL DB backup. currently only backup with lvm snapshots
-    are supported. This mean, just before the lvm snap vol is created,
-    the db tables will be flushed and locked for read, then the lvm create
-    command will be executed and after that, the table will be unlocked and
-    the backup will be executed. It is important to have the available in
-    backup_args.mysql_conf the file where the database host, name, user,
-    password and port are set.
-    """
-
-    try:
-        import pymysql as MySQLdb
-    except ImportError:
-        raise ImportError('Please install PyMySQL module')
-
-    if not backup_opt_dict.mysql_conf:
-        raise ValueError('MySQL: please provide a valid config file')
-    with open(backup_opt_dict.mysql_conf, 'r') as mysql_file_fd:
-        parsed_config = config.ini_parse(mysql_file_fd.read())
-
-    # Initialize the DB object and connect to the db according to
-    # the db mysql backup file config
-    try:
-        backup_opt_dict.mysql_db_inst = MySQLdb.connect(
-            host=parsed_config.get("host", False),
-            port=int(parsed_config.get("port", 3306)),
-            user=parsed_config.get("user", False),
-            passwd=parsed_config.get("password", False))
-    except Exception as error:
-        raise Exception('[*] MySQL: {0}'.format(error))
-
-    # Execute backup
-    return backup(backup_opt_dict, storage, backup_opt_dict.engine)
-
-
-def backup_mode_mongo(backup_opt_dict, storage):
-    """
-    Execute the necessary tasks for file system backup mode
-    """
-
-    try:
-        import pymongo
-    except ImportError:
-        raise ImportError('please install pymongo module')
-
-    logging.info('[*] MongoDB backup is being executed...')
-    logging.info('[*] Checking is the localhost is Master/Primary...')
-    mongodb_port = '27017'
-    local_hostname = backup_opt_dict.hostname
-    db_host_port = '{0}:{1}'.format(local_hostname, mongodb_port)
-    mongo_client = pymongo.MongoClient(db_host_port)
-    master_dict = dict(mongo_client.admin.command("isMaster"))
-    mongo_me = master_dict['me']
-    mongo_primary = master_dict['primary']
-
-    if mongo_me == mongo_primary:
-        return backup(backup_opt_dict, storage, backup_opt_dict.engine)
-    else:
-        logging.warning('[*] localhost {0} is not Master/Primary,\
-        exiting...'.format(local_hostname))
-        return None
 
 
 class BackupOs:
@@ -225,16 +137,9 @@ def snapshot_create(backup_opt_dict):
             backup_opt_dict.path_to_backup = winutils.use_shadow(
                 backup_opt_dict.path_to_backup,
                 backup_opt_dict.windows_volume)
-
-            # execute this after the snapshot creation
-            if backup_opt_dict.mode == 'sqlserver':
-                winutils.start_sql_server(backup_opt_dict.sql_server_instance)
-
             return True
         return False
-
     else:
-
         return lvm.lvm_snap(backup_opt_dict)
 
 
@@ -247,7 +152,7 @@ def snapshot_remove(backup_opt_dict, shadow, windows_volume):
         lvm.lvm_snap_remove(backup_opt_dict)
 
 
-def backup(backup_opt_dict, storage, engine):
+def backup(backup_opt_dict, storage, engine, app_mode):
     """
 
     :param backup_opt_dict:
@@ -255,6 +160,7 @@ def backup(backup_opt_dict, storage, engine):
     :type storage: freezer.storage.base.Storage
     :param engine: Backup Engine
     :type engine: freezer.engine.engine.BackupEngine
+    :type app_mode: freezer.mode.mode.Mode
     :return:
     """
     backup_media = backup_opt_dict.backup_media
@@ -263,8 +169,10 @@ def backup(backup_opt_dict, storage, engine):
     backup_opt_dict.time_stamp = time_stamp
 
     if backup_media == 'fs':
-
+        app_mode.prepare()
         snapshot_taken = snapshot_create(backup_opt_dict)
+        if snapshot_taken:
+            app_mode.release()
         try:
             filepath = '.'
             chdir_path = os.path.expanduser(
@@ -285,6 +193,7 @@ def backup(backup_opt_dict, storage, engine):
             return backup_instance
         finally:
             # whether an error occurred or not, remove the snapshot anyway
+            app_mode.release()
             if snapshot_taken:
                 snapshot_remove(backup_opt_dict, backup_opt_dict.shadow,
                                 backup_opt_dict.windows_volume)

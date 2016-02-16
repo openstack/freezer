@@ -261,9 +261,6 @@ class FakeSwiftClient:
 class BackupOpt1:
 
     def __init__(self):
-        fakeclient = FakeSwiftClient()
-        fakeconnector = fakeclient.client()
-        fakeswclient = fakeconnector.Connection()
         self.dereference_symlink = 'none'
         self.mysql_conf = '/tmp/freezer-test-conf-file'
         self.backup_media = 'fs'
@@ -297,7 +294,6 @@ class BackupOpt1:
         self.time_stamp = 123456789
         self.container = 'test-container'
         self.work_dir = '/tmp'
-        self.sw_connector = fakeswclient
         self.max_level = '20'
         self.encrypt_pass_file = '/dev/random'
         self.always_level = '20'

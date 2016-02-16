@@ -18,16 +18,13 @@ limitations under the License.
 
 from freezer.tests.commons import *
 from freezer.job import ExecJob
-from freezer import backup
 
 from freezer.job import Job, InfoJob, AdminJob, BackupJob
 from mock import patch, Mock
 import unittest
 
 
-
 class TestJob(unittest.TestCase):
-
     def test_execute(self):
         opt = BackupOpt1()
         job = Job(opt, opt.storage)
@@ -51,7 +48,7 @@ class TestBackupJob(TestJob):
 
     def test_execute_backup_fs_no_incremental_and_backup_level_raise(self):
         backup_opt = BackupOpt1()
-        backup_opt.mode = 'fs'
+        backup_opt.mode = 'default'
         backup_opt.no_incremental = True
         job = BackupJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)
@@ -67,7 +64,7 @@ class TestBackupJob(TestJob):
 class TestAdminJob(TestJob):
     def test_execute(self):
         backup_opt = BackupOpt1()
-        job = AdminJob(backup_opt, backup_opt.storage).execute()
+        AdminJob(backup_opt, backup_opt.storage).execute()
 
 
 class TestExecJob(TestJob):
