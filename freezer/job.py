@@ -24,7 +24,11 @@ from freezer import exec_cmd
 from freezer import restore
 from freezer import utils
 
-import logging
+from oslo_config import cfg
+from oslo_log import log
+
+CONF = cfg.CONF
+logging = log.getLogger(__name__)
 
 
 class Job:

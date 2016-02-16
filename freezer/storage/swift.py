@@ -16,10 +16,14 @@ limitations under the License.
 """
 
 import json
-import logging
+from oslo_config import cfg
+from oslo_log import log
 import time
 
 from freezer.storage import base
+
+CONF = cfg.CONF
+logging = log.getLogger(__name__)
 
 
 class SwiftStorage(base.Storage):
