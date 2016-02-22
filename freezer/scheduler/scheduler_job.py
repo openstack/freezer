@@ -128,11 +128,11 @@ class Job(object):
     def create(scheduler, executable, job_doc):
         job = Job(scheduler, executable, job_doc)
         if job.job_doc_status in ['running', 'scheduled']:
-            logging.warning('Job {0} already has {1} status, '
-                            'skipping'.format(job.id, job.job_doc_status))
-            return None
-        if not job.event and not job.job_doc_status:
-            logging.warning('Autostart Job {0}'.format(job.id))
+            logging.warning('Resetting {0} status from job {1}'
+                            .format(job.job_doc_status, job.id))
+        job.job_doc_status = ''
+        if not job.event:
+            logging.info('Autostart Job {0}'.format(job.id))
             job.event = Job.START_EVENT
         return job
 
