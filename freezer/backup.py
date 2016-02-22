@@ -15,7 +15,6 @@ limitations under the License.
 
 Freezer Backup modes related functions
 """
-import logging
 import os
 import time
 
@@ -24,7 +23,11 @@ from freezer import lvm
 from freezer import utils
 from freezer import vss
 from freezer import winutils
+from oslo_config import cfg
+from oslo_log import log
 
+CONF = cfg.CONF
+logging = log.getLogger(__name__)
 home = os.path.expanduser("~")
 
 

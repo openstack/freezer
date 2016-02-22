@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import logging
 import time
 
 from cinderclient import client as cclient
@@ -22,6 +20,11 @@ from novaclient import client as nclient
 import swiftclient
 
 from freezer import utils
+from oslo_config import cfg
+from oslo_log import log
+
+CONF = cfg.CONF
+logging = log.getLogger(__name__)
 
 
 class ClientManager:

@@ -16,13 +16,14 @@ limitations under the License.
 Freezer main execution function
 """
 import json
-import logging
 import os
+from oslo_config import cfg
+from oslo_log import log
 import subprocess
 import sys
 
-from freezer import arguments
 from freezer import bandwidth
+from freezer.common import config as freezer_config
 from freezer import config
 from freezer.engine.tar import tar_engine
 from freezer import job
@@ -35,55 +36,18 @@ from freezer import utils
 from freezer import validator
 from freezer import winutils
 
+CONF = cfg.CONF
+LOG = log.getLogger(__name__)
+
 
 def freezer_main(backup_args):
     """Freezer main loop for job execution.
     """
-
-    def configure_log_file_using_defaults():
-        """ Configure log file for freezer """
-
-        dry_run_message = ''
-        if backup_args.dry_run:
-            dry_run_message = '[DRY_RUN] '
-
-        def configure_logging(log_file, str_level):
-            levels = {
-                'all': logging.NOTSET,
-                'debug': logging.DEBUG,
-                'warn': logging.WARN,
-                'info': logging.INFO,
-                'error': logging.ERROR,
-                'critical': logging.CRITICAL
-            }
-
-            expanded_file_name = os.path.expanduser(log_file)
-            expanded_dir_name = os.path.dirname(expanded_file_name)
-            utils.create_dir(expanded_dir_name, do_log=False)
-            logging.basicConfig(
-                filename=expanded_file_name,
-                level=levels[str_level],
-                format=('%(asctime)s %(name)s %(levelname)s {0}%(message)s'.
-                        format(dry_run_message)))
-            return expanded_file_name
-
-        if backup_args.log_file:
-            return configure_logging(backup_args.log_file,
-                                     backup_args.log_level)
-
-        for file_name in ['/var/log/freezer.log', '~/.freezer/freezer.log']:
-            try:
-                return configure_logging(file_name, backup_args.log_level)
-            except IOError:
-                pass
-
-        raise Exception("Unable to write to log file")
-
     def set_max_process_priority():
         """ Set freezer in max priority on the os """
         # children processes inherit niceness from father
         try:
-            logging.warning(
+            LOG.warning(
                 '[*] Setting freezer execution with high CPU and I/O priority')
             PID = os.getpid()
             # Set cpu priority
@@ -95,15 +59,10 @@ def freezer_main(backup_args):
                 u'-p', u'{0}'.format(PID)
             ])
         except Exception as priority_error:
-            logging.warning('[*] Priority: {0}'.format(priority_error))
-
-    try:
-        log_file_name = configure_log_file_using_defaults()
-    except Exception as err:
-        fail(1, err, quiet=backup_args.quiet, do_log=False)
+            LOG.warning('[*] Priority: {0}'.format(priority_error))
 
     if not backup_args.quiet:
-        logging.info('log file at {0}'.format(log_file_name))
+        LOG.info('log file at {0}'.format(CONF.get('log_file')))
 
     if backup_args.max_priority:
         set_max_process_priority()
@@ -139,8 +98,8 @@ def freezer_main(backup_args):
     if hasattr(backup_args, 'trickle_command'):
         if "tricklecount" in os.environ:
             if int(os.environ.get("tricklecount")) > 1:
-                logging.critical("[*] Trickle seems to be not working,"
-                                 " Switching to normal mode ")
+                LOG.critical("[*] Trickle seems to be not working,  Switching "
+                             "to normal mode ")
                 run_job(backup_args, storage)
 
         freezer_command = '{0} {1}'.format(backup_args.trickle_command,
@@ -154,8 +113,8 @@ def freezer_main(backup_args):
         output, error = process.communicate()
 
         if process.returncode:
-            logging.error("[*] Trickle Error: {0}".format(error))
-            logging.critical("[*] Switching to work without trickle ...")
+            LOG.error("[*] Trickle Error: {0}".format(error))
+            LOG.critical("[*] Switching to work without trickle ...")
             run_job(backup_args, storage)
 
     else:
@@ -178,7 +137,7 @@ def fail(exit_code, e, quiet, do_log=True):
     if not quiet:
         sys.stderr.write(msg)
     if do_log:
-        logging.critical(msg)
+        LOG.critical(msg)
     return exit_code
 
 
@@ -216,25 +175,21 @@ def storage_from_dict(backup_args, work_dir, max_segment_size,
             backup_args['ssh_key'], backup_args['ssh_username'],
             backup_args['ssh_host'], int(backup_args.get('ssh_port', 22)))
     else:
-        raise Exception("Not storage found for name " + backup_args['storage'])
+        raise Exception("Not storage found for name {0}".format(
+            backup_args['storage']))
     return storage
 
 
 def main():
-    """Freezerc binary main execution"""
-
-    (backup_args, opt_args) = arguments.backup_arguments()
+    """freezer-agent/freezerc binary main execution"""
+    freezer_config.config()
+    freezer_config.setup_logging()
+    backup_args = freezer_config.get_backup_args()
+    if len(sys.argv) < 2:
+            CONF.print_help()
+            sys.exit(1)
     try:
-        if backup_args.version:
-            print("freezer version {0}".format(backup_args.__version__))
-            sys.exit(1)
-
-        if len(sys.argv) < 2:
-            opt_args.print_help()
-            sys.exit(1)
-
         freezer_main(backup_args)
-
     except ValueError as err:
         return fail(1, err, backup_args.quiet)
     except ImportError as err:
@@ -242,6 +197,3 @@ def main():
     except Exception as err:
         return fail(1, err, backup_args.quiet)
 
-if __name__ == '__main__':
-
-    sys.exit(main())

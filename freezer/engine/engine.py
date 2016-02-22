@@ -15,12 +15,16 @@ limitations under the License.
 
 Freezer general utils functions
 """
-import logging
 import multiprocessing
 import time
 
 from freezer import streaming
 from freezer import utils
+from oslo_config import cfg
+from oslo_log import log
+
+CONF = cfg.CONF
+logging = log.getLogger(__name__)
 
 
 class BackupEngine(object):

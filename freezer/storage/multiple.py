@@ -14,8 +14,12 @@
 
 from freezer.storage import base
 from freezer import streaming
+from oslo_config import cfg
+from oslo_log import log
 
-import logging
+CONF = cfg.CONF
+logging = log.getLogger(__name__)
+
 
 class MultipleStorage(base.Storage):
     def remove_backup(self, backup):

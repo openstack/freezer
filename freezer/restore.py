@@ -16,9 +16,12 @@ limitations under the License.
 Freezer restore modes related functions
 """
 
-import logging
-
 from freezer import utils
+from oslo_config import cfg
+from oslo_log import log
+
+CONF = cfg.CONF
+logging = log.getLogger(__name__)
 
 
 class RestoreOs:

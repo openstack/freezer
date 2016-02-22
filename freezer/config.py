@@ -20,6 +20,7 @@ import re
 from six.moves import configparser
 from six.moves import cStringIO
 
+
 class Config:
 
     @staticmethod
