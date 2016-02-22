@@ -100,7 +100,7 @@ def getCommonOpts():
 
 
 def parse_args(choices):
-    default_conf = cfg.find_config_files('freezer', 'freezer-scheduler',
+    default_conf = cfg.find_config_files('freezer', 'scheduler',
                                          '.conf')
     CONF.register_cli_opts(api_client.build_os_options())
     CONF.register_cli_opts(getCommonOpts())
@@ -135,3 +135,10 @@ def setup_logging():
                                        '%(message)s')
     log.set_defaults(_DEFAULT_LOGGING_CONTEXT_FORMAT, _DEFAULT_LOG_LEVELS)
     log.setup(CONF, 'freezer-scheduler', version=FREEZER_VERSION)
+
+
+def list_opts():
+    _opt = {
+        None: getCommonOpts()
+    }
+    return _opt.items()
