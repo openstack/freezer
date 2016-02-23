@@ -25,7 +25,7 @@ where::
 
 For example::
 
-    enable_plugin freezer https://git.openstack.org/openstack/freezer.git master
+    enable_plugin freezer https://git.openstack.org/openstack/freezer master
 
 Then run devstack normally::
 
