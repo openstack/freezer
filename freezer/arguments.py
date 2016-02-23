@@ -84,6 +84,9 @@ def enrich_defaults(config_path):
             if option_value in ('False', 'None'):
                 option_value = False
             defaults[option] = option_value
+        # TODO: restore_from_host is deprecated and to be removed
+        if not defaults.get('hostname'):
+            defaults['hostname'] = defaults.get('restore_from_host')
     return defaults
 
 
