@@ -53,7 +53,7 @@ DEFAULT_PARAMS = {
     'max_priority': False, 'max_level': False, 'path_to_backup': False,
     'encrypt_pass_file': False, 'volume': False, 'proxy': False,
     'cinder_vol_id': '', 'cindernative_vol_id': '',
-    'nova_inst_id': '',
+    'nova_inst_id': '', '__version__': FREEZER_VERSION,
     'remove_older_than': None, 'restore_from_date': False,
     'upload_limit': None, 'always_level': False, 'version': False,
     'dry_run': False, 'lvm_snapsize': DEFAULT_LVM_SNAPSIZE,
@@ -409,6 +409,9 @@ def setup_logging():
         '%(levelname)s %(name)s [%(request_id)s '
         '%(user_identity)s] %(instance)s'
         '%(message)s')
+    # disable freezer from logging to stderr
+    CONF.set_default('use_stderr', False)
+    CONF.set_default('log_file', prepare_logging())
     log.set_defaults(_DEFAULT_LOGGING_CONTEXT_FORMAT, _DEFAULT_LOG_LEVELS)
     log.setup(CONF, 'freezer', version=FREEZER_VERSION)
 
@@ -419,7 +422,9 @@ def get_backup_args():
     class FreezerConfig(object):
         def __init__(self, args):
             self.__dict__.update(args)
-
+    cli_options = dict([(x, y) for x, y in CONF.iteritems() if y !=
+                        defaults.get(x) and y is not 'False'])
+    defaults.update(cli_options)
     conf = None
     if CONF.get('config'):
         conf = freezer_config.Config.parse(CONF.get('config'))
@@ -437,14 +442,10 @@ def get_backup_args():
             'error': log.ERROR,
             'critical': log.CRITICAL
         }
-        CONF.set_override('log_file', levels.get(defaults['log_file'],
-                                                 log.NOTSET))
+        if not CONF.get('log_file'):
+            CONF.set_override('log_file', levels.get(defaults['log_file'],
+                                                     log.NOTSET))
         CONF.set_override('default_log_levels', defaults['log_level'])
-    else:
-        cli_opts = dict([(x,y) for x, y in CONF._namespace._cli.iteritems()
-                         if y is not None])
-        defaults.update(cli_opts)
-
     if not CONF.get('log_file'):
         log_file = None
         for file_name in ['/var/log/freezer.log', '~/.freezer/freezer.log']:
@@ -453,7 +454,7 @@ def get_backup_args():
             except IOError:
                 pass
         if log_file:
-            CONF.set_override('log_file', log_file)
+            CONF.set_default('log_file', log_file)
         else:
             LOG.warn("log file cannot be created. Freezer will proceed with "
                      "default stdout and stderr")
