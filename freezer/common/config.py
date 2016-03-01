@@ -33,9 +33,9 @@ LOG = log.getLogger(__name__)
 
 home = os.path.expanduser("~")
 
-DEFAULT_LVM_SNAPNAME = 'freezer_backup_snap'
 DEFAULT_LVM_SNAPSIZE = '1G'
-DEFAULT_LVM_DIRMOUNT = '/var/lib/freezer'
+DEFAULT_LVM_MOUNT_BASENAME = '/var/lib/freezer'
+DEFAULT_LVM_SNAP_BASENAME = 'freezer_backup_snap'
 DEFAULT_SSH_PORT = 22
 
 DEFAULT_PARAMS = {
@@ -46,10 +46,10 @@ DEFAULT_PARAMS = {
     'container': 'freezer_backups', 'no_incremental': False,
     'max_segment_size': 33554432, 'lvm_srcvol': False,
     'download_limit': -1, 'hostname': False, 'remove_from_date': False,
-    'restart_always_level': False, 'lvm_dirmount': DEFAULT_LVM_DIRMOUNT,
+    'restart_always_level': False, 'lvm_dirmount': None,
     'dereference_symlink': '',
     'config': False, 'mysql_conf': False,
-    'insecure': False, 'lvm_snapname': DEFAULT_LVM_SNAPNAME,
+    'insecure': False, 'lvm_snapname': None,
     'lvm_snapperm': 'ro', 'snapshot': False,
     'max_priority': False, 'max_level': False, 'path_to_backup': False,
     'encrypt_pass_file': False, 'volume': False, 'proxy': False,
@@ -116,9 +116,8 @@ _COMMON = [
                     "Default no volume"),
     cfg.StrOpt('lvm-snapname',
                dest='lvm_snapname',
-               help="Set the lvm snapshot name to use. If the snapshot name "
-                    "already exists, the old one will be used a no new one will"
-                    " be created. Default {0}.".format(DEFAULT_LVM_SNAPNAME)),
+               help="Set the name of the snapshot that will be created."
+                    " If not provided, a unique name will be generated."),
     cfg.StrOpt('lvm-snap-perm',
                choices=['ro', 'rw'],
                dest='lvm_snapperm',
@@ -133,7 +132,8 @@ _COMMON = [
     cfg.StrOpt('lvm-dirmount',
                dest='lvm_dirmount',
                help="Set the directory you want to mount the lvm snapshot to. "
-                    "Default to {0}".format(DEFAULT_LVM_DIRMOUNT)),
+                    "If not provided, a unique name will be generated with the"
+                    "basename {0} ".format(DEFAULT_LVM_MOUNT_BASENAME)),
     cfg.StrOpt('lvm-volgroup',
                dest='lvm_volgroup',
                help="Specify the volume group of your logical volume. This is "

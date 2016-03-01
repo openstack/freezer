@@ -20,7 +20,9 @@ import logging
 import os
 import re
 import subprocess
+import uuid
 
+from freezer.common import config as freezer_config
 from freezer import utils
 
 
@@ -34,7 +36,10 @@ def lvm_snap_remove(backup_opt_dict):
     :return: None, raises on error
     """
     os.chdir(backup_opt_dict.work_dir)
-    _umount(backup_opt_dict.lvm_dirmount)
+    try:
+        _umount(backup_opt_dict.lvm_dirmount)
+    except Exception as e:
+        logging.warning("Snapshot unmount errror: {0}".format(e))
     lv = os.path.join('/dev',
                       backup_opt_dict.lvm_volgroup,
                       backup_opt_dict.lvm_snapname)
@@ -72,6 +77,11 @@ def lvm_snap(backup_opt_dict):
                 backup_opt_dict.path_to_backup
             backup_opt_dict.path_to_backup = ''
 
+    if not backup_opt_dict.lvm_snapname:
+        backup_opt_dict.lvm_snapname = \
+            "{0}_{1}".format(freezer_config.DEFAULT_LVM_SNAP_BASENAME,
+                             uuid.uuid4().hex)
+
     if backup_opt_dict.lvm_auto_snap:
         # adjust/check lvm parameters according to provided lvm_auto_snap
         lvm_info = get_lvm_info(backup_opt_dict.lvm_auto_snap)
@@ -81,6 +91,11 @@ def lvm_snap(backup_opt_dict):
 
         if not backup_opt_dict.lvm_srcvol:
             backup_opt_dict.lvm_srcvol = lvm_info['srcvol']
+
+        if not backup_opt_dict.lvm_dirmount:
+            backup_opt_dict.lvm_dirmount = \
+                "{0}_{1}".format(freezer_config.DEFAULT_LVM_MOUNT_BASENAME,
+                                 uuid.uuid4().hex)
 
         path_to_backup = os.path.join(backup_opt_dict.lvm_dirmount,
                                       lvm_info['snap_path'])
