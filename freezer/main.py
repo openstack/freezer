@@ -162,14 +162,18 @@ def freezer_main(backup_args):
         run_job(backup_args, storage)
 
 
-def run_job(backup_args, storage):
-    freezer_job = job.create_job(backup_args, storage)
-    freezer_job.execute()
+def run_job(conf, storage):
+    freezer_job = {
+        'backup': job.BackupJob,
+        'restore': job.RestoreJob,
+        'info': job.InfoJob,
+        'admin': job.AdminJob,
+        'exec': job.ExecJob}[conf.action](conf, storage)
+    response = freezer_job.execute()
 
-    if backup_args.metadata_out == '-':
-        metadata = freezer_job.get_metadata()
-        if metadata:
-            sys.stdout.write(json.dumps(metadata))
+    if conf.metadata_out == '-':
+        if response:
+            sys.stdout.write(json.dumps(response))
 
 
 def fail(exit_code, e, quiet, do_log=True):
