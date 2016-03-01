@@ -173,7 +173,8 @@ def storage_from_dict(backup_args, work_dir, max_segment_size,
         storage = ssh.SshStorage(
             container, work_dir,
             backup_args['ssh_key'], backup_args['ssh_username'],
-            backup_args['ssh_host'], int(backup_args.get('ssh_port', 22)))
+            backup_args['ssh_host'],
+            int(backup_args.get('ssh_port', freezer_config.DEFAULT_SSH_PORT)))
     else:
         raise Exception("Not storage found for name {0}".format(
             backup_args['storage']))
@@ -187,8 +188,8 @@ def main():
         freezer_config.setup_logging()
         backup_args = freezer_config.get_backup_args()
         if len(sys.argv) < 2:
-                CONF.print_help()
-                sys.exit(1)
+            CONF.print_help()
+            sys.exit(1)
         freezer_main(backup_args)
     except ValueError as err:
         return fail(1, err, backup_args.quiet)
