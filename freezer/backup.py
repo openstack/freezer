@@ -46,7 +46,7 @@ def backup_mode_sql_server(backup_opt_dict, storage):
     backup_opt_dict.sql_server_instance = sql_server_instance
     try:
         winutils.stop_sql_server(sql_server_instance)
-        backup(backup_opt_dict, storage, backup_opt_dict.engine)
+        return backup(backup_opt_dict, storage, backup_opt_dict.engine)
     finally:
         if not backup_opt_dict.snapshot:
             # if snapshot is false, wait until the backup is complete
@@ -87,7 +87,7 @@ def backup_mode_mysql(backup_opt_dict, storage):
         raise Exception('[*] MySQL: {0}'.format(error))
 
     # Execute backup
-    backup(backup_opt_dict, storage, backup_opt_dict.engine)
+    return backup(backup_opt_dict, storage, backup_opt_dict.engine)
 
 
 def backup_mode_mongo(backup_opt_dict, storage):
@@ -111,11 +111,11 @@ def backup_mode_mongo(backup_opt_dict, storage):
     mongo_primary = master_dict['primary']
 
     if mongo_me == mongo_primary:
-        backup(backup_opt_dict, storage, backup_opt_dict.engine)
+        return backup(backup_opt_dict, storage, backup_opt_dict.engine)
     else:
         logging.warning('[*] localhost {0} is not Master/Primary,\
         exiting...'.format(local_hostname))
-        return True
+        return None
 
 
 class BackupOs:
@@ -282,12 +282,12 @@ def backup(backup_opt_dict, storage, engine):
                 backup_opt_dict.restart_always_level,
                 time_stamp=time_stamp)
             engine.backup(filepath, backup_instance)
+            return backup_instance
         finally:
             # whether an error occurred or not, remove the snapshot anyway
             if snapshot_taken:
                 snapshot_remove(backup_opt_dict, backup_opt_dict.shadow,
                                 backup_opt_dict.windows_volume)
-        return
 
     backup_os = BackupOs(backup_opt_dict.client_manager,
                          backup_opt_dict.container,
@@ -304,3 +304,4 @@ def backup(backup_opt_dict, storage, engine):
         backup_os.backup_cinder_by_glance(backup_opt_dict.cinder_vol_id)
     else:
         raise Exception('unknown parameter backup_media %s' % backup_media)
+    return None

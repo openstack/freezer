@@ -33,7 +33,7 @@ logging = log.getLogger(__name__)
 
 class Job:
     """
-    :type storage: freezer.storage.Storage
+    :type storage: freezer.storage.base.Storage
     :type engine: freezer.engine.engine.BackupEngine
     """
 
@@ -44,9 +44,6 @@ class Job:
 
     def execute(self):
         logging.info('[*] Action not implemented')
-
-    def get_metadata(self):
-        return None
 
     @staticmethod
     def executemethod(func):
@@ -83,19 +80,24 @@ class BackupJob(Job):
             logging.error('Error while sync exec: {0}'.format(error))
 
         if self.conf.mode == 'fs':
-            backup.backup(self.conf, self.storage, self.engine)
+            backup_instance = \
+                backup.backup(self.conf, self.storage, self.engine)
         elif self.conf.mode == 'mongo':
-            backup.backup_mode_mongo(self.conf, self.storage)
+            backup_instance = \
+                backup.backup_mode_mongo(self.conf, self.storage)
         elif self.conf.mode == 'mysql':
-            backup.backup_mode_mysql(self.conf, self.storage)
+            backup_instance = \
+                backup.backup_mode_mysql(self.conf, self.storage)
         elif self.conf.mode == 'sqlserver':
-            backup.backup_mode_sql_server(self.conf, self.storage)
+            backup_instance = \
+                backup.backup_mode_sql_server(self.conf, self.storage)
         else:
             raise ValueError('Please provide a valid backup mode')
 
-    def get_metadata(self):
+        level = backup_instance.level if backup_instance else 0
+
         metadata = {
-            'curr_backup_level': 0,
+            'curr_backup_level': level,
             'fs_real_path': (self.conf.lvm_auto_snap or
                              self.conf.path_to_backup),
             'vol_snap_path':
@@ -142,6 +144,7 @@ class RestoreJob(Job):
             res.restore_cinder(conf.cindernative_vol_id, restore_timestamp)
         else:
             raise Exception("unknown backup type: %s" % conf.backup_media)
+        return {}
 
 
 class AdminJob(Job):
@@ -156,6 +159,7 @@ class AdminJob(Job):
 
         self.storage.remove_older_than(timestamp,
                                        self.conf.hostname_backup_name)
+        return {}
 
 
 class ExecJob(Job):
@@ -168,19 +172,4 @@ class ExecJob(Job):
         else:
             logging.warning(
                 '[*] No command info options were set. Exiting.')
-            return False
-        return True
-
-
-def create_job(conf, storage):
-    if conf.action == 'backup':
-        return BackupJob(conf, storage)
-    if conf.action == 'restore':
-        return RestoreJob(conf, storage)
-    if conf.action == 'info':
-        return InfoJob(conf, storage)
-    if conf.action == 'admin':
-        return AdminJob(conf, storage)
-    if conf.action == 'exec':
-        return ExecJob(conf, storage)
-    raise Exception('Action "{0}" not supported'.format(conf.action))
+        return {}

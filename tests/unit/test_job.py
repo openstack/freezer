@@ -20,26 +20,13 @@ from freezer.tests.commons import *
 from freezer.job import ExecJob
 from freezer import backup
 
-from freezer.job import Job, InfoJob, AdminJob, BackupJob, RestoreJob, \
-    create_job
+from freezer.job import Job, InfoJob, AdminJob, BackupJob
 from mock import patch, Mock
 import unittest
 
 
 
-class FakeBackup:
-    def __init__(self):
-        pass
-
-    def fake_backup_mode_mongo(self, *args, **kwargs):
-        return True
-
-    def fake_backup_mode_mysql(self, *args, **kwargs):
-        return True
-
-
 class TestJob(unittest.TestCase):
-    fakebackup = FakeBackup()
 
     def test_execute(self):
         opt = BackupOpt1()
@@ -69,22 +56,6 @@ class TestBackupJob(TestJob):
         job = BackupJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)
 
-    def test_execute_backup_mongo(self):
-        backup.backup_mode_mongo = self.fakebackup.fake_backup_mode_mongo
-        backup_opt = BackupOpt1()
-        backup_opt.no_incremental = False
-        backup_opt.mode = 'mongo'
-        job = BackupJob(backup_opt, backup_opt.storage)
-        assert job.execute() is None
-
-    def test_execute_backup_mysql(self):
-        backup.backup_mode_mysql = self.fakebackup.fake_backup_mode_mysql
-        backup_opt = BackupOpt1()
-        backup_opt.no_incremental = False
-        backup_opt.mode = 'mysql'
-        job = BackupJob(backup_opt, backup_opt.storage)
-        assert job.execute() is None
-
     def test_execute_raise(self):
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
@@ -96,8 +67,7 @@ class TestBackupJob(TestJob):
 class TestAdminJob(TestJob):
     def test_execute(self):
         backup_opt = BackupOpt1()
-        job = AdminJob(backup_opt, backup_opt.storage)
-        assert job.execute() is None
+        job = AdminJob(backup_opt, backup_opt.storage).execute()
 
 
 class TestExecJob(TestJob):
@@ -115,15 +85,13 @@ class TestExecJob(TestJob):
 
     def test_execute_nothing_to_do(self):
         backup_opt = BackupOpt1()
-        job = ExecJob(backup_opt, backup_opt.storage)
-        assert job.execute() is False
+        ExecJob(backup_opt, backup_opt.storage).execute()
 
     def test_execute_script(self):
         self.mock_popen.return_value.returncode = 0
         backup_opt = BackupOpt1()
         backup_opt.command='echo test'
-        job = ExecJob(backup_opt, backup_opt.storage)
-        assert job.execute() is True
+        ExecJob(backup_opt, backup_opt.storage).execute()
 
     def test_execute_raise(self):
         self.popen=patch('freezer.exec_cmd.subprocess.Popen')
@@ -133,28 +101,3 @@ class TestExecJob(TestJob):
         backup_opt.command = 'echo test'
         job = ExecJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)
-
-    def test_create_job(self):
-        backup_opt = BackupOpt1()
-        backup_opt.action = None
-        self.assertRaises(Exception, create_job, backup_opt)
-
-        backup_opt.action = 'backup'
-        job = create_job(backup_opt, backup_opt.storage)
-        assert isinstance(job, BackupJob)
-
-        backup_opt.action = 'restore'
-        job = create_job(backup_opt, backup_opt.storage)
-        assert isinstance(job, RestoreJob)
-
-        backup_opt.action = 'info'
-        job = create_job(backup_opt, backup_opt.storage)
-        assert isinstance(job, InfoJob)
-
-        backup_opt.action = 'admin'
-        job = create_job(backup_opt, backup_opt.storage)
-        assert isinstance(job, AdminJob)
-
-        backup_opt.action = 'exec'
-        job = create_job(backup_opt, backup_opt.storage)
-        assert isinstance(job, ExecJob)
