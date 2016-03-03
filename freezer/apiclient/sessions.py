@@ -45,7 +45,8 @@ class SessionManager(object):
 
     def delete(self, session_id):
         endpoint = self.endpoint + session_id
-        r = requests.delete(endpoint, headers=self.headers, verify=self.verify)
+        r = requests.delete(endpoint, headers=self.headers,
+                            verify=self.verify)
         if r.status_code != 204:
             raise exceptions.ApiClientException(r)
 

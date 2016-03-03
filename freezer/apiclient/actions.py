@@ -46,7 +46,9 @@ class ActionManager(object):
 
     def delete(self, action_id):
         endpoint = self.endpoint + action_id
-        r = requests.delete(endpoint, headers=self.headers, verify=self.verify)
+        r = requests.delete(endpoint,
+                            headers=self.headers,
+                            verify=self.verify)
         if r.status_code != 204:
             raise exceptions.ApiClientException(r)
 

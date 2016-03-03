@@ -43,7 +43,8 @@ class BackupsManager(object):
 
     def delete(self, backup_id):
         endpoint = self.endpoint + backup_id
-        r = requests.delete(endpoint, headers=self.headers, verify=self.verify)
+        r = requests.delete(endpoint, headers=self.headers,
+                            verify=self.verify)
         if r.status_code != 204:
             raise exceptions.ApiClientException(r)
 
