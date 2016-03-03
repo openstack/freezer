@@ -89,7 +89,7 @@ def ini_parse(lines):
         try:
             # TODO: Remove the parsing of ini-like file via regex
             conf = find_all(INI, lines)
-            logging.warning("Using non-INI files for database configuration"
+            logging.warning("Using non-INI files for database configuration "
                             "file is deprecated. Falling back to Regex.")
             logging.warning("INI parser error was: {}".format(str(e)))
             return conf
