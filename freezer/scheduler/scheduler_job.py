@@ -17,14 +17,19 @@ limitations under the License.
 
 import datetime
 import json
-import logging
 import os
-from six.moves import configparser
 import subprocess
 import tempfile
 import time
 
 from freezer import utils
+from oslo_config import cfg
+from oslo_log import log
+from six.moves import configparser
+
+
+CONF = cfg.CONF
+logging = log.getLogger(__name__)
 
 
 class StopState(object):
@@ -323,6 +328,15 @@ class Job(object):
 
         return Job.FAIL_RESULT
 
+    def contains_exec(self):
+        jobs = self.job_doc.get('job_actions')
+        for job in jobs:
+            freezer_action = job.get('freezer_action')
+            action = freezer_action.get('action')
+            if action == 'exec':
+                return True
+        return False
+
     def execute(self):
         result = Job.SUCCESS_RESULT
         with self.scheduler.execution_lock:
@@ -333,6 +347,15 @@ class Job(object):
                 self.scheduler.update_job_status(self.id, self.job_doc_status)
 
             self.start_session()
+            # if the job contains exec action and the scheduler passes the
+            # parameter --disable-exec job execuation should fail
+            if self.contains_exec() and CONF.disable_exec:
+                logging.info("Job {0} failed because it contains exec action "
+                             "and exec actions are disabled by scheduler"
+                             .format(self.id))
+                self.result = Job.FAIL_RESULT
+                self.finish()
+                return
 
             for job_action in self.job_doc.get('job_actions', []):
                 if job_action.get('mandatory', False) or\
