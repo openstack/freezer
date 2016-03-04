@@ -18,10 +18,11 @@ Freezer general utils functions
 import multiprocessing
 import time
 
-from freezer import streaming
-from freezer import utils
 from oslo_config import cfg
 from oslo_log import log
+
+from freezer.utils import streaming
+from freezer.utils import utils
 
 CONF = cfg.CONF
 logging = log.getLogger(__name__)

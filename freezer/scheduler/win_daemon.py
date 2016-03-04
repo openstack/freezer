@@ -17,8 +17,8 @@ import os
 
 import win32serviceutil
 
-from freezer import utils
-from freezer import winutils
+from freezer.utils import utils
+from freezer.utils import winutils
 
 
 def setup_logging(log_file):

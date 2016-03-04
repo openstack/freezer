@@ -28,7 +28,7 @@ class TestLogging(unittest.TestCase):
         res = daemon.setup_logging(None)
         self.assertEqual('/var/log/freezer-scheduler.log', res)
 
-    @patch('freezer.scheduler.daemon.create_dir')
+    @patch('freezer.utils.utils.create_dir')
     @patch('freezer.scheduler.daemon.logging')
     def test_setup_logging_userdefined(self, mock_logging, mock_createdir):
         res = daemon.setup_logging('mylogfile')

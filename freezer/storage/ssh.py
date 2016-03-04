@@ -22,7 +22,7 @@ import paramiko
 
 from freezer.storage import fslike
 
-from freezer import utils
+from freezer.utils import utils
 
 
 class SshStorage(fslike.FsLikeStorage):

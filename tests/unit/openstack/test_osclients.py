@@ -16,13 +16,14 @@
 import unittest
 import mock
 
-from freezer import osclients
-from freezer import utils
+from freezer.openstack import openstack
+from freezer.openstack import osclients
+from freezer.utils import utils
 
 
 class TestOsClients(unittest.TestCase):
 
-    fake_options = utils.OpenstackOptions(
+    fake_options = openstack.OpenstackOptions(
         user_name="user", tenant_name="tenant", project_name="project",
         auth_url="url", password="password", identity_api_version="3",
         insecure=False, cert='cert', verify=True)
@@ -43,7 +44,7 @@ class TestOsClients(unittest.TestCase):
         client.create_nova()
 
     def test_create_swift_public(self):
-        options = utils.OpenstackOptions(
+        options = openstack.OpenstackOptions(
             user_name="user", tenant_name="tenant", project_name="project",
             auth_url="url", password="password", identity_api_version="3",
             endpoint_type="adminURL", insecure=False, cert='cert',

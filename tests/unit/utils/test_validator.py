@@ -14,8 +14,9 @@
 
 
 import unittest
-from freezer import validator
-from freezer import utils
+
+from freezer.utils import validator
+from freezer.utils import utils
 
 class TestValidator(unittest.TestCase):
     def test_pass(self):

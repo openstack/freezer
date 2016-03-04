@@ -17,11 +17,12 @@ import time
 from cinderclient import client as cclient
 from glanceclient import client as gclient
 from novaclient import client as nclient
-import swiftclient
-
-from freezer import utils
 from oslo_config import cfg
 from oslo_log import log
+import swiftclient
+
+from freezer.utils import utils
+
 
 CONF = cfg.CONF
 logging = log.getLogger(__name__)
@@ -39,7 +40,7 @@ class ClientManager:
         """
         Creates manager of connections to swift, nova, glance and cinder
         :param options: OpenstackOptions
-        :type options: freezer.utils.OpenstackOptions
+        :type options: freezer.openstack.openstack.OpenstackOptions
         :param insecure:
         :param swift_auth_version:
         :param dry_run:

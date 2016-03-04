@@ -16,12 +16,13 @@ limitations under the License.
 
 """
 
-from freezer.tests.commons import *
-from freezer.job import ExecJob
 
-from freezer.job import Job, InfoJob, AdminJob, BackupJob
 from mock import patch, Mock
 import unittest
+
+from freezer.tests.commons import *
+from freezer.job import ExecJob
+from freezer.job import Job, InfoJob, AdminJob, BackupJob
 
 
 class TestJob(unittest.TestCase):
@@ -71,8 +72,8 @@ class TestExecJob(TestJob):
 
     def setUp(self):
         #init mock_popen
-        self.popen=patch('freezer.exec_cmd.subprocess.Popen')
-        self.mock_popen=self.popen.start()
+        self.popen = patch('freezer.utils.exec_cmd.subprocess.Popen')
+        self.mock_popen = self.popen.start()
         self.mock_popen.return_value = Mock()
         self.mock_popen.return_value.communicate = Mock()
         self.mock_popen.return_value.communicate.return_value = ['some stderr']
@@ -91,7 +92,7 @@ class TestExecJob(TestJob):
         ExecJob(backup_opt, backup_opt.storage).execute()
 
     def test_execute_raise(self):
-        self.popen=patch('freezer.exec_cmd.subprocess.Popen')
+        self.popen=patch('freezer.utils.exec_cmd.subprocess.Popen')
         self.mock_popen=self.popen.start()
         self.mock_popen.return_value.returncode = 1
         backup_opt = BackupOpt1()

@@ -16,8 +16,9 @@
 import datetime
 import unittest
 
+from freezer.openstack import openstack
 from freezer.tests.commons import *
-from freezer import utils
+from freezer.utils import utils
 
 
 class TestUtils(unittest.TestCase):
@@ -70,7 +71,7 @@ class TestUtils(unittest.TestCase):
                         OS_PASSWORD='testpassword',
                         OS_REGION_NAME='testregion',
                         OS_TENANT_ID='0123456789')
-        options = OpenstackOptions.create_from_dict(env_dict)
+        options = openstack.OpenstackOptions.create_from_dict(env_dict)
         assert options.user_name == env_dict['OS_USERNAME']
         assert options.tenant_name == env_dict['OS_TENANT_NAME']
         assert options.auth_url == env_dict['OS_AUTH_URL']
@@ -82,7 +83,7 @@ class TestUtils(unittest.TestCase):
                         OS_TENANT_NAME='testtenantename',
                         OS_AUTH_URL='testauthurl',
                         OS_PASSWORD='testpassword')
-        options = OpenstackOptions.create_from_dict(env_dict)
+        options = openstack.OpenstackOptions.create_from_dict(env_dict)
         assert options.user_name == env_dict['OS_USERNAME']
         assert options.tenant_name == env_dict['OS_TENANT_NAME']
         assert options.auth_url == env_dict['OS_AUTH_URL']

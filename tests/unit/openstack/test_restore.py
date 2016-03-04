@@ -17,7 +17,7 @@ limitations under the License.
 """
 import unittest
 
-from freezer import restore
+from freezer.openstack import restore
 from freezer.tests import commons
 
 

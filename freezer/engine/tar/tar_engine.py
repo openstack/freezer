@@ -19,12 +19,10 @@ import logging
 import os
 import subprocess
 import sys
-import threading
 
 from freezer.engine import engine
 from freezer.engine.tar import tar_builders
-from freezer import streaming
-from freezer import winutils
+from freezer.utils import winutils
 
 
 class TarBackupEngine(engine.BackupEngine):

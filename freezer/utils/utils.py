@@ -19,79 +19,19 @@ import datetime
 import errno
 import logging
 import os
-import re
 import subprocess
 import sys
 import time
 
 from distutils import spawn as distspawn
 from functools import wraps
+from oslo_config import cfg
+from oslo_log import log
 from six.moves import configparser
 
 
-class OpenstackOptions:
-    """
-    Stores credentials for OpenStack API.
-    Can be created using
-    >> create_from_env()
-    or
-    >> create_from_dict(dict)
-    """
-    def __init__(self, user_name, tenant_name, project_name, auth_url,
-                 password, identity_api_version, tenant_id=None,
-                 region_name=None, endpoint_type=None, cert=None,
-                 insecure=False, verify=True):
-        self.user_name = user_name
-        self.tenant_name = tenant_name
-        self.auth_url = auth_url
-        self.password = password
-        self.tenant_id = tenant_id
-        self.project_name = project_name
-        self.identity_api_version = identity_api_version
-        self.region_name = region_name
-        self.endpoint_type = endpoint_type
-        self.cert = cert
-        self.insecure = insecure
-        self.verify = verify
-        if not (self.password and self.user_name and self.auth_url and
-           (self.tenant_name or self.project_name)):
-            raise Exception("Please set up in your env:"
-                            "OS_USERNAME, OS_TENANT_NAME/OS_PROJECT_NAME,"
-                            " OS_AUTH_URL, OS_PASSWORD")
-
-    @property
-    def os_options(self):
-        """
-        :return: The OpenStack options which can have tenant_id,
-                 auth_token, service_type, endpoint_type, tenant_name,
-                 object_storage_url, region_name
-        """
-        return {'tenant_id': self.tenant_id,
-                'tenant_name': self.tenant_name,
-                'project_name': self.project_name,
-                'identity_api_version': self.identity_api_version,
-                'region_name': self.region_name,
-                'endpoint_type': self.endpoint_type}
-
-    @staticmethod
-    def create_from_env():
-        return OpenstackOptions.create_from_dict(os.environ)
-
-    @staticmethod
-    def create_from_dict(src_dict):
-        return OpenstackOptions(
-            user_name=src_dict.get('OS_USERNAME', None),
-            tenant_name=src_dict.get('OS_TENANT_NAME', None),
-            project_name=src_dict.get('OS_PROJECT_NAME', None),
-            auth_url=src_dict.get('OS_AUTH_URL', None),
-            identity_api_version=src_dict.get('OS_IDENTITY_API_VERSION',
-                                              '2.0'),
-            password=src_dict.get('OS_PASSWORD', None),
-            tenant_id=src_dict.get('OS_TENANT_ID', None),
-            region_name=src_dict.get('OS_REGION_NAME', None),
-            endpoint_type=src_dict.get('OS_ENDPOINT_TYPE', None),
-            cert=src_dict.get('OS_CERT', None)
-        )
+CONF = cfg.CONF
+LOG = log.getLogger(__name__)
 
 
 def create_dir_tree(dir):
@@ -162,36 +102,6 @@ class DateTime(object):
     @staticmethod
     def now():
         return DateTime(datetime.datetime.now())
-
-
-def get_vol_fs_type(vol_name):
-    """
-    The argument need to be a full path lvm name i.e. /dev/vg0/var
-    or a disk partition like /dev/sda1. The returnet value is the
-    file system type
-    """
-    if os.path.exists(vol_name) is False:
-        err = '[*] Provided volume name not found: {0} '.format(vol_name)
-        logging.exception(err)
-        raise Exception(err)
-
-    file_cmd = '{0} -0 -bLs --no-pad --no-buffer --preserve-date \
-    {1}'.format(find_executable("file"), vol_name)
-    file_process = subprocess.Popen(
-        file_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, shell=True,
-        executable=find_executable("bash"))
-    (file_out, file_err) = file_process.communicate()
-    file_match = re.search(r'(\S+?) filesystem data', file_out, re.I)
-    if file_match is None:
-        err = '[*] File system type not guessable: {0}'.format(file_err)
-        logging.exception(err)
-        raise Exception(err)
-    else:
-        filesys_type = file_match.group(1)
-        logging.info('[*] File system {0} found for volume {1}'.format(
-            filesys_type, vol_name))
-        return filesys_type.lower().strip()
 
 
 def path_join(*args):
@@ -361,7 +271,7 @@ def find_executable(name):
 
 
 def openssl_path():
-    from freezer import winutils
+    from freezer.utils import winutils
     if winutils.is_windows():
         return 'openssl'
     else:
@@ -370,7 +280,7 @@ def openssl_path():
 
 def tar_path():
     """This function returns tar binary path"""
-    from freezer import winutils
+    from freezer.utils import winutils
     if winutils.is_windows():
         path_to_binaries = os.path.dirname(os.path.abspath(__file__))
         return '{0}\\bin\\tar.exe'.format(path_to_binaries)
@@ -392,7 +302,7 @@ def get_executable_path(binary):
     :rtype: str
     :return: Absoulte Path to the executable file
     """
-    from freezer import winutils
+    from freezer.utils import winutils
     if winutils.is_windows():
         path_to_binaries = os.path.dirname(os.path.abspath(__file__))
         return '{0}\\bin\\{1}.exe'.format(path_to_binaries, binary)
@@ -520,3 +430,22 @@ class Namespace(dict):
     @staticmethod
     def delattr(ns, name):
         return object.__delattr__(ns, name)
+
+
+def set_max_process_priority():
+    """ Set freezer in max priority on the os """
+    # children processes inherit niceness from father
+    try:
+        LOG.warning(
+            '[*] Setting freezer execution with high CPU and I/O priority')
+        PID = os.getpid()
+        # Set cpu priority
+        os.nice(-19)
+        # Set I/O Priority to Real Time class with level 0
+        subprocess.call([
+            u'{0}'.format(find_executable("ionice")),
+            u'-c', u'1', u'-n', u'0', u'-t',
+            u'-p', u'{0}'.format(PID)
+        ])
+    except Exception as priority_error:
+        LOG.warning('[*] Priority: {0}'.format(priority_error))

@@ -14,12 +14,9 @@
 
 import ctypes
 import json
-import logging
 import os
 import six
 import sys
-
-from freezer.utils import create_subprocess
 
 
 def is_windows():

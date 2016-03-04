@@ -14,10 +14,10 @@
 
 import logging
 
-from freezer import config
 from freezer.mode import mode
-from freezer import utils
-from freezer import winutils
+from freezer.utils import config
+from freezer.utils import utils
+from freezer.utils import winutils
 
 
 class SqlserverMode(mode.Mode):

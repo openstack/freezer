@@ -20,7 +20,7 @@ import sys
 
 from freezer import __version__ as FREEZER_VERSION
 from freezer.apiclient import client as api_client
-from freezer import winutils
+from freezer.utils import winutils
 from oslo_config import cfg
 from oslo_log import log
 
