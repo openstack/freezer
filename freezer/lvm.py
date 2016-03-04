@@ -126,26 +126,11 @@ def lvm_snap(backup_opt_dict):
             backup_opt_dict.lvm_snapname,
             backup_opt_dict.lvm_srcvol))
 
-    # If backup mode is mysql, then the db will be flushed and read locked
-    # before the creation of the lvm snap
-    if backup_opt_dict.mode == 'mysql':
-        cursor = backup_opt_dict.mysql_db_inst.cursor()
-        cursor.execute('FLUSH TABLES WITH READ LOCK')
-        backup_opt_dict.mysql_db_inst.commit()
-
     lvm_process = subprocess.Popen(
         lvm_create_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, shell=True,
         executable=utils.find_executable('bash'))
     (lvm_out, lvm_err) = lvm_process.communicate()
-
-    # Unlock MySQL Tables if backup is == mysql
-    # regardless of the snapshot being taken or not
-    if backup_opt_dict.mode == 'mysql':
-        cursor.execute('UNLOCK TABLES')
-        backup_opt_dict.mysql_db_inst.commit()
-        cursor.close()
-        backup_opt_dict.mysql_db_inst.close()
 
     if lvm_process.returncode:
         raise Exception('lvm snapshot creation error: {0}'.format(lvm_err))

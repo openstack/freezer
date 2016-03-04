@@ -59,31 +59,6 @@ def use_shadow(to_backup, windows_volume):
                              .format(windows_volume))
 
 
-def stop_sql_server(sql_server_instance):
-    """ Stop a SQL Server instance to perform the backup of the db files """
-
-    logging.info('[*] Stopping SQL Server for backup')
-    with DisableFileSystemRedirection():
-        cmd = 'net stop "SQL Server ({0})"'\
-            .format(sql_server_instance)
-        (out, err) = create_subprocess(cmd)
-        if err != '':
-            raise Exception('[*] Error while stopping SQL Server,'
-                            ', error {0}'.format(err))
-
-
-def start_sql_server(sql_server_instance):
-    """ Start the SQL Server instance after the backup is completed """
-
-    with DisableFileSystemRedirection():
-        cmd = 'net start "SQL Server ({0})"'.format(sql_server_instance)
-        (out, err) = create_subprocess(cmd)
-        if err != '':
-            raise Exception('[*] Error while starting SQL Server'
-                            ', error {0}'.format(err))
-        logging.info('[*] SQL Server back to normal')
-
-
 def save_environment(home):
     """Read the environment from the terminal where the scheduler is
     initialized and save the environment variables to be reused within the

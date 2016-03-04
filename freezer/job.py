@@ -16,6 +16,7 @@ limitations under the License.
 """
 
 import datetime
+from oslo_utils import importutils
 import sys
 import time
 
@@ -78,21 +79,13 @@ class BackupJob(Job):
                 logging.error('Error while sync exec: {0}'.format(err))
         except Exception as error:
             logging.error('Error while sync exec: {0}'.format(error))
-
-        if self.conf.mode == 'fs':
-            backup_instance = \
-                backup.backup(self.conf, self.storage, self.engine)
-        elif self.conf.mode == 'mongo':
-            backup_instance = \
-                backup.backup_mode_mongo(self.conf, self.storage)
-        elif self.conf.mode == 'mysql':
-            backup_instance = \
-                backup.backup_mode_mysql(self.conf, self.storage)
-        elif self.conf.mode == 'sqlserver':
-            backup_instance = \
-                backup.backup_mode_sql_server(self.conf, self.storage)
-        else:
-            raise ValueError('Please provide a valid backup mode')
+        if not self.conf.mode:
+            raise ValueError("Empty mode")
+        mod_name = 'freezer.mode.{0}.{1}'.format(
+            self.conf.mode, self.conf.mode.capitalize() + 'Mode')
+        app_mode = importutils.import_object(mod_name, self.conf)
+        backup_instance = backup.backup(
+            self.conf, self.storage, self.engine, app_mode)
 
         level = backup_instance.level if backup_instance else 0
 
@@ -133,7 +126,7 @@ class RestoreJob(Job):
                                            restore_timestamp)
 
             self.engine.restore(backup, restore_abs_path)
-            return
+            return {}
 
         res = restore.RestoreOs(conf.client_manager, conf.container)
         if conf.backup_media == 'nova':
