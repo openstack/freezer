@@ -9,3 +9,6 @@ sphinx>=1.1.2,!=1.2.0,!=1.3b1,<1.3 # BSD
 oslosphinx>=2.5.0,!=3.4.0 # Apache-2.0
 testrepository>=0.0.18
 testtools>=1.4.0
+
+# Tempest Plugin
+tempest-lib>=0.14.0  # Apache-2.0
