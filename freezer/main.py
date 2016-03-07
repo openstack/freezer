@@ -182,3 +182,7 @@ def main():
         freezer_main(backup_args)
     except Exception as err:
         return fail(1, err, backup_args.quiet)
+
+if __name__ == '__main__':
+
+    sys.exit(main())
