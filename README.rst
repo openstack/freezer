@@ -987,3 +987,25 @@ optional arguments:
                         Remote username for ssh storage only
   --ssh-host SSH_HOST   Remote host for ssh storage only
   --ssh-port SSH_PORT   Remote port for ssh storage only (default 22)
+
+
+Scheduler Options
+-----------------
+
+To get an updated sample of freezer-scheduler configuration you the following command::
+
+    oslo-config-generator --config-file config-generator/scheduler.conf
+
+you will find the update sample file in etc/scheduler.conf.sample
+
+Agent Options
+-------------
+
+To list options available in freezer-agent use the following command::
+
+    oslo-config-generator --namespace freezer --namespace oslo.log
+
+this will print all options to the screen you direct the output to a file if you want::
+
+    oslo-config-generator --namespace freezer --namespace oslo.log --output-file etc/agent.conf.sample
+
