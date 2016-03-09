@@ -317,7 +317,8 @@ class Backup:
                 logging.exception(e)
                 logging.error("cannot parse backup name: {0}"
                               .format(name))
-        backups.sort(key=lambda x: (x.timestamp, x.level))
+        backups.sort(
+            key=lambda x: (x.hostname_backup_name, x.timestamp, x.level))
         zero_backups = []
         """:type: list[freezer.storage.base.Backup]"""
         last_backup = None
