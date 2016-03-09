@@ -492,7 +492,7 @@ def backup_arguments(args_dict={}):
             backup_args.vssadmin = False
 
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.1.7'
+    backup_args.__dict__['__version__'] = '1.1.8'
 
     # todo(enugaev) move it to new command line param backup_media
     backup_media = 'fs'
