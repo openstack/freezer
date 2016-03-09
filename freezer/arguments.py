@@ -447,7 +447,7 @@ def backup_arguments():
                 backup_args.path_to_backup[:3]
 
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.2.13'
+    backup_args.__dict__['__version__'] = '1.2.14'
 
     # todo(enugaev) move it to new command line param backup_media
     backup_media = 'fs'
