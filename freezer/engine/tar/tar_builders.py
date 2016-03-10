@@ -110,6 +110,7 @@ class TarCommandRestoreBuilder:
         '--ignore-zeros --warning=none'
     UNIX_TEMPLATE = '{0} {1} --incremental --extract --unlink-first ' \
         '--ignore-zeros --warning=none --overwrite --directory {2}'
+    OPENSSL_DEC = "{openssl_path} enc -d -aes-256-cfb -pass file:{file}"
 
     def __init__(self, restore_path, compression_algo, is_windows,
                  tar_path=None):
@@ -144,9 +145,9 @@ class TarCommandRestoreBuilder:
         # Check if encryption file is provided and set the openssl decrypt
         # command accordingly
         if self.encrypt_pass_file:
-            openssl_cmd = "{openssl_path} enc -aes-256-cfb -pass file:{file}"\
-                .format(openssl_path=self.openssl_path,
-                        file=self.encrypt_pass_file)
+            openssl_cmd = self.OPENSSL_DEC.format(
+                openssl_path=self.openssl_path,
+                file=self.encrypt_pass_file)
             tar_command = '{0} | {1}'.format(openssl_cmd, tar_command)
         return tar_command
 
