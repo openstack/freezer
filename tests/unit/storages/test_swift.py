@@ -14,8 +14,9 @@
 
 
 import unittest
-from freezer import osclients
-from freezer import utils
+
+from freezer.openstack import openstack
+from freezer.openstack import osclients
 from freezer.storage import swift
 from freezer.storage import base
 
@@ -26,7 +27,7 @@ class TestSwiftStorage(unittest.TestCase):
 
         self.storage = swift.SwiftStorage(
             osclients.ClientManager(
-                utils.OpenstackOptions.create_from_env()
+                openstack.OpenstackOptions.create_from_env()
             ),
             "freezer_ops-aw1ops1-gerrit0001.aw1.hpcloud.net",
             "/tmp/",

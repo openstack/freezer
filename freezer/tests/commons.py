@@ -26,7 +26,8 @@ import pymongo
 import re
 from glanceclient.common.utils import IterableWithLength
 from freezer.storage import swift
-from freezer.utils import OpenstackOptions
+from freezer.utils import utils
+from freezer.openstack import openstack
 from freezer.engine.tar import tar_engine
 
 os.environ['OS_REGION_NAME'] = 'testregion'
@@ -315,8 +316,8 @@ class BackupOpt1:
         self.cindernative_vol_id = ''
         self.nova_inst_id = ''
         self.lvm_snapperm = 'ro'
-        self.options = OpenstackOptions.create_from_dict(os.environ)
-        from freezer.osclients import ClientManager
+        self.options = openstack.OpenstackOptions.create_from_dict(os.environ)
+        from freezer.openstack.osclients import ClientManager
         from mock import Mock
         self.client_manager = ClientManager(None, False, 2, False)
         self.client_manager.get_swift = Mock(

@@ -18,12 +18,10 @@ Freezer Backup modes related functions
 import os
 import time
 
-from freezer import lvm
-from freezer import utils
-from freezer import vss
-from freezer import winutils
 from oslo_config import cfg
 from oslo_log import log
+
+from freezer.utils import utils
 
 CONF = cfg.CONF
 logging = log.getLogger(__name__)
@@ -118,99 +116,3 @@ class BackupOs:
         cinder = client_manager.get_cinder()
         cinder.backups.create(volume_id, self.container, name, description,
                               incremental=True, force=True)
-
-
-def snapshot_create(backup_opt_dict):
-    """
-    Calls the code to take fs snapshots, depending on the platform
-
-    :param backup_opt_dict:
-    :return: boolean value, True if snapshot has been taken, false otherwise
-    """
-
-    if winutils.is_windows():
-        if backup_opt_dict.snapshot:
-            # Create a shadow copy.
-            backup_opt_dict.shadow_path, backup_opt_dict.shadow = \
-                vss.vss_create_shadow_copy(backup_opt_dict.windows_volume)
-
-            backup_opt_dict.path_to_backup = winutils.use_shadow(
-                backup_opt_dict.path_to_backup,
-                backup_opt_dict.windows_volume)
-            return True
-        return False
-    else:
-        return lvm.lvm_snap(backup_opt_dict)
-
-
-def snapshot_remove(backup_opt_dict, shadow, windows_volume):
-    if winutils.is_windows():
-        # Delete the shadow copy after the backup
-        vss.vss_delete_shadow_copy(shadow, windows_volume)
-    else:
-        # Unmount and remove lvm snapshot volume
-        lvm.lvm_snap_remove(backup_opt_dict)
-
-
-def backup(backup_opt_dict, storage, engine, app_mode):
-    """
-
-    :param backup_opt_dict:
-    :param storage:
-    :type storage: freezer.storage.base.Storage
-    :param engine: Backup Engine
-    :type engine: freezer.engine.engine.BackupEngine
-    :type app_mode: freezer.mode.mode.Mode
-    :return:
-    """
-    backup_media = backup_opt_dict.backup_media
-
-    time_stamp = utils.DateTime.now().timestamp
-    backup_opt_dict.time_stamp = time_stamp
-
-    if backup_media == 'fs':
-        app_mode.prepare()
-        snapshot_taken = snapshot_create(backup_opt_dict)
-        if snapshot_taken:
-            app_mode.release()
-        try:
-            filepath = '.'
-            chdir_path = os.path.expanduser(
-                os.path.normpath(backup_opt_dict.path_to_backup.strip()))
-            if not os.path.isdir(chdir_path):
-                filepath = os.path.basename(chdir_path)
-                chdir_path = os.path.dirname(chdir_path)
-            os.chdir(chdir_path)
-            hostname_backup_name = backup_opt_dict.hostname_backup_name
-            backup_instance = storage.create_backup(
-                hostname_backup_name,
-                backup_opt_dict.no_incremental,
-                backup_opt_dict.max_level,
-                backup_opt_dict.always_level,
-                backup_opt_dict.restart_always_level,
-                time_stamp=time_stamp)
-            engine.backup(filepath, backup_instance)
-            return backup_instance
-        finally:
-            # whether an error occurred or not, remove the snapshot anyway
-            app_mode.release()
-            if snapshot_taken:
-                snapshot_remove(backup_opt_dict, backup_opt_dict.shadow,
-                                backup_opt_dict.windows_volume)
-
-    backup_os = BackupOs(backup_opt_dict.client_manager,
-                         backup_opt_dict.container,
-                         storage)
-
-    if backup_media == 'nova':
-        logging.info('[*] Executing nova backup')
-        backup_os.backup_nova(backup_opt_dict.nova_inst_id)
-    elif backup_media == 'cindernative':
-        logging.info('[*] Executing cinder backup')
-        backup_os.backup_cinder(backup_opt_dict.cindernative_vol_id)
-    elif backup_media == 'cinder':
-        logging.info('[*] Executing cinder snapshot')
-        backup_os.backup_cinder_by_glance(backup_opt_dict.cinder_vol_id)
-    else:
-        raise Exception('unknown parameter backup_media %s' % backup_media)
-    return None

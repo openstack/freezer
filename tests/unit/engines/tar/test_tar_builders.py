@@ -14,8 +14,9 @@
 
 
 import unittest
+
 from freezer.engine.tar import tar_builders
-from freezer import utils
+from freezer.utils import utils
 
 
 class TestTarCommandBuilder(unittest.TestCase):

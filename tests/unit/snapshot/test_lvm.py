@@ -16,16 +16,16 @@ limitations under the License.
 """
 
 import unittest
-from mock import Mock, patch, mock_open, call
+from mock import Mock, patch
 
-from freezer import lvm
+from freezer.snapshot import lvm
 
 
 class Test_lvm_snap_remove(unittest.TestCase):
 
-    @patch('freezer.lvm.os')
-    @patch('freezer.lvm._umount')
-    @patch('freezer.lvm._lvremove')
+    @patch('freezer.snapshot.lvm.os')
+    @patch('freezer.snapshot.lvm._umount')
+    @patch('freezer.snapshot.lvm._lvremove')
     def test_return_none_on_success(self, mock_lvremove, mock_umount, mock_os):
         backup_opt = Mock()
         backup_opt.lvm_volgroup = 'one'
@@ -35,7 +35,7 @@ class Test_lvm_snap_remove(unittest.TestCase):
 
 class Test_lvm_snap(unittest.TestCase):
 
-    @patch('freezer.lvm.validate_lvm_params')
+    @patch('freezer.snapshot.lvm.validate_lvm_params')
     def test_no_lvm_configured_returns_false(self, mock_validate_lvm_params):
         backup_opt = Mock()
         backup_opt.lvm_auto_snap = ''
@@ -43,9 +43,9 @@ class Test_lvm_snap(unittest.TestCase):
         backup_opt.snapshot = False
         self.assertFalse(lvm.lvm_snap(backup_opt))
 
-    @patch('freezer.lvm.validate_lvm_params')
-    @patch('freezer.lvm.get_lvm_info')
-    @patch('freezer.lvm.utils.create_dir')
+    @patch('freezer.snapshot.lvm.validate_lvm_params')
+    @patch('freezer.snapshot.lvm.get_lvm_info')
+    @patch('freezer.snapshot.lvm.utils.create_dir')
     def test_with_auto_snap_param_path_mismatch_raises(self, mock_create_dir, mock_get_lvm_info, mock_validate_lvm_params):
         mock_get_lvm_info.return_value = {
             'volgroup': 'lvm_volgroup',
@@ -60,8 +60,8 @@ class Test_lvm_snap(unittest.TestCase):
 
         self.assertRaises(Exception, lvm.lvm_snap, backup_opt)
 
-    @patch('freezer.lvm.get_lvm_info')
-    @patch('freezer.lvm.utils.create_dir')
+    @patch('freezer.snapshot.lvm.get_lvm_info')
+    @patch('freezer.snapshot.lvm.utils.create_dir')
     def test_with_snapshot_opt_simple_sets_correct_path_and_raises_on_perm(self, mock_create_dir, mock_get_lvm_info):
         mock_get_lvm_info.return_value = {
             'volgroup': 'lvm_volgroup',
@@ -81,11 +81,11 @@ class Test_lvm_snap(unittest.TestCase):
         self.assertIn('Invalid value for option lvm-snap-perm',
                       str(the_exception))
 
-    @patch('freezer.lvm.validate_lvm_params')
-    @patch('freezer.lvm.subprocess.Popen')
-    @patch('freezer.lvm.utils.get_vol_fs_type')
-    @patch('freezer.lvm.get_lvm_info')
-    @patch('freezer.lvm.utils.create_dir')
+    @patch('freezer.snapshot.lvm.validate_lvm_params')
+    @patch('freezer.snapshot.lvm.subprocess.Popen')
+    @patch('freezer.snapshot.lvm.get_vol_fs_type')
+    @patch('freezer.snapshot.lvm.get_lvm_info')
+    @patch('freezer.snapshot.lvm.utils.create_dir')
     def test_ok(self, mock_create_dir, mock_get_lvm_info, mock_get_vol_fs_type, mock_popen, mock_validate_lvm_params):
         mock_get_lvm_info.return_value = {
             'volgroup': 'lvm_volgroup',
@@ -107,11 +107,11 @@ class Test_lvm_snap(unittest.TestCase):
 
         self.assertTrue(lvm.lvm_snap(backup_opt))
 
-    @patch('freezer.lvm.validate_lvm_params')
-    @patch('freezer.lvm.subprocess.Popen')
-    @patch('freezer.lvm.utils.get_vol_fs_type')
-    @patch('freezer.lvm.get_lvm_info')
-    @patch('freezer.lvm.utils.create_dir')
+    @patch('freezer.snapshot.lvm.validate_lvm_params')
+    @patch('freezer.snapshot.lvm.subprocess.Popen')
+    @patch('freezer.snapshot.lvm.get_vol_fs_type')
+    @patch('freezer.snapshot.lvm.get_lvm_info')
+    @patch('freezer.utils.utils.create_dir')
     def test_snapshot_fails(self, mock_create_dir, mock_get_lvm_info, mock_get_vol_fs_type, mock_popen, mock_validate_lvm_params):
         mock_get_lvm_info.return_value = {
             'volgroup': 'lvm_volgroup',
@@ -134,12 +134,12 @@ class Test_lvm_snap(unittest.TestCase):
         the_exception = cm.exception
         self.assertIn('lvm snapshot creation error', str(the_exception))
 
-    @patch('freezer.lvm.lvm_snap_remove')
-    @patch('freezer.lvm.validate_lvm_params')
-    @patch('freezer.lvm.subprocess.Popen')
-    @patch('freezer.lvm.utils.get_vol_fs_type')
-    @patch('freezer.lvm.get_lvm_info')
-    @patch('freezer.lvm.utils.create_dir')
+    @patch('freezer.snapshot.lvm.lvm_snap_remove')
+    @patch('freezer.snapshot.lvm.validate_lvm_params')
+    @patch('freezer.snapshot.lvm.subprocess.Popen')
+    @patch('freezer.snapshot.lvm.get_vol_fs_type')
+    @patch('freezer.snapshot.lvm.get_lvm_info')
+    @patch('freezer.utils.utils.create_dir')
     def test_already_mounted(self, mock_create_dir, mock_get_lvm_info, mock_get_vol_fs_type,
                              mock_popen, mock_validate_lvm_params, lvm_snap_remove):
         mock_get_vol_fs_type.return_value = 'xfs'
@@ -161,11 +161,11 @@ class Test_lvm_snap(unittest.TestCase):
 
         self.assertTrue(lvm.lvm_snap(backup_opt))
 
-    @patch('freezer.lvm.lvm_snap_remove')
-    @patch('freezer.lvm.subprocess.Popen')
-    @patch('freezer.lvm.utils.get_vol_fs_type')
-    @patch('freezer.lvm.get_lvm_info')
-    @patch('freezer.lvm.utils.create_dir')
+    @patch('freezer.snapshot.lvm.lvm_snap_remove')
+    @patch('freezer.snapshot.lvm.subprocess.Popen')
+    @patch('freezer.snapshot.lvm.get_vol_fs_type')
+    @patch('freezer.snapshot.lvm.get_lvm_info')
+    @patch('freezer.snapshot.lvm.utils.create_dir')
     def test_snapshot_mount_error_raises_Exception(self,
                                                    mock_create_dir,
                                                    mock_get_lvm_info,
@@ -204,8 +204,8 @@ class Test_lvm_snap(unittest.TestCase):
 
 # class Test_get_lvm_info(unittest.TestCase):
 
-    # @patch('freezer.lvm.lvm_guess')
-    # @patch('freezer.lvm.utils.get_mount_from_path')
+    # @patch('freezer.snapshot.lvm.lvm_guess')
+    # @patch('freezer.snapshot.lvm.utils.get_mount_from_path')
     # def test_using_guess(self, mock_get_mount_from_path, mock_lvm_guess):
     #     mock_get_mount_from_path.return_value = '/home/somedir', 'some-snap-path'
     #     mock_lvm_guess.return_value = 'vg_test', 'lv_test', 'lvm_device'
@@ -220,9 +220,9 @@ class Test_lvm_snap(unittest.TestCase):
     #                        'srcvol': 'lvm_device'}
     #     self.assertEquals(res, expected_result)
 
-    # @patch('freezer.lvm.subprocess.Popen')
-    # @patch('freezer.lvm.lvm_guess')
-    # @patch('freezer.lvm.utils.get_mount_from_path')
+    # @patch('freezer.snapshot.lvm.subprocess.Popen')
+    # @patch('freezer.snapshot.lvm.lvm_guess')
+    # @patch('freezer.snapshot.lvm.utils.get_mount_from_path')
     # def test_using_mount(self, mock_get_mount_from_path, mock_lvm_guess, mock_popen):
     #     mock_get_mount_from_path.return_value = '/home/somedir', 'some-snap-path'
     #     mock_lvm_guess.side_effect = [(None, None, None), ('vg_test', 'lv_test', 'lvm_device')]
@@ -241,9 +241,9 @@ class Test_lvm_snap(unittest.TestCase):
     #                        'srcvol': 'lvm_device'}
     #     self.assertEquals(res, expected_result)
     #
-    # @patch('freezer.lvm.subprocess.Popen')
-    # @patch('freezer.lvm.lvm_guess')
-    # @patch('freezer.lvm.utils.get_mount_from_path')
+    # @patch('freezer.snapshot.lvm.subprocess.Popen')
+    # @patch('freezer.snapshot.lvm.lvm_guess')
+    # @patch('freezer.snapshot.lvm.utils.get_mount_from_path')
     # def test_raises_Exception_when_info_not_found(self, mock_get_mount_from_path, mock_lvm_guess, mock_popen):
     #     mock_get_mount_from_path.return_value = '/home/somedir', 'some-snap-path'
     #     mock_lvm_guess.return_value = None, None, None
@@ -354,7 +354,7 @@ class Test_validate_lvm_params(unittest.TestCase):
 
 class Test_umount(unittest.TestCase):
 
-    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.snapshot.lvm.subprocess.Popen')
     def test_return_none_on_success(self, mock_popen):
         mock_process = Mock()
         mock_process.communicate.return_value = '', ''
@@ -362,7 +362,7 @@ class Test_umount(unittest.TestCase):
         mock_popen.return_value = mock_process
         self.assertIsNone(lvm._umount('path'))
 
-    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.snapshot.lvm.subprocess.Popen')
     def test_raises_on_popen_returncode_not_0(self, mock_popen):
         mock_process = Mock()
         mock_process.communicate.return_value = '', ''
@@ -373,7 +373,7 @@ class Test_umount(unittest.TestCase):
 
 class Test_lvremove(unittest.TestCase):
 
-    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.snapshot.lvm.subprocess.Popen')
     def test_return_none_on_success(self, mock_popen):
         mock_process = Mock()
         mock_process.communicate.return_value = '', ''
@@ -381,7 +381,7 @@ class Test_lvremove(unittest.TestCase):
         mock_popen.return_value = mock_process
         self.assertIsNone(lvm._lvremove('logicalvolume'))
 
-    @patch('freezer.lvm.subprocess.Popen')
+    @patch('freezer.snapshot.lvm.subprocess.Popen')
     def test_raises_on_popen_returncode_not_0(self, mock_popen):
         mock_process = Mock()
         mock_process.communicate.return_value = '', ''

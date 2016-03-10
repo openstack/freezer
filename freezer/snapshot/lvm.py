@@ -23,7 +23,7 @@ import subprocess
 import uuid
 
 from freezer.common import config as freezer_config
-from freezer import utils
+from freezer.utils import utils
 
 
 def lvm_snap_remove(backup_opt_dict):
@@ -45,6 +45,36 @@ def lvm_snap_remove(backup_opt_dict):
                       backup_opt_dict.lvm_snapname)
     _lvremove(lv)
     logging.info('[*] Snapshot volume {0} removed'.format(lv))
+
+
+def get_vol_fs_type(vol_name):
+    """
+    The argument need to be a full path lvm name i.e. /dev/vg0/var
+    or a disk partition like /dev/sda1. The returnet value is the
+    file system type
+    """
+    if os.path.exists(vol_name) is False:
+        err = '[*] Provided volume name not found: {0} '.format(vol_name)
+        logging.exception(err)
+        raise Exception(err)
+
+    file_cmd = '{0} -0 -bLs --no-pad --no-buffer --preserve-date \
+    {1}'.format(utils.find_executable("file"), vol_name)
+    file_process = subprocess.Popen(
+        file_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, shell=True,
+        executable=utils.find_executable("bash"))
+    (file_out, file_err) = file_process.communicate()
+    file_match = re.search(r'(\S+?) filesystem data', file_out, re.I)
+    if file_match is None:
+        err = '[*] File system type not guessable: {0}'.format(file_err)
+        logging.exception(err)
+        raise Exception(err)
+    else:
+        filesys_type = file_match.group(1)
+        logging.info('[*] File system {0} found for volume {1}'.format(
+            filesys_type, vol_name))
+        return filesys_type.lower().strip()
 
 
 def lvm_snap(backup_opt_dict):
@@ -141,7 +171,7 @@ def lvm_snap(backup_opt_dict):
 
     # Guess the file system of the provided source volume and st mount
     # options accordingly
-    filesys_type = utils.get_vol_fs_type(backup_opt_dict.lvm_srcvol)
+    filesys_type = get_vol_fs_type(backup_opt_dict.lvm_srcvol)
     mount_options = '-o {}'.format(backup_opt_dict.lvm_snapperm)
     if 'xfs' == filesys_type:
         mount_options = ' -onouuid '

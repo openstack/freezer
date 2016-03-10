@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from freezer import utils
 
 import logging
 import os
 import re
+
 from six.moves import configparser
 from six.moves import cStringIO
+
+from freezer.utils import utils
 
 
 class Config:

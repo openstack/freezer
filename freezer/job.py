@@ -16,14 +16,16 @@ limitations under the License.
 """
 
 import datetime
+import os
 from oslo_utils import importutils
 import sys
 import time
 
-from freezer import backup
-from freezer import exec_cmd
-from freezer import restore
-from freezer import utils
+from freezer.openstack import backup
+from freezer.openstack import restore
+from freezer.snapshot import snapshot
+from freezer.utils import exec_cmd
+from freezer.utils import utils
 
 from oslo_config import cfg
 from oslo_log import log
@@ -84,8 +86,7 @@ class BackupJob(Job):
         mod_name = 'freezer.mode.{0}.{1}'.format(
             self.conf.mode, self.conf.mode.capitalize() + 'Mode')
         app_mode = importutils.import_object(mod_name, self.conf)
-        backup_instance = backup.backup(
-            self.conf, self.storage, self.engine, app_mode)
+        backup_instance = self.backup(app_mode)
 
         level = backup_instance.level if backup_instance else 0
 
@@ -109,6 +110,65 @@ class BackupJob(Job):
         for field_name in fields:
             metadata[field_name] = self.conf.__dict__.get(field_name, '') or ''
         return metadata
+
+    def backup(self, app_mode):
+        """
+
+        :type app_mode: freezer.mode.mode.Mode
+        :return:
+        """
+        backup_media = self.conf.backup_media
+
+        time_stamp = utils.DateTime.now().timestamp
+        self.conf.time_stamp = time_stamp
+
+        if backup_media == 'fs':
+            app_mode.prepare()
+            snapshot_taken = snapshot.snapshot_create(self.conf)
+            if snapshot_taken:
+                app_mode.release()
+            try:
+                filepath = '.'
+                chdir_path = os.path.expanduser(
+                    os.path.normpath(self.conf.path_to_backup.strip()))
+                if not os.path.isdir(chdir_path):
+                    filepath = os.path.basename(chdir_path)
+                    chdir_path = os.path.dirname(chdir_path)
+                os.chdir(chdir_path)
+                hostname_backup_name = self.conf.hostname_backup_name
+                backup_instance = self.storage.create_backup(
+                    hostname_backup_name,
+                    self.conf.no_incremental,
+                    self.conf.max_level,
+                    self.conf.always_level,
+                    self.conf.restart_always_level,
+                    time_stamp=time_stamp)
+                self.engine.backup(filepath, backup_instance)
+                return backup_instance
+            finally:
+                # whether an error occurred or not, remove the snapshot anyway
+                app_mode.release()
+                if snapshot_taken:
+                    snapshot.snapshot_remove(
+                        self.conf, self.conf.shadow,
+                        self.conf.windows_volume)
+
+        backup_os = backup.BackupOs(self.conf.client_manager,
+                                    self.conf.container,
+                                    self.storage)
+
+        if backup_media == 'nova':
+            logging.info('[*] Executing nova backup')
+            backup_os.backup_nova(self.conf.nova_inst_id)
+        elif backup_media == 'cindernative':
+            logging.info('[*] Executing cinder backup')
+            backup_os.backup_cinder(self.conf.cindernative_vol_id)
+        elif backup_media == 'cinder':
+            logging.info('[*] Executing cinder snapshot')
+            backup_os.backup_cinder_by_glance(self.conf.cinder_vol_id)
+        else:
+            raise Exception('unknown parameter backup_media %s' % backup_media)
+        return None
 
 
 class RestoreJob(Job):

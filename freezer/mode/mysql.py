@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from freezer import config
 from freezer.mode import mode
+from freezer.utils import config
 
 
 class MysqlMode(mode.Mode):

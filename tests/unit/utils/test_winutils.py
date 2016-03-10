@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from freezer.tests.commons import *
-from freezer.winutils import is_windows
-from freezer.winutils import use_shadow
-from freezer.winutils import DisableFileSystemRedirection
-from freezer import winutils
 import unittest
 import mock
+
+from freezer.tests.commons import *
+from freezer.utils import winutils
 
 
 class TestWinutils(unittest.TestCase):
@@ -40,17 +38,17 @@ class TestWinutils(unittest.TestCase):
     def test_is_windows(self):
         fake_os = Os()
         os.name = fake_os
-        assert is_windows() is False
+        assert winutils.is_windows() is False
 
     def test_use_shadow(self):
         test_volume = 'C:'
         test_volume2 = 'C:\\'
         path = 'C:\\Users\\Test'
         expected = 'C:\\freezer_shadowcopy\\Users\\Test'
-        assert use_shadow(path, test_volume2) == expected
+        assert winutils.use_shadow(path, test_volume2) == expected
 
         # test if the volume format is incorrect
-        self.assertRaises(Exception, use_shadow(path, test_volume))
+        self.assertRaises(Exception, winutils.use_shadow(path, test_volume))
 
     # def test_start_sql_server(self):
     #     backup_opt = BackupOpt1()

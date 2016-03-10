@@ -13,7 +13,7 @@
 # limitations under the License.
 import unittest
 
-from freezer import bandwidth
+from freezer.utils import bandwidth
 
 
 class FakeSocket:

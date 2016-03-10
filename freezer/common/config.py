@@ -23,9 +23,9 @@ import sys
 from tempfile import NamedTemporaryFile
 
 from freezer import __version__ as FREEZER_VERSION
-from freezer import config as freezer_config
-from freezer import utils
-from freezer import winutils
+from freezer.utils import config as freezer_config
+from freezer.utils import utils
+from freezer.utils import winutils
 
 
 CONF = cfg.CONF

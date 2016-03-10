@@ -11,17 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-from freezer import  exec_cmd
-from mock import patch, Mock
 import subprocess
 import unittest
+
+from mock import patch, Mock
+
+from freezer.utils import exec_cmd
+
 
 class TestExec(unittest.TestCase):
     def test_exec_cmd(self):
         cmd="echo test > test.txt"
-        popen=patch('freezer.exec_cmd.subprocess.Popen')
+        popen=patch('freezer.utils.exec_cmd.subprocess.Popen')
         mock_popen=popen.start()
         mock_popen.return_value = Mock()
         mock_popen.return_value.communicate = Mock()
@@ -37,7 +38,7 @@ class TestExec(unittest.TestCase):
 
     def test__exec_cmd_with_pipe(self):
         cmd="echo test|wc -l"
-        popen=patch('freezer.exec_cmd.subprocess.Popen')
+        popen=patch('freezer.utils.exec_cmd.subprocess.Popen')
         mock_popen=popen.start()
         mock_popen.return_value = Mock()
         mock_popen.return_value.communicate = Mock()

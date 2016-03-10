@@ -17,24 +17,26 @@ Freezer main execution function
 """
 import json
 import os
-from oslo_config import cfg
-from oslo_log import log
 import subprocess
 import sys
 
-from freezer import bandwidth
+from oslo_config import cfg
+from oslo_log import log
+
 from freezer.common import config as freezer_config
-from freezer import config
 from freezer.engine.tar import tar_engine
 from freezer import job
-from freezer import osclients
+from freezer.openstack import openstack
+from freezer.openstack import osclients
 from freezer.storage import local
 from freezer.storage import multiple
 from freezer.storage import ssh
 from freezer.storage import swift
-from freezer import utils
-from freezer import validator
-from freezer import winutils
+from freezer.utils import bandwidth
+from freezer.utils import config
+from freezer.utils import utils
+from freezer.utils import validator
+from freezer.utils import winutils
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
@@ -43,29 +45,12 @@ LOG = log.getLogger(__name__)
 def freezer_main(backup_args):
     """Freezer main loop for job execution.
     """
-    def set_max_process_priority():
-        """ Set freezer in max priority on the os """
-        # children processes inherit niceness from father
-        try:
-            LOG.warning(
-                '[*] Setting freezer execution with high CPU and I/O priority')
-            PID = os.getpid()
-            # Set cpu priority
-            os.nice(-19)
-            # Set I/O Priority to Real Time class with level 0
-            subprocess.call([
-                u'{0}'.format(utils.find_executable("ionice")),
-                u'-c', u'1', u'-n', u'0', u'-t',
-                u'-p', u'{0}'.format(PID)
-            ])
-        except Exception as priority_error:
-            LOG.warning('[*] Priority: {0}'.format(priority_error))
 
     if not backup_args.quiet:
         LOG.info('log file at {0}'.format(CONF.get('log_file')))
 
     if backup_args.max_priority:
-        set_max_process_priority()
+        utils.set_max_process_priority()
 
     bandwidth.monkeypatch_socket_bandwidth(backup_args)
 
@@ -156,10 +141,10 @@ def storage_from_dict(backup_args, work_dir, max_segment_size,
     container = backup_args['container']
     if storage_name == "swift":
         if "osrc" in backup_args:
-            options = utils.OpenstackOptions.create_from_dict(
+            options = openstack.OpenstackOptions.create_from_dict(
                 parse_osrc(backup_args['osrc']))
         else:
-            options = utils.OpenstackOptions.create_from_env()
+            options = openstack.OpenstackOptions.create_from_env()
         identity_api_version = (os_identity_api_version or
                                 options.identity_api_version)
         client_manager = osclients.ClientManager(
@@ -195,10 +180,5 @@ def main():
             CONF.print_help()
             sys.exit(1)
         freezer_main(backup_args)
-    except ValueError as err:
-        return fail(1, err, backup_args.quiet)
-    except ImportError as err:
-        return fail(1, err, backup_args.quiet)
     except Exception as err:
         return fail(1, err, backup_args.quiet)
-

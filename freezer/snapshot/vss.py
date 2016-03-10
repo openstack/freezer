@@ -15,8 +15,8 @@
 import logging
 import os
 
-from freezer import utils
-from freezer import winutils
+from freezer.utils import utils
+from freezer.utils import winutils
 
 
 def vss_create_shadow_copy(windows_volume):

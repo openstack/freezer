@@ -20,7 +20,7 @@ import os
 import shutil
 
 from freezer.storage import fslike
-from freezer import utils
+from freezer.utils import utils
 
 
 class LocalStorage(fslike.FsLikeStorage):

@@ -18,7 +18,7 @@ import shutil
 import unittest
 
 from freezer.storage import local
-from freezer import utils
+from freezer.utils import utils
 
 
 class TestLocalStorage(unittest.TestCase):

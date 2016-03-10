@@ -14,7 +14,7 @@
 
 
 from freezer.storage import base
-from freezer import utils
+from freezer.utils import utils
 
 
 class FsLikeStorage(base.Storage):

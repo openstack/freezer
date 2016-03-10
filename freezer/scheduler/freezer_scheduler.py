@@ -29,7 +29,7 @@ from freezer.scheduler import arguments
 from freezer.scheduler import scheduler_job
 from freezer.scheduler import shell
 from freezer.scheduler import utils
-from freezer import winutils
+from freezer.utils import winutils
 
 
 if winutils.is_windows():

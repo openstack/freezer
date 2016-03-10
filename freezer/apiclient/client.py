@@ -29,7 +29,7 @@ from freezer.apiclient import backups
 from freezer.apiclient import jobs
 from freezer.apiclient import registration
 from freezer.apiclient import sessions
-from freezer.utils import Namespace
+from freezer.utils import utils
 
 CONF = cfg.CONF
 
@@ -209,7 +209,7 @@ class Client(object):
         # this creates a namespace for self.opts when the client is
         # created from other method rather than command line arguments.
         if self.opts is None:
-            self.opts = Namespace({})
+            self.opts = utils.Namespace({})
         if token:
             self.opts.os_token = token
         if username:

@@ -19,7 +19,7 @@ import win32event
 import win32service
 import win32serviceutil
 
-from freezer.winutils import set_environment
+from freezer.utils import winutils
 
 
 class PySvc(win32serviceutil.ServiceFramework):
@@ -65,7 +65,7 @@ class PySvc(win32serviceutil.ServiceFramework):
             servicemanager.PYS_SERVICE_STARTED,
             (self._svc_name_, ''))
 
-        set_environment(self.home)
+        winutils.set_environment(self.home)
 
         if os.environ.get('SERVICE_INSECURE'):
             self.insecure = True

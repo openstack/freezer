@@ -14,7 +14,7 @@
 
 import unittest
 
-from freezer import config
+from freezer.utils import config
 
 
 class TestConfig(unittest.TestCase):

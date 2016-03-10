@@ -29,7 +29,7 @@ except Exception:
     def pprint(doc):
         print(json.dumps(doc, indent=4))
 
-from freezer.utils import create_dir
+from freezer.utils import utils as freezer_utils
 
 
 def do_session_remove_job(client, args):
@@ -174,7 +174,7 @@ def do_job_stop(client, args):
 
 
 def do_job_download(client, args):
-    create_dir(args.jobs_dir, do_log=True)
+    freezer_utils.create_dir(args.jobs_dir, do_log=True)
     for doc in _job_list(client, args):
         fname = os.path.normpath('{0}/job_{1}.conf'.
                                  format(args.jobs_dir, doc['job_id']))

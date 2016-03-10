@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from freezer.storage import base
-from freezer import streaming
 from oslo_config import cfg
 from oslo_log import log
+
+from freezer.storage import base
+from freezer.utils import streaming
 
 CONF = cfg.CONF
 logging = log.getLogger(__name__)
