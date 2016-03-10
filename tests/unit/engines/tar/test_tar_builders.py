@@ -90,7 +90,7 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
         self.builder.set_encryption("encrypt_pass_file", "openssl")
         self.assertEquals(
             self.builder.build(),
-            "openssl enc -aes-256-cfb -pass file:encrypt_pass_file | gnutar "
+            "openssl enc -d -aes-256-cfb -pass file:encrypt_pass_file | gnutar "
             "-z --incremental --extract --unlink-first --ignore-zeros"
             " --warning=none --overwrite --directory restore_path")
 
@@ -100,7 +100,7 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
         self.builder.set_encryption("encrypt_pass_file", "openssl")
         self.assertEquals(
             self.builder.build(),
-            'openssl enc -aes-256-cfb -pass file:encrypt_pass_file '
+            'openssl enc -d -aes-256-cfb -pass file:encrypt_pass_file '
             '| gnutar -x -z --incremental --unlink-first --ignore-zeros')
 
     def test_get_tar_flag_from_algo(self):
