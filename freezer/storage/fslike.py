@@ -72,7 +72,7 @@ class FsLikeStorage(base.Storage):
         backups = []
         backup_dir = utils.path_join(self.storage_directory,
                                      hostname_backup_name)
-        utils.create_dir_tree(backup_dir)
+        self.create_dirs(backup_dir)
         timestamps = self.listdir(backup_dir)
         for timestamp in timestamps:
             increments = \
