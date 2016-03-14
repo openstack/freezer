@@ -159,7 +159,7 @@ class FakeCinderClient:
             pass
 
         @staticmethod
-        def create(volume_id, display_name, force):
+        def create(volume_id, name, force):
             return FakeIdObject("10")
 
         @staticmethod
