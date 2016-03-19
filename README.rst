@@ -4,8 +4,33 @@ Freezer
 
 .. image:: freezer_logo.jpg
 
-Freezer is a Backup Restore DR as a Service platform that helps you to automate the data backup and
-restore process.
+NOTE
+----
+
+Freezer has four different components; Freezer Web UI, Freezer Scheduler,
+Freezer Agent and Freezer API.
+
+If you need to use Freezer Backup Restore DR as a Service platform, you need to
+install Freezer Scheduler, Freezer Agent on client and Freezer Web UI, Freezer
+API on OpenStack controller server.
+(The server where your Horizon and Keystone installed)
+
+This is the source code of Freezer Scheduler and Freezer Agent.
+
+If you need to get the source code of other components,
+please visit proper Github pages:
+
+Freezer Web UI:
+https://github.com/openstack/freezer-web-ui
+
+Freezer API:
+https://github.com/openstack/freezer-api
+
+Features
+========
+
+Freezer is a Backup Restore DR as a Service platform that helps you to automate
+the data backup and restore process.
 
 The following features are available:
 
@@ -28,8 +53,53 @@ The following features are available:
 -  Web user interface integrated with OpenStack Horizon
 -  Execute scripts/commands before or after a job execution
 
-Requirements
-============
+Freezer Components
+==================
+
++-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| Component         | Description                                                                                                                                    |
++===================+================================================================================================================================================+
+| Freezer Web UI    | Web interface that interacts with the Freezer API to configure and change settings.                                                            |
+|                   | It provides most of the features from the Freezer Agent CLI, advanced scheduler settings such as multi-node backup synchronization,                 |
+|                   | metrics, and reporting.                                                                                                                        |
++-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| Freezer Scheduler | A client side component, running on the node where the data backup is to be executed.                                                          |
+|                   | It consists of a daemon that retrieves the data from the freezer API and executes jobs (i.e. backups, restore, admin actions, info actions,    |
+|                   | pre and/or post job scripts) by running the Freezer Agent.                                                                                     |
+|                   | The metrics and exit codes returned by the freezer agent are captured and sent to the Freezer API.                                             |
+|                   | The scheduler manages the execution and synchronization of multiple jobs executed on a single or multiple nodes.                               |
+|                   | The status of the execution of all the nodes is saved through the API.                                                                         |
+|                   | The Freezer scheduler takes care of uploading jobs to the API by reading job files on the file system.                                         |
+|                   | It also has its own configuration file where job session or other settings like the freezer API polling interval can be configured.            |
+|                   | The Freezer scheduler manages jobs, for more information about jobs please refer to: freezer_api/README.rst under JOB the sections             |
++-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| Freezer Agent     | Multiprocessing Python software that runs on the client side, where the data backup is to be executed.                                         |
+|                   | It can be executed standalone or by the Freezer Scheduler.                                                                                     |
+|                   | The Freezer Agent provides a flexible way to execute backup, restore and other actions on a running system.                                         |
+|                   | In order to provide flexibility in terms of data integrity, speed, performance, resources usage, etc the freezer agent offers a                |
+|                   | wide range of options to execute optimized backup according the available resources as:                                                        |
+|                   |                                                                                                                                                |
+|                   |   - Segments size (the amount of memory used)                                                                                                  |
+|                   |   - Queues size (optimize backups where I/O, bandwidth, memory or CPU is a constraint)                                                         |
+|                   |   - I/O Affinity and process priority (it can be used with real time I/O and maximum user level process priority)                              |
+|                   |   - Bandwidth limitation                                                                                                                       |
+|                   |   - Client side Encryption (AES-256-CFB)                                                                                                       |
+|                   |   - Compression (multiple algorithms supported as zlib, bzip2, xz/lzma)                                                                        |
+|                   |   - Parallel upload to pluggable storage media (i.e., upload backup to swift and to a remote node by ssh,                                      |
+|                   |     or upload to two or more independent swift instances with different credentials, etc)                                                      |
+|                   |   - Execute file based incremental (like tar), block based incremental (like rsync algorithm) and differential based backup and restore        |
+|                   |   - Multiplatform as it can be run on Linux, Windows, \*BSD and OSX                                                                            |
+|                   |   - Automatic removal of old backups                                                                                                           |
++-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| Freezer API       | The API is used to store and provide metadata to the Freezer Web UI and to the Freezer Scheduler.                                              |
+|                   | Also the API is used to store session information for multi node backup synchronization. No workload data is stored in the API.                |
+|                   | For more information to the API please refer to: freezer_api/README.rst                                                                        |
++-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| DB Elasticsearch  | Backend used by the API to store and retrieve metrics, metadata sessions information, job status, etc.                                         |
++-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Linux Requirements
+==================
 
 -  OpenStack Swift Account (optional)
 -  python
@@ -90,8 +160,22 @@ Freezer offers a [windows installer] (https://github.com/openstack-freezer-utils
 Installation & Env Setup
 ========================
 
-Install required packages
--------------------------
+Before Installation
+-------------------
+
+1-) Chose correct branch for corresponding OpenStack version.
+If your OpenStack installation is Kilo, chose Stable/Kilo release. etc...
+
+2-) This installation instruction only for Freezer Agent and Freezer Scheduler
+on client side. If you need to install other components, visit their Github page.
+
+3-) Make sure you have installed same version of all four components.
+Do not miss match different version. For example; do not use Freezer Agent Stable/Kilo
+release with Freeze API Stable/Liberty release.
+
+4-) Following installation instructions only for Freezer Scheduler
+and Freezer Agent.
+
 
 Ubuntu / Debian
 ---------------
@@ -490,8 +574,12 @@ The Freezer architecture is composed of the following components:
 |                   |   - Execute file based incremental (like tar), block based incremental (like rsync algorithm) and differential based backup and restore        |
 |                   |   - Multi-platform as it can be run on Linux, Windows, \*BSD and OSX                                                                           |
 |                   |   - Automatic removal of old backups                                                                                                           |
+<<<<<<< HEAD
 |                   |                                                                                                                                                |
 |                   | freezerc binary is deprecated and won't be available in next releases. Use freezer-agent instead.                                              |
+=======
+|                   | "freezerc" binary is deprecated and won't be available in next releases. Use freezer-agent instead .                                             |
+>>>>>>> New Better & Well Formatted Docs with Sphinx
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer API       | The API is used to store and provide metadata to the Freezer Web UI and to the Freezer Scheduler.                                              |
 |                   | Also the API is used to store session information for multi node backup synchronization. No workload data is stored in the API.                |
