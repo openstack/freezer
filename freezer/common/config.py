@@ -59,7 +59,7 @@ DEFAULT_PARAMS = {
     'upload_limit': -1, 'always_level': False, 'version': False,
     'dry_run': False, 'lvm_snapsize': DEFAULT_LVM_SNAPSIZE,
     'restore_abs_path': False, 'log_file': None, 'log_level': "info",
-    'mode': 'default', 'action': 'backup', 'shadow': '', 'shadow_path': '',
+    'mode': 'fs', 'action': 'backup', 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
     'ssh_port': DEFAULT_SSH_PORT, 'compression': 'gzip'
