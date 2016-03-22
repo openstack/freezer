@@ -234,7 +234,16 @@ _COMMON = [
                ),
     cfg.StrOpt('restore-from-date',
                dest='restore_from_date',
-               help="Set the absolute path where you want your data restored. "
+               help="Set the date of the backup from which you want to restore. "
+                    "This will select the most recent backup previous to "
+                    "the specified date (included). Example: "
+                    "if the last backup was created at '2016-03-22T14:29:01' "
+                    "and restore-from-date is set to '2016-03-22T14:29:01', "
+                    "the backup will be restored successfully. The same for " 
+                    "any date after that, even if the provided date is in the "
+                    "future. However if restore-from-date is set to "
+                    "'2016-03-22T14:29:00' or before, that backup will not "
+                    "be found. "
                     "Please provide datetime in format 'YYYY-MM-DDThh:mm:ss' "
                     "i.e. '1979-10-03T23:23:23'. Make sure the 'T' is between "
                     "date and time Default None."
