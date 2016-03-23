@@ -185,7 +185,7 @@ class RestoreJob(Job):
             backup = self.storage.find_one(conf.hostname_backup_name,
                                            restore_timestamp)
 
-            self.engine.restore(backup, restore_abs_path)
+            self.engine.restore(backup, restore_abs_path, conf.overwrite)
             return {}
 
         res = restore.RestoreOs(conf.client_manager, conf.container)
