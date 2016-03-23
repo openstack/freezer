@@ -62,7 +62,7 @@ DEFAULT_PARAMS = {
     'vssadmin': False, 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
-    'ssh_port': 22, 'compression': 'gzip'
+    'ssh_port': 22, 'compression': 'gzip', 'overwrite': False
 }
 
 
@@ -379,6 +379,10 @@ def backup_arguments():
         choices=['gzip', 'bzip2', 'xz'],
         help='compression algorithm to use. gzip is default algorithm',
         dest='compression', default='gzip')
+    arg_parser.add_argument(
+        '--overwrite', action='store',
+        help='With overwrite empty the restore directory before restore.',
+        dest='overwrite', default=False)
 
     arg_parser.add_argument(
         '--storage', action='store',
@@ -447,7 +451,7 @@ def backup_arguments():
                 backup_args.path_to_backup[:3]
 
     # Freezer version
-    backup_args.__dict__['__version__'] = '1.2.16'
+    backup_args.__dict__['__version__'] = '1.2.17'
 
     # todo(enugaev) move it to new command line param backup_media
     backup_media = 'fs'
