@@ -62,7 +62,8 @@ DEFAULT_PARAMS = {
     'mode': 'fs', 'action': 'backup', 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
-    'ssh_port': DEFAULT_SSH_PORT, 'compression': 'gzip'
+    'ssh_port': DEFAULT_SSH_PORT, 'compression': 'gzip',
+    'overwrite': False,
 }
 
 
@@ -341,8 +342,11 @@ _COMMON = [
                dest='config',
                help="Config file abs path. Option arguments are provided from "
                     "config file. When config file is used any option from "
-                    "command line provided take precedence."
-               )
+                    "command line provided take precedence."),
+    cfg.BoolOpt('overwrite',
+                dest='overwrite',
+                help='With overwrite removes files from restore path before '
+                     'restore.'),
 ]
 
 

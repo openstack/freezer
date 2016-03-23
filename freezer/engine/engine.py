@@ -115,12 +115,16 @@ class BackupEngine(object):
                 break
             time.sleep(1)
 
-    def restore(self, backup, restore_path):
+    def restore(self, backup, restore_path, overwrite):
         """
         :type backup: freezer.storage.Backup
         """
         logging.info("Creation restore path: {0}".format(restore_path))
         utils.create_dir_tree(restore_path)
+        if not overwrite and not utils.is_empty_dir(restore_path):
+            raise Exception(
+                "Restore dir is not empty. "
+                "Please use --overwrite or provide different path.")
         logging.info("Creation restore path completed")
         for level in range(0, backup.level + 1):
             b = backup.full_backup.increments[level]
