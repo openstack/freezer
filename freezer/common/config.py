@@ -234,12 +234,12 @@ _COMMON = [
                ),
     cfg.StrOpt('restore-from-date',
                dest='restore_from_date',
-               help="Set the date of the backup from which you want to restore. "
+               help="Set the date of the backup from which you want to restore."
                     "This will select the most recent backup previous to "
                     "the specified date (included). Example: "
                     "if the last backup was created at '2016-03-22T14:29:01' "
                     "and restore-from-date is set to '2016-03-22T14:29:01', "
-                    "the backup will be restored successfully. The same for " 
+                    "the backup will be restored successfully. The same for "
                     "any date after that, even if the provided date is in the "
                     "future. However if restore-from-date is set to "
                     "'2016-03-22T14:29:00' or before, that backup will not "
@@ -255,15 +255,15 @@ _COMMON = [
                     " set only if nice and ionice are installed Default "
                     "disabled. Use with caution."
                ),
-    cfg.StrOpt('quiet',
-               short='q',
-               dest='quiet',
-               help="Suppress error messages"
-               ),
-    cfg.StrOpt('insecure',
-               dest='insecure',
-               help="Allow to access swift servers without checking SSL certs."
-               ),
+    cfg.BoolOpt('quiet',
+                short='q',
+                dest='quiet',
+                help="Suppress error messages"
+                ),
+    cfg.BoolOpt('insecure',
+                dest='insecure',
+                help='Allow to access swift servers without checking SSL '
+                     'certs.'),
     cfg.StrOpt('os-identity-api-version',
                deprecated_name='os-auth-ver',
                dest='os_identity_api_version',
@@ -275,10 +275,10 @@ _COMMON = [
                help="Enforce proxy that alters system HTTP_PROXY and "
                     "HTTPS_PROXY, use \'\' to eliminate all system proxies"
                ),
-    cfg.StrOpt('dry-run',
-               dest='dry_run',
-               help="Do everything except writing or removing objects"
-               ),
+    cfg.BoolOpt('dry-run',
+                dest='dry_run',
+                help="Do everything except writing or removing objects"
+                ),
     cfg.IntOpt('upload-limit',
                dest='upload_limit',
                help="Upload bandwidth limit in Bytes per sec. "
