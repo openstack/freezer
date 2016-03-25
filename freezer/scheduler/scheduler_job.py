@@ -348,7 +348,7 @@ class Job(object):
 
             self.start_session()
             # if the job contains exec action and the scheduler passes the
-            # parameter --disable-exec job execuation should fail
+            # parameter --disable-exec job execution should fail
             if self.contains_exec() and CONF.disable_exec:
                 logging.info("Job {0} failed because it contains exec action "
                              "and exec actions are disabled by scheduler"

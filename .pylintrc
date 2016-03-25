@@ -101,7 +101,7 @@ ignore-mixin-members=yes
 
 # List of module names for which member attributes should not be checked
 # (useful for modules/projects where namespaces are manipulated during runtime
-# and thus extisting member attributes cannot be deduced by static analysis
+# and thus existing member attributes cannot be deduced by static analysis
 ignored-modules=distutils
 
 # List of classes names for which member attributes should not be checked

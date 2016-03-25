@@ -96,7 +96,7 @@ class DaemonContext(object):
 
     :param files_preserve:
         List of integers, or objects with a fileno method, that
-        represent files that should not be closed while daemoninzing.
+        represent files that should not be closed while daemonizing.
     :type files_preserve: list
 
     :param pidfile:
@@ -414,7 +414,7 @@ def detach_required():
     """ Check if detaching is required
 
     This is done by collecting the results of parent_is_inet and
-    parent_is_init. If one of them is True, detaching, aka the daemoninzing,
+    parent_is_init. If one of them is True, detaching, aka the daemonizing,
     aka the double fork magic, is not required, and can be skipped.
 
     :return: bool

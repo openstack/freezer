@@ -194,7 +194,7 @@ dry_run = False
 # Megabytes, i.e. 500M or 8G. Default 5G.
 # WARNING: It is important that the volume snapshot
 # size will not be filled at 100% while executing the backup
-# or the data on the volume snapshot will be currupted.
+# or the data on the volume snapshot will be corrupted.
 # This is an LVM behavior
 lvm_snapsize = False
 

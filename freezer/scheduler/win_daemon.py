@@ -101,7 +101,7 @@ class Daemon(object):
     def stop(self):
         """Stop the windows service by using sc queryex command, if we use
         win32serviceutil.StoptService(self.service_name) it never gets stopped
-        becuase freezer_scheduler.start() blocks the windows service and
+        because freezer_scheduler.start() blocks the windows service and
         prevents any new signal to reach the service.
         """
         query = 'sc queryex {0}'.format(self.service_name)
