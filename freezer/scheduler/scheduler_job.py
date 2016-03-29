@@ -130,8 +130,10 @@ class Job(object):
         if job.job_doc_status in ['running', 'scheduled']:
             logging.warning('Resetting {0} status from job {1}'
                             .format(job.job_doc_status, job.id))
-        job.job_doc_status = ''
-        if not job.event:
+        if job.job_doc_status == 'stop' and not job.event:
+            logging.info('Job {0} was stopped.'.format(job.id))
+            job.event = Job.STOP_EVENT
+        elif not job.event:
             logging.info('Autostart Job {0}'.format(job.id))
             job.event = Job.START_EVENT
         return job
