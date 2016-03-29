@@ -1,21 +1,24 @@
-astroid<1.4.0 # breaks pylint 1.4.4
-setuptools>=16.0
-pbr>=1.6
+# The order of packages is significant, because pip processes them in the order
+# of appearance. Changing the order has an impact on the overall integration
+# process, which may cause wedges in the gate later.
+astroid<1.4.0 # LGPL # breaks pylint 1.4.4
+setuptools>=16.0 # PSF/ZPL
+pbr>=1.6 # Apache-2.0
 python-swiftclient>=2.2.0 # Apache-2.0
-python-keystoneclient>=1.6.0,!=1.8.0
-python-cinderclient>=1.3.1
-python-glanceclient>=1.2.0 # Apache-2.0
-python-novaclient>=2.29.0,!=2.33.0 # Apache-2.0
-python-openstackclient>=2.0.0 # Apache-2.0
-oslo.utils>=3.2.0
-oslo.i18n>=1.5.0 # Apache-2.0
-oslo.log>=1.14.0
-oslo.config>=3.2.0  # Apache-2.0
+python-keystoneclient!=1.8.0,!=2.1.0,>=1.6.0 # Apache-2.0
+python-cinderclient>=1.3.1 # Apache-2.0
+python-glanceclient>=2.0.0 # Apache-2.0
+python-novaclient!=2.33.0,>=2.29.0 # Apache-2.0
+python-openstackclient>=2.1.0 # Apache-2.0
+oslo.utils>=3.5.0 # Apache-2.0
+oslo.i18n>=2.1.0 # Apache-2.0
+oslo.log>=1.14.0 # Apache-2.0
+oslo.config>=3.7.0 # Apache-2.0
 
-PyMySQL>=0.6.2  # MIT License
-pymongo>=3.0.2
-paramiko>=1.13.0
+PyMySQL>=0.6.2 # MIT License
+pymongo!=3.1,>=3.0.2 # Apache-2.0
+paramiko>=1.16.0 # LGPL
 six>=1.9.0 # MIT
 
 # Not in global-requirements
-apscheduler
+apscheduler # MIT License
