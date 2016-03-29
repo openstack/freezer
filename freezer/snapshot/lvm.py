@@ -146,10 +146,16 @@ def lvm_snap(backup_opt_dict):
 
     utils.create_dir(backup_opt_dict.lvm_dirmount)
 
+    if '%' in backup_opt_dict.lvm_snapsize:
+        lvm_size_option = "--extents"
+    else:
+        lvm_size_option = "--size"
+
     lvm_create_command = (
-        '{0} --size {1} --snapshot --permission {2} '
-        '--name {3} {4}'.format(
+        '{0} {1} {2} --snapshot --permission {3} '
+        '--name {4} {5}'.format(
             utils.find_executable('lvcreate'),
+            lvm_size_option,
             backup_opt_dict.lvm_snapsize,
             ('r' if backup_opt_dict.lvm_snapperm == 'ro'
              else backup_opt_dict.lvm_snapperm),
