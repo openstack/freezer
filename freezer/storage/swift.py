@@ -18,6 +18,7 @@ limitations under the License.
 import json
 from oslo_config import cfg
 from oslo_log import log
+import requests.exceptions
 import time
 
 from freezer.storage import base
@@ -213,8 +214,17 @@ class SwiftStorage(base.Storage):
         :type backup: freezer.storage.base.Backup
         :return:
         """
-        for chunk in self.swift().get_object(
-                self.container, str(backup), resp_chunk_size=self.chunk_size)[1]:
+        try:
+            chunks = self.swift().get_object(
+                self.container, str(backup),
+                resp_chunk_size=self.chunk_size)[1]
+        except requests.exceptions.SSLError as e:
+            logging.warning(e)
+            chunks = self.client_manager.create_swift().get_object(
+                self.container, str(backup),
+                resp_chunk_size=self.chunk_size)[1]
+
+        for chunk in chunks:
             yield chunk
 
     def write_backup(self, rich_queue, backup):
