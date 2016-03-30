@@ -130,7 +130,7 @@ class FakeCinderClient:
         def create(self, id, container, name, desription):
             pass
 
-        def findall(self, **kwargs):
+        def list(self, **kwargs):
             return [FakeIdObject(4)]
 
     class Volumes:
