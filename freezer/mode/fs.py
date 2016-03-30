@@ -15,14 +15,14 @@
 from freezer.mode import mode
 
 
-class DefaultMode(mode.Mode):
+class FsMode(mode.Mode):
 
     def __init__(self, conf):
         pass
 
     @property
     def name(self):
-        return "default"
+        return "fs"
 
     @property
     def version(self):
