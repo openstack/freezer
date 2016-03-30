@@ -2,6 +2,8 @@
 Freezer
 =======
 
+.. image:: freezer_logo.jpg
+
 Freezer is a Backup Restore DR as a Service platform that helps you to automate the data backup and
 restore process.
 
@@ -1009,3 +1011,5 @@ this will print all options to the screen you direct the output to a file if you
 
     oslo-config-generator --namespace freezer --namespace oslo.log --output-file etc/agent.conf.sample
 
+
+The Freezer logo is released under the licence Attribution 3.0 Unported (CC BY3.0).

@@ -20,8 +20,11 @@ Contributors
 -  Guillermo Ramirez Garcia
 -  Zahari Zahariev
 -  Eldar Nugaev
--  Saad Zaher Saad
+-  Saad Zaher
 -  Samuel Bartel
+-  Jonas Pfannschmidt
+-  Deklan Dieterly
+-  Pierre Mathieu
 
 Credits
 =======
@@ -36,4 +39,4 @@ Credits
 -  Matt Joyce
 -  Anupriya Ramraj
 -  HP OpsAuto Team
-
+-  Jon Otero Fernández (logo)
