@@ -44,6 +44,10 @@ def create_dir_tree(dir):
             raise exc
 
 
+def is_empty_dir(path):
+    return not os.listdir(path)
+
+
 def create_dir(directory, do_log=True):
     """
     Creates a directory if it doesn't exists and write the execution
