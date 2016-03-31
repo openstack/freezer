@@ -104,6 +104,7 @@ class Test_lvm_snap(unittest.TestCase):
         backup_opt.lvm_snapperm = 'ro'
         backup_opt.lvm_volgroup = ''
         backup_opt.lvm_srcvol = ''
+        backup_opt.lvm_snapsize = '1G'
 
         self.assertTrue(lvm.lvm_snap(backup_opt))
 
@@ -128,6 +129,7 @@ class Test_lvm_snap(unittest.TestCase):
         backup_opt.path_to_backup = '/just/a/path'
         backup_opt.lvm_dirmount = '/var/mountpoint'
         backup_opt.lvm_snapperm = 'ro'
+        backup_opt.lvm_snapsize = '1G'
 
         with self.assertRaises(Exception) as cm:
             lvm.lvm_snap(backup_opt)
@@ -158,6 +160,7 @@ class Test_lvm_snap(unittest.TestCase):
         backup_opt.path_to_backup = '/just/a/path'
         backup_opt.lvm_dirmount = '/var/mountpoint'
         backup_opt.lvm_snapperm = 'ro'
+        backup_opt.lvm_snapsize = '1G'
 
         self.assertTrue(lvm.lvm_snap(backup_opt))
 
@@ -193,6 +196,7 @@ class Test_lvm_snap(unittest.TestCase):
         backup_opt.path_to_backup = '/just/a/path'
         backup_opt.lvm_dirmount = '/var/mountpoint'
         backup_opt.lvm_snapperm = 'ro'
+        backup_opt.lvm_snapsize = '1G'
 
         with self.assertRaises(Exception) as cm:
             lvm.lvm_snap(backup_opt)
