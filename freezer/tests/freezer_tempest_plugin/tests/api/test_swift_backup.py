@@ -98,14 +98,22 @@ class TestFreezerSwiftBackup(base.BaseFreezerTest):
         output = subprocess.check_output(restore_args,
                                          stderr=subprocess.STDOUT,
                                          env=self.environ, shell=False)
-
         diff_args = ['diff',
                      '-r',
                      '-q',
                      self.backup_source_dir,
                      self.restore_target_dir]
+        process = subprocess.Popen(diff_args, stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE, shell=False,
+                                   stderr=subprocess.PIPE)
+        output, error = process.communicate()
 
-        diff_rc = subprocess.call(diff_args,
-                                  shell=False)
-
-        self.assertEqual(0, diff_rc, "Test backup to swift and restore")
+        self.assertEqual(0, process.returncode,
+                         "Test backup to swift and restore. Output: {0}. "
+                         "Error: {1} ".format(output, error))
+        self.assertEqual(0, len(output.strip()),
+                         "Test backup to swift and restore. Output: {0}. "
+                         "Error: {1} ".format(output, error))
+        self.assertEqual(0, len(error.strip()),
+                         "Test backup to swift and restore. Output: {0}. "
+                         "Error: {1} ".format(output, error))

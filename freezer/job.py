@@ -1,5 +1,6 @@
 """
 (c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+(C) Copyright 2016 Hewlett Packard Enterprise Development Company LP
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +18,6 @@ limitations under the License.
 import abc
 import datetime
 import os
-from oslo_utils import importutils
 import six
 import sys
 import time
@@ -25,11 +25,13 @@ import time
 from freezer.openstack import backup
 from freezer.openstack import restore
 from freezer.snapshot import snapshot
+from freezer.utils.checksum import CheckSum
 from freezer.utils import exec_cmd
 from freezer.utils import utils
 
 from oslo_config import cfg
 from oslo_log import log
+from oslo_utils import importutils
 
 CONF = cfg.CONF
 logging = log.getLogger(__name__)
@@ -89,15 +91,33 @@ class BackupJob(Job):
             'vol_snap_path': self.conf.path_to_backup,
             'client_os': sys.platform,
             'client_version': self.conf.__version__,
-            'time_stamp': self.conf.time_stamp
+            'time_stamp': self.conf.time_stamp,
         }
-        fields = ['action', 'always_level', 'backup_media', 'backup_name',
-                  'container', 'container_segments',
-                  'dry_run', 'hostname', 'path_to_backup', 'max_level',
-                  'mode', 'backup_name', 'hostname',
-                  'time_stamp', 'log_file', 'storage', 'mode',
-                  'os_auth_version', 'proxy', 'compression', 'ssh_key',
-                  'ssh_username', 'ssh_host', 'ssh_port']
+        fields = ['action',
+                  'always_level',
+                  'backup_media',
+                  'backup_name',
+                  'container',
+                  'container_segments',
+                  'dry_run',
+                  'hostname',
+                  'path_to_backup',
+                  'max_level',
+                  'mode',
+                  'backup_name',
+                  'time_stamp',
+                  'log_file',
+                  'storage',
+                  'mode',
+                  'os_auth_version',
+                  'proxy',
+                  'compression',
+                  'ssh_key',
+                  'ssh_username',
+                  'ssh_host',
+                  'ssh_port',
+                  'consistency_checksum'
+                  ]
         for field_name in fields:
             metadata[field_name] = self.conf.__dict__.get(field_name, '') or ''
         return metadata
@@ -122,10 +142,22 @@ class BackupJob(Job):
                 filepath = '.'
                 chdir_path = os.path.expanduser(
                     os.path.normpath(self.conf.path_to_backup.strip()))
+
                 if not os.path.isdir(chdir_path):
                     filepath = os.path.basename(chdir_path)
                     chdir_path = os.path.dirname(chdir_path)
                 os.chdir(chdir_path)
+
+                # Checksum for Backup Consistency
+                if self.conf.consistency_check:
+                    ignorelinks = (self.conf.dereference_symlink == 'none' or
+                                   self.conf.dereference_symlink == 'hard')
+                    consistency_checksum = CheckSum(
+                        filepath, ignorelinks=ignorelinks).compute()
+                    logging.info('[*] Computed checksum for consistency {0}'.
+                                 format(consistency_checksum))
+                    self.conf.consistency_checksum = consistency_checksum
+
                 hostname_backup_name = self.conf.hostname_backup_name
                 backup_instance = self.storage.create_backup(
                     hostname_backup_name,
@@ -175,8 +207,24 @@ class RestoreJob(Job):
         if conf.backup_media == 'fs':
             backup = self.storage.find_one(conf.hostname_backup_name,
                                            restore_timestamp)
-
             self.engine.restore(backup, restore_abs_path, conf.overwrite)
+
+            try:
+                if conf.consistency_checksum:
+                    backup_checksum = conf.consistency_checksum
+                    restore_checksum = CheckSum(restore_abs_path,
+                                                ignorelinks=True)
+                    if restore_checksum.compare(backup_checksum):
+                        logging.info('[*] Consistency check success.')
+                    else:
+                        raise ConsistencyCheckException(
+                            "Backup Consistency Check failed: backup checksum "
+                            "({0}) and restore checksum ({1}) did not match.".
+                            format(backup_checksum, restore_checksum.checksum))
+            except OSError as e:
+                raise ConsistencyCheckException(
+                    "Backup Consistency Check failed: could not checksum file"
+                    " {0} ({1})".format(e.filename, e.strerror))
             return {}
 
         res = restore.RestoreOs(conf.client_manager, conf.container)
@@ -189,6 +237,10 @@ class RestoreJob(Job):
         else:
             raise Exception("unknown backup type: %s" % conf.backup_media)
         return {}
+
+
+class ConsistencyCheckException(Exception):
+    pass
 
 
 class AdminJob(Job):

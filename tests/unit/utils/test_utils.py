@@ -17,7 +17,8 @@
 import datetime
 import unittest
 
-from freezer.openstack.osclients import OpenstackOpts
+from mock import patch
+
 from freezer.tests.commons import *
 from freezer.utils import utils
 
@@ -45,12 +46,12 @@ class TestUtils(unittest.TestCase):
     #     re.search = fakere.search
     #     assert type(utils.get_vol_fs_type("test")) is str
 
-    def test_get_mount_from_path(self):
-        dir1 = '/tmp'
-        dir2 = '/tmp/nonexistentpathasdf'
-        assert type(utils.get_mount_from_path(dir1)[0]) is str
-        assert type(utils.get_mount_from_path(dir1)[1]) is str
-        self.assertRaises(Exception, utils.get_mount_from_path, dir2)
+    #def test_get_mount_from_path(self):
+    #    dir1 = '/tmp'
+    #    dir2 = '/tmp/nonexistentpathasdf'
+    #    assert type(utils.get_mount_from_path(dir1)[0]) is str
+    #    assert type(utils.get_mount_from_path(dir1)[1]) is str
+    #    self.assertRaises(Exception, utils.get_mount_from_path, dir2)
 
         # pytest.raises(Exception, utils.get_mount_from_path, dir2)
 
@@ -120,6 +121,42 @@ class TestUtils(unittest.TestCase):
         utils.alter_proxy(test_proxy)
         assert os.environ["HTTP_PROXY"] == test_proxy
         assert os.environ["HTTPS_PROXY"] == test_proxy
+
+    def test_exclude_path(self):
+        assert utils.exclude_path('./dir/file','file') is True
+        assert utils.exclude_path('./dir/file','*le') is True
+        assert utils.exclude_path('./dir/file','fi*') is True
+        assert utils.exclude_path('./dir/file','*fi*') is True
+        assert utils.exclude_path('./dir/file','dir') is True
+        assert utils.exclude_path('./dir/file','di*') is True
+        assert utils.exclude_path('./aaa/bbb/ccc','*bb') is True
+        assert utils.exclude_path('./aaa/bbb/ccc','bb') is False
+        assert utils.exclude_path('./a/b','c') is False
+        assert utils.exclude_path('./a/b/c','') is False
+
+    @patch('freezer.utils.utils.os.walk')
+    @patch('freezer.utils.utils.os.chdir')
+    @patch('freezer.utils.utils.os.path.isfile')
+    def test_walk_path_dir(self,mock_isfile,mock_chdir,mock_walk):
+        mock_isfile.return_value = False
+        mock_chdir.return_value = None
+        mock_walk.return_value = [('.', ['d1','d2'],['f1','f2']),
+                ('./d1',[],['f3']),('./d2',[],[]),]
+        expected = ['.', './f1', './f2', './d1', './d1/f3', './d2']
+        files = []
+        count = utils.walk_path('root','',False,self.callback, files=files)
+        for i in range(len(files)):
+            assert expected[i] == files[i]
+        assert count is len(files)
+
+    @patch('freezer.utils.utils.os.path.isfile')
+    def test_walk_path_file(self,mock_isfile):
+        mock_isfile.return_value = True
+        count = utils.walk_path('root','',False,self.callback)
+        assert count is 1
+
+    def callback(self,filepath='', files=[]):
+        files.append(filepath)
 
 
 class TestDateTime:

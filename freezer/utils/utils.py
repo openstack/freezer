@@ -18,6 +18,7 @@ Freezer general utils functions
 """
 import datetime
 import errno
+import fnmatch as fn
 import logging
 import os
 import subprocess
@@ -81,6 +82,7 @@ def save_config_to_file(config, f, section='freezer_default'):
 
 
 class DateTime(object):
+
     def __init__(self, value):
         if isinstance(value, int):
             self.date_time = datetime.datetime.fromtimestamp(value)
@@ -201,6 +203,7 @@ def date_to_timestamp(date):
 
 
 class Bunch:
+
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
@@ -212,6 +215,7 @@ class ReSizeStream:
     """
     Iterator/File-like object for changing size of chunk in stream
     """
+
     def __init__(self, stream, length, chunk_size):
         self.stream = stream
         self.length = length
@@ -340,6 +344,7 @@ def alter_proxy(proxy):
     else:
         raise Exception('Proxy has unknown scheme')
 
+
 def is_bsd():
     return 'darwin' in sys.platform or 'bsd' in sys.platform
 
@@ -362,6 +367,57 @@ def delete_file(path_to_file):
         os.remove(path_to_file)
     except Exception:
         logging.warning("Error deleting file {0}".format(path_to_file))
+
+
+def walk_path(path, exclude, ignorelinks, callback, *kargs, **kwargs):
+    """
+    Walk a directory and execute a callback function for each file found.
+    If path to a single file is given, the callback is excuted for this file.
+    The callback is also executed and counted for an empty directory.
+    :return: int with the number of files walked
+    """
+    count = 0
+
+    if os.path.isfile(path):
+        return execute_walk_callback(count, path, callback, *kargs, **kwargs)
+
+    os.chdir(path)
+    for root, dirs, files in os.walk('.', topdown=True, followlinks=True):
+        if not exclude_path(root, exclude):
+            count = execute_walk_callback(count, root,
+                                          callback, *kargs, **kwargs)
+
+            if os.path.islink(root) and ignorelinks:
+                break
+
+            for fname in files:
+                f = os.path.join(root, fname)
+                if not exclude_path(f, exclude):
+                    count = execute_walk_callback(count, f,
+                                                  callback, *kargs, **kwargs)
+    return count
+
+
+def execute_walk_callback(count, filepath, callback, *kargs, **kwargs):
+    """
+    Execute the callback function adding the file path to its argument list.
+    Increments the file counter and returns it.
+    NB: the callback function must be defined with the filepath argument.
+    """
+    kwargs["filepath"] = filepath
+    callback(*kargs, **kwargs)
+    return count + 1
+
+
+def exclude_path(path, exclude):
+    """
+    Tests if path is to be excluded according to the given pattern.
+    :return: True if path matches the exclude pattern, False otherwise
+    """
+    for name in path.split('/'):
+        if (fn.fnmatch(name, exclude) or os.path.basename(path) == exclude):
+            return True
+    return False
 
 
 class Namespace(dict):
@@ -401,7 +457,7 @@ class Namespace(dict):
     def from_object(cls, obj, names=None):
         if names is None:
             names = dir(obj)
-        ns = {name:getattr(obj, name) for name in names}
+        ns = {name: getattr(obj, name) for name in names}
         return cls(ns)
 
     @classmethod

@@ -1,5 +1,5 @@
 # (c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
-#
+# (C) Copyright 2016 Hewlett Packard Enterprise Development Company LP
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -64,6 +64,7 @@ DEFAULT_PARAMS = {
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
     'ssh_port': DEFAULT_SSH_PORT, 'compression': 'gzip',
     'overwrite': False,
+    'consistency_check': False, 'consistency_checksum': None,
 }
 
 
@@ -350,6 +351,22 @@ _COMMON = [
                 dest='overwrite',
                 help='With overwrite removes files from restore path before '
                      'restore.'),
+    cfg.BoolOpt('consistency_check',
+                dest='consistency_check',
+                help="When true will checksum the files before backup. "
+                     "The commuted backup checksum is stored as bakcup metadata"
+                     " and can be retrieved through the freezer-api. "
+                     "On restore it is possible to check for consistency. "
+                     "Please note this option is currently only available "
+                     "for file system backups. "
+                     "Please also note backup consistency is a resource "
+                     "consuming operation so use it carefully."),
+    cfg.StrOpt('consistency_checksum',
+               dest='consistency_checksum',
+               help="Checksum the restored file(s) and compares to the "
+                    "backup consistency_checksum provided. "
+                    "Allows verification that the restored file(s) matches "
+                    "the original file(s) before backup. "),
 ]
 
 
