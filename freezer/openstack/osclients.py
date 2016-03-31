@@ -23,12 +23,12 @@ import swiftclient
 
 from freezer.utils import utils
 
-
 CONF = cfg.CONF
 logging = log.getLogger(__name__)
 
 
 class ClientManager:
+    
     """
     :type swift: swiftclient.Connection
     :type glance: glanceclient.v1.client.Client
@@ -147,7 +147,7 @@ class ClientManager:
 
         logging.info("[*] Creation of glance client")
 
-        endpoint, token = OpenStackImagesShell()._get_endpoint_and_token(
+        self.glance = OpenStackImagesShell()._get_versioned_client('1',
             utils.Bunch(os_username=options.user_name,
                         os_password=options.password,
                         os_tenant_name=options.tenant_name,
@@ -158,8 +158,6 @@ class ClientManager:
                         force_auth=False,
                         cacert=options.cert))
 
-        self.glance = gclient.Client(version="1",
-                                     endpoint=endpoint, token=token)
         return self.glance
 
     def create_nova(self):
