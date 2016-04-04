@@ -129,8 +129,8 @@ _COMMON = [
                dest='lvm_snapsize',
                help="Set the lvm snapshot size when creating a new snapshot. "
                     "Please add G for Gigabytes or M for Megabytes, i.e. 500M "
-                    "or 8G. It is also possible to use percentages as with the" 
-                    " -l option of lvm, i.e. 80%FREE Default {0}.".format(
+                    "or 8G. It is also possible to use percentages as with the"
+                    " -l option of lvm, i.e. 80%%FREE Default {0}.".format(
                     DEFAULT_LVM_SNAPSIZE)),
     cfg.StrOpt('lvm-dirmount',
                dest='lvm_dirmount',
