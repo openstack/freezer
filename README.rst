@@ -178,11 +178,11 @@ Backup
 
 The most simple backup execution is a direct file system backup::
 
-    $ sudo freezerc --file-to-backup /data/dir/to/backup
+    $ sudo freezer-agent --path-to-backup /data/dir/to/backup
     --container freezer_new-data-backup --backup-name my-backup-name
 
     * On windows (need admin rights)*
-    > freezerc --action backup --mode fs --backup-name testwindows
+    > freezer-agent --action backup --mode fs --backup-name testwindows
     --path-to-backup "C:\path\to\backup" --container freezer_windows
     --log-file  C:\path\to\log\freezer.log
 
@@ -213,11 +213,11 @@ the volume group and logical volume info::
 We assume our mongo volume is "/dev/mongo/mongolv" and the volume group
 is "mongo"::
 
-    $ sudo freezerc --lvm-srcvol /dev/mongo/mongolv --lvm-dirmount /var/lib/snapshot-backup
-    --lvm-volgroup mongo --file-to-backup /var/lib/snapshot-backup/mongod_ops2
+    $ sudo freezer-agent --lvm-srcvol /dev/mongo/mongolv --lvm-dirmount /var/lib/snapshot-backup
+    --lvm-volgroup mongo --path-to-backup /var/lib/snapshot-backup/mongod_ops2
     --container freezer_mongodb-backup-prod --exclude "*.lock" --mode mongo --backup-name mongod-ops2
 
-Now freezerc creates an lvm snapshot of the volume /dev/mongo/mongolv. If
+Now freezer-agent creates an lvm snapshot of the volume /dev/mongo/mongolv. If
 no options are provided, the default snapshot name is "freezer\_backup\_snap".
 The snapshot vol will be mounted automatically on /var/lib/snapshot-backup
 and the backup metadata and segments will be uploaded in the container
@@ -225,9 +225,9 @@ mongodb-backup-prod with the name mongod-ops2.
 
 Execute a file system backup using lvm snapshot::
 
-    $ sudo freezerc --lvm-srcvol /dev/jenkins/jenkins-home --lvm-dirmount
+    $ sudo freezer-agent --lvm-srcvol /dev/jenkins/jenkins-home --lvm-dirmount
     /var/snapshot-backup --lvm-volgroup jenkins
-    --file-to-backup /var/snapshot-backup --container freezer_jenkins-backup-prod
+    --path-to-backup /var/snapshot-backup --container freezer_jenkins-backup-prod
     --exclude "\*.lock" --mode fs --backup-name jenkins-ops2
 
 MySQL backup require a basic configuration file. The following is an
@@ -243,9 +243,9 @@ service before the backup execution.
 
 Execute a MySQL backup using lvm snapshot::
 
-    $ sudo freezerc --lvm-srcvol /dev/mysqlvg/mysqlvol
+    $ sudo freezer-agent --lvm-srcvol /dev/mysqlvg/mysqlvol
     --lvm-dirmount /var/snapshot-backup
-    --lvm-volgroup mysqlvg --file-to-backup /var/snapshot-backup
+    --lvm-volgroup mysqlvg --path-to-backup /var/snapshot-backup
     --mysql-conf /root/.freezer/freezer-mysql.conf--container
     freezer_mysql-backup-prod --mode mysql --backup-name mysql-ops002
 
@@ -258,11 +258,11 @@ data in future.
 
 Execute a cinder backup::
 
-    $ freezerc --cinder-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezer-agent --cinder-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Execute a mysql backup with cinder::
 
-   $ freezerc --mysql-conf /root/.freezer/freezer-mysql.conf
+   $ freezer-agent --mysql-conf /root/.freezer/freezer-mysql.conf
    --container freezer_mysql-backup-prod --mode mysql
    --backup-name mysql-ops002
    --cinder-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
@@ -275,16 +275,16 @@ of that instance will be sufficient to restore your data in future.
 
 Execute a nova backup::
 
-    $ freezerc --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezer-agent --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Execute a mysql backup with nova::
 
-   $ freezerc --mysql-conf /root/.freezer/freezer-mysql.conf
+   $ freezer-agent --mysql-conf /root/.freezer/freezer-mysql.conf
    --container freezer_mysql-backup-prod --mode mysql
    --backup-name mysql-ops002
    --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
-All the freezerc activities are logged into /var/log/freezer.log.
+All the freezer-agent activities are logged into /var/log/freezer.log.
 
 
 Swift, Local and SSH Storage
@@ -298,13 +298,13 @@ Freezer can use:
  And use "--container %path-to-folder-with-backups%"
  Backup example::
 
-   $ sudo freezerc --file-to-backup /data/dir/to/backup
+   $ sudo freezer-agent --path-to-backup /data/dir/to/backup
    --container /tmp/my_backup_path/ --backup-name my-backup-name
    --storage local
 
  Restore example::
 
-   $ sudo freezerc --action restore --restore-abs-path /data/dir/to/backup
+   $ sudo freezer-agent --action restore --restore-abs-path /data/dir/to/backup
    --container /tmp/my_backup_path/ --backup-name my-backup-name
    --storage local
 
@@ -315,13 +315,13 @@ Freezer can use:
 
  Backup example::
 
-   $ sudo freezerc --file-to-backup /data/dir/to/backup
+   $ sudo freezer-agent --path-to-backup /data/dir/to/backup
    --container freezer-container --backup-name my-backup-name
    --storage swift
 
  Restore example::
 
-   $ sudo freezerc --action restore --restore-abs-path /data/dir/to/backup
+   $ sudo freezer-agent --action restore --restore-abs-path /data/dir/to/backup
    --container freezer-container --backup-name my-backup-name
    --storage swift
 
@@ -338,14 +338,14 @@ Freezer can use:
 
  Backup example::
 
-   $ sudo freezerc --file-to-backup /data/dir/to/backup
+   $ sudo freezer-agent --path-to-backup /data/dir/to/backup
    --container /remote-machine-path/ --backup-name my-backup-name
    --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa
    --ssh-host 8.8.8.8
 
  Restore example::
 
-  $ sudo freezerc  --action restore --restore-abs-pat /data/dir/to/backup
+  $ sudo freezer-agent  --action restore --restore-abs-pat /data/dir/to/backup
   --container /remote-machine-path/ --backup-name my-backup-name
   --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa
   --ssh-host 8.8.8.8
@@ -363,7 +363,7 @@ File System Restore:
 Execute a file system restore of the backup name
 adminui.git::
 
-    $ sudo freezerc --action restore --container freezer_foobar-container-2
+    $ sudo freezer-agent --action restore --container freezer_foobar-container-2
     --backup-name adminui.git
     --hostname git-HP-DL380-host-001 --restore-abs-path
     /home/git/repositories/adminui.git/
@@ -378,7 +378,7 @@ Let's stop mysql service first::
 
 Execute Restore::
 
-    $ sudo freezerc --action restore --container freezer_foobar-container-2
+    $ sudo freezer-agent --action restore --container freezer_foobar-container-2
     --backup-name mysq-prod --hostname db-HP-DL380-host-001
     --restore-abs-path /var/lib/mysql --restore-from-date "2014-05-23T23:23:23"
 
@@ -388,23 +388,23 @@ And finally restart mysql::
 
 Execute a MongoDB restore of the backup name mongobigdata::
 
-    $ sudo freezerc --action restore --container freezer_foobar-container-2
+    $ sudo freezer-agent --action restore --container freezer_foobar-container-2
     --backup-name mongobigdata --hostname db-HP-DL380-host-001
     --restore-abs-path /var/lib/mongo --restore-from-date "2014-05-23T23:23:23"
 
 
 List remote containers::
 
-    $ sudo freezerc --action info
+    $ sudo freezer-agent --action info
 
 List remote objects in container::
 
-    $ sudo freezerc --action info --container freezer_testcontainer -l
+    $ sudo freezer-agent --action info --container freezer_testcontainer -l
 
 
 Remove backups older then 1 day::
 
-    $ freezerc --action admin --container freezer_dev-test --remove-older-then 1 --backup-name dev-test-01
+    $ freezer-agent --action admin --container freezer_dev-test --remove-older-then 1 --backup-name dev-test-01
 
 
 Cinder restore currently creates a volume with the contents of the saved one, but
@@ -414,19 +414,19 @@ existing content run next command:
 
 Execute a cinder restore::
 
-    $ freezerc --action restore --cinder-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
-    $ freezerc --action restore --cindernative-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezer-agent --action restore --cinder-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezer-agent --action restore --cindernative-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Nova restore currently creates an instance with the content of saved one, but the
 ip address of the vm will be different as well as it's id.
 
 Execute a nova restore::
 
-    $ freezerc --action restore --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezer-agent --action restore --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Local storage restore execution:
 
-    $ sudo freezerc --action restore --container /local_backup_storage/
+    $ sudo freezer-agent --action restore --container /local_backup_storage/
     --backup-name adminui.git
     --hostname git-HP-DL380-host-001 --restore-abs-path
     /home/git/repositories/adminui.git/
@@ -453,7 +453,7 @@ Freezer architecture is composed by the following components:
 | Component         | Description                                                                                                                                    |
 +===================+================================================================================================================================================+
 | Freezer Web UI    | Web interface that interacts with the Freezer API to configure and change settings.                                                            |
-|                   | It provides most of the features from the freezerc CLI, advanced scheduler settings such as multi-node backup synchronization,                 |
+|                   | It provides most of the features from the freezer-agent CLI, advanced scheduler settings such as multi-node backup synchronization,            |
 |                   | metrics, and reporting.                                                                                                                        |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer Scheduler | A client side component, running on the node where the data backup is to be executed.                                                          |
@@ -468,7 +468,7 @@ Freezer architecture is composed by the following components:
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer Agent     | Multiprocessing Python software that runs on the client side, where the data backup is to be executed.                                         |
 |                   | It can be executed standalone or by the Freezer Scheduler.                                                                                     |
-|                   | The freezerc provides a flexible way to execute backup, restore and other actions on a running system.                                         |
+|                   | The freezer-agent provides a flexible way to execute backup, restore and other actions on a running system.                                    |
 |                   | In order to provide flexibility in terms of data integrity, speed, performance, resources usage, etc the freezer agent offers a                |
 |                   | wide range of options to execute optimized backup according the available resources as:                                                        |
 |                   |                                                                                                                                                |
@@ -483,6 +483,7 @@ Freezer architecture is composed by the following components:
 |                   |   - Execute file based incremental (like tar), block based incremental (like rsync algorithm) and differential based backup and restore        |
 |                   |   - Multiplatform as it can be run on Linux, Windows, \*BSD and OSX                                                                            |
 |                   |   - Automatic removal of old backups                                                                                                           |
+|                   | freezerc binary is deprecated and won't be available in next releases. Use freezer-agent instead .                                             |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer API       | The API is used to store and provide metadata to the Freezer Web UI and to the Freezer Scheduler.                                              |
 |                   | Also the API is used to store session information for multi node backup synchronization. No workload data is stored in the API.                |
@@ -779,84 +780,169 @@ Please check the FAQ to: FAQ.rst
 
 Available options::
 
-    usage: freezerc [-h] [--config CONFIG]
-               [--action {backup,restore,info,admin,exec}]
-               [-F PATH_TO_BACKUP] [-N BACKUP_NAME] [-m MODE] [-C CONTAINER]
-               [-s] [--lvm-auto-snap LVM_AUTO_SNAP] [--lvm-srcvol LVM_SRCVOL]
-               [--lvm-snapname LVM_SNAPNAME] [--lvm-snap-perm {ro,rw}]
-               [--lvm-snapsize LVM_SNAPSIZE] [--lvm-dirmount LVM_DIRMOUNT]
-               [--lvm-volgroup LVM_VOLGROUP] [--max-level MAX_LEVEL]
-               [--always-level ALWAYS_LEVEL]
-               [--restart-always-level RESTART_ALWAYS_LEVEL]
-               [-R REMOVE_OLDER_THAN] [--remove-from-date REMOVE_FROM_DATE]
-               [--no-incremental] [--hostname HOSTNAME]
-               [--mysql-conf MYSQL_CONF] [--metadata-out METADATA_OUT]
-               [--log-file LOG_FILE]
-               [--log-level {all,debug,info,warn,error,critical}]
-               [--exclude EXCLUDE]
-               [--dereference-symlink {none,soft,hard,all}]
-               [--encrypt-pass-file ENCRYPT_PASS_FILE] [-M MAX_SEGMENT_SIZE]
-               [--restore-abs-path RESTORE_ABS_PATH]
-               [--restore-from-host HOSTNAME]
-               [--restore-from-date RESTORE_FROM_DATE] [--max-priority] [-V]
-               [-q] [--insecure] [--os-auth-ver {1,2,2.0,3}] [--proxy PROXY]
-               [--dry-run] [--upload-limit UPLOAD_LIMIT]
-               [--cinder-vol-id CINDER_VOL_ID] [--nova-inst-id NOVA_INST_ID]
-               [--cindernative-vol-id CINDERNATIVE_VOL_ID]
-               [--download-limit DOWNLOAD_LIMIT]
-               [--sql-server-conf SQL_SERVER_CONF]
-               [--command COMMAND] [--compression {gzip,bzip2,xz}]
-               [--storage {local,swift,ssh}] [--ssh-key SSH_KEY]
-               [--ssh-username SSH_USERNAME] [--ssh-host SSH_HOST]
-               [--ssh-port SSH_PORT]
+    usage: freezer-agent [-h] [--action ACTION] [--always-level ALWAYS_LEVEL]
+                     [--backup-name BACKUP_NAME]
+                     [--cinder-vol-id CINDER_VOL_ID]
+                     [--cindernative-vol-id CINDERNATIVE_VOL_ID]
+                     [--command COMMAND] [--compression COMPRESSION]
+                     [--config CONFIG] [--config-dir DIR] [--config-file PATH]
+                     [--container CONTAINER] [--debug]
+                     [--dereference-symlink DEREFERENCE_SYMLINK]
+                     [--download-limit DOWNLOAD_LIMIT] [--dry-run]
+                     [--encrypt-pass-file ENCRYPT_PASS_FILE]
+                     [--exclude EXCLUDE] [--hostname HOSTNAME] [--insecure]
+                     [--log-config-append PATH]
+                     [--log-date-format DATE_FORMAT] [--log-dir LOG_DIR]
+                     [--log-file PATH] [--log-format FORMAT]
+                     [--lvm-auto-snap LVM_AUTO_SNAP]
+                     [--lvm-dirmount LVM_DIRMOUNT]
+                     [--lvm-snap-perm LVM_SNAPPERM]
+                     [--lvm-snapname LVM_SNAPNAME]
+                     [--lvm-snapsize LVM_SNAPSIZE] [--lvm-srcvol LVM_SRCVOL]
+                     [--lvm-volgroup LVM_VOLGROUP] [--max-level MAX_LEVEL]
+                     [--max-priority MAX_PRIORITY]
+                     [--max-segment-size MAX_SEGMENT_SIZE]
+                     [--metadata-out METADATA_OUT] [--mode MODE]
+                     [--mysql-conf MYSQL_CONF]
+                     [--no-incremental NO_INCREMENTAL] [--nodebug]
+                     [--nodry-run] [--noinsecure] [--nooverwrite] [--noquiet]
+                     [--nouse-syslog] [--nouse-syslog-rfc-format]
+                     [--nova-inst-id NOVA_INST_ID] [--noverbose]
+                     [--nowatch-log-file]
+                     [--os-identity-api-version OS_IDENTITY_API_VERSION]
+                     [--overwrite] [--path-to-backup PATH_TO_BACKUP]
+                     [--proxy PROXY] [--quiet]
+                     [--remove-from-date REMOVE_FROM_DATE]
+                     [--remove-older-than REMOVE_OLDER_THAN]
+                     [--restart-always-level RESTART_ALWAYS_LEVEL]
+                     [--restore-abs-path RESTORE_ABS_PATH]
+                     [--restore-from-date RESTORE_FROM_DATE]
+                     [--snapshot SNAPSHOT] [--sql-server-conf SQL_SERVER_CONF]
+                     [--ssh-host SSH_HOST] [--ssh-key SSH_KEY]
+                     [--ssh-port SSH_PORT] [--ssh-username SSH_USERNAME]
+                     [--storage STORAGE]
+                     [--syslog-log-facility SYSLOG_LOG_FACILITY]
+                     [--upload-limit UPLOAD_LIMIT] [--use-syslog]
+                     [--use-syslog-rfc-format] [--verbose] [--version]
+                     [--watch-log-file]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --config CONFIG       Config file abs path. Option arguments are provided
-                        from config file. When config file is used any option
-                        from command line provided take precedence.
-  --action {backup,restore,info,admin,exec}
-                        Set the action to be taken. backup and restore are
+  --action ACTION       Set the action to be taken. backup and restore are
                         self explanatory, info is used to retrieve info from
                         the storage media, exec is used to execute a script,
                         while admin is used to delete old backups and other
                         admin actions. Default backup.
-  -F PATH_TO_BACKUP, --path-to-backup PATH_TO_BACKUP, --file-to-backup PATH_TO_BACKUP
-                        The file or directory you want to back up to Swift
-  -N BACKUP_NAME, --backup-name BACKUP_NAME
+  --always-level ALWAYS_LEVEL
+                        Set backup maximum level used with tar to implement
+                        incremental backup. If a level 3 is specified, the
+                        backup will be executed from level 0 to level 3 and to
+                        that point always a backup level 3 will be executed.
+                        It will not restart from level 0. This option has
+                        precedence over --max-backup-level. Default False
+                        (Disabled)
+  --backup-name BACKUP_NAME, -N BACKUP_NAME
                         The backup name you want to use to identify your
                         backup on Swift
-  -m MODE, --mode MODE  Set the technology to back from. Options are, fs
-                        (filesystem), mongo (MongoDB), mysql (MySQL),
-                        sqlserver (SQL Server) Default set to fs
-  -C CONTAINER, --container CONTAINER
+  --cinder-vol-id CINDER_VOL_ID
+                        Id of cinder volume for backup
+  --cindernative-vol-id CINDERNATIVE_VOL_ID
+                        Id of cinder volume for native backup
+  --command COMMAND     Command executed by exec action
+  --compression COMPRESSION
+                        compression algorithm to use. gzip is default
+                        algorithm
+  --config CONFIG       Config file abs path. Option arguments are provided
+                        from config file. When config file is used any option
+                        from command line provided take precedence.
+  --config-dir DIR      Path to a config directory to pull *.conf files from.
+                        This file set is sorted, so as to provide a
+                        predictable parse order if individual options are
+                        over-ridden. The set is parsed after the file(s)
+                        specified via previous --config-file, arguments hence
+                        over-ridden options in the directory take precedence.
+  --config-file PATH    Path to a config file to use. Multiple config files
+                        can be specified, with values in later files taking
+                        precedence. Defaults to None.
+  --container CONTAINER, -C CONTAINER
                         The Swift container (or path to local storage) used to
                         upload files to
-  -s, --snapshot        Create a snapshot of the fs containing the resource to
-                        backup. When used, the lvm parameters will be guessed
-                        and/or the default values will be used
+  --debug, -d           If set to true, the logging level will be set to DEBUG
+                        instead of the default INFO level.
+  --dereference-symlink DEREFERENCE_SYMLINK
+                        Follow hard and soft links and archive and dump the
+                        files they refer to. Default False.
+  --download-limit DOWNLOAD_LIMIT
+                        Download bandwidth limit in Bytes per sec. Can be
+                        invoked with dimensions (10K, 120M, 10G).
+  --dry-run             Do everything except writing or removing objects
+  --encrypt-pass-file ENCRYPT_PASS_FILE
+                        Passing a private key to this option, allow you to
+                        encrypt the files before to be uploaded in Swift.
+                        Default do not encrypt.
+  --exclude EXCLUDE     Exclude files,given as a PATTERN.Ex: --exclude '*.log'
+                        will exclude any file with name ending with .log.
+                        Default no exclude
+  --hostname HOSTNAME, --restore_from_host HOSTNAME
+                        Set hostname to execute actions. If you are executing
+                        freezer from one host but you want to delete objects
+                        belonging to another host then you can set this option
+                        that hostname and execute appropriate actions. Default
+                        current node hostname.
+  --insecure            Allow to access swift servers without checking SSL
+                        certs.
+  --log-config-append PATH, --log_config PATH
+                        The name of a logging configuration file. This file is
+                        appended to any existing logging configuration files.
+                        For details about logging configuration files, see the
+                        Python logging module documentation. Note that when
+                        logging configuration files are used all logging
+                        configuration is defined in the configuration file and
+                        other logging configuration options are ignored (for
+                        example, log_format).
+  --log-date-format DATE_FORMAT
+                        Defines the format string for %(asctime)s in log
+                        records. Default: None . This option is ignored if
+                        log_config_append is set.
+  --log-dir LOG_DIR, --logdir LOG_DIR
+                        (Optional) The base directory used for relative
+                        log_file paths. This option is ignored if
+                        log_config_append is set.
+  --log-file PATH, --logfile PATH
+                        (Optional) Name of log file to send logging output to.
+                        If no default is set, logging will go to stderr as
+                        defined by use_stderr. This option is ignored if
+                        log_config_append is set.
+  --log-format FORMAT   DEPRECATED. A logging.Formatter log message format
+                        string which may use any of the available
+                        logging.LogRecord attributes. This option is
+                        deprecated. Please use logging_context_format_string
+                        and logging_default_format_string instead. This option
+                        is ignored if log_config_append is set.
   --lvm-auto-snap LVM_AUTO_SNAP
                         Automatically guess the volume group and volume name
                         for given PATH.
-  --lvm-srcvol LVM_SRCVOL
-                        Set the lvm volume you want to take a snaphost from.
-                        Default no volume
-  --lvm-snapname LVM_SNAPNAME
-                        Set the lvm snapshot name to use. If the snapshot name
-                        already exists, the old one will be used a no new one
-                        will be created. Default freezer_backup_snap.
-  --lvm-snap-perm {ro,rw}
+  --lvm-dirmount LVM_DIRMOUNT
+                        Set the directory you want to mount the lvm snapshot
+                        to. If not provided, a unique name will be generated
+                        with thebasename /var/lib/freezer
+  --lvm-snap-perm LVM_SNAPPERM
                         Set the lvm snapshot permission to use. If the
                         permission is set to ro The snapshot will be immutable
                         - read only -. If the permission is set to rw it will
                         be mutable
+  --lvm-snapname LVM_SNAPNAME
+                        Set the name of the snapshot that will be created. If
+                        not provided, a unique name will be generated.
   --lvm-snapsize LVM_SNAPSIZE
                         Set the lvm snapshot size when creating a new
                         snapshot. Please add G for Gigabytes or M for
-                        Megabytes, i.e. 500M or 8G. Default 1G.
-  --lvm-dirmount LVM_DIRMOUNT
-                        Set the directory you want to mount the lvm snapshot
-                        to. Default to /var/lib/freezer
+                        Megabytes, i.e. 500M or 8G. It is also possible to use
+                        percentages as with the -l option of lvm, i.e. 80%FREE
+                        Default 1G.
+  --lvm-srcvol LVM_SRCVOL
+                        Set the lvm volume you want to take a snaphost from.
+                        Default no volume
   --lvm-volgroup LVM_VOLGROUP
                         Specify the volume group of your logical volume. This
                         is important to mount your snapshot volume. Default
@@ -867,128 +953,127 @@ optional arguments:
                         level 0 is already available, a level 0 will be done
                         and subsequently backs to level 1. Default 0 (No
                         Incremental)
-  --always-level ALWAYS_LEVEL
-                        Set backup maximum level used with tar to implement
-                        incremental backup. If a level 3 is specified, the
-                        backup will be executed from level 0 to level 3 and to
-                        that point always a backup level 3 will be executed.
-                        It will not restart from level 0. This option has
-                        precedence over --max-backup-level. Default False
-                        (Disabled)
+  --max-priority MAX_PRIORITY
+                        Set the cpu process to the highest priority (i.e. -20
+                        on Linux) and real-time for I/O. The process priority
+                        will be set only if nice and ionice are installed
+                        Default disabled. Use with caution.
+  --max-segment-size MAX_SEGMENT_SIZE, -M MAX_SEGMENT_SIZE
+                        Set the maximum file chunk size in bytes to upload to
+                        swift Default 33554432 bytes (32MB)
+  --metadata-out METADATA_OUT
+                        Set the filename to which write the metadata regarding
+                        the backup metrics. Use '-' to output to standard
+                        output.
+  --mode MODE, -m MODE  Set the technology to back from. Options are, fs
+                        (filesystem),mongo (MongoDB), mysql (MySQL), sqlserver
+                        (SQL Server) Default set to fs
+  --mysql-conf MYSQL_CONF
+                        Set the MySQL configuration file where freezer
+                        retrieve important information as db_name, user,
+                        password, host, port. Following is an example of
+                        config file: # backup_mysql_confhost = <db-host>user =
+                        <mysqluser>password = <mysqlpass>port = <db-port>
+  --no-incremental NO_INCREMENTAL
+                        Disable incremental feature. By default freezer build
+                        the meta data even for level 0 backup. By setting this
+                        option incremental meta data is not created at all.
+                        Default disabled
+  --nodebug             The inverse of --debug
+  --nodry-run           The inverse of --dry-run
+  --noinsecure          The inverse of --insecure
+  --nooverwrite         The inverse of --overwrite
+  --noquiet             The inverse of --quiet
+  --nouse-syslog        The inverse of --use-syslog
+  --nouse-syslog-rfc-format
+                        The inverse of --use-syslog-rfc-format
+  --nova-inst-id NOVA_INST_ID
+                        Id of nova instance for backup
+  --noverbose           The inverse of --verbose
+  --nowatch-log-file    The inverse of --watch-log-file
+  --os-identity-api-version OS_IDENTITY_API_VERSION, --os_auth_ver OS_IDENTITY_API_VERSION
+                        Openstack identity api version, can be 1, 2, 2.0 or 3
+  --overwrite           With overwrite removes files from restore path before
+                        restore.
+  --path-to-backup PATH_TO_BACKUP, -F PATH_TO_BACKUP
+                        The file or directory you want to back up to Swift
+  --proxy PROXY         Enforce proxy that alters system HTTP_PROXY and
+                        HTTPS_PROXY, use '' to eliminate all system proxies
+  --quiet, -q           Suppress error messages
+  --remove-from-date REMOVE_FROM_DATE
+                        Checks the specified container and removes objects
+                        older than the provided datetime in the form 'YYYY-MM-
+                        DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. Make sure the
+                        'T' is between date and time
+  --remove-older-than REMOVE_OLDER_THAN, -R REMOVE_OLDER_THAN
+                        Checks in the specified container for object older
+                        than the specified days. If i.e. 30 is specified, it
+                        will remove the remote object older than 30 days.
+                        Default False (Disabled) The option --remove-older-
+                        then is deprecated and will be removed soon
   --restart-always-level RESTART_ALWAYS_LEVEL
                         Restart the backup from level 0 after n days. Valid
                         only if --always-level option if set. If --always-
                         level is used together with --remove-older-then, there
                         might be the chance where the initial level 0 will be
-                        removed Default False (Disabled)
-  -R REMOVE_OLDER_THAN, --remove-older-then REMOVE_OLDER_THAN, --remove-older-than REMOVE_OLDER_THAN
-                        Checks in the specified container for object older
-                        than the specified days.If i.e. 30 is specified, it
-                        will remove the remote object older than 30 days.
-                        Default False (Disabled) The option --remove-older-
-                        then is deprecated and will be removed soon
-  --remove-from-date REMOVE_FROM_DATE
-                        Checks the specified container and removes objects
-                        older than the provided datetime in the form "YYYY-MM-
-                        DDThh:mm:ss i.e. "1974-03-25T23:23:23". Make sure the
-                        "T" is between date and time
-  --no-incremental      Disable incremental feature. By default freezer build
-                        the meta data even for level 0 backup. By setting this
-                        option incremental meta data is not created at all.
-                        Default disabled
-  --hostname HOSTNAME   Set hostname to execute actions. If you are executing
-                        freezer from one host but you want to delete objects
-                        belonging to another host then you can set this option
-                        that hostname and execute appropriate actions. Default
-                        current node hostname.
-  --mysql-conf MYSQL_CONF
-                        Set the MySQL configuration file where freezer
-                        retrieve important information as db_name, user,
-                        password, host, port. Following is an example of
-                        config file: # backup_mysql_conf host = <db-host> user
-                        = <mysqluser> password = <mysqlpass> port = <db-port>
-  --metadata-out METADATA_OUT
-                        Set the filename to which write the metadata regarding
-                        the backup metrics. Use "-" to output to standard
-                        output.
-  --log-file LOG_FILE   Set log file. By default logs to
-                        /var/log/freezer.logIf that file is not writable,
-                        freezer tries to logto ~/.freezer/freezer.log
-  --log-level {all,debug,info,warn,error,critical}
-                        Set logging level. Can be all, debug, info,
-                        warn,error, critical. Default value - info
-  --exclude EXCLUDE     Exclude files, given as a PATTERN.Ex: --exclude
-                        '*.log' will exclude any file with name ending with
-                        .log. Default no exclude
-  --dereference-symlink {none,soft,hard,all}
-                        Follow hard and soft links and archive and dump the
-                        files they refer to. Default False.
-  --encrypt-pass-file ENCRYPT_PASS_FILE
-                        Passing a private key to this option, allow you to
-                        encrypt the files before to be uploaded in Swift.
-                        Default do not encrypt.
-  -M MAX_SEGMENT_SIZE, --max-segment-size MAX_SEGMENT_SIZE
-                        Set the maximum file chunk size in bytes to upload to
-                        swift Default 33554432 bytes (32MB)
+                        removed. Default False (Disabled)
   --restore-abs-path RESTORE_ABS_PATH
                         Set the absolute path where you want your data
                         restored. Default False.
-  --restore-from-host HOSTNAME
-                        Set the hostname used to identify the data you want to
-                        restore from. If you want to restore data in the same
-                        host where the backup was executed just type from your
-                        shell: "$ hostname" and the output is the value that
-                        needs to be passed to this option. Mandatory with
-                        Restore Default False. (Deprecated use "hostname"
-                        instead)
   --restore-from-date RESTORE_FROM_DATE
-                        Set the absolute path where you want your data
-                        restored. Please provide datetime in format "YYYY-MM-
-                        DDThh:mm:ss" i.e. "1979-10-03T23:23:23". Make sure the
-                        "T" is between date and time Default None.
-  --max-priority        Set the cpu process to the highest priority (i.e. -20
-                        on Linux) and real-time for I/O. The process priority
-                        will be set only if nice and ionice are installed
-                        Default disabled. Use with caution.
-  -V, --version         Print the release version and exit
-  -q, --quiet           Suppress error messages
-  --insecure            Allow to access swift servers without checking SSL
-                        certs.
-  --os-auth-ver {1,2,2.0,3}, --os-identity-api-version {1,2,2.0,3}
-                        Openstack identity api version, can be 1, 2, 2.0 or 3
-  --proxy PROXY         Enforce proxy that alters system HTTP_PROXY and
-                        HTTPS_PROXY, use '' to eliminate all system proxies
-  --dry-run             Do everything except writing or removing objects
-  --upload-limit UPLOAD_LIMIT
-                        Upload bandwidth limit in Bytes per sec. Can be
-                        invoked with dimensions (10K, 120M, 10G).
-  --cinder-vol-id CINDER_VOL_ID
-                        Id of cinder volume for backup
-  --nova-inst-id NOVA_INST_ID
-                        Id of nova instance for backup
-  --cindernative-vol-id CINDERNATIVE_VOL_ID
-                        Id of cinder volume for native backup
-  --download-limit DOWNLOAD_LIMIT
-                        Download bandwidth limit in Bytes per sec. Can be
-                        invoked with dimensions (10K, 120M, 10G).
+                        Set the date of the backup from which you want to
+                        restore.This will select the most recent backup
+                        previous to the specified date (included). Example: if
+                        the last backup was created at '2016-03-22T14:29:01'
+                        and restore-from-date is set to '2016-03-22T14:29:01',
+                        the backup will be restored successfully. The same for
+                        any date after that, even if the provided date is in
+                        the future. However if restore-from-date is set to
+                        '2016-03-22T14:29:00' or before, that backup will not
+                        be found. Please provide datetime in format 'YYYY-MM-
+                        DDThh:mm:ss' i.e. '1979-10-03T23:23:23'. Make sure the
+                        'T' is between date and time Default None.
+  --snapshot SNAPSHOT, -s SNAPSHOT
+                        Create a snapshot of the fs containing the resource to
+                        backup. When used, the lvm parameters will be guessed
+                        and/or the default values will be used, on windows it
+                        will invoke vssadmin
   --sql-server-conf SQL_SERVER_CONF
                         Set the SQL Server configuration file where freezer
                         retrieve the sql server instance. Following is an
                         example of config file: instance = <db-instance>
-  --command COMMAND     Command executed by exec action
-  --compression {gzip,bzip2,xz}
-                        compression algorithm to use. gzip is default
-                        algorithm
-  --storage {local,swift,ssh}
-                        Storage for backups. Can be Swift or Local now. Swift
-                        is defaultstorage now. Local stores backups on the
-                        same defined path andswift will store files in
-                        container.
+  --ssh-host SSH_HOST   Remote host for ssh storage only
   --ssh-key SSH_KEY     Path to ssh-key for ssh storage only
+  --ssh-port SSH_PORT   Remote port for ssh storage only (default 22)
   --ssh-username SSH_USERNAME
                         Remote username for ssh storage only
-  --ssh-host SSH_HOST   Remote host for ssh storage only
-  --ssh-port SSH_PORT   Remote port for ssh storage only (default 22)
+  --storage STORAGE     Storage for backups. Can be Swift or Local now. Swift
+                        is default storage now. Local stores backups on the
+                        same defined path and swift will store files in
+                        container.
+  --syslog-log-facility SYSLOG_LOG_FACILITY
+                        Syslog facility to receive log lines. This option is
+                        ignored if log_config_append is set.
+  --upload-limit UPLOAD_LIMIT
+                        Upload bandwidth limit in Bytes per sec. Can be
+                        invoked with dimensions (10K, 120M, 10G).
+  --use-syslog          Use syslog for logging. Existing syslog format is
+                        DEPRECATED and will be changed later to honor RFC5424.
+                        This option is ignored if log_config_append is set.
+  --use-syslog-rfc-format
+                        Enables or disables syslog rfc5424 format for logging.
+                        If enabled, prefixes the MSG part of the syslog
+                        message with APP-NAME (RFC5424). This option is
+                        ignored if log_config_append is set.
+  --verbose, -v         If set to false, the logging level will be set to
+                        WARNING instead of the default INFO level.
+  --version             show program's version number and exit
+  --watch-log-file      Uses logging handler designed to watch file system.
+                        When log file is moved or removed this handler will
+                        open a new log file with specified path
+                        instantaneously. It makes sense only if log_file
+                        option is specified and Linux platform is used. This
+                        option is ignored if log_config_append is set.
 
 
 Scheduler Options
