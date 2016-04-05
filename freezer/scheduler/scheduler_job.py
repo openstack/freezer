@@ -22,7 +22,7 @@ import subprocess
 import tempfile
 import time
 
-from freezer import utils
+from freezer.utils import utils
 from oslo_config import cfg
 from oslo_log import log
 from six.moves import configparser
