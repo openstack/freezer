@@ -66,7 +66,7 @@ function configure_freezer_scheduler {
 
     [ ! -d $FREEZER_CONF_DIR ] && sudo mkdir -m 755 -p $FREEZER_CONF_DIR
     sudo chown $USER $FREEZER_CONF_DIR
-
+    sudo cp -p  $FREEZER_DIR/etc/scheduler.conf.sample $FREEZER_CONF_FILE
     [ ! -d $FREEZER_LOG_DIR ] &&  sudo mkdir -m 755 -p $FREEZER_LOG_DIR
     sudo chown $USER $FREEZER_LOG_DIR
 

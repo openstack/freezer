@@ -17,8 +17,8 @@
 
 # Set up default directories
 FREEZER_DIR=$DEST/freezer
-FREEZER_FILES=${FREEZER_API_DIR}/devstack/files
-FREEZER_CONF_DIR=${FREEZER_CONF_DIR:-/etc}
+FREEZER_CONF_DIR=${FREEZER_CONF_DIR:-/etc/freezer}
+FREEZER_CONF_FILE=$FREEZER_CONF_DIR/scheduler.conf
 FREEZER_LOG_DIR=$DEST/logs
 
 # Freezer API repository
