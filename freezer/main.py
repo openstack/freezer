@@ -171,9 +171,12 @@ def run_job(conf, storage):
         'exec': job.ExecJob}[conf.action](conf, storage)
     response = freezer_job.execute()
 
-    if conf.metadata_out == '-':
-        if response:
+    if conf.metadata_out and response:
+        if conf.metadata_out == '-':
             sys.stdout.write(json.dumps(response))
+        else:
+            with open(conf.metadata_out, 'w') as outfile:
+                outfile.write(json.dumps(response))
 
 
 def fail(exit_code, e, quiet, do_log=True):
