@@ -12,18 +12,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import subprocess
-
 from freezer.tests.freezer_tempest_plugin.tests.api import base
-from freezer import __version__ as FREEZER_VERSION
 from tempest import test
 
-
-class TestFreezerVersion(base.BaseFreezerTest):
+class TestFreezerTestsRunning(base.BaseFreezerTest):
 
     @test.attr(type="gate")
-    def test_version(self):
-
-        version = subprocess.check_output(['freezer-agent', '--version'],
-                                          stderr=subprocess.STDOUT)
-        self.assertEqual(FREEZER_VERSION, version.strip())
+    def test_tests_running(self):
+        # See if tempest plugin tests run.
+        self.assertEqual(1, 1, 'Tests are running')
