@@ -201,8 +201,17 @@ class BackupOs:
     def backup_cinder(self, volume_id, name=None, description=None):
         client_manager = self.client_manager
         cinder = client_manager.get_cinder()
+        search_opts = {
+            'volume_id': volume_id,
+            'status': 'available',
+        }
+        backups = cinder.backups.list(search_opts=search_opts)
+        if len(backups) > 0 :
+            incremental = True
+        else:
+            incremental = False
         cinder.backups.create(volume_id, self.container, name, description,
-                              incremental=True, force=True)
+                              incremental=incremental, force=True)
 
 
 def snapshot_create(backup_opt_dict):
