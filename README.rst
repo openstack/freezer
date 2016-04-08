@@ -42,6 +42,9 @@ Requirements
 -  PyMySQL
 -  libmysqlclient-dev
 -  sync
+-  libffi-dev
+-  libssl-dev
+-  python-dev
 -  At least 128 MB of memory reserved for Freezer
 
 Windows Requirements
