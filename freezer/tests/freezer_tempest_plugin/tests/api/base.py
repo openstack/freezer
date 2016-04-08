@@ -11,8 +11,43 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import os
 
 import tempest.test
 
 class BaseFreezerTest(tempest.test.BaseTestCase):
-    pass
+
+    def __init__(self, *args, **kwargs):
+
+        super(BaseFreezerTest, self).__init__(*args, **kwargs)
+
+    def setUp(self):
+
+        super(BaseFreezerTest, self).setUp()
+
+    def tearDown(self):
+
+        super(BaseFreezerTest, self).tearDown()
+
+    def get_environ(self):
+
+        os.environ['OS_REGION_NAME'] = 'RegionOne'
+        os.environ['OS_PASSWORD'] = 'secretadmin'
+        os.environ['OS_IDENTITY_API_VERSION'] = '2.0'
+        os.environ['OS_NO_CACHE'] = '1'
+        os.environ['OS_USERNAME'] = 'demo'
+        os.environ['OS_VOLUME_API_VERSION'] = '2'
+        os.environ['OS_PROJECT_NAME'] = 'demo'
+        os.environ['PYTHONUNBUFFERED'] = '1'
+        os.environ['OS_TENANT_NAME'] = 'demo'
+        os.environ['OS_TENANT_ID'] = ''
+
+        # Allow developers to set OS_AUTH_URL when developing so that
+        # Keystone may be on a host other than localhost.
+        if not 'OS_AUTH_URL' in os.environ:
+                os.environ['OS_AUTH_URL'] = 'http://localhost:5000/v2.0'
+
+        # Mac OS X uses gtar located in /usr/local/bin
+        os.environ['PATH'] = '/usr/local/bin:' + os.environ['PATH']
+
+        return os.environ
