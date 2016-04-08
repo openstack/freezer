@@ -70,16 +70,20 @@ class RestoreOs:
             disk_format="raw")
         return stream[0], image
 
-    def restore_cinder(self, restore_from_date, volume_id):
+    def restore_cinder(self, volume_id, restore_from_timestamp):
         """
         Restoring cinder backup using
         :param volume_id:
+        :param restore_from_timestamp:
         :return:
         """
         cinder = self.client_manager.get_cinder()
-        backups = cinder.backups.findall(volume_id=volume_id,
-                                         status='available')
-        backups = [x for x in backups if x.created_at >= restore_from_date]
+        search_opts = {
+            'volume_id': volume_id,
+            'status': 'available',
+        }
+        backups = cinder.backups.list(search_opts=search_opts)
+        backups = [x for x in backups if x.created_at >= restore_from_timestamp]
         if not backups:
             logging.error("no available backups for cinder volume")
         else:
