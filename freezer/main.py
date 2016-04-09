@@ -62,6 +62,11 @@ def freezer_main(backup_args):
     work_dir = backup_args.work_dir
     os_identity = backup_args.os_identity_api_version
     max_segment_size = backup_args.max_segment_size
+    if backup_args.storage == 'swift' or (backup_args.__dict__['backup_media']
+        in ['nova', 'cinder', 'cindernative']):
+        client_manager = get_client_manager(backup_args.__dict__)
+
+
     if backup_args.storages:
         storage = multiple.MultipleStorage(
             work_dir,
@@ -137,28 +142,33 @@ def parse_osrc(file_name):
     with open(file_name, 'r') as osrc_file:
         return config.osrc_parse(osrc_file.read())
 
+def get_client_manager(backup_args, os_identity_api_version=None):
+    if "osrc" in backup_args:
+        options = openstack.OpenstackOptions.create_from_dict(
+            parse_osrc(backup_args['osrc']))
+    else:
+        options = openstack.OpenstackOptions.create_from_env()
+    identity_api_version = (os_identity_api_version or
+                            options.identity_api_version)
+    client_manager = osclients.ClientManager(
+        options=options,
+        insecure=backup_args.get('insecure') or False,
+        swift_auth_version=identity_api_version,
+        dry_run=backup_args.get('dry_run') or False)
+
+    backup_args['client_manager'] = client_manager
+    return client_manager
+
 
 def storage_from_dict(backup_args, work_dir, max_segment_size,
                       os_identity_api_version=None):
     storage_name = backup_args['storage']
     container = backup_args['container']
     if storage_name == "swift":
-        if "osrc" in backup_args:
-            options = openstack.OpenstackOptions.create_from_dict(
-                parse_osrc(backup_args['osrc']))
-        else:
-            options = openstack.OpenstackOptions.create_from_env()
-        identity_api_version = (os_identity_api_version or
-                                options.identity_api_version)
-        client_manager = osclients.ClientManager(
-            options=options,
-            insecure=backup_args.get('insecure') or False,
-            swift_auth_version=identity_api_version,
-            dry_run=backup_args.get('dry_run') or False)
+        client_manager = backup_args['client_manager']
 
         storage = swift.SwiftStorage(
             client_manager, container, work_dir,max_segment_size)
-        backup_args['client_manager'] = client_manager
     elif storage_name == "local":
         storage = local.LocalStorage(container, work_dir)
     elif storage_name == "ssh":
