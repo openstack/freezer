@@ -1,5 +1,6 @@
 """
-(c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+Copyright 2015 Hewlett-Packard
+(c) Copyright 2016 Hewlett Packard Enterprise Development Company LP
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -72,9 +73,9 @@ def create_dir(directory, do_log=True):
 
 def save_config_to_file(config, f, section='freezer_default'):
     parser = configparser.ConfigParser()
-    parser.add_section(section)
     for option, option_value in config.items():
-        parser.set(section, option, option_value)
+        parser.set(configparser.DEFAULTSECT, option, option_value)
+    configparser.DEFAULTSECT = section
     parser.write(f)
     f.close()
 
