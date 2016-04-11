@@ -479,15 +479,24 @@ def get_backup_args():
 
     backup_args.__dict__['time_stamp'] = None
 
-    if backup_args.upload_limit or backup_args.download_limit and not\
-            winutils.is_windows():
+    if backup_args.upload_limit != -1 or backup_args.download_limit != -1 and \
+            not winutils.is_windows():
+        # handle --config option with tmp config file
         if backup_args.config:
             conf_file = NamedTemporaryFile(prefix='freezer_job_', delete=False)
-            defaults['upload_limit'] = defaults['download_limit'] = -1
-            utils.save_config_to_file(defaults, conf_file)
+            # remove the limits from the new file
+            if 'upload_limit' in conf.default:
+                conf.default.pop('upload_limit')
+            elif 'download_limit' in conf.default:
+                conf.default.pop('download_limit')
+
+            utils.save_config_to_file(conf.default, conf_file,
+                                      'default')
+            # replace the original file with the tmp one
             conf_index = sys.argv.index('--config') + 1
             sys.argv[conf_index] = conf_file.name
 
+        # if limits provided from cli remove it !
         if '--upload-limit' in sys.argv:
             index = sys.argv.index('--upload-limit')
             sys.argv.pop(index)
@@ -496,7 +505,7 @@ def get_backup_args():
             index = sys.argv.index('--download-limit')
             sys.argv.pop(index)
             sys.argv.pop(index)
-
+        # locate trickle
         trickle_executable = distspawn.find_executable('trickle')
         if trickle_executable is None:
             trickle_executable = distspawn.find_executable(
@@ -505,22 +514,17 @@ def get_backup_args():
                         trickle_executable = distspawn.find_executable(
                             'trickle', path=":".join(os.environ.get('PATH')))
 
-        trickle_lib = distspawn.find_executable('trickle-overload.so')
-        if trickle_lib is None:
-            trickle_lib = distspawn.find_executable(
-                'trickle-overload.so', path=":".join(sys.path))
-            if trickle_lib is None:
-                trickle_lib = distspawn.find_executable(
-                    'trickle-overload.so', path=":".join(
-                        os.environ.get('PATH')))
-        if trickle_executable and trickle_lib:
+        if trickle_executable:
             LOG.info("[*] Info: Starting trickle ...")
-            os.environ['LD_PRELOAD'] = trickle_lib
             trickle_command = '{0} -d {1} -u {2} '.\
                 format(trickle_executable,
                        getattr(backup_args, 'download_limit') or -1,
                        getattr(backup_args, 'upload_limit') or -1)
             backup_args.__dict__['trickle_command'] = trickle_command
+            if backup_args.config:
+                backup_args.__dict__['tmp_file'] = conf_file.name
+
+            # maintain env variable not to get into infinite loop
             if "tricklecount" in os.environ:
                 tricklecount = int(os.environ.get("tricklecount", 1))
                 tricklecount += 1
@@ -529,8 +533,13 @@ def get_backup_args():
             else:
                 os.environ["tricklecount"] = str(1)
         else:
-            LOG.critical("[*] Trickle or Trickle library not found. Switching "
-                         "to normal mode without limiting bandwidth")
+            LOG.warn("[*] Trickle not found. Switching to normal mode without "
+                     "limiting bandwidth")
+            if backup_args.config:
+                # remove index tmp_file from backup arguments dict
+                backup_args.__dict__.pop('tmp_file')
+                utils.delete_file(conf_file.name)
+
     return backup_args
 
 
