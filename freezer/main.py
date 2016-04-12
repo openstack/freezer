@@ -1,5 +1,6 @@
 """
-(c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+Copyright 2015 Hewlett-Packard
+(c) Copyright 2016 Hewlett Packard Enterprise Development Company LP
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +23,6 @@ import subprocess
 import sys
 
 from freezer import arguments
-from freezer import bandwidth
 from freezer import config
 from freezer.engine.tar import tar_engine
 from freezer import job
@@ -108,8 +108,6 @@ def freezer_main(backup_args):
     if backup_args.max_priority:
         set_max_process_priority()
 
-    bandwidth.monkeypatch_socket_bandwidth(backup_args)
-
     backup_args.__dict__['hostname_backup_name'] = "{0}_{1}".format(
         backup_args.hostname, backup_args.backup_name)
 
@@ -139,27 +137,36 @@ def freezer_main(backup_args):
     if hasattr(backup_args, 'trickle_command'):
         if "tricklecount" in os.environ:
             if int(os.environ.get("tricklecount")) > 1:
-                logging.critical("[*] Trickle seems to be not working,"
-                                 " Switching to normal mode ")
-                run_job(backup_args, storage)
+                logging.warn("[*] Trickle seems to be not working, Switching to"
+                             " normal mode ")
+                return run_job(backup_args, storage)
 
         freezer_command = '{0} {1}'.format(backup_args.trickle_command,
                                            ' '.join(sys.argv))
+        logging.info("Trickle command: {0}".format(freezer_command))
+        # call freezer with trickle
         process = subprocess.Popen(freezer_command.split(),
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
                                    env=os.environ.copy())
+        # wait for the subprocess to finish
+        # (wait for freezer to finish what  it's doing !)
         while process.poll() is None:
-            print(process.stdout.readline().rstrip())
+            line = process.stdout.readline().strip()
+            if line != '':
+                print (line)
         output, error = process.communicate()
+        # remove the temp job file
+        if hasattr(backup_args, 'tmp_file'):
+            utils.delete_file(backup_args.tmp_file)
 
         if process.returncode:
-            logging.error("[*] Trickle Error: {0}".format(error))
-            logging.critical("[*] Switching to work without trickle ...")
-            run_job(backup_args, storage)
+            logging.warn("[*] Trickle Error: {0}".format(error))
+            logging.info("[*] Switching to work without trickle ...")
+            return run_job(backup_args, storage)
 
     else:
-        run_job(backup_args, storage)
+        return run_job(backup_args, storage)
 
 
 def run_job(conf, storage):
