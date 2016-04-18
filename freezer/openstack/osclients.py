@@ -189,7 +189,7 @@ class ClientManager:
         """
         snapshot = self.get_cinder().volume_snapshots.create(
             volume_id=volume.id,
-            display_name=snapshot_name,
+            name=snapshot_name,
             force=True)
 
         logging.debug("Snapshot for volume with id {0}".format(volume.id))
