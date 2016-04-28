@@ -1,4 +1,5 @@
 # (c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+# (c) Copyright 2016 Hewlett-Packard Enterprise Development Company, L.P
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +16,6 @@
 
 import unittest
 
-from freezer.openstack import openstack
 from freezer.openstack import osclients
 from freezer.storage import swift
 from freezer.storage import base
@@ -24,11 +24,12 @@ from freezer.storage import base
 class TestSwiftStorage(unittest.TestCase):
 
     def setUp(self):
-
+        opts = osclients.OpenstackOpts.create_from_env().get_opts_dicts()
         self.storage = swift.SwiftStorage(
-            osclients.ClientManager(
-                openstack.OpenstackOptions.create_from_env()
-            ),
+            osclients.OSClientManager(opts.pop('auth_url'),
+                                      opts.pop('auth_method', 'password'),
+                                      **opts
+                                      ),
             "freezer_ops-aw1ops1-gerrit0001.aw1.hpcloud.net",
             "/tmp/",
             100, skip_prepare=True

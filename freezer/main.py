@@ -27,7 +27,6 @@ from oslo_log import log
 from freezer.common import config as freezer_config
 from freezer.engine.tar import tar_engine
 from freezer import job
-from freezer.openstack import openstack
 from freezer.openstack import osclients
 from freezer.storage import local
 from freezer.storage import multiple
@@ -58,23 +57,21 @@ def freezer_main(backup_args):
     validator.validate(backup_args)
 
     work_dir = backup_args.work_dir
-    os_identity = backup_args.os_identity_api_version
     max_segment_size = backup_args.max_segment_size
-    if backup_args.storage == 'swift' or (backup_args.__dict__['backup_media']
-        in ['nova', 'cinder', 'cindernative']):
-        client_manager = get_client_manager(backup_args.__dict__)
-
+    if backup_args.storage == 'swift' or (
+                backup_args.backup_media in ['nova', 'cinder', 'cindernative']):
+        backup_args.client_manager = get_client_manager(backup_args.__dict__)
 
     if backup_args.storages:
         storage = multiple.MultipleStorage(
             work_dir,
-            [storage_from_dict(x, work_dir, max_segment_size, os_identity)
+            [storage_from_dict(x, work_dir, max_segment_size)
              for x in backup_args.storages])
     else:
         storage = storage_from_dict(backup_args.__dict__, work_dir,
-                                    max_segment_size, os_identity)
+                                    max_segment_size)
 
-    backup_args.__dict__['engine'] = tar_engine.TarBackupEngine(
+    backup_args.engine = tar_engine.TarBackupEngine(
         backup_args.compression,
         backup_args.dereference_symlink,
         backup_args.exclude,
@@ -146,26 +143,24 @@ def parse_osrc(file_name):
     with open(file_name, 'r') as osrc_file:
         return config.osrc_parse(osrc_file.read())
 
-def get_client_manager(backup_args, os_identity_api_version=None):
+
+def get_client_manager(backup_args):
     if "osrc" in backup_args:
-        options = openstack.OpenstackOptions.create_from_dict(
+        options = osclients.OpenstackOpts.create_from_dict(
             parse_osrc(backup_args['osrc']))
     else:
-        options = openstack.OpenstackOptions.create_from_env()
-    identity_api_version = (os_identity_api_version or
-                            options.identity_api_version)
-    client_manager = osclients.ClientManager(
-        options=options,
-        insecure=backup_args.get('insecure') or False,
-        swift_auth_version=identity_api_version,
-        dry_run=backup_args.get('dry_run') or False)
+        options = osclients.OpenstackOpts.create_from_env().get_opts_dicts()
 
-    backup_args['client_manager'] = client_manager
+    client_manager = osclients.OSClientManager(
+        auth_url=options.pop('auth_url', None),
+        auth_method=options.pop('auth_method', 'password'),
+        dry_run=backup_args.get('dry_run', None),
+        **options
+    )
     return client_manager
 
 
-def storage_from_dict(backup_args, work_dir, max_segment_size,
-                      os_identity_api_version=None):
+def storage_from_dict(backup_args, work_dir, max_segment_size):
     storage_name = backup_args['storage']
     container = backup_args['container']
     if storage_name == "swift":
@@ -188,7 +183,7 @@ def storage_from_dict(backup_args, work_dir, max_segment_size,
 
 
 def main():
-    """freezer-agent/freezerc binary main execution"""
+    """freezer-agent binary main execution"""
     backup_args = None
     try:
         freezer_config.config()
@@ -203,5 +198,4 @@ def main():
         return fail(1, err, quiet)
 
 if __name__ == '__main__':
-
     sys.exit(main())

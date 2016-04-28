@@ -1,4 +1,5 @@
 # (c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+# (c) Copyright 2016 Hewlett-Packard Enterprise Development Company, L.P.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,61 +13,46 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 import mock
 
-from freezer.openstack import openstack
 from freezer.openstack import osclients
-from freezer.utils import utils
 
 
 class TestOsClients(unittest.TestCase):
-
-    fake_options = openstack.OpenstackOptions(
-        user_name="user", tenant_name="tenant", project_name="project",
-        auth_url="url", password="password", identity_api_version="3",
-        insecure=False, cert='cert', verify=True)
+    def setUp(self):
+        self.opts = osclients.OpenstackOpts(
+            username="user", tenant_name="tenant", project_name="project",
+            auth_url="url/v3", password="password", identity_api_version="3",
+            insecure=False, cacert='cert', user_domain_name='Default',
+            project_domain_name='Default').get_opts_dicts()
+        self.client_manager = osclients.OSClientManager(auth_method=self.opts.pop('auth_method'),
+                                                        auth_url=self.opts.pop('auth_url'),
+                                                        **self.opts)
 
     def test_init(self):
-        osclients.ClientManager(self.fake_options, None, None, None)
+        self.client_manager.get_cinder()
 
     def test_create_cinder(self):
-        client = osclients.ClientManager(self.fake_options, None, None, None)
-        client.create_cinder()
+        self.client_manager.create_cinder()
 
     def test_create_swift(self):
-        client = osclients.ClientManager(self.fake_options, None, None, None)
-        client.create_swift()
+        self.client_manager.create_swift()
 
     def test_create_nova(self):
-        client = osclients.ClientManager(self.fake_options, None, None, None)
-        client.create_nova()
-
-    def test_create_swift_public(self):
-        options = openstack.OpenstackOptions(
-            user_name="user", tenant_name="tenant", project_name="project",
-            auth_url="url", password="password", identity_api_version="3",
-            endpoint_type="adminURL", insecure=False, cert='cert',
-            verify=True)
-        client = osclients.ClientManager(options, None, None, None)
-        client.create_swift()
+        self.client_manager.create_nova()
 
     def test_dry_run(self):
         osclients.DryRunSwiftclientConnectionWrapper(mock.Mock())
 
     def test_get_cinder(self):
-        client = osclients.ClientManager(self.fake_options, None, None, None)
-        client.get_cinder()
+        self.client_manager.get_cinder()
 
     def test_get_swift(self):
-        client = osclients.ClientManager(self.fake_options, None, None, None)
-        client.get_swift()
+        self.client_manager.get_swift()
 
     def get_glance(self):
-        client = osclients.ClientManager(self.fake_options, None, None, None)
-        client.get_glance()
+        self.client_manager.get_glance()
 
     def get_nova(self):
-        client = osclients.ClientManager(self.fake_options, None, None, None)
-        client.get_nova()
+        self.client_manager.get_nova()

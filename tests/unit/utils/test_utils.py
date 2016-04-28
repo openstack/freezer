@@ -1,4 +1,5 @@
 # (c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+# (c) Copyright 2016 Hewlett-Packard Enterprise Development Company, L.P
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@
 import datetime
 import unittest
 
-from freezer.openstack import openstack
+from freezer.openstack.osclients import OpenstackOpts
 from freezer.tests.commons import *
 from freezer.utils import utils
 
@@ -65,14 +66,19 @@ class TestUtils(unittest.TestCase):
         self.assertRaises(ValueError, utils.human2bytes, '12 foo')
 
     def test_OpenstackOptions_creation_success(self):
+        class FreezerOpts:
+            def __init__(self, opts):
+                self.__dict__.update(opts)
         env_dict = dict(OS_USERNAME='testusername',
                         OS_TENANT_NAME='testtenantename',
                         OS_AUTH_URL='testauthurl',
                         OS_PASSWORD='testpassword',
                         OS_REGION_NAME='testregion',
-                        OS_TENANT_ID='0123456789')
-        options = openstack.OpenstackOptions.create_from_dict(env_dict)
-        assert options.user_name == env_dict['OS_USERNAME']
+                        OS_TENANT_ID='0123456789',
+                        OS_AUTH_VERSION='2.0')
+        options = OpenstackOpts.create_from_dict(env_dict).get_opts_dicts()
+        options = FreezerOpts(options)
+        assert options.username == env_dict['OS_USERNAME']
         assert options.tenant_name == env_dict['OS_TENANT_NAME']
         assert options.auth_url == env_dict['OS_AUTH_URL']
         assert options.password == env_dict['OS_PASSWORD']
@@ -82,14 +88,14 @@ class TestUtils(unittest.TestCase):
         env_dict = dict(OS_USERNAME='testusername',
                         OS_TENANT_NAME='testtenantename',
                         OS_AUTH_URL='testauthurl',
-                        OS_PASSWORD='testpassword')
-        options = openstack.OpenstackOptions.create_from_dict(env_dict)
-        assert options.user_name == env_dict['OS_USERNAME']
+                        OS_PASSWORD='testpassword',
+                        OS_AUTH_VERSION='2.0')
+        options = OpenstackOpts.create_from_dict(env_dict).get_opts_dicts()
+        options = FreezerOpts(options)
+        assert options.username == env_dict['OS_USERNAME']
         assert options.tenant_name == env_dict['OS_TENANT_NAME']
         assert options.auth_url == env_dict['OS_AUTH_URL']
         assert options.password == env_dict['OS_PASSWORD']
-        assert options.region_name is None
-        assert options.tenant_id is None
 
     def test_date_to_timestamp(self):
         # ensure that timestamp is check with appropriate timezone offset
@@ -136,8 +142,8 @@ class TestDateTime:
         d = utils.DateTime(1425750464)
         assert 1425750464 == d.timestamp
         #ensure that time is check with appropriate timezone offset
-        t = time.strftime("%Y-%m-%d %H:%M:%S", 
-              time.localtime((time.mktime(time.strptime("2015-03-07 17:47:44", 
+        t = time.strftime("%Y-%m-%d %H:%M:%S",
+              time.localtime((time.mktime(time.strptime("2015-03-07 17:47:44",
                                                     "%Y-%m-%d %H:%M:%S")))-time.timezone))
         assert t == '{}'.format(d)
 
