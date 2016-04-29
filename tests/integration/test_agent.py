@@ -121,96 +121,21 @@ class TestBackupFSLocalstorage(common.TestFS):
         self.assertTreesMatch()
 
     @unittest.skipIf(not common.TestFS.use_lvm, "No LVM support")
-    def test_backup_local_storage_lvm_raises_path_mismatch(self):
-
+    def test_backup_local_storage_use_lvm_snapshot_and_path_to_backup(self):
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
 
         backup_name = uuid.uuid4().hex
-        lvm_auto_snap= self.source_tree.path
-        lvm_snapsize= '1G'
+        path_to_backup= self.source_tree.path
+        lvm_snapsize= '50M'
         lvm_snapname= 'freezer-snap_{0}'.format(backup_name)
         lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
-        path_to_backup = os.path.join(lvm_dirmount, self.source_tree.path)
 
         with common.Temp_Tree() as storage_dir:
             backup_args = {
                 'action': 'backup',
                 'mode': 'fs',
                 'path_to_backup': path_to_backup,
-                'lvm_auto_snap': lvm_auto_snap,
-                'lvm_dirmount': lvm_dirmount,
-                'lvm_snapsize': lvm_snapsize,
-                'lvm_snapname': lvm_snapname,
-                'container': storage_dir.path,
-                'storage': 'local',
-                'max_level': '6',
-                'max_segment_size': '67108864',
-                'backup_name': backup_name
-            }
-
-            result = common.execute_freezerc(
-                backup_args, must_fail=True, merge_stderr=True)
-            self.assertIn('Path to backup mismatch', result)
-
-    @unittest.skipIf(not common.TestFS.use_lvm, "No LVM support")
-    def test_backup_local_storage_lvm_with_auto_snap(self):
-
-        self.source_tree.add_random_data()
-        self.assertTreesMatchNot()
-
-        backup_name = uuid.uuid4().hex
-        lvm_auto_snap= self.source_tree.path
-        lvm_snapsize= '1G'
-        lvm_snapname= 'freezer-snap_{0}'.format(backup_name)
-        lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
-        path_to_backup = os.path.join(lvm_dirmount, self.source_tree.path)
-
-        with common.Temp_Tree() as storage_dir:
-            backup_args = {
-                'action': 'backup',
-                'mode': 'fs',
-                'lvm_auto_snap': lvm_auto_snap,
-                'lvm_dirmount': lvm_dirmount,
-                'lvm_snapsize': lvm_snapsize,
-                'lvm_snapname': lvm_snapname,
-                'container': storage_dir.path,
-                'storage': 'local',
-                'max_level': '6',
-                'max_segment_size': '67108864',
-                'backup_name': backup_name
-            }
-            restore_args = {
-                'action': 'restore',
-                'restore_abs_path': self.dest_tree.path,
-                'backup_name': copy(backup_args['backup_name']),
-                'storage': 'local',
-                'container': storage_dir.path
-            }
-
-            result = common.execute_freezerc(backup_args)
-            self.assertIsNotNone(result)
-            result = common.execute_freezerc(restore_args)
-            self.assertIsNotNone(result)
-        self.assertTreesMatch()
-
-    @unittest.skipIf(not common.TestFS.use_lvm, "No LVM support")
-    def test_backup_local_storage_use_lvm_snapshot_and_path_to_backup(self):
-        self.source_tree.add_random_data()
-        self.assertTreesMatchNot()
-
-        backup_name = uuid.uuid4().hex
-        lvm_auto_snap= self.source_tree.path
-        lvm_snapsize= '50M'
-        lvm_snapname= 'freezer-snap_{0}'.format(backup_name)
-        lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
-        path_to_backup = os.path.join(lvm_dirmount, self.source_tree.path)
-
-        with common.Temp_Tree() as storage_dir:
-            backup_args = {
-                'action': 'backup',
-                'mode': 'fs',
-                'path_to_backup': lvm_auto_snap,
                 'snapshot': '',
                 'lvm_dirmount': lvm_dirmount,
                 'lvm_snapsize': lvm_snapsize,
@@ -369,17 +294,15 @@ class TestBackupSSH(common.TestFS):
         self.assertTreesMatchNot()
 
         backup_name = uuid.uuid4().hex
-        lvm_auto_snap= self.source_tree.path
+        path_to_backup= self.source_tree.path
         lvm_snapsize= '1G'
         lvm_snapname= 'freezer-snap_{0}'.format(backup_name)
         lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
-        path_to_backup = os.path.join(lvm_dirmount, os.path.relpath(self.source_tree.path, '/'))
 
         backup_args = {
             'action': 'backup',
             'mode': 'fs',
             'path_to_backup': path_to_backup,
-            'lvm_auto_snap': lvm_auto_snap,
             'lvm_dirmount': lvm_dirmount,
             'lvm_snapsize': lvm_snapsize,
             'lvm_snapname': lvm_snapname,
@@ -575,7 +498,6 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         self.source_tree = common.Temp_Tree(dir='/var/lib/mysql', create=False)
 
         backup_name = uuid.uuid4().hex
-        lvm_auto_snap = self.source_tree.path
         lvm_snapsize = '1G'
         lvm_snapname = 'freezer-snap_{0}'.format(backup_name)
         lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)

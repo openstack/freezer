@@ -37,6 +37,8 @@ def snapshot_create(backup_opt_dict):
     :param backup_opt_dict:
     :return: boolean value, True if snapshot has been taken, false otherwise
     """
+    if not backup_opt_dict.snapshot:
+        return False
 
     if winutils.is_windows():
         if backup_opt_dict.snapshot:
