@@ -304,7 +304,7 @@ def get_executable_path(binary):
     :param binary:
     :type binary: str
     :rtype: str
-    :return: Absoulte Path to the executable file
+    :return: Absolute Path to the executable file
     """
     from freezer.utils import winutils
     if winutils.is_windows():

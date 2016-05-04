@@ -139,7 +139,7 @@ class SessionManager(object):
     def end_session(self, session_id, job_id, session_tag, result):
         """
         Informs the freezer service that the job has ended.
-        Privides information about the job's result and the session tag
+        Provides information about the job's result and the session tag
 
         :param session_id:
         :param job_id:
