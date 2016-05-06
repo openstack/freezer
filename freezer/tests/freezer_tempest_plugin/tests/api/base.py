@@ -17,6 +17,8 @@ import tempest.test
 
 class BaseFreezerTest(tempest.test.BaseTestCase):
 
+    credentials = ['primary']
+
     def __init__(self, *args, **kwargs):
 
         super(BaseFreezerTest, self).__init__(*args, **kwargs)
@@ -30,17 +32,10 @@ class BaseFreezerTest(tempest.test.BaseTestCase):
         super(BaseFreezerTest, self).tearDown()
 
     def get_environ(self):
-
-        os.environ['OS_REGION_NAME'] = 'RegionOne'
-        os.environ['OS_PASSWORD'] = 'secretadmin'
-        os.environ['OS_IDENTITY_API_VERSION'] = '2.0'
-        os.environ['OS_NO_CACHE'] = '1'
-        os.environ['OS_USERNAME'] = 'demo'
-        os.environ['OS_VOLUME_API_VERSION'] = '2'
-        os.environ['OS_PROJECT_NAME'] = 'demo'
-        os.environ['PYTHONUNBUFFERED'] = '1'
-        os.environ['OS_TENANT_NAME'] = 'demo'
-        os.environ['OS_TENANT_ID'] = ''
+        os.environ['OS_PASSWORD'] = self.os_primary.credentials.credentials.password
+        os.environ['OS_USERNAME'] = self.os_primary.credentials.credentials.username
+        os.environ['OS_PROJECT_NAME'] = self.os_primary.credentials.credentials.tenant_name
+        os.environ['OS_TENANT_NAME'] = self.os_primary.credentials.credentials.tenant_name
 
         # Allow developers to set OS_AUTH_URL when developing so that
         # Keystone may be on a host other than localhost.
