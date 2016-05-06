@@ -14,8 +14,8 @@
 import os
 import shutil
 
-import datetime
 import subprocess
+import uuid
 
 from freezer.tests.freezer_tempest_plugin.tests.api import base
 from tempest import test
@@ -31,15 +31,15 @@ class TestFreezerSwiftBackup(base.BaseFreezerTest):
 
         super(TestFreezerSwiftBackup, self).setUp()
 
-        now_in_secs = datetime.datetime.now().strftime("%s")
+        test_id = uuid.uuid4().hex
 
         self.backup_source_dir = ("/tmp/freezer-test-backup-source/"
-                             + now_in_secs)
+                             + test_id)
         self.backup_source_sub_dir = self.backup_source_dir + "/subdir"
 
         self.restore_target_dir = (
             "/tmp/freezer-test-backup-restore/"
-            + now_in_secs)
+            + test_id)
 
         self.freezer_container_name = 'freezer-test-container-0'
         self.freezer_backup_name = 'freezer-test-backup-swift-0'
