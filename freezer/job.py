@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-
+import abc
 import datetime
 import os
 from oslo_utils import importutils
+import six
 import sys
 import time
 
@@ -34,7 +35,8 @@ CONF = cfg.CONF
 logging = log.getLogger(__name__)
 
 
-class Job:
+@six.add_metaclass(abc.ABCMeta)
+class Job(object):
     """
     :type storage: freezer.storage.base.Storage
     :type engine: freezer.engine.engine.BackupEngine
@@ -46,35 +48,26 @@ class Job:
         self.engine = conf_dict.engine
 
     def execute(self):
-        logging.info('[*] Action not implemented')
+        start_time = utils.DateTime.now()
+        logging.info('[*] Job execution Started at: {0}'.format(start_time))
+        retval = self.execute_method()
+        end_time = utils.DateTime.now()
+        logging.info('[*] Job execution Finished, at: {0}'.format(end_time))
+        logging.info('[*] Job time Elapsed: {0}'.format(end_time - start_time))
+        return retval
 
-    @staticmethod
-    def executemethod(func):
-        def wrapper(self):
-            self.start_time = utils.DateTime.now()
-            logging.info('[*] Job execution Started at: {0}'.
-                         format(self.start_time))
-
-            retval = func(self)
-
-            end_time = utils.DateTime.now()
-            logging.info('[*] Job execution Finished, at: {0}'.
-                         format(end_time))
-            logging.info('[*] Job time Elapsed: {0}'.
-                         format(end_time - self.start_time))
-            return retval
-        return wrapper
+    @abc.abstractmethod
+    def execute_method(self):
+        pass
 
 
 class InfoJob(Job):
-    @Job.executemethod
-    def execute(self):
+    def execute_method(self):
         self.storage.info()
 
 
 class BackupJob(Job):
-    @Job.executemethod
-    def execute(self):
+    def execute_method(self):
         try:
             (out, err) = utils.create_subprocess('sync')
             if err:
@@ -170,8 +163,8 @@ class BackupJob(Job):
 
 
 class RestoreJob(Job):
-    @Job.executemethod
-    def execute(self):
+
+    def execute_method(self):
         conf = self.conf
         logging.info('[*] Executing FS restore...')
         restore_timestamp = None
@@ -199,8 +192,8 @@ class RestoreJob(Job):
 
 
 class AdminJob(Job):
-    @Job.executemethod
-    def execute(self):
+
+    def execute_method(self):
         if self.conf.remove_from_date:
             timestamp = utils.date_to_timestamp(self.conf.remove_from_date)
         else:
@@ -214,8 +207,8 @@ class AdminJob(Job):
 
 
 class ExecJob(Job):
-    @Job.executemethod
-    def execute(self):
+
+    def execute_method(self):
         logging.info('[*] exec job....')
         if self.conf.command:
             logging.info('[*] Executing exec job....')

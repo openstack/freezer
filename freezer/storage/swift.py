@@ -237,3 +237,9 @@ class SwiftStorage(base.Storage):
                 self.max_segment_size, "%08d" % block_index)
             self.upload_chunk(message, segment_package_name)
         self.upload_manifest(backup)
+
+    def download_freezer_meta_data(self, backup):
+        return {}
+
+    def upload_freezer_meta_data(self, backup, meta_dict):
+        pass

@@ -16,19 +16,17 @@ limitations under the License.
 
 """
 
-
 from mock import patch, Mock
 import unittest
 
 from freezer.tests.commons import *
-from freezer.job import ExecJob
-from freezer.job import Job, InfoJob, AdminJob, BackupJob
+from freezer import job as jobs
 
 
 class TestJob(unittest.TestCase):
     def test_execute(self):
         opt = BackupOpt1()
-        job = Job(opt, opt.storage)
+        job = jobs.InfoJob(opt, opt.storage)
         assert job.execute() is None
 
 
@@ -36,12 +34,12 @@ class TestInfoJob(TestJob):
 
     def test_execute_nothing_to_do(self):
         backup_opt = BackupOpt1()
-        job = InfoJob(backup_opt, backup_opt.storage)
+        job = jobs.InfoJob(backup_opt, backup_opt.storage)
         job.execute()
 
     def test_execute_list_containers(self):
         backup_opt = BackupOpt1()
-        job = InfoJob(backup_opt, backup_opt.storage)
+        job = jobs.InfoJob(backup_opt, backup_opt.storage)
         job.execute()
 
 
@@ -51,21 +49,21 @@ class TestBackupJob(TestJob):
         backup_opt = BackupOpt1()
         backup_opt.mode = 'default'
         backup_opt.no_incremental = True
-        job = BackupJob(backup_opt, backup_opt.storage)
+        job = jobs.BackupJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)
 
     def test_execute_raise(self):
         backup_opt = BackupOpt1()
         backup_opt.no_incremental = False
         backup_opt.mode = None
-        job = BackupJob(backup_opt, backup_opt.storage)
+        job = jobs.BackupJob(backup_opt, backup_opt.storage)
         self.assertRaises(ValueError, job.execute)
 
 
 class TestAdminJob(TestJob):
     def test_execute(self):
         backup_opt = BackupOpt1()
-        AdminJob(backup_opt, backup_opt.storage).execute()
+        jobs.AdminJob(backup_opt, backup_opt.storage).execute()
 
 
 class TestExecJob(TestJob):
@@ -83,13 +81,13 @@ class TestExecJob(TestJob):
 
     def test_execute_nothing_to_do(self):
         backup_opt = BackupOpt1()
-        ExecJob(backup_opt, backup_opt.storage).execute()
+        jobs.ExecJob(backup_opt, backup_opt.storage).execute()
 
     def test_execute_script(self):
         self.mock_popen.return_value.returncode = 0
         backup_opt = BackupOpt1()
         backup_opt.command='echo test'
-        ExecJob(backup_opt, backup_opt.storage).execute()
+        jobs.ExecJob(backup_opt, backup_opt.storage).execute()
 
     def test_execute_raise(self):
         self.popen=patch('freezer.utils.exec_cmd.subprocess.Popen')
@@ -97,5 +95,5 @@ class TestExecJob(TestJob):
         self.mock_popen.return_value.returncode = 1
         backup_opt = BackupOpt1()
         backup_opt.command = 'echo test'
-        job = ExecJob(backup_opt, backup_opt.storage)
+        job = jobs.ExecJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)

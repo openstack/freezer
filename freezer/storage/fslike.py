@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
+import six
 
 from freezer.storage import base
 from freezer.utils import utils
 
 
+@six.add_metaclass(abc.ABCMeta)
 class FsLikeStorage(base.Storage):
     DEFAULT_CHUNK_SIZE = 10000000
 
@@ -117,17 +120,28 @@ class FsLikeStorage(base.Storage):
                 if len(chunk):
                     yield chunk
 
+    @abc.abstractmethod
     def listdir(self, directory):
-        raise NotImplementedError("Should have implemented this")
+        pass
 
+    @abc.abstractmethod
     def put_file(self, from_path, to_path):
-        raise NotImplementedError("Should have implemented this")
+        pass
 
+    @abc.abstractmethod
     def create_dirs(self, path):
-        raise NotImplementedError("Should have implemented this")
+        pass
 
+    @abc.abstractmethod
     def rmtree(self, path):
-        raise NotImplementedError("Should have implemented this")
+        pass
 
+    @abc.abstractmethod
     def open(self, filename, mode):
-        raise NotImplementedError("Should have implemented this")
+        pass
+
+    def download_freezer_meta_data(self, backup):
+        return {}
+
+    def upload_freezer_meta_data(self, backup, meta_dict):
+        pass

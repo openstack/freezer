@@ -28,27 +28,30 @@ from freezer.utils import winutils
 class TarBackupEngine(engine.BackupEngine):
 
     def __init__(
-            self, compression_algo, dereference_symlink, exclude, main_storage,
+            self, compression_algo, dereference_symlink, exclude, storage,
             is_windows, chunk_size, encrypt_pass_file=None, dry_run=False):
+        """
+            :type storage: freezer.storage.base.Storage
+        :return:
+        """
         self.compression_algo = compression_algo
         self.encrypt_pass_file = encrypt_pass_file
         self.dereference_symlink = dereference_symlink
         self.exclude = exclude
-        self._main_storage = main_storage
+        self.storage = storage
         self.is_windows = is_windows
         self.dry_run = dry_run
         self.chunk_size = chunk_size
 
-    @property
-    def main_storage(self):
-        """
-        :rtype: freezer.storage.storage.Storage
-        :return:
-        """
-        return self._main_storage
-
     def post_backup(self, backup, manifest):
-        self.main_storage.upload_meta_file(backup, manifest)
+        self.storage.upload_meta_file(backup, manifest)
+        metadata = {
+            "engine": "tar",
+            "compression": self.compression_algo,
+            "encryption": self.encrypt_pass_file is not None
+        }
+
+        self.storage.upload_freezer_meta_data(backup, metadata)
 
     def backup_data(self, backup_path, manifest_path):
         logging.info("Tar engine backup stream enter")
@@ -93,14 +96,20 @@ class TarBackupEngine(engine.BackupEngine):
             logging.error('[*] Restore return code is not 0')
             sys.exit(1)
 
-    def restore_level(self, restore_path, read_pipe):
+    def restore_level(self, restore_path, read_pipe, backup):
         """
         Restore the provided file into backup_opt_dict.restore_abs_path
         Decrypt the file if backup_opt_dict.encrypt_pass_file key is provided
         """
 
+        metadata = backup.metadata()
+        if not self.encrypt_pass_file and metadata.get("encryption", False):
+            raise Exception("Cannot restore encrypted backup without key")
+
         tar_command = tar_builders.TarCommandRestoreBuilder(
-            restore_path, self.compression_algo, self.is_windows)
+            restore_path,
+            metadata.get('compression', self.compression_algo),
+            self.is_windows)
 
         if self.encrypt_pass_file:
             tar_command.set_encryption(self.encrypt_pass_file)

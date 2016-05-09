@@ -15,6 +15,7 @@
 
 import unittest
 from freezer.storage import base
+from freezer.storage import local
 import mock
 
 
@@ -96,7 +97,7 @@ class TestBackup(unittest.TestCase):
         self.assertRaises(ValueError, backup.add_increment, None)
 
     def test_restore_latest_backup(self):
-        t = base.Storage("", skip_prepare=True)
+        t = local.LocalStorage("", None, skip_prepare=True)
         t.find_all = mock.Mock()
         last = base.Backup(t, "host_backup", 5000)
         t.find_all.return_value = [
@@ -113,7 +114,7 @@ class TestBackup(unittest.TestCase):
         test_backup = base.Backup(None, "host_backup", 5500)
         increment = base.Backup(None, "host_backup", 6000, 1, test_backup)
         test_backup.add_increment(increment)
-        t = base.Storage(None, skip_prepare=True)
+        t = local.LocalStorage(None, None, skip_prepare=True)
         t.find_all = mock.Mock()
         t.find_all.return_value = [
             test_backup,
@@ -126,7 +127,7 @@ class TestBackup(unittest.TestCase):
         assert t.find_one("host_backup") == increment
 
     def test_restore_from_date(self):
-        t = base.Storage(None, skip_prepare=True)
+        t = local.LocalStorage(None, None, skip_prepare=True)
         t.find_all = mock.Mock()
         backup_restore = base.Backup(None, "host_backup", 3000)
         t.find_all.return_value = [
@@ -140,7 +141,7 @@ class TestBackup(unittest.TestCase):
         assert t.find_one("host_backup", 3234) == backup_restore
 
     def test_restore_from_date_increment(self):
-        t = base.Storage(None, skip_prepare=True)
+        t = local.LocalStorage(None, None, skip_prepare=True)
         t.find_all = mock.Mock()
         test_backup = base.Backup(None, "host_backup", 1000)
         increment = base.Backup(None, "host_backup", 3200, 1, test_backup)
@@ -168,7 +169,7 @@ class TestBackup(unittest.TestCase):
         assert result.level == 0
 
     def test_remove_older_than(self):
-        t = base.Storage(None, skip_prepare=True)
+        t = local.LocalStorage(None, None, skip_prepare=True)
         t.find_all = mock.Mock()
         r1 = base.Backup(t, "host_backup", 1000)
         r2 = base.Backup(t, "host_backup", 2000)
@@ -186,7 +187,7 @@ class TestBackup(unittest.TestCase):
         assert t.remove_backup.call_count == 2
 
     def test_create_backup(self):
-        t = base.Storage(None, skip_prepare=True)
+        t = local.LocalStorage(None, None, skip_prepare=True)
         t.find_all = mock.Mock()
         t.find_all.return_value = []
         t._find_previous_backup = mock.Mock()
@@ -195,7 +196,7 @@ class TestBackup(unittest.TestCase):
         t.create_backup("", True, 12, False, False)
 
     def test_restart_always_level(self):
-        t = base.Storage(None, skip_prepare=True)
+        t = local.LocalStorage(None, None, skip_prepare=True)
         t.find_all = mock.Mock()
         t.find_all.return_value = []
         backup = base.Backup(None, "host_backup", 3000, tar_meta=True)

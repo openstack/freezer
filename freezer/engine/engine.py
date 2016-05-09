@@ -15,7 +15,10 @@ limitations under the License.
 
 Freezer general utils functions
 """
+
+import abc
 import multiprocessing
+import six
 import time
 
 from oslo_config import cfg
@@ -28,17 +31,18 @@ CONF = cfg.CONF
 logging = log.getLogger(__name__)
 
 
+@six.add_metaclass(abc.ABCMeta)
 class BackupEngine(object):
     """
     The main part of making a backup and making a restore is the mechanism of
-    implementing it. A long time Freezer had the only mechanism of doing it -
-    invoking gnutar and it was heavy hardcoded.
+    implementing it. For a long time Freezer had only one mechanism of doing it -
+    invoking gnutar and it was heavy hard-coded.
 
     Currently we are going to support many different approaches.
     One of them is rsync. Having many different implementations requires to
     have an abstraction level
 
-    This class is an abstraction above all implementations.
+    This class is an abstraction over all implementations.
 
     Workflow:
     1) invoke backup
@@ -91,12 +95,13 @@ class BackupEngine(object):
         write_stream.join()
         self.post_backup(backup, manifest)
 
+    @abc.abstractmethod
     def post_backup(self, backup, manifest_file):
         """
         Uploading manifest, cleaning temporary files
         :return:
         """
-        raise NotImplementedError("Should have implemented this")
+        pass
 
     def read_blocks(self, backup, write_pipe, read_pipe):
         # Close the read pipe in this child as it is unneeded
@@ -139,7 +144,8 @@ class BackupEngine(object):
 
             # Start the tar pipe consumer process
             tar_stream = multiprocessing.Process(
-                target=self.restore_level, args=(restore_path, read_pipe))
+                target=self.restore_level,
+                args=(restore_path, read_pipe, backup))
             tar_stream.daemon = True
             tar_stream.start()
             read_pipe.close()
@@ -154,13 +160,15 @@ class BackupEngine(object):
             '[*] Restore execution successfully executed \
              for backup name {0}'.format(backup))
 
-    def restore_level(self, restore_path, read_pipe):
-        raise NotImplementedError("Should have implemented this")
+    @abc.abstractmethod
+    def restore_level(self, restore_path, read_pipe, backup):
+        pass
 
+    @abc.abstractmethod
     def backup_data(self, backup_path, manifest_path):
         """
         :param backup_path:
         :param manifest_path:
         :return:
         """
-        raise NotImplementedError("Should have implemented this")
+        pass

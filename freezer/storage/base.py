@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import abc
 import logging
 import os
 import re
+import six
 
 from freezer.utils import utils
 
 
+@six.add_metaclass(abc.ABCMeta)
 class Storage(object):
     """
     Any freezer storage implementation should be inherited from this abstract
@@ -52,12 +56,15 @@ class Storage(object):
             meta_backup.storage.meta_file_abs_path(meta_backup), to_path)
         return to_path
 
+    @abc.abstractmethod
     def meta_file_abs_path(self, backup):
-        raise NotImplementedError("Should have implemented this")
+        pass
 
+    @abc.abstractmethod
     def get_file(self, from_path, to_path):
-        raise NotImplementedError("Should have implemented this")
+        pass
 
+    @abc.abstractmethod
     def upload_meta_file(self, backup, meta_file):
         """
         :param backup:
@@ -65,16 +72,26 @@ class Storage(object):
         :param meta_file:
         :return:
         """
-        raise NotImplementedError("Should have implemented this")
+        pass
 
+    @abc.abstractmethod
+    def upload_freezer_meta_data(self, backup, meta_dict):
+        pass
+
+    @abc.abstractmethod
+    def download_freezer_meta_data(self, backup):
+        pass
+
+    @abc.abstractmethod
     def backup_blocks(self, backup):
         """
         :param backup:
         :type backup: freezer.storage.base.Backup
         :return:
         """
-        raise NotImplementedError("Should have implemented this")
+        pass
 
+    @abc.abstractmethod
     def write_backup(self, rich_queue, backup):
         """
         :param rich_queue:
@@ -82,14 +99,15 @@ class Storage(object):
         :type backup: freezer.storage.base.Backup
         :return:
         """
-        raise NotImplementedError("Should have implemented this")
+        pass
 
+    @abc.abstractmethod
     def prepare(self):
         """
         Creates directories, containers
         :return: nothing
         """
-        raise NotImplementedError("Should have implemented this")
+        pass
 
     def find_one(self, hostname_backup_name, recent_to_date=None):
         """
@@ -115,6 +133,7 @@ class Storage(object):
                                if x.timestamp <= recent_to_date]
         return max(last_increments, key=lambda x: x.timestamp)
 
+    @abc.abstractmethod
     def find_all(self, hostname_backup_name):
         """
         Gets backups by backup_name and hostname
@@ -123,15 +142,16 @@ class Storage(object):
         :rtype: list[freezer.storage.base.Backup]
         :return: List of matched backups
         """
-        raise NotImplementedError("Should have implemented this")
+        pass
 
+    @abc.abstractmethod
     def remove_backup(self, backup):
         """
         :type backup: freezer.storage.base.Backup
         :param backup:
         :return:
         """
-        raise NotImplementedError("Should have implemented this")
+        pass
 
     def remove_older_than(self, remove_older_timestamp, hostname_backup_name):
         """
@@ -145,8 +165,9 @@ class Storage(object):
         for b in backups:
             b.storage.remove_backup(b)
 
+    @abc.abstractmethod
     def info(self):
-        raise NotImplementedError("Should have implemented this")
+        pass
 
     def create_backup(self, hostname_backup_name, no_incremental,
                       max_level, always_level, restart_always_level,
@@ -266,6 +287,9 @@ class Backup:
 
     def tar(self):
         return "tar_metadata_{0}".format(self)
+
+    def metadata(self):
+        return self.storage.download_freezer_meta_data(self)
 
     def add_increment(self, increment):
         """
