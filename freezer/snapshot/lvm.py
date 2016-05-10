@@ -82,63 +82,35 @@ def lvm_snap(backup_opt_dict):
     Checks the provided parameters and create the lvm snapshot if requested
 
     The path_to_backup might be adjusted in case the user requested
-    a lvm snapshot without specifying an exact path for the snapshot
-    (lvm_auto_snap).
+    a lvm snapshot without specifying an exact path for the snapshot).
     The assumption in this case is that the user wants to use the lvm snapshot
     capability to backup the specified filesystem path, leaving out all
     the rest of the parameters which will guessed and set by freezer.
 
-    if a snapshot is requested using the --snapshot flag, but lvm_auto_snap
-    is not provided, then path_to_backup is supposed to be the path to backup
-    *before* any information about the snapshot is added and will be
-    adjusted.
-
     :param backup_opt_dict: the configuration dict
     :return: True if the snapshot has been taken, False otherwise
     """
-    if backup_opt_dict.snapshot:
-        if not backup_opt_dict.lvm_auto_snap:
-            # 1) the provided path_to_backup has the meaning of
-            #    the lvm_auto_snap and is therefore copied into it
-            # 2) the correct value of path_to_backup, which takes into
-            #    consideration the snapshot mount-point, is cleared
-            #    and will be calculated by freezer
-            backup_opt_dict.lvm_auto_snap =\
-                backup_opt_dict.path_to_backup
-            backup_opt_dict.path_to_backup = ''
-
     if not backup_opt_dict.lvm_snapname:
         backup_opt_dict.lvm_snapname = \
             "{0}_{1}".format(freezer_config.DEFAULT_LVM_SNAP_BASENAME,
                              uuid.uuid4().hex)
 
-    if backup_opt_dict.lvm_auto_snap:
-        # adjust/check lvm parameters according to provided lvm_auto_snap
-        lvm_info = get_lvm_info(backup_opt_dict.lvm_auto_snap)
+    # adjust/check lvm parameters according to provided path_to_backup
+    lvm_info = get_lvm_info(backup_opt_dict.path_to_backup)
 
-        if not backup_opt_dict.lvm_volgroup:
-            backup_opt_dict.lvm_volgroup = lvm_info['volgroup']
+    if not backup_opt_dict.lvm_volgroup:
+        backup_opt_dict.lvm_volgroup = lvm_info['volgroup']
 
-        if not backup_opt_dict.lvm_srcvol:
-            backup_opt_dict.lvm_srcvol = lvm_info['srcvol']
+    if not backup_opt_dict.lvm_srcvol:
+        backup_opt_dict.lvm_srcvol = lvm_info['srcvol']
 
-        if not backup_opt_dict.lvm_dirmount:
-            backup_opt_dict.lvm_dirmount = \
-                "{0}_{1}".format(freezer_config.DEFAULT_LVM_MOUNT_BASENAME,
-                                 uuid.uuid4().hex)
+    if not backup_opt_dict.lvm_dirmount:
+        backup_opt_dict.lvm_dirmount = \
+            "{0}_{1}".format(freezer_config.DEFAULT_LVM_MOUNT_BASENAME,
+                             uuid.uuid4().hex)
 
-        path_to_backup = os.path.join(backup_opt_dict.lvm_dirmount,
-                                      lvm_info['snap_path'])
-        if backup_opt_dict.path_to_backup:
-            # path_to_backup is user-provided, check if consistent
-            if backup_opt_dict.path_to_backup != path_to_backup:
-                raise Exception('Path to backup mismatch. '
-                                'provided: {0}, should be LVM-mounted: {1}'.
-                                format(backup_opt_dict.path_to_backup,
-                                       path_to_backup))
-        else:
-            # path_to_backup not provided: use the one calculated above
-            backup_opt_dict.path_to_backup = path_to_backup
+    backup_opt_dict.path_to_backup = os.path.join(backup_opt_dict.lvm_dirmount,
+                                  lvm_info['snap_path'])
 
     if not validate_lvm_params(backup_opt_dict):
         logging.info('[*] No LVM requested/configured')
@@ -211,18 +183,18 @@ def lvm_snap(backup_opt_dict):
     return True
 
 
-def get_lvm_info(lvm_auto_snap):
+def get_lvm_info(path):
     """
     Take a file system path as argument as backup_opt_dict.path_to_backup
     and return a list containing lvm_srcvol, lvm_volgroup
     where the path is mounted on.
 
-    :param lvm_auto_snap: the original file system path where backup needs
+    :param path: the original file system path where backup needs
     to be executed
     :returns: a dict containing the keys 'volgroup', 'srcvol' and 'snap_path'
     """
 
-    mount_point_path, snap_path = utils.get_mount_from_path(lvm_auto_snap)
+    mount_point_path, snap_path = utils.get_mount_from_path(path)
 
     with open('/proc/mounts', 'r') as mount_fd:
         mount_points = mount_fd.readlines()

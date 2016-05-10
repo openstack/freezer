@@ -35,31 +35,6 @@ class Test_lvm_snap_remove(unittest.TestCase):
 
 class Test_lvm_snap(unittest.TestCase):
 
-    @patch('freezer.snapshot.lvm.validate_lvm_params')
-    def test_no_lvm_configured_returns_false(self, mock_validate_lvm_params):
-        backup_opt = Mock()
-        backup_opt.lvm_auto_snap = ''
-        mock_validate_lvm_params.return_value = False
-        backup_opt.snapshot = False
-        self.assertFalse(lvm.lvm_snap(backup_opt))
-
-    @patch('freezer.snapshot.lvm.validate_lvm_params')
-    @patch('freezer.snapshot.lvm.get_lvm_info')
-    @patch('freezer.snapshot.lvm.utils.create_dir')
-    def test_with_auto_snap_param_path_mismatch_raises(self, mock_create_dir, mock_get_lvm_info, mock_validate_lvm_params):
-        mock_get_lvm_info.return_value = {
-            'volgroup': 'lvm_volgroup',
-            'srcvol': 'lvm_device',
-            'snap_path': 'snap_path'}
-
-        backup_opt = Mock()
-        backup_opt.snapshot = False
-        backup_opt.lvm_auto_snap = '/just/a/path'
-        backup_opt.path_to_backup = '/different'
-        backup_opt.lvm_dirmount = '/var/mountpoint'
-
-        self.assertRaises(Exception, lvm.lvm_snap, backup_opt)
-
     @patch('freezer.snapshot.lvm.get_lvm_info')
     @patch('freezer.snapshot.lvm.utils.create_dir')
     def test_with_snapshot_opt_simple_sets_correct_path_and_raises_on_perm(self, mock_create_dir, mock_get_lvm_info):
@@ -70,7 +45,6 @@ class Test_lvm_snap(unittest.TestCase):
 
         backup_opt = Mock()
         backup_opt.snapshot = True
-        backup_opt.lvm_auto_snap = ''
         backup_opt.path_to_backup = '/just/a/path'
         backup_opt.lvm_dirmount = '/var/mountpoint'
         backup_opt.lvm_snapperm = 'invalid_value'
@@ -98,7 +72,6 @@ class Test_lvm_snap(unittest.TestCase):
 
         backup_opt = Mock()
         backup_opt.snapshot = True
-        backup_opt.lvm_auto_snap = ''
         backup_opt.path_to_backup = '/just/a/path'
         backup_opt.lvm_dirmount = '/var/mountpoint'
         backup_opt.lvm_snapperm = 'ro'
@@ -125,7 +98,6 @@ class Test_lvm_snap(unittest.TestCase):
 
         backup_opt = Mock()
         backup_opt.snapshot = True
-        backup_opt.lvm_auto_snap = ''
         backup_opt.path_to_backup = '/just/a/path'
         backup_opt.lvm_dirmount = '/var/mountpoint'
         backup_opt.lvm_snapperm = 'ro'
@@ -156,7 +128,6 @@ class Test_lvm_snap(unittest.TestCase):
 
         backup_opt = Mock()
         backup_opt.snapshot = True
-        backup_opt.lvm_auto_snap = ''
         backup_opt.path_to_backup = '/just/a/path'
         backup_opt.lvm_dirmount = '/var/mountpoint'
         backup_opt.lvm_snapperm = 'ro'
@@ -192,7 +163,6 @@ class Test_lvm_snap(unittest.TestCase):
 
         backup_opt = Mock()
         backup_opt.snapshot = True
-        backup_opt.lvm_auto_snap = ''
         backup_opt.path_to_backup = '/just/a/path'
         backup_opt.lvm_dirmount = '/var/mountpoint'
         backup_opt.lvm_snapperm = 'ro'

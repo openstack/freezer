@@ -189,6 +189,7 @@ def storage_from_dict(backup_args, work_dir, max_segment_size,
 
 def main():
     """freezer-agent/freezerc binary main execution"""
+    backup_args = None
     try:
         freezer_config.config()
         freezer_config.setup_logging()
@@ -198,7 +199,8 @@ def main():
             sys.exit(1)
         freezer_main(backup_args)
     except Exception as err:
-        return fail(1, err, backup_args.quiet)
+        quiet = backup_args.quiet if backup_args else False
+        return fail(1, err, quiet)
 
 if __name__ == '__main__':
 

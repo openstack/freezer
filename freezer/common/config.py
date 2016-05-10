@@ -40,7 +40,7 @@ DEFAULT_SSH_PORT = 22
 
 DEFAULT_PARAMS = {
     'os_identity_api_version': None,
-    'lvm_auto_snap': False, 'lvm_volgroup': False,
+    'lvm_auto_snap': None, 'lvm_volgroup': False,
     'exclude': False, 'sql_server_conf': False,
     'backup_name': False, 'quiet': False,
     'container': 'freezer_backups', 'no_incremental': False,
@@ -109,7 +109,8 @@ _COMMON = [
                     "will invoke  vssadmin"),
     cfg.StrOpt('lvm-auto-snap',
                dest='lvm_auto_snap',
-               help="Automatically guess the volume group and volume name for "
+               help="(Deprecated) Please use --snapshot instead"
+                    "Automatically guess the volume group and volume name for "
                     "given PATH."),
     cfg.StrOpt('lvm-srcvol',
                dest='lvm_srcvol',
@@ -467,6 +468,10 @@ def get_backup_args():
                 backup_args.path_to_backup[:3]
 
     # todo(enugaev) move it to new command line param backup_media
+
+    if backup_args.lvm_auto_snap:
+        raise Exception('lvm-auto-snap is deprecated. '
+                        'Please use --snapshot instead')
     backup_media = 'fs'
     if backup_args.cinder_vol_id:
         backup_media = 'cinder'

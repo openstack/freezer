@@ -92,10 +92,8 @@ class BackupJob(Job):
 
         metadata = {
             'curr_backup_level': level,
-            'fs_real_path': (self.conf.lvm_auto_snap or
-                             self.conf.path_to_backup),
-            'vol_snap_path':
-                self.conf.path_to_backup if self.conf.lvm_auto_snap else '',
+            'fs_real_path': self.conf.path_to_backup,
+            'vol_snap_path': self.conf.path_to_backup,
             'client_os': sys.platform,
             'client_version': self.conf.__version__,
             'time_stamp': self.conf.time_stamp
