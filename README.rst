@@ -9,24 +9,24 @@ restore process.
 
 The following features are available:
 
--  Backup your filesystem using point in time snapshot
+-  Backup file system using point-in-time snapshot
 -  Strong encryption supported: AES-256-CFB
--  Backup your file system tree directly (without volume snapshot)
--  Backup your journaled MongoDB directory tree using lvm snapshot to swift
--  Backup MySQL DB with lvm snapshot
--  Restore your data from a specific date automatically to your file system
+-  Backup file system tree directly (without volume snapshot)
+-  Backup journaled MongoDB directory tree using lvm snapshot to Swift
+-  Backup MySQL with lvm snapshot
+-  Restore data from a specific date automatically to file system
 -  Low storage consumption as the backup are uploaded as a stream
 -  Flexible backup policy (incremental and differential)
 -  Data is archived in GNU Tar format for file based incremental
 -  Multiple compression algorithm support (zlib, bzip2, xz)
 -  Remove old backup automatically according to the provided parameters
--  Multiple storage media support (Swift, local file system, ssh)
+-  Multiple storage media support (Swift, local file system, or ssh)
 -  Flush kernel buffered memory to disk
--  Multi platform (Linux, Windows, \*BSD, OSX)
--  Manage multiple jobs (i.e. multiple backups on the same node)
+-  Multi-platform (Linux, Windows, \*BSD, OSX)
+-  Manage multiple jobs (I.e., multiple backups on the same node)
 -  Synchronize backups and restore on multiple nodes
 -  Web user interface integrated with OpenStack Horizon
--  Can execute scripts/commands before or after a job execution
+-  Execute scripts/commands before or after a job execution
 
 Requirements
 ============
@@ -167,7 +167,7 @@ The basic Swift account configuration is needed to use freezer. Make sure python
 Usage Example
 =============
 
-Freezer will automatically add the prefix "freezer_" to the container name,
+Freezer will automatically add the prefix "freezer\_" to the container name,
 where it is provided by the user and doesn't already start with this prefix.
 If no container name is provided, the default is "freezer_backups".
 
@@ -189,18 +189,18 @@ The most simple backup execution is a direct file system backup::
     --path-to-backup "C:\path\to\backup" --container freezer_windows
     --log-file  C:\path\to\log\freezer.log
 
-By default --mode fs is set. The command would generate a compressed tar
+By default --mode fs is set. The command will generate a compressed tar
 gzip file of the directory /data/dir/to/backup. The generated file will
-be segmented in stream and uploaded in the swift container called
+be segmented in stream and uploaded in the Swift container called
 freezer_new-data-backup, with backup name my-backup-name.
 
-Now check if your backup is executing correctly looking at
+Now check to see if your backup executed correctly by looking at
 /var/log/freezer.log
 
 Execute a MongoDB backup using lvm snapshot:
 
-We need to check before on which volume group and logical volume our
-mongo data is. This information can be obtained as per following::
+We need to check before to see on which volume group and logical volume our
+mongo data is located. This information can be obtained as per the following::
 
     $ mount
     [...]
@@ -222,7 +222,7 @@ is "mongo"::
 
 Now freezer-agent creates an lvm snapshot of the volume /dev/mongo/mongolv. If
 no options are provided, the default snapshot name is "freezer\_backup\_snap".
-The snapshot vol will be mounted automatically on /var/lib/snapshot-backup
+The snapshot vol will be mounted automatically on /var/lib/snapshot-backup,
 and the backup metadata and segments will be uploaded in the container
 mongodb-backup-prod with the name mongod-ops2.
 
@@ -233,7 +233,7 @@ Execute a file system backup using lvm snapshot::
     --path-to-backup /var/snapshot-backup --container freezer_jenkins-backup-prod
     --exclude "\*.lock" --mode fs --backup-name jenkins-ops2
 
-MySQL backup require a basic configuration file. The following is an
+MySQL backup requires a basic configuration file. The following is an
 example of the config::
 
     $ sudo cat /root/.freezer/db.conf
@@ -255,15 +255,15 @@ Execute a MySQL backup using lvm snapshot::
 Cinder backups
 
 To make a cinder backup you should provide cinder-vol-id or cindernative-vol-id
-parameter in command line arguments. Freezer doesn't do any additional checks
+parameters in command line arguments. Freezer doesn't do any additional checks
 and assumes that making a backup of that image will be sufficient to restore your
-data in future.
+data in the future.
 
 Execute a cinder backup::
 
     $ freezer-agent --cinder-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
-Execute a mysql backup with cinder::
+Execute a MySQL backup with Cinder::
 
    $ freezer-agent --mysql-conf /root/.freezer/freezer-mysql.conf
    --container freezer_mysql-backup-prod --mode mysql
@@ -272,7 +272,7 @@ Execute a mysql backup with cinder::
 
 Nova backups
 
-To make a nova backup you should provide a nova parameter in the arguments.
+To make a Nova backup you should provide a Nova parameter in the arguments.
 Freezer doesn't do any additional checks and assumes that making a backup
 of that instance will be sufficient to restore your data in future.
 
@@ -280,7 +280,7 @@ Execute a nova backup::
 
     $ freezer-agent --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
-Execute a mysql backup with nova::
+Execute a MySQL backup with Nova::
 
    $ freezer-agent --mysql-conf /root/.freezer/freezer-mysql.conf
    --container freezer_mysql-backup-prod --mode mysql
@@ -295,10 +295,10 @@ Swift, Local and SSH Storage
 
 Freezer can use:
 
- local storage - folder that is available in the same OS (may be mounted)
+ local storage - a folder that is available in the same OS (may be mounted)
 
  To use local storage specify "--storage local"
- And use "--container %path-to-folder-with-backups%"
+ And use "--container <path-to-folder-with-backups>"
  Backup example::
 
    $ sudo freezer-agent --path-to-backup /data/dir/to/backup
@@ -311,10 +311,11 @@ Freezer can use:
    --container /tmp/my_backup_path/ --backup-name my-backup-name
    --storage local
 
- swift storage - OS object storage
+ Swift storage - OS object storage
 
- To use swift storage specify "--storage swift" or skip "--storage" parameter at all.
- And use "--container %swift-container-name%"
+ To use swift storage specify "--storage swift" or omit "--storage" parameter
+ altogether (Swift storage is the default).
+ And use "--container <swift-container-name>"
 
  Backup example::
 
@@ -328,15 +329,15 @@ Freezer can use:
    --container freezer-container --backup-name my-backup-name
    --storage swift
 
- ssh storage - folder on remote machine
+ SSH storage - a folder on a remote machine
 
  To use ssh storage specify "--storage ssh"
- And use "--container %path-to-folder-with-backups-on-remote-machine%"
+ And use "--container <path-to-folder-with-backups-on-remote-machine>"
  Also you should specify ssh-username, ssh-key and ssh-host parameters.
  ssh-port is optional parameter, default is 22.
 
  ssh-username for user ubuntu should be "--ssh-username ubuntu"
- ssh-key should be path to your secret ssh key "--ssh-key %path-to-secret-key%"
+ ssh-key should be path to your secret ssh key "--ssh-key <path-to-secret-key>"
  ssh-host can be ip of remote machine or resolvable dns name "--ssh-host 8.8.8.8"
 
  Backup example::
@@ -357,11 +358,13 @@ Restore
 -------
 
 As a general rule, when you execute a restore, the application that
-writes or reads data should be stopped.
+writes or reads data should be stopped so that during the restore
+operation, the restored data is not inadvertantly read or written by the
+application.
 
 There are 3 main options that need to be set for data restore
 
-File System Restore:
+file system Restore:
 
 Execute a file system restore of the backup name
 adminui.git::
@@ -413,7 +416,7 @@ Remove backups older then 1 day::
 Cinder restore currently creates a volume with the contents of the saved one, but
 doesn't implement deattach of existing volume and attach of the new one to the
 vm. You should implement these steps manually. To create a new volume from
-existing content run next command:
+existing content run the next command:
 
 Execute a cinder restore::
 
@@ -421,7 +424,7 @@ Execute a cinder restore::
     $ freezer-agent --action restore --cindernative-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Nova restore currently creates an instance with the content of saved one, but the
-ip address of the vm will be different as well as it's id.
+ip address of the vm will be different as well as its id.
 
 Execute a nova restore::
 
@@ -443,31 +446,32 @@ Architecture
 Freezer architectural components are the following:
 
 -  OpenStack Swift (the storage)
--  freezer client running on the node where you want to execute the backups or
-   restore
+-  freezer client running on the node where the backups and restores are to be executed
 
 Freezer uses GNU Tar under the hood to execute incremental backup and
 restore. When a key is provided, it uses OpenSSL to encrypt data.
 (AES-256-CFB)
+
 =============
-Freezer architecture is composed by the following components:
+
+The Freezer architecture is composed of the following components:
 
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Component         | Description                                                                                                                                    |
 +===================+================================================================================================================================================+
 | Freezer Web UI    | Web interface that interacts with the Freezer API to configure and change settings.                                                            |
-|                   | It provides most of the features from the freezer-agent CLI, advanced scheduler settings such as multi-node backup synchronization,            |
+|                   | It provides most of the features from the freezer-agent CLI as well as advanced scheduler settings such as multi-node backup synchronization,  |
 |                   | metrics, and reporting.                                                                                                                        |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer Scheduler | A client side component, running on the node where the data backup is to be executed.                                                          |
-|                   | It consists of a daemon that retrieves the data from the freezer API and executes jobs (i.e. backups, restore, admin actions, info actions,    |
+|                   | It consists of a daemon that retrieves the data from the freezer API and executes jobs (i.e., backups, restore, admin actions, info actions,   |
 |                   | pre and/or post job scripts) by running the Freezer Agent.                                                                                     |
 |                   | The metrics and exit codes returned by the freezer agent are captured and sent to the Freezer API.                                             |
 |                   | The scheduler manages the execution and synchronization of multiple jobs executed on a single or multiple nodes.                               |
 |                   | The status of the execution of all the nodes is saved through the API.                                                                         |
 |                   | The Freezer scheduler takes care of uploading jobs to the API by reading job files on the file system.                                         |
 |                   | It also has its own configuration file where job session or other settings like the freezer API polling interval can be configured.            |
-|                   | The Freezer scheduler manages jobs, for more information about jobs please refer to: freezer_api/README.rst under JOB the sections             |
+|                   | The Freezer scheduler manages jobs. For more information about jobs please refer to: freezer_api/README.rst under JOB the sections             |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer Agent     | Multiprocessing Python software that runs on the client side, where the data backup is to be executed.                                         |
 |                   | It can be executed standalone or by the Freezer Scheduler.                                                                                     |
@@ -481,16 +485,17 @@ Freezer architecture is composed by the following components:
 |                   |   - Bandwidth limitation                                                                                                                       |
 |                   |   - Client side Encryption (AES-256-CFB)                                                                                                       |
 |                   |   - Compression (multiple algorithms supported as zlib, bzip2, xz/lzma)                                                                        |
-|                   |   - Parallel upload to pluggable storage media (i.e., upload backup to swift and to a remote node by ssh,                                      |
+|                   |   - Parallel upload to pluggable storage media (i.e.,upload backup to swift and to a remote node by SSH,                                       |
 |                   |     or upload to two or more independent swift instances with different credentials, etc)                                                      |
 |                   |   - Execute file based incremental (like tar), block based incremental (like rsync algorithm) and differential based backup and restore        |
-|                   |   - Multiplatform as it can be run on Linux, Windows, \*BSD and OSX                                                                            |
+|                   |   - Multi-platform as it can be run on Linux, Windows, \*BSD and OSX                                                                           |
 |                   |   - Automatic removal of old backups                                                                                                           |
-|                   | freezerc binary is deprecated and won't be available in next releases. Use freezer-agent instead .                                             |
+|                   |                                                                                                                                                |
+|                   | freezerc binary is deprecated and won't be available in next releases. Use freezer-agent instead.                                              |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer API       | The API is used to store and provide metadata to the Freezer Web UI and to the Freezer Scheduler.                                              |
 |                   | Also the API is used to store session information for multi node backup synchronization. No workload data is stored in the API.                |
-|                   | For more information to the API please refer to: freezer_api/README.rst                                                                        |
+|                   | For more information on the API please refer to: freezer_api/README.rst                                                                        |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | DB Elasticsearch  | Backend used by the API to store and retrieve metrics, metadata sessions information, job status, etc.                                         |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -553,7 +558,7 @@ backup execution. The only additional storage needed is the LVM snapshot
 size (set by default at 5GB). The lvm snapshot size can be set with the
 option --lvm-snapsize. It is important to not specify a too small snapshot
 size, because in case a quantity of data is being written to the source
-volume and consequently the lvm snapshot is filled up, then the data is
+volume and consequently the lvm snapshot is filled up, then the data will be
 corrupted.
 
 If more memory is available for the backup process, the maximum
@@ -587,18 +592,18 @@ file backup using nova snapshots or volume backups.
 
 Nova backups:
 
-If you provide nova argument in parameters, freezer assumes that all
+If you provide nova arguments in the parameters, freezer assumes that all
 necessary data is located on instance disk and it can be successfully stored
 using nova snapshot mechanism.
 
-For example if we want to store our mysql located on instance disk, we
-will execute the same actions like in the case of lvm or tar snapshots, but
+For example if we want to store our MySQL located on instance disk, we
+will execute the same actions as in the case of lvm or tar snapshots, but
 we will invoke nova snapshot instead of lvm or tar.
 
-After that we will place snapshot to swift container as dynamic large object.
+After that we will place the snapshot in a Swift container as a dynamic large object.
 
-container/%instance_id%/%timestamp% <- large object with metadata
-container_segments/%instance_id%/%timestamp%/segments...
+container/<instance_id>/<timestamp> <- large object with metadata
+container_segments/<instance_id>/<timestamp>/segments...
 
 Restore will create a snapshot from stored data and restore an instance from
 this snapshot. Instance will have different id and old instance should be
@@ -858,7 +863,7 @@ optional arguments:
   --config CONFIG       Config file abs path. Option arguments are provided
                         from config file. When config file is used any option
                         from command line provided take precedence.
-  --config-dir DIR      Path to a config directory to pull *.conf files from.
+  --config-dir DIR      Path to a config directory to pull \*.conf files from.
                         This file set is sorted, so as to provide a
                         predictable parse order if individual options are
                         over-ridden. The set is parsed after the file(s)
@@ -883,7 +888,7 @@ optional arguments:
                         Passing a private key to this option, allow you to
                         encrypt the files before to be uploaded in Swift.
                         Default do not encrypt.
-  --exclude EXCLUDE     Exclude files,given as a PATTERN.Ex: --exclude '*.log'
+  --exclude EXCLUDE     Exclude files,given as a PATTERN.Ex: --exclude '\*.log'
                         will exclude any file with name ending with .log.
                         Default no exclude
   --hostname HOSTNAME, --restore_from_host HOSTNAME
