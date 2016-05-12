@@ -32,10 +32,8 @@ class SwiftStorage(base.Storage):
     :type client_manager: freezer.osclients.ClientManager
     """
 
-    RESP_CHUNK_SIZE = 10000000
-
     def __init__(self, client_manager, container, work_dir, max_segment_size,
-                 chunk_size=RESP_CHUNK_SIZE, skip_prepare=False):
+                 skip_prepare=False):
         """
         :type client_manager: freezer.osclients.ClientManager
         :type container: str
@@ -52,7 +50,6 @@ class SwiftStorage(base.Storage):
             self.container = container
         self.segments = u'{0}_segments'.format(container)
         self.max_segment_size = max_segment_size
-        self.chunk_size = chunk_size
         super(SwiftStorage, self).__init__(work_dir, skip_prepare)
 
     def swift(self):
@@ -156,7 +153,8 @@ class SwiftStorage(base.Storage):
     def get_file(self, from_path, to_path):
         with open(to_path, 'ab') as obj_fd:
             iterator = self.swift().get_object(
-                self.container, from_path, resp_chunk_size=self.chunk_size)[1]
+                self.container, from_path,
+                resp_chunk_size=self.max_segment_size)[1]
             for obj_chunk in iterator:
                 obj_fd.write(obj_chunk)
 
@@ -217,12 +215,12 @@ class SwiftStorage(base.Storage):
         try:
             chunks = self.swift().get_object(
                 self.container, str(backup),
-                resp_chunk_size=self.chunk_size)[1]
+                resp_chunk_size=self.max_segment_size)[1]
         except requests.exceptions.SSLError as e:
             logging.warning(e)
             chunks = self.client_manager.create_swift().get_object(
                 self.container, str(backup),
-                resp_chunk_size=self.chunk_size)[1]
+                resp_chunk_size=self.max_segment_size)[1]
 
         for chunk in chunks:
             yield chunk

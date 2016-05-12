@@ -58,7 +58,6 @@ def freezer_main(backup_args):
     validator.validate(backup_args)
 
     work_dir = backup_args.work_dir
-    os_identity = backup_args.os_identity_api_version
     max_segment_size = backup_args.max_segment_size
     if backup_args.storage == 'swift' or (backup_args.__dict__['backup_media']
         in ['nova', 'cinder', 'cindernative']):
@@ -68,11 +67,11 @@ def freezer_main(backup_args):
     if backup_args.storages:
         storage = multiple.MultipleStorage(
             work_dir,
-            [storage_from_dict(x, work_dir, max_segment_size, os_identity)
+            [storage_from_dict(x, work_dir, max_segment_size)
              for x in backup_args.storages])
     else:
         storage = storage_from_dict(backup_args.__dict__, work_dir,
-                                    max_segment_size, os_identity)
+                                    max_segment_size)
 
     backup_args.__dict__['engine'] = tar_engine.TarBackupEngine(
         backup_args.compression,
@@ -80,6 +79,7 @@ def freezer_main(backup_args):
         backup_args.exclude,
         storage,
         winutils.is_windows(),
+        backup_args.max_segment_size,
         backup_args.encrypt_pass_file,
         backup_args.dry_run)
 
@@ -164,15 +164,14 @@ def get_client_manager(backup_args, os_identity_api_version=None):
     return client_manager
 
 
-def storage_from_dict(backup_args, work_dir, max_segment_size,
-                      os_identity_api_version=None):
+def storage_from_dict(backup_args, work_dir, max_segment_size):
     storage_name = backup_args['storage']
     container = backup_args['container']
     if storage_name == "swift":
         client_manager = backup_args['client_manager']
 
         storage = swift.SwiftStorage(
-            client_manager, container, work_dir,max_segment_size)
+            client_manager, container, work_dir, max_segment_size)
     elif storage_name == "local":
         storage = local.LocalStorage(container, work_dir)
     elif storage_name == "ssh":

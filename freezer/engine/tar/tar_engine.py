@@ -26,12 +26,10 @@ from freezer.utils import winutils
 
 
 class TarBackupEngine(engine.BackupEngine):
-    DEFAULT_CHUNK_SIZE = 20000000
 
     def __init__(
             self, compression_algo, dereference_symlink, exclude, main_storage,
-            is_windows, encrypt_pass_file=None, dry_run=False,
-            chunk_size=DEFAULT_CHUNK_SIZE):
+            is_windows, chunk_size, encrypt_pass_file=None, dry_run=False):
         self.compression_algo = compression_algo
         self.encrypt_pass_file = encrypt_pass_file
         self.dereference_symlink = dereference_symlink
