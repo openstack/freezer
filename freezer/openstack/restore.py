@@ -83,11 +83,15 @@ class RestoreOs:
             'status': 'available',
         }
         backups = cinder.backups.list(search_opts=search_opts)
-        backups = [x for x in backups if x.created_at >= restore_from_timestamp]
-        if not backups:
-            logging.error("no available backups for cinder volume")
+        backups_filter = [x for x in backups if (utils.date_to_timestamp(x.created_at.split('.')[0])
+                            >= restore_from_timestamp)]
+        if not backups_filter:
+            logging.warning("no available backups for cinder volume,"
+                            "restore newest backup")
+            backup = max(backups, key=lambda x: x.created_at)
+            cinder.restores.restore(backup_id=backup.id)
         else:
-            backup = min(backups, key=lambda x: x.created_at)
+            backup = min(backups_filter, key=lambda x: x.created_at)
             cinder.restores.restore(backup_id=backup.id)
 
     def restore_cinder_by_glance(self, volume_id, restore_from_timestamp):

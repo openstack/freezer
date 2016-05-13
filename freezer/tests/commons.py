@@ -113,7 +113,7 @@ class FakeIdObject:
         self.status = "available"
         self.size = 10
         self.min_disk = 10
-        self.created_at = 1234
+        self.created_at = '2016-05-12T02:00:22.000000'
 
 
 class FakeCinderClient:
