@@ -331,7 +331,7 @@ class BackupOpt1:
 
         self.engine = tar_engine.TarBackupEngine(
             self.compression, self.dereference_symlink,
-            self.exclude, self.storage, False)
+            self.exclude, self.storage, 1000, False)
         self.client_manager.get_glance = Mock(return_value=FakeGlanceClient())
         self.client_manager.get_cinder = Mock(return_value=FakeCinderClient())
         nova_client = MagicMock()
