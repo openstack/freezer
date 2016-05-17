@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 # (c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+# (c) Copyright 2016 Hewlett-Packard Enterprise Development Company, L.P
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +17,7 @@
 
 
 from mock import MagicMock
+from mock import Mock
 
 import swiftclient
 import multiprocessing
@@ -27,13 +29,14 @@ import re
 from glanceclient.common.utils import IterableWithLength
 from freezer.storage import swift
 from freezer.utils import utils
-from freezer.openstack import openstack
+from freezer.openstack.osclients import OpenstackOpts
+from freezer.openstack.osclients import OSClientManager
 from freezer.engine.tar import tar_engine
 
 os.environ['OS_REGION_NAME'] = 'testregion'
 os.environ['OS_TENANT_ID'] = '0123456789'
 os.environ['OS_PASSWORD'] = 'testpassword'
-os.environ['OS_AUTH_URL'] = 'testauthurl'
+os.environ['OS_AUTH_URL'] = 'http://testauthurl/v2.0'
 os.environ['OS_USERNAME'] = 'testusername'
 os.environ['OS_TENANT_NAME'] = 'testtenantename'
 
@@ -316,10 +319,14 @@ class BackupOpt1:
         self.cindernative_vol_id = ''
         self.nova_inst_id = ''
         self.lvm_snapperm = 'ro'
-        self.options = openstack.OpenstackOptions.create_from_dict(os.environ)
-        from freezer.openstack.osclients import ClientManager
-        from mock import Mock
-        self.client_manager = ClientManager(None, False, 2, False)
+
+        self.compression = 'gzip'
+        self.storage = MagicMock()
+        self.engine = MagicMock()
+        opts = OpenstackOpts.create_from_env().get_opts_dicts()
+        self.client_manager = OSClientManager(opts.pop('auth_url'),
+                                              opts.pop('auth_method'),
+                                              **opts)
         self.client_manager.get_swift = Mock(
             return_value=FakeSwiftClient().client.Connection())
         self.client_manager.create_swift = self.client_manager.get_swift
@@ -327,8 +334,6 @@ class BackupOpt1:
                                           self.container,
                                           self.work_dir,
                                           self.max_segment_size)
-        self.compression = 'gzip'
-
         self.engine = tar_engine.TarBackupEngine(
             self.compression, self.dereference_symlink,
             self.exclude, self.storage, 1000, False)
@@ -337,6 +342,7 @@ class BackupOpt1:
         nova_client = MagicMock()
 
         self.client_manager.get_nova = Mock(return_value=nova_client)
+
         self.command = None
 
 
@@ -387,7 +393,7 @@ class Os:
     @classmethod
     def exists(cls, directory=True):
         return True
-    
+
     @classmethod
     def notexists(cls, directory=True):
         return False

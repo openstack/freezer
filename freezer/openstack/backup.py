@@ -28,7 +28,7 @@ logging = log.getLogger(__name__)
 home = os.path.expanduser("~")
 
 
-class BackupOs:
+class BackupOs(object):
 
     def __init__(self, client_manager, container, storage):
         """
@@ -76,8 +76,8 @@ class BackupOs:
         headers = {"x-object-meta-name": instance._info['name'],
                    "x-object-meta-flavor-id": instance._info['flavor']['id']}
         self.storage.add_stream(stream, package, headers)
-        logging.info("[*] Deleting temporary image")
-        glance.images.delete(image)
+        logging.info("[*] Deleting temporary image {0}".format(image))
+        glance.images.delete(image.id)
 
     def backup_cinder_by_glance(self, volume_id):
         """
