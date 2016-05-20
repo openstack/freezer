@@ -15,10 +15,10 @@ limitations under the License.
 
 Freezer general utils functions
 """
-from six.moves import queue
-import threading
-
 from oslo_log import log
+from six.moves import queue
+
+import threading
 
 LOG = log.getLogger(__name__)
 
@@ -112,4 +112,5 @@ class QueuedThread(threading.Thread):
             self._exception_queue.put_nowait(e)
             self.rich_queue.force_stop()
             # Thread will exit at this point.
-            raise
+            # @todo print the error using traceback.print_exc(file=sys.stdout)
+            raise e

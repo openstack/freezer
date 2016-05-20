@@ -110,7 +110,9 @@ class DateTime(object):
 
 
 def path_join(*args):
-    """Should work for windows and linux"""
+    """Should work for windows and linux
+    :rtype: str
+    """
     return "/".join([str(x) for x in args])
 
 

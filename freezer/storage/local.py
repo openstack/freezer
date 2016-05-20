@@ -35,7 +35,10 @@ class LocalStorage(fslike.FsLikeStorage):
         shutil.copyfile(from_path, to_path)
 
     def listdir(self, directory):
-        return os.listdir(directory)
+        try:
+            return os.listdir(directory)
+        except OSError:
+            return list()
 
     def create_dirs(self, path):
         utils.create_dir_tree(path)

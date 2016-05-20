@@ -33,14 +33,12 @@ class SshStorage(fslike.FsLikeStorage):
     """
     :type ftp: paramiko.SFTPClient
     """
-    DEFAULT_CHUNK_SIZE = 10000000
 
-    def __init__(self, storage_directory, work_dir, ssh_key_path,
-                 remote_username, remote_ip, port,
-                 chunk_size=DEFAULT_CHUNK_SIZE):
+    def __init__(self, storage_path, ssh_key_path,
+                 remote_username, remote_ip, port, max_segment_size):
         """
-            :param storage_directory: directory of storage
-            :type storage_directory: str
+            :param storage_path: directory of storage
+            :type storage_path: str
             :return:
             """
         self.ssh_key_path = ssh_key_path
@@ -50,8 +48,9 @@ class SshStorage(fslike.FsLikeStorage):
         self.ssh = None
         self.ftp = None
         self.init()
-        super(SshStorage, self).__init__(storage_directory, work_dir,
-                                         chunk_size)
+        super(SshStorage, self).__init__(
+            storage_path=storage_path,
+            max_segment_size=max_segment_size)
 
     def init(self):
         ssh = paramiko.SSHClient()

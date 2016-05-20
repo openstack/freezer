@@ -297,7 +297,6 @@ class BackupOpt1:
         self.max_segment_size = '0'
         self.time_stamp = 123456789
         self.container = 'test-container'
-        self.work_dir = '/tmp'
         self.max_level = '20'
         self.encrypt_pass_file = '/dev/random'
         self.always_level = '20'
@@ -333,7 +332,6 @@ class BackupOpt1:
         self.client_manager.create_swift = self.client_manager.get_swift
         self.storage = swift.SwiftStorage(self.client_manager,
                                           self.container,
-                                          self.work_dir,
                                           self.max_segment_size)
         self.engine = tar_engine.TarBackupEngine(
             self.compression, self.dereference_symlink,

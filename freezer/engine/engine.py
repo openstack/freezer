@@ -17,16 +17,20 @@ Freezer general utils functions
 """
 
 import abc
+import json
 import multiprocessing
 from multiprocessing.queues import SimpleQueue
+import shutil
 import six
 # PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
 from six.moves import queue
+import tempfile
 import time
 
 from oslo_log import log
 
 from freezer.engine.exceptions import EngineException
+from freezer.storage import base
 from freezer.utils import streaming
 from freezer.utils import utils
 
@@ -65,78 +69,123 @@ class BackupEngine(object):
             Restore stream is a consumer, that is actually does restore (for
             tar it is a thread that creates gnutar subprocess and feeds chunks
             to stdin of this thread.
+
+    :type storage: freezer.storage.base.Storage
     """
+
+    def __init__(self, storage):
+        """
+        :type storage: freezer.storage.base.Storage
+        :param storage:
+        :return:
+        """
+        self.storage = storage
+
+    @abc.abstractproperty
+    def name(self):
+        """
+        :rtype: str
+        :return: Engine name
+        """
+        pass
+
     def backup_stream(self, backup_path, rich_queue, manifest_path):
         """
         :param rich_queue:
         :type rich_queue: freezer.streaming.RichQueue
+        :type manifest_path: list[str]
         :param manifest_path:
         :return:
         """
         rich_queue.put_messages(self.backup_data(backup_path, manifest_path))
 
-    def backup(self, backup_path, backup, queue_size=2):
+    def backup(self, backup_path, hostname_backup_name, no_incremental,
+               max_level, always_level, restart_always_level, queue_size=2):
         """
         Here we now location of all interesting artifacts like metadata
         Should return stream for storing data.
         :return: stream
         """
-        manifest = backup.storage.download_meta_file(backup)
-        input_queue = streaming.RichQueue(queue_size)
+        prev_backup = self.storage.previous_backup(
+            engine=self,
+            hostname_backup_name=hostname_backup_name,
+            no_incremental=no_incremental,
+            max_level=max_level,
+            always_level=always_level,
+            restart_always_level=restart_always_level
+        )
 
-        read_except_queue = queue.Queue()
-        write_except_queue = queue.Queue()
+        try:
+            tmpdir = tempfile.mkdtemp()
+        except Exception:
+            LOG.error("Unable to create a tmp directory")
+            raise
 
-        read_stream = streaming.QueuedThread(
-            self.backup_stream,
-            input_queue,
-            read_except_queue,
-            kwargs={"backup_path": backup_path,
-                    "manifest_path": manifest})
+        try:
+            engine_meta = utils.path_join(tmpdir, "engine_meta")
+            freezer_meta = utils.path_join(tmpdir, "freezer_meta")
+            if prev_backup:
+                prev_backup.storage.get_file(prev_backup.engine_metadata_path,
+                                             engine_meta)
+            timestamp = utils.DateTime.now().timestamp
+            level_zero_timestamp = (prev_backup.level_zero_timestamp
+                                    if prev_backup else timestamp)
+            backup = base.Backup(
+                engine=self,
+                hostname_backup_name=hostname_backup_name,
+                level_zero_timestamp=level_zero_timestamp,
+                timestamp=timestamp,
+                level=(prev_backup.level + 1 if prev_backup else 0)
+            )
 
-        write_stream = streaming.QueuedThread(
-            backup.storage.write_backup,
-            input_queue,
-            write_except_queue,
-            kwargs={"backup": backup})
+            input_queue = streaming.RichQueue(queue_size)
+            read_except_queue = queue.Queue()
+            write_except_queue = queue.Queue()
 
-        read_stream.daemon = True
-        write_stream.daemon = True
+            read_stream = streaming.QueuedThread(
+                self.backup_stream,
+                input_queue,
+                read_except_queue,
+                kwargs={"backup_path": backup_path,
+                        "manifest_path": engine_meta})
 
-        read_stream.start()
-        write_stream.start()
+            write_stream = streaming.QueuedThread(
+                self.storage.write_backup,
+                input_queue,
+                write_except_queue,
+                kwargs={"backup": backup})
 
-        read_stream.join()
-        write_stream.join()
+            read_stream.daemon = True
+            write_stream.daemon = True
+            read_stream.start()
+            write_stream.start()
+            read_stream.join()
+            write_stream.join()
 
-        # queue handling is different from SimpleQueue handling.
-        def handle_except_queue(except_queue):
-            if not except_queue.empty():
-                while not except_queue.empty():
-                    e = except_queue.get_nowait()
-                    LOG.exception('Engine error: {0}'.format(e))
-                return True
-            else:
-                return False
+            # queue handling is different from SimpleQueue handling.
+            def handle_except_queue(except_queue):
+                if not except_queue.empty():
+                    while not except_queue.empty():
+                        e = except_queue.get_nowait()
+                        LOG.critical('Engine error: {0}'.format(e))
+                    return True
+                else:
+                    return False
 
-        got_exception = None
-        got_exception = (handle_except_queue(read_except_queue) or
-                         got_exception)
-        got_exception = (handle_except_queue(write_except_queue) or
-                         got_exception)
+            got_exception = None
+            got_exception = (handle_except_queue(read_except_queue) or
+                             got_exception)
+            got_exception = (handle_except_queue(write_except_queue) or
+                             got_exception)
 
-        if (got_exception):
-            raise EngineException("Engine error. Failed to backup.")
+            if (got_exception):
+                raise EngineException("Engine error. Failed to backup.")
 
-        self.post_backup(backup, manifest)
-
-    @abc.abstractmethod
-    def post_backup(self, backup, manifest_file):
-        """
-        Uploading manifest, cleaning temporary files
-        :return:
-        """
-        pass
+            with open(freezer_meta, mode='wb') as b_file:
+                b_file.write(json.dumps(self.metadata()))
+            self.storage.put_metadata(engine_meta, freezer_meta, backup)
+        finally:
+            shutil.rmtree(tmpdir)
 
     def read_blocks(self, backup, write_pipe, read_pipe, except_queue):
         # Close the read pipe in this child as it is unneeded
@@ -165,28 +214,42 @@ class BackupEngine(object):
             except_queue.put(e)
             raise
 
-    def restore(self, backup, restore_path, overwrite):
+    def restore(self, hostname_backup_name, restore_path,
+                overwrite,
+                recent_to_date):
         """
-        :type backup: freezer.storage.Backup
+
+        :param hostname_backup_name:
+        :param restore_path:
+        :param overwrite:
+        :param recent_to_date:
         """
-        LOG.info("Creation restore path: {0}".format(restore_path))
+        LOG.info("Creating restore path: {0}".format(restore_path))
+        # if restore path can't be created this function will raise exception
         utils.create_dir_tree(restore_path)
         if not overwrite and not utils.is_empty_dir(restore_path):
             raise Exception(
                 "Restore dir is not empty. "
                 "Please use --overwrite or provide different path.")
-        LOG.info("Creation restore path completed")
-        for level in range(0, backup.level + 1):
-            b = backup.full_backup.increments[level]
-            LOG.info("Restore backup {0}".format(b))
 
-            # Use SimpleQueue because Queue does not work on Mac OS X.
-            read_except_queue = SimpleQueue()
+        LOG.info("Restore path creation completed")
+        backups = self.storage.get_latest_level_zero_increments(
+            engine=self,
+            hostname_backup_name=hostname_backup_name,
+            recent_to_date=recent_to_date)
 
+        max_level = max(backups.keys())
+
+        # Use SimpleQueue because Queue does not work on Mac OS X.
+        read_except_queue = SimpleQueue()
+
+        for level in range(0, max_level + 1):
+            backup = backups[level]
+            LOG.info("Restoring backup {0}".format(backup))
             read_pipe, write_pipe = multiprocessing.Pipe()
             process_stream = multiprocessing.Process(
                 target=self.read_blocks,
-                args=(b, write_pipe, read_pipe, read_except_queue))
+                args=(backup, write_pipe, read_pipe, read_except_queue))
 
             process_stream.daemon = True
             process_stream.start()
@@ -228,8 +291,8 @@ class BackupEngine(object):
                 raise EngineException("Engine error. Failed to restore.")
 
         LOG.info(
-            'Restore execution successfully executed \
-             for backup name {0}'.format(backup))
+            'Restore completed successfully for backup name '
+            '{0}'.format(backups[max_level]))
 
     @abc.abstractmethod
     def restore_level(self, restore_path, read_pipe, backup, except_queue):
@@ -242,4 +305,8 @@ class BackupEngine(object):
         :param manifest_path:
         :return:
         """
+        pass
+
+    @abc.abstractmethod
+    def metadata(self):
         pass

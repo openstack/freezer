@@ -31,7 +31,8 @@ class TarBackupEngine(engine.BackupEngine):
 
     def __init__(
             self, compression_algo, dereference_symlink, exclude, storage,
-            is_windows, chunk_size, encrypt_pass_file=None, dry_run=False):
+            is_windows, max_segment_size, encrypt_pass_file=None,
+            dry_run=False):
         """
             :type storage: freezer.storage.base.Storage
         :return:
@@ -43,20 +44,24 @@ class TarBackupEngine(engine.BackupEngine):
         self.storage = storage
         self.is_windows = is_windows
         self.dry_run = dry_run
-        self.chunk_size = chunk_size
+        self.max_segment_size = max_segment_size
+        super(TarBackupEngine, self).__init__(storage=storage)
 
-    def post_backup(self, backup, manifest):
-        self.storage.upload_meta_file(backup, manifest)
-        metadata = {
-            "engine": "tar",
+    @property
+    def name(self):
+        return "tar"
+
+    def metadata(self):
+        return {
+            "engine_name": self.name,
             "compression": self.compression_algo,
-            "encryption": self.encrypt_pass_file is not None
+            # the encrypt_pass_file might be key content so we need to covert
+            # to boolean
+            "encryption": bool(self.encrypt_pass_file)
         }
 
-        self.storage.upload_freezer_meta_data(backup, metadata)
-
     def backup_data(self, backup_path, manifest_path):
-        LOG.info("Tar engine backup stream enter")
+        LOG.info("Starting Tar engine backup stream")
         tar_command = tar_builders.TarCommandBuilder(
             backup_path, self.compression_algo, self.is_windows)
         if self.encrypt_pass_file:
@@ -73,19 +78,24 @@ class TarBackupEngine(engine.BackupEngine):
         tar_process = subprocess.Popen(command, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, shell=True)
         read_pipe = tar_process.stdout
-        tar_chunk = read_pipe.read(self.chunk_size)
+        tar_chunk = read_pipe.read(self.max_segment_size)
         while tar_chunk:
             yield tar_chunk
-            tar_chunk = read_pipe.read(self.chunk_size)
+            tar_chunk = read_pipe.read(self.max_segment_size)
 
         self.check_process_output(tar_process, 'Backup')
 
-        LOG.info("Tar engine streaming end")
+        LOG.info("Tar engine stream completed")
 
     def restore_level(self, restore_path, read_pipe, backup, except_queue):
         """
         Restore the provided file into backup_opt_dict.restore_abs_path
         Decrypt the file if backup_opt_dict.encrypt_pass_file key is provided
+
+        :param restore_path:
+        :param read_pipe:
+        :type backup: freezer.storage.base.Backup
+        :param backup:
         """
 
         try:

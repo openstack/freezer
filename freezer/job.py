@@ -49,27 +49,18 @@ class Job(object):
         self.storage = storage
         self.engine = conf_dict.engine
 
-    def execute(self):
-        start_time = utils.DateTime.now()
-        LOG.info('Job execution Started at: {0}'.format(start_time))
-        retval = self.execute_method()
-        end_time = utils.DateTime.now()
-        LOG.info('Job execution Finished, at: {0}'.format(end_time))
-        LOG.info('Job time Elapsed: {0}'.format(end_time - start_time))
-        return retval
-
     @abc.abstractmethod
-    def execute_method(self):
+    def execute(self):
         pass
 
 
 class InfoJob(Job):
-    def execute_method(self):
+    def execute(self):
         self.storage.info()
 
 
 class BackupJob(Job):
-    def execute_method(self):
+    def execute(self):
         try:
             (out, err) = utils.create_subprocess('sync')
             if err:
@@ -81,9 +72,9 @@ class BackupJob(Job):
         mod_name = 'freezer.mode.{0}.{1}'.format(
             self.conf.mode, self.conf.mode.capitalize() + 'Mode')
         app_mode = importutils.import_object(mod_name, self.conf)
-        backup_instance = self.backup(app_mode)
+        backup_level = self.backup(app_mode)
 
-        level = backup_instance.level if backup_instance else 0
+        level = backup_level or 0
 
         metadata = {
             'curr_backup_level': level,
@@ -162,16 +153,14 @@ class BackupJob(Job):
                              format(consistency_checksum))
                     self.conf.consistency_checksum = consistency_checksum
 
-                hostname_backup_name = self.conf.hostname_backup_name
-                backup_instance = self.storage.create_backup(
-                    hostname_backup_name,
-                    self.conf.no_incremental,
-                    self.conf.max_level,
-                    self.conf.always_level,
-                    self.conf.restart_always_level,
-                    time_stamp=time_stamp)
-                self.engine.backup(filepath, backup_instance)
-                return backup_instance
+                return self.engine.backup(
+                    backup_path=filepath,
+                    hostname_backup_name=self.conf.hostname_backup_name,
+                    no_incremental=self.conf.no_incremental,
+                    max_level=self.conf.max_level,
+                    always_level=self.conf.always_level,
+                    restart_always_level=self.conf.restart_always_level)
+
             finally:
                 # whether an error occurred or not, remove the snapshot anyway
                 app_mode.release()
@@ -201,7 +190,7 @@ class BackupJob(Job):
 
 class RestoreJob(Job):
 
-    def execute_method(self):
+    def execute(self):
         conf = self.conf
         LOG.info('Executing FS restore...')
         restore_timestamp = None
@@ -210,9 +199,11 @@ class RestoreJob(Job):
         if conf.restore_from_date:
             restore_timestamp = utils.date_to_timestamp(conf.restore_from_date)
         if conf.backup_media == 'fs':
-            backup = self.storage.find_one(conf.hostname_backup_name,
-                                           restore_timestamp)
-            self.engine.restore(backup, restore_abs_path, conf.overwrite)
+            self.engine.restore(
+                hostname_backup_name=self.conf.hostname_backup_name,
+                restore_path=restore_abs_path,
+                overwrite=conf.overwrite,
+                recent_to_date=conf.restore_from_date)
 
             try:
                 if conf.consistency_checksum:
@@ -246,13 +237,9 @@ class RestoreJob(Job):
         return {}
 
 
-class ConsistencyCheckException(Exception):
-    pass
-
-
 class AdminJob(Job):
 
-    def execute_method(self):
+    def execute(self):
         if self.conf.remove_from_date:
             timestamp = utils.date_to_timestamp(self.conf.remove_from_date)
         else:
@@ -260,14 +247,15 @@ class AdminJob(Job):
                 datetime.timedelta(days=self.conf.remove_older_than)
             timestamp = int(time.mktime(timestamp.timetuple()))
 
-        self.storage.remove_older_than(timestamp,
+        self.storage.remove_older_than(self.engine,
+                                       timestamp,
                                        self.conf.hostname_backup_name)
         return {}
 
 
 class ExecJob(Job):
 
-    def execute_method(self):
+    def execute(self):
         LOG.info('exec job....')
         if self.conf.command:
             LOG.info('Executing exec job....')
@@ -276,3 +264,7 @@ class ExecJob(Job):
             LOG.warning(
                 'No command info options were set. Exiting.')
         return {}
+
+
+class ConsistencyCheckException(Exception):
+    pass

@@ -22,10 +22,12 @@ from glanceclient.client import Client as glance_client
 from keystoneauth1 import loading
 from keystoneauth1 import session
 from novaclient.client import Client as nova_client
+from oslo_config import cfg
 from oslo_log import log
 
 from freezer.utils import utils
 
+CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
 

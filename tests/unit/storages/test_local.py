@@ -63,10 +63,12 @@ class TestLocalStorage(unittest.TestCase):
 
     def test_prepare(self):
         backup_dir, files_dir, work_dir = self.create_dirs()
-        storage = local.LocalStorage(backup_dir, work_dir)
+        storage = local.LocalStorage(backup_dir,
+                                     work_dir,
+                                     10000)
         storage.prepare()
 
     def test_info(self):
         backup_dir, files_dir, work_dir = self.create_dirs()
-        storage = local.LocalStorage(backup_dir, work_dir)
+        storage = local.LocalStorage(backup_dir, work_dir, 10000)
         storage.info()

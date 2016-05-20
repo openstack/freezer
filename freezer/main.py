@@ -57,7 +57,6 @@ def freezer_main(backup_args):
 
     validator.validate(backup_args)
 
-    work_dir = backup_args.work_dir
     max_segment_size = backup_args.max_segment_size
     if (backup_args.storage ==
             'swift' or
@@ -67,12 +66,10 @@ def freezer_main(backup_args):
 
     if backup_args.storages:
         storage = multiple.MultipleStorage(
-            work_dir,
-            [storage_from_dict(x, work_dir, max_segment_size)
+            [storage_from_dict(x, max_segment_size)
              for x in backup_args.storages])
     else:
-        storage = storage_from_dict(backup_args.__dict__, work_dir,
-                                    max_segment_size)
+        storage = storage_from_dict(backup_args.__dict__, max_segment_size)
 
     backup_args.engine = tar_engine.TarBackupEngine(
         backup_args.compression,
@@ -127,7 +124,14 @@ def run_job(conf, storage):
         'info': job.InfoJob,
         'admin': job.AdminJob,
         'exec': job.ExecJob}[conf.action](conf, storage)
+
+    start_time = utils.DateTime.now()
+    LOG.info('Job execution Started at: {0}'.format(start_time))
     response = freezer_job.execute()
+    end_time = utils.DateTime.now()
+    LOG.info('Job execution Finished, at: {0}'.format(end_time))
+    LOG.info('Job time Elapsed: {0}'.format(end_time - start_time))
+    LOG.info('Backup metadata received: {0}'.format(json.dumps(response)))
 
     if conf.metadata_out and response:
         if conf.metadata_out == '-':
@@ -168,22 +172,25 @@ def get_client_manager(backup_args):
     return client_manager
 
 
-def storage_from_dict(backup_args, work_dir, max_segment_size):
+def storage_from_dict(backup_args, max_segment_size):
     storage_name = backup_args['storage']
     container = backup_args['container']
     if storage_name == "swift":
         client_manager = backup_args['client_manager']
 
         storage = swift.SwiftStorage(
-            client_manager, container, work_dir, max_segment_size)
+            client_manager, container, max_segment_size)
     elif storage_name == "local":
-        storage = local.LocalStorage(container, work_dir)
+        storage = local.LocalStorage(
+            storage_path=container,
+            max_segment_size=max_segment_size)
     elif storage_name == "ssh":
         storage = ssh.SshStorage(
-            container, work_dir,
+            container,
             backup_args['ssh_key'], backup_args['ssh_username'],
             backup_args['ssh_host'],
-            int(backup_args.get('ssh_port', freezer_config.DEFAULT_SSH_PORT)))
+            int(backup_args.get('ssh_port', freezer_config.DEFAULT_SSH_PORT)),
+            max_segment_size=max_segment_size)
     else:
         raise Exception("Not storage found for name {0}".format(
             backup_args['storage']))

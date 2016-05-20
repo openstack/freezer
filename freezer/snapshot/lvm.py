@@ -38,7 +38,6 @@ def lvm_snap_remove(backup_opt_dict):
     :param backup_opt_dict.lvm_snapname: name of the snapshot lv
     :return: None, raises on error
     """
-    os.chdir(backup_opt_dict.work_dir)
     try:
         _umount(backup_opt_dict.lvm_dirmount)
     except Exception as e:

@@ -26,12 +26,6 @@ LOG = log.getLogger(__name__)
 
 class MultipleStorage(base.Storage):
 
-    def remove_backup(self, backup):
-        raise Exception()
-
-    def backup_blocks(self, backup):
-        raise Exception()
-
     def info(self):
         for s in self.storages:
             s.info()
@@ -70,25 +64,42 @@ class MultipleStorage(base.Storage):
         if (got_exception):
             raise StorageException("Storage error. Failed to backup.")
 
-    def find_all(self, hostname_backup_name):
-        backups = [b.find_all(hostname_backup_name) for b in self.storages]
+    def get_level_zero(self,
+                       engine,
+                       hostname_backup_name,
+                       recent_to_date=None):
+        backups = (
+            [s.get_level_zero(engine, hostname_backup_name, recent_to_date)
+             for s in self.storages]
+        )
         # flat the list
         return [item for sublist in backups for item in sublist]
 
     def prepare(self):
         pass
 
-    def upload_meta_file(self, backup, meta_file):
+    def put_file(self, from_path, to_path):
         for storage in self.storages:
-            storage.upload_meta_file(backup, meta_file)
+            storage.put_file(from_path, to_path)
 
-    def __init__(self, work_dir, storages):
+    def put_engine_metadata(self, from_path, backup):
+        """
+
+        :param from_path:
+        :type backup: freezer.storage.base.Backup
+        :param backup:
+        :return:
+        """
+        for storage in self.storages:
+            storage.put_engine_metadata(from_path, backup)
+
+    def __init__(self, storages):
         """
         :param storages:
         :type storages: list[freezer.storage.base.Storage]
         :return:
         """
-        super(MultipleStorage, self).__init__(work_dir)
+        super(MultipleStorage, self).__init__()
         self.storages = storages
 
     def download_freezer_meta_data(self, backup):

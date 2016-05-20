@@ -92,15 +92,26 @@ class TestFreezerCompressGzip(base.BaseFreezerTest):
         :param metadata: the parsed json file metadata
         :return: the mimetype
         """
-        hostname = metadata['hostname']
-        backup_name = metadata['backup_name']
-        time_stamp = metadata['time_stamp']
-        dir_name = '%s_%s' % (hostname, backup_name)
-        file_name = '%s_%s_%s_0' % (hostname, backup_name, time_stamp)
+        """
+        Data is stored like data/tar/localhost_False/1469786264/0_1469786264 so
+        we need build the same directory structure.
+        data: the directory that holds the backup data
+        tar: the engine used to create backup
+        localhost: the hostname of the machine where the backup was taken
+        False: it should be backup name or False is backup is not provided
+        1469786264: timestamp
+        0_1469786264: level zero timestamp
+        """
+        data_file_path = 'data{0}{1}{0}{2}_{3}{0}{4}{0}{5}_{4}{0}data'.format(
+            os.path.sep,
+            "tar",  # currently we support only tar
+            metadata['hostname'],
+            metadata['backup_name'],
+            metadata['time_stamp'],
+            metadata['curr_backup_level']
+        )
         data_file_path = os.path.join(self.storage_tree.path,
-                                      dir_name,
-                                      str(time_stamp),
-                                      file_name)
+                                      data_file_path)
         self.assertEqual(True, os.path.exists(data_file_path))
 
         # run 'file' in brief mode to only output the values we want

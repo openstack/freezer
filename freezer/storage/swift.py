@@ -20,35 +20,42 @@ from oslo_log import log
 import requests.exceptions
 import time
 
-from freezer.storage import base
+from freezer.storage import physical
 
 LOG = log.getLogger(__name__)
 
 
-class SwiftStorage(base.Storage):
+class SwiftStorage(physical.PhysicalStorage):
     """
     :type client_manager: freezer.osclients.ClientManager
     """
 
-    def __init__(self, client_manager, container, work_dir, max_segment_size,
+    def rmtree(self, path):
+        split = path.rsplit('/', 1)
+        for file in self.swift().get_container(split[0],
+                                               prefix=split[1])[1]:
+            try:
+                self.swift().delete_object(split[0], file['name'])
+            except Exception as e:
+                raise e
+
+    def put_file(self, from_path, to_path):
+        self.client_manager.create_swift()
+        split = to_path.rsplit('/', 1)
+        with open(from_path, 'r') as meta_fd:
+            self.swift().put_object(split[0], split[1], meta_fd)
+
+    def __init__(self, client_manager, container, max_segment_size,
                  skip_prepare=False):
         """
-        :type client_manager: freezer.osclients.ClientManager
+        :type client_manager: freezer.osclients.OSClientManager
         :type container: str
         """
         self.client_manager = client_manager
-        # The containers used by freezer to executed backups needs to have
-        # freezer_ prefix in the name. If the user provider container doesn't
-        # have the prefix, it is automatically added also to the container
-        # segments name. This is done to quickly identify the containers
-        # that contain freezer generated backups
-        if not container.startswith('freezer_'):
-            self.container = 'freezer_{0}'.format(container)
-        else:
-            self.container = container
-        self.segments = u'{0}_segments'.format(container)
-        self.max_segment_size = max_segment_size
-        super(SwiftStorage, self).__init__(work_dir, skip_prepare)
+        super(SwiftStorage, self).__init__(
+            storage_path=container,
+            max_segment_size=max_segment_size,
+            skip_prepare=skip_prepare)
 
     def swift(self):
         """
@@ -67,12 +74,13 @@ class SwiftStorage(base.Storage):
 
         count = 0
         success = False
+        split = path.rsplit('/', 1)
         while not success:
             try:
                 LOG.info(
                     'Uploading file chunk index: {0}'.format(path))
                 self.swift().put_object(
-                    self.segments, path, content,
+                    split[0], split[1], content,
                     content_type='application/octet-stream',
                     content_length=len(content))
                 LOG.info('Data successfully uploaded!')
@@ -96,26 +104,14 @@ class SwiftStorage(base.Storage):
         :param backup: Backup
         :type backup: freezer.storage.base.Backup
         """
+        backup = backup.copy(storage=self)
         self.client_manager.create_swift()
-        headers = {'x-object-manifest':
-                   u'{0}/{1}'.format(self.segments, backup)}
-        LOG.info('Uploading Swift Manifest: {0}'.format(backup))
-        self.swift().put_object(container=self.container, obj=str(backup),
+        headers = {'x-object-manifest': backup.segments_path}
+        LOG.info('[*] Uploading Swift Manifest: {0}'.format(backup))
+        split = backup.data_path.rsplit('/', 1)
+        self.swift().put_object(container=split[0], obj=split[1],
                                 contents=u'', headers=headers)
         LOG.info('Manifest successfully uploaded!')
-
-    def upload_meta_file(self, backup, meta_file):
-        # Upload swift manifest for segments
-        # Request a new auth client in case the current token
-        # is expired before uploading tar meta data or the swift manifest
-        self.client_manager.create_swift()
-
-        # Upload tar incremental meta data file and remove it
-        LOG.info('Uploading tar meta data file: {0}'.format(
-            backup.tar()))
-        with open(meta_file, 'r') as meta_fd:
-            self.swift().put_object(
-                self.container, backup.tar(), meta_fd)
 
     def prepare(self):
         """
@@ -125,10 +121,8 @@ class SwiftStorage(base.Storage):
         account.
         """
         containers_list = [c['name'] for c in self.swift().get_account()[1]]
-        if self.container not in containers_list:
-            self.swift().put_container(self.container)
-        if self.segments not in containers_list:
-            self.swift().put_container(self.segments)
+        if self.storage_path not in containers_list:
+            self.swift().put_container(self.storage_path)
 
     def info(self):
         ordered_container = {}
@@ -145,36 +139,14 @@ class SwiftStorage(base.Storage):
                 ordered_container, indent=4,
                 separators=(',', ': '), sort_keys=True))
 
-    def meta_file_abs_path(self, backup):
-        return backup.tar()
-
     def get_file(self, from_path, to_path):
+        split = from_path.split('/', 1)
         with open(to_path, 'ab') as obj_fd:
             iterator = self.swift().get_object(
-                self.container, from_path,
+                split[0], split[1],
                 resp_chunk_size=self.max_segment_size)[1]
             for obj_chunk in iterator:
                 obj_fd.write(obj_chunk)
-
-    def remove(self, container, prefix):
-        for segment in self.swift().get_container(container, prefix=prefix)[1]:
-            self.swift().delete_object(container, segment['name'])
-
-    def remove_backup(self, backup):
-        """
-            Removes backup, all increments, tar_meta and segments
-            :param backup:
-            :type backup: freezer.storage.base.Backup
-            :return:
-        """
-        for i in range(backup.latest_update.level, -1, -1):
-            if i in backup.increments:
-                # remove segment
-                self.remove(self.segments, backup.increments[i])
-                # remove tar
-                self.remove(self.container, backup.increments[i].tar())
-                # remove manifest
-                self.remove(self.container, backup.increments[i])
 
     def add_stream(self, stream, package_name, headers=None):
         i = 0
@@ -190,19 +162,6 @@ class SwiftStorage(base.Storage):
         self.swift().put_object(self.container, package_name, "",
                                 headers=headers)
 
-    def find_all(self, hostname_backup_name):
-        """
-        :rtype: list[freezer.storage.base.Backup]
-        :return: list of zero level backups
-        """
-        try:
-            files = self.swift().get_container(self.container)[1]
-            names = [x['name'] for x in files if 'name' in x]
-            return [b for b in base.Backup.parse_backups(names, self)
-                    if b.hostname_backup_name == hostname_backup_name]
-        except Exception as error:
-            raise Exception('Error: get_object_list: {0}'.format(error))
-
     def backup_blocks(self, backup):
         """
 
@@ -210,14 +169,15 @@ class SwiftStorage(base.Storage):
         :type backup: freezer.storage.base.Backup
         :return:
         """
+        split = backup.data_path.split('/', 1)
         try:
-            chunks = self.swift().get_object(
-                self.container, str(backup),
+            chunks = self.client_manager.create_swift().get_object(
+                split[0], split[1],
                 resp_chunk_size=self.max_segment_size)[1]
         except requests.exceptions.SSLError as e:
             LOG.warning(e)
             chunks = self.client_manager.create_swift().get_object(
-                self.container, str(backup),
+                split[0], split[1],
                 resp_chunk_size=self.max_segment_size)[1]
 
         for chunk in chunks:
@@ -229,15 +189,36 @@ class SwiftStorage(base.Storage):
         :type rich_queue: freezer.streaming.RichQueue
         :type backup: freezer.storage.base.Backup
         """
+        backup = backup.copy(storage=self)
         for block_index, message in enumerate(rich_queue.get_messages()):
-            segment_package_name = u'{0}/{1}/{2}/{3}'.format(
-                backup, backup.timestamp,
-                self.max_segment_size, "%08d" % block_index)
+            segment_package_name = u'{0}/{1}'.format(
+                backup.segments_path, "%08d" % block_index)
             self.upload_chunk(message, segment_package_name)
         self.upload_manifest(backup)
 
-    def download_freezer_meta_data(self, backup):
-        return {}
+    def listdir(self, path):
+        """
+        :type path: str
+        :param path:
+        :rtype: collections.Iterable[str]
+        """
+        try:
+            # split[0] will have container name and the split[1] will have
+            # the rest of the path. If the path is
+            # freezer_backups/tar/server1.cloud.com_testest/
+            # split[0] = freezer_backups which is container name
+            # split[1] = tar/server1.cloud.com_testest/
+            split = path.split('/', 1)
+            files = self.swift().get_container(container=split[0],
+                                               full_listing=True,
+                                               prefix=split[1])[1]
+            # @todo normalize intro plain for loop to be easily
+            # understandable (szaher)
+            return set(f['name'][len(split[1]):].split('/', 2)[1] for f in
+                       files)
+        except Exception as e:
+            LOG.info(e)
+            return []
 
-    def upload_freezer_meta_data(self, backup, meta_dict):
+    def create_dirs(self, folder_list):
         pass

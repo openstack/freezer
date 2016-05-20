@@ -17,7 +17,6 @@ from distutils import spawn as distspawn
 import os
 from oslo_config import cfg
 from oslo_log import log
-from oslo_utils import encodeutils
 import socket
 import sys
 from tempfile import NamedTemporaryFile
@@ -26,7 +25,7 @@ from freezer import __version__ as FREEZER_VERSION
 from freezer.utils import config as freezer_config
 from freezer.utils import utils
 from freezer.utils import winutils
-
+from oslo_utils import encodeutils
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
@@ -177,18 +176,16 @@ _COMMON = [
                  help="Restart the backup from level 0 after n days. Valid "
                       "only if --always-level option if set. If "
                       "--always-level is used together with "
-                      "--remove-older-then, there might be "
+                      "--remove-older-than, there might be "
                       "the chance where the initial level 0 will be removed. "
                       "Default False (Disabled)"),
     cfg.FloatOpt('remove-older-than',
                  short='R',
                  dest='remove_older_than',
-                 help="Checks in the specified container for object older "
+                 help="Checks in the specified container for objects older "
                       "than the specified days. If i.e. 30 is specified, it "
                       "will remove the remote object older than 30 days. "
-                      "Default False (Disabled) The option "
-                      "--remove-older-then is deprecated and will be removed "
-                      "soon", deprecated_for_removal=True),
+                      "Default False (Disabled)"),
     cfg.StrOpt('remove-from-date',
                dest='remove_from_date',
                help="Checks the specified container and removes objects older "
@@ -462,11 +459,29 @@ def get_backup_args():
 
     if not CONF.get('log_file'):
         log_file = None
-        for file_name in ['/var/log/freezer.log', '~/.freezer/freezer.log']:
+        for file_name in ['/var/log/freezer-agent/freezer-agent.log',
+                          '/var/log/freezer.log']:
             try:
                 log_file = prepare_logging(file_name)
             except IOError:
                 pass
+
+        if not log_file:
+            # Set default working directory to ~/.freezer. If the directory
+            # does not exists it is created
+            work_dir = os.path.join(home, '.freezer')
+            if not os.path.exists(work_dir):
+                try:
+                    os.makedirs(work_dir)
+                    log_file = prepare_logging(os.path.join(work_dir,
+                                                            'freezer.log'))
+                except (OSError, IOError) as err_msg:
+                    # This avoids freezer-agent to crash if it can't write to
+                    # ~/.freezer, which may happen on some env (for me,
+                    # it happens in Jenkins, as freezer-agent can't write to
+                    # /var/lib/jenkins).
+                    print(encodeutils.safe_decode('{}'.format(err_msg)),
+                          file=sys.stderr)
         if log_file:
             CONF.set_default('log_file', log_file)
         else:
