@@ -24,24 +24,36 @@ class BaseFreezerTest(tempest.test.BaseTestCase):
 
         super(BaseFreezerTest, self).__init__(*args, **kwargs)
 
-    def setUp(self):
 
+    def setUp(self):
         super(BaseFreezerTest, self).setUp()
+
+        self.get_environ()
 
     def tearDown(self):
 
         super(BaseFreezerTest, self).tearDown()
 
-    def get_environ(self):
-        os.environ['OS_PASSWORD'] = self.os.credentials.password
-        os.environ['OS_USERNAME'] = self.os.credentials.username
-        os.environ['OS_PROJECT_NAME'] = self.os.credentials.tenant_name
-        os.environ['OS_TENANT_NAME'] = self.os.credentials.tenant_name
+    @classmethod
+    def get_auth_url(cls):
+        return cls.os_primary.auth_provider.auth_client.auth_url[:-len('/tokens')]
+
+    @classmethod
+    def setup_clients(cls):
+        super(BaseFreezerTest, cls).setup_clients()
+        cls.get_environ()
+
+    @classmethod
+    def get_environ(cls):
+        os.environ['OS_PASSWORD'] = cls.os_primary.credentials.password
+        os.environ['OS_USERNAME'] = cls.os_primary.credentials.username
+        os.environ['OS_PROJECT_NAME'] = cls.os_primary.credentials.tenant_name
+        os.environ['OS_TENANT_NAME'] = cls.os_primary.credentials.tenant_name
 
         # Allow developers to set OS_AUTH_URL when developing so that
         # Keystone may be on a host other than localhost.
         if not 'OS_AUTH_URL' in os.environ:
-                os.environ['OS_AUTH_URL'] = 'http://localhost:5000/v2.0'
+                os.environ['OS_AUTH_URL'] = cls.get_auth_url()
 
         # Mac OS X uses gtar located in /usr/local/bin
         os.environ['PATH'] = '/usr/local/bin:' + os.environ['PATH']

@@ -13,9 +13,18 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-set -ex
+set -x
 
-# Install freezer devstack integration
+echo "Start Gate Hook"
+
 export DEVSTACK_LOCAL_CONFIG="enable_plugin freezer https://git.openstack.org/openstack/freezer"
+export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin freezer-api https://git.openstack.org/openstack/freezer-api"
+# Swift is needed for some of the integration tests
+export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service s-proxy s-object s-container s-account"
 
 $BASE/new/devstack-gate/devstack-vm-gate.sh
+
+# Copy log file so it will be collected by the CI system
+sudo cp /home/tempest/.freezer/freezer.log $BASE/logs/
+
+echo "End Gate Hook"

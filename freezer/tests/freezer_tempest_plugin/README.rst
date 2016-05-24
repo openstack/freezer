@@ -1,9 +1,15 @@
+<<<<<<< HEAD
 ==============================
 Tempest Integration of Freezer
 ==============================
+=======
+Freezer Tempest Tests
+=====================
+>>>>>>> First scenario test
 
-This directory contains Tempest tests to cover the freezer project.
+Integration tests in freezer are implemented using tempest. There are typically two approaches to run these tests in a development environment:
 
+<<<<<<< HEAD
 Instructions for Running/Developing Tempest Tests with Freezer Project
 
 #. Need to make sure that there is a Devstack or other environment for running Keystone and Swift.
@@ -112,3 +118,142 @@ Mac OS X Instructions
 For Mac OS X users you will need to install gnu-tar in ``/usr/local/bin`` and make sure that ``/usr/local/bin`` is in the PATH environment variable before any other directories where a different version of tar can be found. Gnu-tar can be installed as ``gtar`` or ``tar``, either name works.
 
 Also, currently for Mac OS X users, the latest version of gnu-tar (1.29) will not allow ``--unlink-first`` and ``--overwrite`` options to be used together. Also, gnu-tar will complain about the ``--unlink-first`` argument. To get around these limitations, you will need to modify ``tar_builders.py`` and remove the ``--unlink-first`` option from the ``UNIX_TEMPLATE`` variable.
+=======
+* Run all tests inside a devstack VM
+* Run the tests outside of a devstack VM (e.g. in PyCharm) but use services (keystone, swift, ...) inside a VM
+
+For both approaches one needs a devstack VM with freezer an swift running.
+
+Setting up a devstack VM
+------------------------
+
+Install devstack with swift and the freezer [1]_ as well as the freezer-api [2]_ plugins by adding the following lines to you `local.conf`:
+
+::  
+
+    enable_plugin freezer https://git.openstack.org/openstack/freezer master
+    enable_plugin freezer-api https://git.openstack.org/openstack/freezer-api master
+    enable_service s-proxy s-object s-container s-account
+
+.. [1] https://github.com/openstack/freezer/blob/master/devstack/README.rst
+.. [2] https://github.com/openstack/freezer-api/blob/master/devstack/README.rst
+
+Run tests inside a devstack VM
+-------------------------------
+
+#. Create a devstack VM as described in `Setting up a devstack VM`_
+
+#. Inside your devstack VM, navigate to `/opt/stack/tempest`.
+
+#. Run `ostestr -r freezer`
+
+Debugging tests inside a devstack VM
+------------------------------------
+
+Often a devstack VM is used via SSH without graphical interface. Python has multiple command line debuggers. The out-of-the-box pdb works fine but I recommend pudb [3]_ which looks a bit like the old Turbo-Pascal/C IDE. The following steps are necessary to get it running:
+
+#. Follow the steps in `Run tests inside a devstack VM`_.
+
+#. Log into the devstack VM
+
+#. Install pudb:
+
+   :: 
+
+     pip install pudb
+
+#. Open the test file were you want to set the first breakpoint (more breakpoints can be set interactively later) and add the following line
+
+   ::
+
+     import pudb;pu.db
+
+#. Navigate to `/opt/stack/tempest`.
+
+#. `ostestr` runs tests in parallel which causes issues with debuggers. To work around that you need to run the relevant test directly. E.g.:
+
+   ::
+
+     python -m unittest freezer.tests.freezer_tempest_plugin.tests.scenario.test_backups.TestFreezerScenario
+
+#. It should drop you into the debugger!
+
+.. [3] https://pypi.python.org/pypi/pudb
+
+Run tests outside a devstack VM
+-------------------------------
+
+#. Create a devstack VM as described in `Setting up a devstack VM`_.
+
+#. Create and activate a virtual environment for Tempest:
+   ::
+
+      virtualenv --no-site-packages tempest-venv
+      . tempest-venv/bin/activate
+
+#. Clone and install the Tempest project into the virtual environment:
+   ::
+
+     git clone https://github.com/openstack/tempest
+     pip install tempest/
+
+#. Clone and install the Freezer project into the virtual environment:
+   ::
+
+     git clone https://github.com/openstack/freezer
+     pip install -e freezer/
+
+#. Clone and install the Freezer API project into the virtual environment:
+   ::
+
+     git clone https://github.com/openstack/freezer-api
+     pip install -e freezer-api/
+
+#. Initialise a Tempest working directory:
+   ::
+
+     mkdir tempest-working
+     cd tempest-working
+     tempest init .
+     
+#. Configure `tempest-working/etc/tempest.conf`. The easiest way to do this is to just copy the config from `/opt/stack/tempest/etc/tempest.conf` inside the devstack VM.
+
+#. Run the freezer test inside the tempest working directory:
+   ::
+
+     cd tempest-working
+     ostestr -r freezer
+
+Run tests in PyCharm
+--------------------
+
+#. Set up the test environment as described in `Run tests outside a devstack VM`_.
+
+#. Start PyCharm and open a new project pointing to the cloned freezer directory.
+
+#. Click `File > Settings > Project: freezer > Project Interpreter`.
+
+#. Click the gear-wheel icon next to `Project Interpreter` and choose `Add Local`.
+
+#. Navigate to your virtual environment and select the Python interpreter under `bin/python` and confirm with `OK`
+
+#. In the left pane, navigate to one of the test scripts in `freezer/tests/freezer_tempest_plugin/tests/[api or scenario]/*.py`.
+
+#. Right-click the file and choose `Run 'Unittests in [..]'`
+
+#. This test run will most likely fail because it is started from the wrong directory. To fix this, open the dropdown box next to the run button in the top-right corner. Choose `Edit Configurations ..`
+
+#. Point `Working directory:` to your tempest working directory.
+
+#. Run the test again, this time it should work!
+
+Troubleshooting
+---------------
+
+If tests fail these are good places to check:
+
+* freezer-api log: `/var/log/apache2/freezer-api.log`
+* freezer-agent log: `$HOME/.freezer/freezer.log`
+
+
+>>>>>>> First scenario test
