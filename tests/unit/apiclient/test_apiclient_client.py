@@ -113,15 +113,15 @@ class TestSupportFunctions(unittest.TestCase):
 
 class TestClientMock(unittest.TestCase):
 
-    @patch('freezer.apiclient.client.ksc_session')
+    @patch('freezer.apiclient.client.ksa_session')
     @patch('freezer.apiclient.client.get_auth_plugin')
-    def test_client_new(self, mock_get_auth_plugin, mock_ksc_session):
+    def test_client_new(self, mock_get_auth_plugin, mock_ksa_session):
         c = client.Client(opts=Mock(), endpoint='blabla')
         self.assertIsInstance(c, client.Client)
 
-    @patch('freezer.apiclient.client.ksc_session')
+    @patch('freezer.apiclient.client.ksa_session')
     @patch('freezer.apiclient.client.get_auth_plugin')
-    def test_client_new_with_kwargs(self, mock_get_auth_plugin, mock_ksc_session):
+    def test_client_new_with_kwargs(self, mock_get_auth_plugin, mock_ksa_session):
         kwargs = {'token': 'alpha',
                   'username': 'bravo',
                   'password': 'charlie',
@@ -145,9 +145,9 @@ class TestClientMock(unittest.TestCase):
         self.assertEqual('golf', c.endpoint)
         self.assertEqual('hotel', c.version)
 
-    @patch('freezer.apiclient.client.ksc_session')
+    @patch('freezer.apiclient.client.ksa_session')
     @patch('freezer.apiclient.client.get_auth_plugin')
-    def test_get_token(self, mock_get_auth_plugin, mock_ksc_session):
+    def test_get_token(self, mock_get_auth_plugin, mock_ksa_session):
         mock_session = Mock()
         mock_session.get_token.return_value = 'antaniX2'
         c = client.Client(session=mock_session, endpoint='justtest', opts=Mock())
@@ -155,9 +155,9 @@ class TestClientMock(unittest.TestCase):
         self.assertEquals(c.auth_token, 'antaniX2')
 
     @patch('freezer.apiclient.client.socket')
-    @patch('freezer.apiclient.client.ksc_session')
+    @patch('freezer.apiclient.client.ksa_session')
     @patch('freezer.apiclient.client.get_auth_plugin')
-    def test_get_client_id(self, mock_get_auth_plugin, mock_ksc_session, mock_socket):
+    def test_get_client_id(self, mock_get_auth_plugin, mock_ksa_session, mock_socket):
         mock_socket.gethostname.return_value = 'parmenide'
         mock_session = Mock()
         mock_session.get_project_id.return_value = 'H2O'
