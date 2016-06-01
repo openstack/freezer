@@ -15,7 +15,6 @@ limitations under the License.
 
 Freezer Backup modes related functions
 """
-import os
 import time
 
 from oslo_config import cfg
@@ -25,7 +24,6 @@ from freezer.utils import utils
 
 CONF = cfg.CONF
 logging = log.getLogger(__name__)
-home = os.path.expanduser("~")
 
 
 class BackupOs(object):
