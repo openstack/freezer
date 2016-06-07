@@ -17,7 +17,7 @@ import logging
 from freezer.mode import mode
 
 
-class MongoDbMode(mode.Mode):
+class MongoMode(mode.Mode):
     """
     Execute the necessary tasks for file system backup mode
     """
