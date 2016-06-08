@@ -19,9 +19,9 @@ client interface to the Freezer API
 import os
 import socket
 
-from keystoneclient.auth.identity import v2
-from keystoneclient.auth.identity import v3
-from keystoneclient import session as ksc_session
+from keystoneauth1.identity import v2
+from keystoneauth1.identity import v3
+from keystoneauth1 import session as ksa_session
 from oslo_config import cfg
 
 from freezer.apiclient import actions
@@ -254,7 +254,7 @@ class Client(object):
         if self._session:
             return self._session
         auth_plugin = get_auth_plugin(self.opts)
-        return ksc_session.Session(auth=auth_plugin, verify=self.verify)
+        return ksa_session.Session(auth=auth_plugin, verify=self.verify)
 
     @cached_property
     def endpoint(self):

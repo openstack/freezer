@@ -37,7 +37,7 @@ Requirements
 -  gzip, bzip2, xz
 -  OpenSSL
 -  python-swiftclient
--  python-keystoneclient
+-  keystoneauth1
 -  pymongo
 -  PyMySQL
 -  libmysqlclient-dev
