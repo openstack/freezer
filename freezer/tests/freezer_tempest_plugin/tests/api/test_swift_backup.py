@@ -67,7 +67,6 @@ class TestFreezerSwiftBackup(base.BaseFreezerTest):
         shutil.rmtree(self.backup_source_dir, True)
         shutil.rmtree(self.restore_target_dir, True)
 
-
     @test.attr(type="gate")
     def test_freezer_swift_backup(self):
 
@@ -79,9 +78,7 @@ class TestFreezerSwiftBackup(base.BaseFreezerTest):
                        '--backup-name',
                        self.freezer_backup_name]
 
-        output = subprocess.check_output(backup_args,
-                                         stderr=subprocess.STDOUT,
-                                         env=self.environ, shell=False)
+        self.run_subprocess(backup_args, "Test backup to swift.")
 
         restore_args = ['freezer-agent',
                         '--action',
@@ -95,25 +92,13 @@ class TestFreezerSwiftBackup(base.BaseFreezerTest):
                         '--storage',
                         'swift']
 
-        output = subprocess.check_output(restore_args,
-                                         stderr=subprocess.STDOUT,
-                                         env=self.environ, shell=False)
+        self.run_subprocess(restore_args, "Test restore from swift.")
+
         diff_args = ['diff',
                      '-r',
                      '-q',
                      self.backup_source_dir,
                      self.restore_target_dir]
-        process = subprocess.Popen(diff_args, stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE, shell=False,
-                                   stderr=subprocess.PIPE)
-        output, error = process.communicate()
 
-        self.assertEqual(0, process.returncode,
-                         "Test backup to swift and restore. Output: {0}. "
-                         "Error: {1} ".format(output, error))
-        self.assertEqual(0, len(output.strip()),
-                         "Test backup to swift and restore. Output: {0}. "
-                         "Error: {1} ".format(output, error))
-        self.assertEqual(0, len(error.strip()),
-                         "Test backup to swift and restore. Output: {0}. "
-                         "Error: {1} ".format(output, error))
+        self.run_subprocess(diff_args, "Test backup to swift and restore diff.")
+

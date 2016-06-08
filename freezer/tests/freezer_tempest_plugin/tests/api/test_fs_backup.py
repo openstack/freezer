@@ -70,11 +70,9 @@ class TestFreezerFSBackup(base.BaseFreezerTest):
     def tearDown(self):
 
         super(TestFreezerFSBackup, self).tearDown()
-
         shutil.rmtree(self.backup_source_dir, True)
         shutil.rmtree(self.restore_target_dir, True)
         shutil.rmtree(self.backup_local_storage_dir)
-
 
     @test.attr(type="gate")
     def test_freezer_fs_backup(self):
@@ -89,9 +87,7 @@ class TestFreezerFSBackup(base.BaseFreezerTest):
                        '--storage',
                        'local']
 
-        output = subprocess.check_output(backup_args,
-                                         stderr=subprocess.STDOUT,
-                                         env=self.environ, shell=False)
+        self.run_subprocess(backup_args, "Test backup to local storage.")
 
         restore_args = ['freezer-agent',
                         '--action',
@@ -105,9 +101,7 @@ class TestFreezerFSBackup(base.BaseFreezerTest):
                         '--storage',
                         'local']
 
-        output = subprocess.check_output(restore_args,
-                                         stderr=subprocess.STDOUT,
-                                         env=self.environ, shell=False)
+        self.run_subprocess(restore_args, "Test restore from local storage.")
 
         diff_args = ['diff',
                      '-r',
@@ -115,8 +109,5 @@ class TestFreezerFSBackup(base.BaseFreezerTest):
                      self.backup_source_dir,
                      self.restore_target_dir]
 
-        diff_rc = subprocess.call(diff_args,
-                                  shell=False)
-
-        self.assertEqual(0, diff_rc, "Test backup to local storage and "
-                                     "restore")
+        self.run_subprocess(diff_args, "Test backup restore from local storage "
+                            "diff.")
