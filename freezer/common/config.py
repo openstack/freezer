@@ -38,6 +38,19 @@ DEFAULT_LVM_MOUNT_BASENAME = '/var/lib/freezer'
 DEFAULT_LVM_SNAP_BASENAME = 'freezer_backup_snap'
 DEFAULT_SSH_PORT = 22
 
+_DEFAULT_LOG_LEVELS = ['amqp=WARN', 'amqplib=WARN', 'boto=WARN',
+                        'qpid=WARN', 'stevedore=WARN', 'oslo_log=INFO',
+                        'iso8601=WARN',
+                        'requests.packages.urllib3.connectionpool=WARN',
+                        'urllib3.connectionpool=WARN', 'websocket=WARN',
+                        'keystonemiddleware=WARN', 'freezer=INFO']
+
+_DEFAULT_LOGGING_CONTEXT_FORMAT = (
+    '%(asctime)s.%(msecs)03d %(process)d '
+    '%(levelname)s %(name)s [%(request_id)s '
+    '%(user_identity)s] %(instance)s'
+    '%(message)s')
+
 DEFAULT_PARAMS = {
     'os_identity_api_version': None,
     'lvm_auto_snap': None, 'lvm_volgroup': False,
@@ -383,18 +396,6 @@ def config():
 
 def setup_logging():
     """Set some oslo log defaults."""
-    _DEFAULT_LOG_LEVELS = ['amqp=WARN', 'amqplib=WARN', 'boto=WARN',
-                           'qpid=WARN', 'stevedore=WARN', 'oslo_log=INFO',
-                           'iso8601=WARN',
-                           'requests.packages.urllib3.connectionpool=WARN',
-                           'urllib3.connectionpool=WARN', 'websocket=WARN',
-                           'keystonemiddleware=WARN', 'freezer=INFO']
-
-    _DEFAULT_LOGGING_CONTEXT_FORMAT = (
-        '%(asctime)s.%(msecs)03d %(process)d '
-        '%(levelname)s %(name)s [%(request_id)s '
-        '%(user_identity)s] %(instance)s'
-        '%(message)s')
     # disable freezer from logging to stderr
     CONF.set_default('use_stderr', False)
     CONF.set_default('log_file', prepare_logging())
@@ -403,13 +404,17 @@ def setup_logging():
 
 
 def get_backup_args():
+
     defaults = DEFAULT_PARAMS.copy()
 
     class FreezerConfig(object):
         def __init__(self, args):
             self.__dict__.update(args)
+
     cli_options = dict([(x, y) for x, y in CONF.iteritems() if y is not None])
+
     defaults.update(cli_options)
+
     conf = None
     if CONF.get('config'):
         conf = freezer_config.Config.parse(CONF.get('config'))
@@ -417,7 +422,6 @@ def get_backup_args():
         # TODO: restore_from_host is deprecated and to be removed
         defaults['hostname'] = conf.default.get('hostname') or \
                                conf.default.get('restore_from_host')
-
         # override default oslo values
         levels = {
             'all': log.NOTSET,
@@ -427,10 +431,13 @@ def get_backup_args():
             'error': log.ERROR,
             'critical': log.CRITICAL
         }
-        if not CONF.get('log_file'):
-            CONF.set_override('log_file', levels.get(defaults['log_file'],
-                                                     log.NOTSET))
-        CONF.set_override('default_log_levels', defaults['log_level'])
+
+        if defaults['log_file']:
+            CONF.set_override('log_file', defaults['log_file'], levels.get(
+                                                                log.NOTSET))
+
+        CONF.set_override('default_log_levels', _DEFAULT_LOG_LEVELS)
+
     if not CONF.get('log_file'):
         log_file = None
         for file_name in ['/var/log/freezer.log', '~/.freezer/freezer.log']:
@@ -445,6 +452,10 @@ def get_backup_args():
                      "default stdout and stderr")
 
     backup_args = FreezerConfig(defaults)
+
+    if CONF.get('config'):
+        backup_args.__dict__['config'] = CONF.get('config')
+
     # Set default working directory to ~/.freezer. If the directory
     # does not exists it is created
     work_dir = os.path.join(home, '.freezer')
