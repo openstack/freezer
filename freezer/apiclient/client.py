@@ -264,7 +264,7 @@ class Client(object):
             auth_ref = self.session.auth.get_auth_ref(self.session)
             endpoint = auth_ref.service_catalog.url_for(
                 service_type=FREEZER_SERVICE_TYPE,
-                endpoint_type=self.opts.os_endpoint_type,
+                interface=self.opts.os_endpoint_type,
             )
         return endpoint
 
