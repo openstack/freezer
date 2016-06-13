@@ -32,10 +32,10 @@ class BaseFreezerTest(tempest.test.BaseTestCase):
         super(BaseFreezerTest, self).tearDown()
 
     def get_environ(self):
-        os.environ['OS_PASSWORD'] = self.os_primary.credentials.credentials.password
-        os.environ['OS_USERNAME'] = self.os_primary.credentials.credentials.username
-        os.environ['OS_PROJECT_NAME'] = self.os_primary.credentials.credentials.tenant_name
-        os.environ['OS_TENANT_NAME'] = self.os_primary.credentials.credentials.tenant_name
+        os.environ['OS_PASSWORD'] = self.os.credentials.password
+        os.environ['OS_USERNAME'] = self.os.credentials.username
+        os.environ['OS_PROJECT_NAME'] = self.os.credentials.tenant_name
+        os.environ['OS_TENANT_NAME'] = self.os.credentials.tenant_name
 
         # Allow developers to set OS_AUTH_URL when developing so that
         # Keystone may be on a host other than localhost.
