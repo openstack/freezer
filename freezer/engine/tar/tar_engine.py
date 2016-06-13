@@ -18,7 +18,6 @@ Freezer general utils functions
 import logging
 import os
 import subprocess
-import sys
 
 from freezer.engine import engine
 from freezer.engine.tar import tar_builders
@@ -75,25 +74,25 @@ class TarBackupEngine(engine.BackupEngine):
             yield tar_chunk
             tar_chunk = read_pipe.read(self.chunk_size)
         tar_err = tar_process.communicate()[1]
-        if 'error' in tar_err.lower():
+        if tar_err:
             logging.exception('[*] Backup error: {0}'.format(tar_err))
-            sys.exit(1)
+            os._exit(1)
         if tar_process.returncode:
             logging.error('[*] Backup return code is not 0')
-            sys.exit(1)
+            os._exit(1)
         logging.info("Tar engine streaming end")
 
     @staticmethod
     def check_process_output(process):
         tar_err = process.communicate()[1]
 
-        if 'error' in tar_err.lower():
+        if tar_err:
             logging.exception('[*] Restore error: {0}'.format(tar_err))
-            sys.exit(1)
+            os._exit(1)
 
         if process.returncode:
             logging.error('[*] Restore return code is not 0')
-            sys.exit(1)
+            os._exit(1)
 
     def restore_level(self, restore_path, read_pipe):
         """
