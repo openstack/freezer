@@ -107,21 +107,26 @@ class BackupOs(object):
         LOG.debug("Deleting temporary image")
         client_manager.get_glance().images.delete(image.id)
 
-    def backup_cinder(self, volume_id, name=None, description=None):
+    def backup_cinder(self, volume_id, name=None, description=None,
+                      incremental=False):
         client_manager = self.client_manager
         cinder = client_manager.get_cinder()
-        search_opts = {
-            'volume_id': volume_id,
-            'status': 'available',
-        }
-        backups = cinder.backups.list(search_opts=search_opts)
-        if len(backups) > 0:
-            incremental = True
-        else:
-            incremental = False
-
         container = "{0}/{1}/{2}".format(self.container, volume_id,
                                          utils.DateTime.now().timestamp)
-
-        cinder.backups.create(volume_id, container, name, description,
-                              incremental=incremental, force=True)
+        if incremental:
+            search_opts = {
+                'volume_id': volume_id,
+                'status': 'available'
+            }
+            backups = cinder.backups.list(search_opts=search_opts)
+            if len(backups) <= 0:
+                msg = ("Backup volume %s is failed."
+                       "Do a full backup before incremental  backup"
+                       % volume_id)
+                raise Exception(msg)
+            else:
+                cinder.backups.create(volume_id, container, name, description,
+                                      incremental=incremental, force=True)
+        else:
+            cinder.backups.create(volume_id, container, name, description,
+                                  incremental=incremental, force=True)

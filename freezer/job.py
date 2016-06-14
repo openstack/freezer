@@ -185,7 +185,8 @@ class BackupJob(Job):
             backup_os.backup_nova(self.conf.nova_inst_id)
         elif backup_media == 'cindernative':
             LOG.info('Executing cinder backup')
-            backup_os.backup_cinder(self.conf.cindernative_vol_id)
+            backup_os.backup_cinder(self.conf.cindernative_vol_id,
+                                    incremental=self.conf.incremental)
         elif backup_media == 'cinder':
             LOG.info('Executing cinder snapshot')
             backup_os.backup_cinder_by_glance(self.conf.cinder_vol_id)
