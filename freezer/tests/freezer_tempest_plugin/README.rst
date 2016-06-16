@@ -1,15 +1,8 @@
-<<<<<<< HEAD
-==============================
-Tempest Integration of Freezer
-==============================
-=======
-Freezer Tempest Tests
-=====================
->>>>>>> First scenario test
+Testing Integration with Freezer
+--------------------------------
 
-Integration tests in freezer are implemented using tempest. There are typically two approaches to run these tests in a development environment:
-
-<<<<<<< HEAD
+Develop and Run Tempest Tests on Development Host
+=================================================
 Instructions for Running/Developing Tempest Tests with Freezer Project
 
 #. Need to make sure that there is a Devstack or other environment for running Keystone and Swift.
@@ -113,23 +106,29 @@ Instructions for Running/Developing Tempest Tests with Freezer Project
 
 
 Mac OS X Instructions
----------------------
+:::::::::::::::::::::
 
 For Mac OS X users you will need to install gnu-tar in ``/usr/local/bin`` and make sure that ``/usr/local/bin`` is in the PATH environment variable before any other directories where a different version of tar can be found. Gnu-tar can be installed as ``gtar`` or ``tar``, either name works.
 
 Also, currently for Mac OS X users, the latest version of gnu-tar (1.29) will not allow ``--unlink-first`` and ``--overwrite`` options to be used together. Also, gnu-tar will complain about the ``--unlink-first`` argument. To get around these limitations, you will need to modify ``tar_builders.py`` and remove the ``--unlink-first`` option from the ``UNIX_TEMPLATE`` variable.
-=======
+
+
+Freezer Scenario Tests
+----------------------
+
+Integration tests in freezer are implemented using tempest. There are typically two approaches to run these tests in a development environment:
+
 * Run all tests inside a devstack VM
 * Run the tests outside of a devstack VM (e.g. in PyCharm) but use services (keystone, swift, ...) inside a VM
 
 For both approaches one needs a devstack VM with freezer an swift running.
 
 Setting up a devstack VM
-------------------------
+========================
 
 Install devstack with swift and the freezer [1]_ as well as the freezer-api [2]_ plugins by adding the following lines to you `local.conf`:
 
-::  
+::
 
     enable_plugin freezer https://git.openstack.org/openstack/freezer master
     enable_plugin freezer-api https://git.openstack.org/openstack/freezer-api master
@@ -139,7 +138,7 @@ Install devstack with swift and the freezer [1]_ as well as the freezer-api [2]_
 .. [2] https://github.com/openstack/freezer-api/blob/master/devstack/README.rst
 
 Run tests inside a devstack VM
--------------------------------
+==============================
 
 #. Create a devstack VM as described in `Setting up a devstack VM`_
 
@@ -148,7 +147,7 @@ Run tests inside a devstack VM
 #. Run `ostestr -r freezer`
 
 Debugging tests inside a devstack VM
-------------------------------------
+====================================
 
 Often a devstack VM is used via SSH without graphical interface. Python has multiple command line debuggers. The out-of-the-box pdb works fine but I recommend pudb [3]_ which looks a bit like the old Turbo-Pascal/C IDE. The following steps are necessary to get it running:
 
@@ -158,7 +157,7 @@ Often a devstack VM is used via SSH without graphical interface. Python has mult
 
 #. Install pudb:
 
-   :: 
+   ::
 
      pip install pudb
 
@@ -181,7 +180,7 @@ Often a devstack VM is used via SSH without graphical interface. Python has mult
 .. [3] https://pypi.python.org/pypi/pudb
 
 Run tests outside a devstack VM
--------------------------------
+===============================
 
 #. Create a devstack VM as described in `Setting up a devstack VM`_.
 
@@ -215,7 +214,7 @@ Run tests outside a devstack VM
      mkdir tempest-working
      cd tempest-working
      tempest init .
-     
+
 #. Configure `tempest-working/etc/tempest.conf`. The easiest way to do this is to just copy the config from `/opt/stack/tempest/etc/tempest.conf` inside the devstack VM.
 
 #. Run the freezer test inside the tempest working directory:
@@ -225,7 +224,7 @@ Run tests outside a devstack VM
      ostestr -r freezer
 
 Run tests in PyCharm
---------------------
+====================
 
 #. Set up the test environment as described in `Run tests outside a devstack VM`_.
 
@@ -248,12 +247,9 @@ Run tests in PyCharm
 #. Run the test again, this time it should work!
 
 Troubleshooting
----------------
+===============
 
 If tests fail these are good places to check:
 
 * freezer-api log: `/var/log/apache2/freezer-api.log`
 * freezer-agent log: `$HOME/.freezer/freezer.log`
-
-
->>>>>>> First scenario test

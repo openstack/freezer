@@ -84,7 +84,7 @@ class RichQueue:
 
 
 class QueuedThread(threading.Thread):
-    def __init__(self, target, rich_queue, args=(), kwargs=None):
+    def __init__(self, target, rich_queue, exception_queue, args=(), kwargs=None):
         """
             :type args: collections.Iterable
             :type kwargs: dict
@@ -94,6 +94,7 @@ class QueuedThread(threading.Thread):
         self.args = args
         kwargs = kwargs or {}
         self.rich_queue = rich_queue
+        self._exception_queue = exception_queue
         kwargs["rich_queue"] = rich_queue
         super(QueuedThread, self).__init__(target=target, args=args,
                                            kwargs=kwargs)
@@ -102,5 +103,7 @@ class QueuedThread(threading.Thread):
         try:
             super(QueuedThread, self).run()
         except Exception as e:
+            self._exception_queue.put_nowait(e)
             self.rich_queue.force_stop()
+            # Thread will exit at this point.
             raise e

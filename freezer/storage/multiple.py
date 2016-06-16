@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
+from six.moves import queue
+
 from oslo_config import cfg
 from oslo_log import log
 
 from freezer.storage import base
+from freezer.storage.exceptions import StorageException
 from freezer.utils import streaming
 
 CONF = cfg.CONF
@@ -23,6 +27,7 @@ logging = log.getLogger(__name__)
 
 
 class MultipleStorage(base.Storage):
+
     def remove_backup(self, backup):
         raise Exception()
 
@@ -35,15 +40,33 @@ class MultipleStorage(base.Storage):
 
     def write_backup(self, rich_queue, backup):
         output_queues = [streaming.RichQueue() for x in self.storages]
+        except_queues = [queue.Queue() for x in self.storages]
         threads = [streaming.QueuedThread(
-            storage.write_backup, queue, kwargs={"backup": backup}) for
-            storage, queue in zip(self.storages, output_queues)]
+            storage.write_backup, output_queue, except_queue, kwargs={"backup": backup}) for
+            storage, output_queue, except_queue in zip(self.storages, output_queues, except_queues)]
         for thread in threads:
             thread.daemon = True
             thread.start()
         StorageManager(rich_queue, output_queues).transmit()
         for thread in threads:
             thread.join()
+
+        def handle_exception_queue(except_queue):
+            if not except_queue.empty:
+                while not except_queue.empty():
+                    e = except_queue.get_nowait()
+                    logging.critical('Storage error: {0}'.format(e))
+                return True
+            else:
+                return False
+
+        got_exception = None
+        for except_queue in except_queues:
+            got_exception = (handle_exception_queue(except_queue)
+                             or got_exception)
+
+        if (got_exception):
+            raise StorageException("Storage error. Failed to write backup.")
 
     def find_all(self, hostname_backup_name):
         backups = [b.find_all(hostname_backup_name) for b in self.storages]
@@ -65,6 +88,22 @@ class MultipleStorage(base.Storage):
         """
         super(MultipleStorage, self).__init__(work_dir)
         self.storages = storages
+
+    def download_freezer_meta_data(self, backup):
+        # TODO. Need to implement.
+        pass
+
+    def get_file(self, from_path, to_path):
+        # TODO. Need to implement.
+        pass
+
+    def meta_file_abs_path(self, backup):
+        # TODO. Need to implement.
+        pass
+
+    def upload_freezer_meta_data(self, backup, meta_dict):
+        # TODO. Need to implement.
+        pass
 
 
 class StorageManager:

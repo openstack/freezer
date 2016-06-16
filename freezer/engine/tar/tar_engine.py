@@ -95,44 +95,49 @@ class TarBackupEngine(engine.BackupEngine):
             logging.error('[*] Restore return code is not 0')
             os._exit(1)
 
-    def restore_level(self, restore_path, read_pipe, backup):
+    def restore_level(self, restore_path, read_pipe, backup, except_queue):
         """
         Restore the provided file into backup_opt_dict.restore_abs_path
         Decrypt the file if backup_opt_dict.encrypt_pass_file key is provided
         """
 
-        metadata = backup.metadata()
-        if not self.encrypt_pass_file and metadata.get("encryption", False):
-            raise Exception("Cannot restore encrypted backup without key")
-
-        tar_command = tar_builders.TarCommandRestoreBuilder(
-            restore_path,
-            metadata.get('compression', self.compression_algo),
-            self.is_windows)
-
-        if self.encrypt_pass_file:
-            tar_command.set_encryption(self.encrypt_pass_file)
-
-        if self.dry_run:
-            tar_command.set_dry_run()
-
-        command = tar_command.build()
-
-        if winutils.is_windows():
-            # on windows, chdir to restore path.
-            os.chdir(restore_path)
-
-        tar_process = subprocess.Popen(
-            command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, shell=True)
-        # Start loop reading the pipe and pass the data to the tar std input.
-        # If EOFError exception is raised, the loop end the std err will be
-        # checked for errors.
         try:
-            while True:
-                tar_process.stdin.write(read_pipe.recv_bytes())
-        except EOFError:
-            logging.info('[*] Pipe closed as EOF reached. '
-                         'Data transmitted successfully')
 
-        self.check_process_output(tar_process)
+            metadata = backup.metadata()
+            if not self.encrypt_pass_file and metadata.get("encryption", False):
+                raise Exception("Cannot restore encrypted backup without key")
+
+            tar_command = tar_builders.TarCommandRestoreBuilder(
+                restore_path,
+                metadata.get('compression', self.compression_algo),
+                self.is_windows)
+
+            if self.encrypt_pass_file:
+                tar_command.set_encryption(self.encrypt_pass_file)
+
+            if self.dry_run:
+                tar_command.set_dry_run()
+
+            command = tar_command.build()
+
+            if winutils.is_windows():
+                # on windows, chdir to restore path.
+                os.chdir(restore_path)
+
+            tar_process = subprocess.Popen(
+                command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, shell=True)
+            # Start loop reading the pipe and pass the data to the tar std input.
+            # If EOFError exception is raised, the loop end the std err will be
+            # checked for errors.
+            try:
+                while True:
+                    tar_process.stdin.write(read_pipe.recv_bytes())
+            except EOFError:
+                logging.info('[*] Pipe closed as EOF reached. '
+                             'Data transmitted successfully')
+
+            self.check_process_output(tar_process)
+
+        except Exception as e:
+            except_queue.put(e)
