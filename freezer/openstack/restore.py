@@ -67,27 +67,43 @@ class RestoreOs(object):
             container_format="bare", disk_format="raw")
         return stream[0], image
 
-    def restore_cinder(self, volume_id, restore_from_timestamp):
+    def restore_cinder(self, volume_id=None,
+                       backup_id=None,
+                       restore_from_timestamp=None):
         """
         Restoring cinder backup using
         :param volume_id:
+        :param backup_id:
         :param restore_from_timestamp:
         :return:
         """
+        backup = None
         cinder = self.client_manager.get_cinder()
-        search_opts = {'volume_id': volume_id, 'status': 'available', }
-        backups = cinder.backups.list(search_opts=search_opts)
-        backups_filter = ([x for x in backups if utils.date_to_timestamp(
-            x.created_at.split('.')[0]) >= restore_from_timestamp])
+        search_opts = {
+            'volume_id': volume_id,
+            'status': 'available',
+        }
+        if not backup_id:
+            backups = cinder.backups.list(search_opts=search_opts)
 
-        if not backups_filter:
-            LOG.warning("no available backups for cinder volume,"
-                        "restore newest backup")
-            backup = max(backups, key=lambda x: x.created_at)
-            cinder.restores.restore(backup_id=backup.id)
-        else:
-            backup = min(backups_filter, key=lambda x: x.created_at)
-            cinder.restores.restore(backup_id=backup.id)
+            def get_backups_from_timestamp(backups, restore_from_timestamp):
+                for backup in backups:
+                    backup_created_date = backup.created_at.split('.')[0]
+                    backup_created_timestamp = (
+                        utils.date_to_timestamp(backup_created_date))
+                    if backup_created_timestamp >= restore_from_timestamp:
+                        yield backup
+
+            backups_filter = get_backups_from_timestamp(backups,
+                                                        restore_from_timestamp)
+            if not backups_filter:
+                LOG.warning("no available backups for cinder volume,"
+                            "restore newest backup")
+                backup = max(backups, key=lambda x: x.created_at)
+            else:
+                backup = min(backups_filter, key=lambda x: x.created_at)
+            backup_id = backup.id
+        cinder.restores.restore(backup_id=backup_id)
 
     def restore_cinder_by_glance(self, volume_id, restore_from_timestamp):
         """

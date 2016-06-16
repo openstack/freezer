@@ -317,6 +317,11 @@ _COMMON = [
                dest='cindernative_vol_id',
                help="Id of cinder volume for native backup"
                ),
+    cfg.StrOpt('cindernative-backup-id',
+               default='',
+               dest='cindernative_backup_id',
+               help="Id of the cindernative backup to be restored"
+               ),
     cfg.StrOpt('nova-inst-id',
                dest='nova_inst_id',
                help="Id of nova instance for backup"
@@ -513,7 +518,7 @@ def get_backup_args():
     backup_media = 'fs'
     if backup_args.cinder_vol_id:
         backup_media = 'cinder'
-    elif backup_args.cindernative_vol_id:
+    elif backup_args.cindernative_vol_id or backup_args.cindernative_backup_id:
         backup_media = 'cindernative'
     elif backup_args.nova_inst_id:
         backup_media = 'nova'

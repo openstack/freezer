@@ -317,6 +317,7 @@ class BackupOpt1:
         self.sql_server_instance = 'Sql Server'
         self.cinder_vol_id = ''
         self.cindernative_vol_id = ''
+        self.cindernative_backup_id = ''
         self.nova_inst_id = ''
         self.lvm_snapperm = 'ro'
 
