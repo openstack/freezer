@@ -39,11 +39,11 @@ DEFAULT_LVM_SNAP_BASENAME = 'freezer_backup_snap'
 DEFAULT_SSH_PORT = 22
 
 _DEFAULT_LOG_LEVELS = ['amqp=WARN', 'amqplib=WARN', 'boto=WARN',
-                        'qpid=WARN', 'stevedore=WARN', 'oslo_log=INFO',
-                        'iso8601=WARN',
-                        'requests.packages.urllib3.connectionpool=WARN',
-                        'urllib3.connectionpool=WARN', 'websocket=WARN',
-                        'keystonemiddleware=WARN', 'freezer=INFO']
+                       'qpid=WARN', 'stevedore=WARN', 'oslo_log=INFO',
+                       'iso8601=WARN',
+                       'requests.packages.urllib3.connectionpool=WARN',
+                       'urllib3.connectionpool=WARN', 'websocket=WARN',
+                       'keystonemiddleware=WARN', 'freezer=INFO']
 
 _DEFAULT_LOGGING_CONTEXT_FORMAT = (
     '%(asctime)s.%(msecs)03d %(process)d '
@@ -142,26 +142,28 @@ _COMMON = [
                     " -. If the permission is set to rw it will be mutable"),
     cfg.StrOpt('lvm-snapsize',
                dest='lvm_snapsize',
-               help="Set the lvm snapshot size when creating a new snapshot. "
-                    "Please add G for Gigabytes or M for Megabytes, i.e. 500M "
-                    "or 8G. It is also possible to use percentages as with the"
-                    " -l option of lvm, i.e. 80%%FREE Default {0}.".format(
-                    DEFAULT_LVM_SNAPSIZE)),
+               help="Set the lvm snapshot size when creating a new "
+                    "snapshot. Please add G for Gigabytes or "
+                    "M for Megabytes, i.e. 500M or 8G. It is also possible "
+                    "to use percentages as with the -l option of lvm, i.e. "
+                    "80%%FREE Default {0}.".format(DEFAULT_LVM_SNAPSIZE)),
     cfg.StrOpt('lvm-dirmount',
                dest='lvm_dirmount',
                help="Set the directory you want to mount the lvm snapshot to. "
-                    "If not provided, a unique name will be generated with the"
-                    "basename {0} ".format(DEFAULT_LVM_MOUNT_BASENAME)),
+                    "If not provided, a unique name will be generated with "
+                    "thebasename {0} ".format(DEFAULT_LVM_MOUNT_BASENAME)),
     cfg.StrOpt('lvm-volgroup',
                dest='lvm_volgroup',
                help="Specify the volume group of your logical volume. This is "
-                    "important to mount your snapshot volume. Default not set"),
+                    "important to mount your snapshot volume. Default not "
+                    "set"),
     cfg.IntOpt('max-level',
                dest='max_level',
                help="Set the backup level used with tar to implement "
-                    "incremental backup. If a level 1 is specified but no level"
-                    " 0 is already available, a level 0 will be done and "
-                    "subsequently backs to level 1. Default 0 (No Incremental)"
+                    "incremental backup. If a level 1 is specified but "
+                    "no level 0 is already available, a level 0 will be "
+                    "done and subsequently backs to level 1. "
+                    "Default 0 (No Incremental)"
                ),
     cfg.IntOpt('always-level',
                dest='always_level',
@@ -173,20 +175,21 @@ _COMMON = [
                     " --max-backup-level. Default False (Disabled)"),
     cfg.FloatOpt('restart-always-level',
                  dest='restart_always_level',
-                 help="Restart the backup from level 0 after n days. Valid only"
-                      " if --always-level option if set. If --always-level is "
-                      "used together with --remove-older-then, there might be "
+                 help="Restart the backup from level 0 after n days. Valid "
+                      "only if --always-level option if set. If "
+                      "--always-level is used together with "
+                      "--remove-older-then, there might be "
                       "the chance where the initial level 0 will be removed. "
                       "Default False (Disabled)"),
     cfg.FloatOpt('remove-older-than',
                  short='R',
                  dest='remove_older_than',
-                 help="Checks in the specified container for object older than "
-                      "the specified days. If i.e. 30 is specified, it will "
-                      "remove the remote object older than 30 days. Default "
-                      "False (Disabled) The option --remove-older-then is "
-                      "deprecated and will be removed soon",
-                 deprecated_for_removal=True),
+                 help="Checks in the specified container for object older "
+                      "than the specified days. If i.e. 30 is specified, it "
+                      "will remove the remote object older than 30 days. "
+                      "Default False (Disabled) The option "
+                      "--remove-older-then is deprecated and will be removed "
+                      "soon", deprecated_for_removal=True),
     cfg.StrOpt('remove-from-date',
                dest='remove_from_date',
                help="Checks the specified container and removes objects older "
@@ -196,9 +199,9 @@ _COMMON = [
     cfg.StrOpt('no-incremental',
                dest='no_incremental',
                help="Disable incremental feature. By default freezer build the"
-                    " meta data even for level 0 backup. By setting this option"
-                    " incremental meta data is not created at all. Default "
-                    "disabled"),
+                    " meta data even for level 0 backup. By setting this "
+                    "option incremental meta data is not created at all. "
+                    "Default disabled"),
     cfg.StrOpt('hostname',
                dest='hostname',
                deprecated_name='restore-from-host',
@@ -219,8 +222,9 @@ _COMMON = [
                     "port     = <db-port>"),
     cfg.StrOpt('metadata-out',
                dest='metadata_out',
-               help="Set the filename to which write the metadata regarding the"
-                    " backup metrics. Use '-' to output to standard output."),
+               help="Set the filename to which write the metadata "
+                    "regarding the backup metrics. Use '-' to output to "
+                    "standard output."),
     cfg.StrOpt('exclude',
                dest='exclude',
                help="Exclude files,given as a PATTERN.Ex: --exclude '*.log' "
@@ -235,9 +239,9 @@ _COMMON = [
                ),
     cfg.StrOpt('encrypt-pass-file',
                dest='encrypt_pass_file',
-               help="Passing a private key to this option, allow you to encrypt"
-                    " the files before to be uploaded in Swift. Default do "
-                    "not encrypt."
+               help="Passing a private key to this option, allow you "
+                    "to encrypt the files before to be uploaded in Swift. "
+                    "Default do not encrypt."
                ),
     cfg.IntOpt('max-segment-size',
                short='M',
@@ -252,9 +256,9 @@ _COMMON = [
                ),
     cfg.StrOpt('restore-from-date',
                dest='restore_from_date',
-               help="Set the date of the backup from which you want to restore."
-                    "This will select the most recent backup previous to "
-                    "the specified date (included). Example: "
+               help="Set the date of the backup from which you want to "
+                    "restore.This will select the most recent backup "
+                    "previous to the specified date (included). Example: "
                     "if the last backup was created at '2016-03-22T14:29:01' "
                     "and restore-from-date is set to '2016-03-22T14:29:01', "
                     "the backup will be restored successfully. The same for "
@@ -269,9 +273,9 @@ _COMMON = [
     cfg.StrOpt('max-priority',
                dest='max_priority',
                help="Set the cpu process to the highest priority (i.e. -20 on "
-                    "Linux) and real-time for I/O. The process priority will be"
-                    " set only if nice and ionice are installed Default "
-                    "disabled. Use with caution."
+                    "Linux) and real-time for I/O. The process priority "
+                    "will be set only if nice and ionice are installed "
+                    "Default disabled. Use with caution."
                ),
     cfg.BoolOpt('quiet',
                 short='q',
@@ -303,8 +307,8 @@ _COMMON = [
                     "Can be invoked with dimensions (10K, 120M, 10G)."),
     cfg.IntOpt('download-limit',
                dest='download_limit',
-               help="Download bandwidth limit in Bytes per sec. Can be invoked "
-                    " with dimensions (10K, 120M, 10G)."),
+               help="Download bandwidth limit in Bytes per sec. Can be "
+                    "invoked  with dimensions (10K, 120M, 10G)."),
     cfg.StrOpt('cinder-vol-id',
                dest='cinder_vol_id',
                help="Id of cinder volume for backup"
@@ -367,8 +371,8 @@ _COMMON = [
     cfg.BoolOpt('consistency_check',
                 dest='consistency_check',
                 help="When true will checksum the files before backup. "
-                     "The commuted backup checksum is stored as bakcup metadata"
-                     " and can be retrieved through the freezer-api. "
+                     "The commuted backup checksum is stored as backup "
+                     "metadata and can be retrieved through the freezer-api. "
                      "On restore it is possible to check for consistency. "
                      "Please note this option is currently only available "
                      "for file system backups. "
@@ -419,9 +423,9 @@ def get_backup_args():
     if CONF.get('config'):
         conf = freezer_config.Config.parse(CONF.get('config'))
         defaults.update(conf.default)
-        # TODO: restore_from_host is deprecated and to be removed
-        defaults['hostname'] = conf.default.get('hostname') or \
-                               conf.default.get('restore_from_host')
+        # TODO(ANONYMOUS): restore_from_host is deprecated and to be removed
+        defaults['hostname'] = (conf.default.get('hostname') or
+                                conf.default.get('restore_from_host'))
         # override default oslo values
         levels = {
             'all': log.NOTSET,
@@ -434,7 +438,7 @@ def get_backup_args():
 
         if defaults['log_file']:
             CONF.set_override('log_file', defaults['log_file'], levels.get(
-                                                                log.NOTSET))
+                log.NOTSET))
 
         CONF.set_override('default_log_levels', _DEFAULT_LOG_LEVELS)
 
@@ -495,7 +499,7 @@ def get_backup_args():
             backup_args.__dict__['windows_volume'] = \
                 backup_args.path_to_backup[:3]
 
-    # todo(enugaev) move it to new command line param backup_media
+    # TODO(enugaev): move it to new command line param backup_media
 
     if backup_args.lvm_auto_snap:
         raise Exception('lvm-auto-snap is deprecated. '

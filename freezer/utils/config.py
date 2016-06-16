@@ -23,7 +23,7 @@ from six.moves import cStringIO
 from freezer.utils import utils
 
 
-class Config:
+class Config(object):
 
     @staticmethod
     def parse(config_path):
@@ -68,6 +68,7 @@ EXPORT = re.compile(r"^\s*export\s+([^=^#^\s]+)\s*=\s*([^#^\n]*)\s*$",
 
 INI = re.compile(r"^\s*([^=#\s]+)\s*=[\t]*([^#\n]*)\s*$", re.MULTILINE)
 
+
 def osrc_parse(lines):
     """
     :param lines:
@@ -75,6 +76,7 @@ def osrc_parse(lines):
     :return:
     """
     return find_all(EXPORT, lines)
+
 
 def ini_parse(lines):
     """
@@ -89,7 +91,7 @@ def ini_parse(lines):
         return dict(parser.items('default'))
     except Exception as e:
         try:
-            # TODO: Remove the parsing of ini-like file via regex
+            # TODO(ANONYMOUS): Remove the parsing of ini-like file via regex
             conf = find_all(INI, lines)
             logging.warning("Using non-INI files for database configuration "
                             "file is deprecated. Falling back to Regex.")
@@ -98,6 +100,7 @@ def ini_parse(lines):
         except Exception:
             logging.warning("Couldn't parse non-INI config file using Regex")
             raise
+
 
 def find_all(regex, lines):
     return dict([(k.strip(), utils.dequote(v.strip())) for k, v in

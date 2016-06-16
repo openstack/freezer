@@ -18,7 +18,7 @@ Freezer Tar related functions
 from freezer.utils import utils
 
 
-class TarCommandBuilder:
+class TarCommandBuilder(object):
     """
     Building a tar cmd command. To build command invoke method build.
     """
@@ -102,7 +102,7 @@ class TarCommandBuilder:
         return tar_command
 
 
-class TarCommandRestoreBuilder:
+class TarCommandRestoreBuilder(object):
     WINDOWS_TEMPLATE = '{0} -x {1} --incremental --unlink-first ' \
         '--ignore-zeros'
     DRY_RUN_TEMPLATE = '{0} {1} --incremental --list ' \

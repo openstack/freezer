@@ -79,7 +79,8 @@ class CheckSum(object):
         Walk the files in path computing the checksum for each one and updates
         the concatenation checksum for the final result
         """
-        self.count = utils.walk_path(self.path, self.exclude, self.ignorelinks, self.get_hash)
+        self.count = utils.walk_path(self.path, self.exclude,
+                                     self.ignorelinks, self.get_hash)
 
         return self._increment_hash
 
@@ -92,7 +93,8 @@ class CheckSum(object):
         :type filename: string
         :return: string containing the hash of the given file
         """
-        if os.path.isfile(filepath) and not (os.path.islink(filepath) and self.ignorelinks):
+        if (os.path.isfile(filepath) and not (
+                os.path.islink(filepath) and self.ignorelinks)):
             file_hash = self.hashfile(open(filepath, 'rb'))
         else:
             file_hash = self.hashstring(filepath)

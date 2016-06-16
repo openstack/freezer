@@ -23,7 +23,7 @@ class Wait(Exception):
     pass
 
 
-class RichQueue:
+class RichQueue(object):
     """
         :type data_queue: Queue.Queue
     """
@@ -84,7 +84,8 @@ class RichQueue:
 
 
 class QueuedThread(threading.Thread):
-    def __init__(self, target, rich_queue, exception_queue, args=(), kwargs=None):
+    def __init__(self, target, rich_queue, exception_queue,
+                 args=(), kwargs=None):
         """
             :type args: collections.Iterable
             :type kwargs: dict

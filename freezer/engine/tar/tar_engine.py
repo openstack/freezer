@@ -104,7 +104,8 @@ class TarBackupEngine(engine.BackupEngine):
         try:
 
             metadata = backup.metadata()
-            if not self.encrypt_pass_file and metadata.get("encryption", False):
+            if (not self.encrypt_pass_file and
+                    metadata.get("encryption", False)):
                 raise Exception("Cannot restore encrypted backup without key")
 
             tar_command = tar_builders.TarCommandRestoreBuilder(
@@ -127,9 +128,9 @@ class TarBackupEngine(engine.BackupEngine):
             tar_process = subprocess.Popen(
                 command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, shell=True)
-            # Start loop reading the pipe and pass the data to the tar std input.
-            # If EOFError exception is raised, the loop end the std err will be
-            # checked for errors.
+            # Start loop reading the pipe and pass the data to the tar
+            # std input. If EOFError exception is raised, the loop end
+            # the std err will be checked for errors.
             try:
                 while True:
                     tar_process.stdin.write(read_pipe.recv_bytes())

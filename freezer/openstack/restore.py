@@ -25,7 +25,7 @@ CONF = cfg.CONF
 logging = log.getLogger(__name__)
 
 
-class RestoreOs:
+class RestoreOs(object):
     def __init__(self, client_manager, container):
         self.client_manager = client_manager
         self.container = container
@@ -40,8 +40,8 @@ class RestoreOs:
         """
         swift = self.client_manager.get_swift()
         info, backups = swift.get_container(self.container, path=path)
-        backups = sorted(map(lambda x: int(x["name"].rsplit("/", 1)[-1]),
-                             backups))
+        backups = sorted(
+            map(lambda x: int(x["name"].rsplit("/", 1)[-1]), backups))
         backups = list(filter(lambda x: x >= restore_from_timestamp, backups))
 
         if not backups:
@@ -60,14 +60,13 @@ class RestoreOs:
         swift = self.client_manager.get_swift()
         glance = self.client_manager.get_glance()
         backup = self._get_backups(path, restore_from_timestamp)
-        stream = swift.get_object(
-            self.container, "%s/%s" % (path, backup), resp_chunk_size=10000000)
+        stream = swift.get_object(self.container, "%s/%s" % (path, backup),
+                                  resp_chunk_size=10000000)
         length = int(stream[0]["x-object-meta-length"])
         logging.info("[*] Creation glance image")
         image = glance.images.create(
             data=utils.ReSizeStream(stream[1], length, 1),
-            container_format="bare",
-            disk_format="raw")
+            container_format="bare", disk_format="raw")
         return stream[0], image
 
     def restore_cinder(self, volume_id, restore_from_timestamp):
@@ -78,13 +77,11 @@ class RestoreOs:
         :return:
         """
         cinder = self.client_manager.get_cinder()
-        search_opts = {
-            'volume_id': volume_id,
-            'status': 'available',
-        }
+        search_opts = {'volume_id': volume_id, 'status': 'available', }
         backups = cinder.backups.list(search_opts=search_opts)
-        backups_filter = [x for x in backups if (utils.date_to_timestamp(x.created_at.split('.')[0])
-                            >= restore_from_timestamp)]
+        backups_filter = ([x for x in backups if utils.date_to_timestamp(
+            x.created_at.split('.')[0]) >= restore_from_timestamp])
+
         if not backups_filter:
             logging.warning("no available backups for cinder volume,"
                             "restore newest backup")

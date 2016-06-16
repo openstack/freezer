@@ -215,7 +215,7 @@ class Storage(object):
         return latest_update
 
 
-class Backup:
+class Backup(object):
     """
     Internal freezer representation of backup.
     Includes:
@@ -386,7 +386,7 @@ class Backup:
             len(self.increments) == len(other.increments)
 
 
-class BackupRepr:
+class BackupRepr(object):
     """
     Intermediate for parsing purposes - it parsed backup name.
     Difference between Backup and BackupRepr - backupRepr can be parsed from

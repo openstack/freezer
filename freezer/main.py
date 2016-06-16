@@ -58,8 +58,10 @@ def freezer_main(backup_args):
 
     work_dir = backup_args.work_dir
     max_segment_size = backup_args.max_segment_size
-    if backup_args.storage == 'swift' or (
-                backup_args.backup_media in ['nova', 'cinder', 'cindernative']):
+    if (backup_args.storage ==
+            'swift' or
+            backup_args.backup_media in ['nova', 'cinder', 'cindernative']):
+
         backup_args.client_manager = get_client_manager(backup_args.__dict__)
 
     if backup_args.storages:

@@ -202,7 +202,7 @@ def date_to_timestamp(date):
     return int(time.mktime(opt_backup_date.timetuple()))
 
 
-class Bunch:
+class Bunch(object):
 
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
@@ -211,7 +211,7 @@ class Bunch:
         return self.__dict__.get(item)
 
 
-class ReSizeStream:
+class ReSizeStream(object):
     """
     Iterator/File-like object for changing size of chunk in stream
     """
@@ -294,8 +294,8 @@ def tar_path():
         path_to_binaries = os.path.dirname(os.path.abspath(__file__))
         return '{0}\\bin\\tar.exe'.format(path_to_binaries)
 
-    tar = (get_executable_path('gnutar') or get_executable_path('gtar')
-           or get_executable_path('tar'))
+    tar = (get_executable_path('gnutar') or get_executable_path('gtar') or
+           get_executable_path('tar'))
     if not tar:
         raise Exception('Please install gnu tar (gtar) as it is a '
                         'mandatory requirement to use freezer.')

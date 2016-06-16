@@ -52,7 +52,8 @@ class FreezerScheduler(object):
             # Needed in the case of a non-activated virtualenv
             self.freezerc_executable = spawn.find_executable(
                 'freezer-agent', path=':'.join(sys.path))
-        LOG.debug('Freezer-agent found at {0}'.format(self.freezerc_executable))
+        LOG.debug('Freezer-agent found at {0}'
+                  .format(self.freezerc_executable))
         self.job_path = job_path
         self._client = None
         self.lock = threading.Lock()
@@ -77,7 +78,7 @@ class FreezerScheduler(object):
                 utils.save_jobs_to_disk(job_doc_list, self.job_path)
             except Exception as e:
                 LOG.error('Unable to save jobs to {0}. '
-                              '{1}'.format(self.job_path, e))
+                          '{1}'.format(self.job_path, e))
             return job_doc_list
         else:
             return utils.get_jobs_from_disk(self.job_path)

@@ -66,7 +66,7 @@ def setup_logging(log_file):
     raise Exception("Unable to write to log file")
 
 
-class NoDaemon:
+class NoDaemon(object):
     """
     A class which shares the same interface as the Daemon class,
     but is used to execute the scheduler as a foreground process
@@ -91,7 +91,7 @@ class NoDaemon:
             signal.SIGTERM: NoDaemon.handle_program_exit,
             signal.SIGINT: NoDaemon.handle_program_exit,
             signal.SIGHUP: NoDaemon.handle_reload,
-            }
+        }
 
     @staticmethod
     def handle_program_exit(signum, frame):
@@ -125,7 +125,7 @@ class NoDaemon:
         pass
 
 
-class Daemon:
+class Daemon(object):
     """
     A class to manage all the daemon-related stuff
 
@@ -154,7 +154,7 @@ class Daemon:
         return {
             signal.SIGTERM: Daemon.handle_program_exit,
             signal.SIGHUP: Daemon.handle_reload,
-            }
+        }
 
     @property
     def pid_fname(self):

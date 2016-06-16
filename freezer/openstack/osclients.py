@@ -281,8 +281,8 @@ class OpenstackOpts(object):
     """
     Gathering and maintaining the right Openstack credentials that will be used
     to authenticate against keystone. Now we support keystone v2 and v3.
-    We need to provide a correct url that ends with either v2.0 or v3 or provide
-    auth_version or identity_api_version
+    We need to provide a correct url that ends with either v2.0 or v3
+    or provide auth_version or identity_api_version
     """
     def __init__(self, auth_url, auth_method='password', auth_version=None,
                  username=None, password=None, region_name=None, cacert=None,
@@ -307,7 +307,8 @@ class OpenstackOpts(object):
         :param identity_api_version: string Keystone API version to use
         :param project_id: UUID string Project ID
         :param project_name: string Project Name
-        :param tenant_id: string Project/ Tenant ID. Use with keystone v2.0 only
+        :param tenant_id: string Project/ Tenant ID.
+               Use with keystone v2.0 only
         :param tenant_name: string Project/ Tenant Name. keystone v2.0 only
         :param token: string Valid token. Only if auth_method is token
         :param insecure: boolean Use insecure connections
@@ -321,7 +322,8 @@ class OpenstackOpts(object):
         :param user_domain_id: string User Domain ID. only with keystone v3
         :param project_domain_id: string Project Domain ID. keystone v3 only
         :param domain_name: string Domain Name. only with keystone v3
-        :param project_domain_name: string Project Domain Name. keystone v3 only
+        :param project_domain_name: string Project Domain Name.
+               keystone v3 only
         :return: None
         """
         self.auth_url = auth_url
@@ -360,13 +362,13 @@ class OpenstackOpts(object):
                 self.auth_version = self.identity_api_version = str('2.0')
             else:
                 raise Exception('Keystone Auth version {0} is not supported!. '
-                                'Generated from auth_url: {1}'.format(version,
-                                                                      auth_url))
-        logging.info('Authenticating with Keystone version: {0}, auth_url: {1},'
-                     ' username: {2}, project: {3}'.format(self.auth_version,
-                                                           self.auth_url,
-                                                           self.username,
-                                                           self.project_name))
+                                'Generated from auth_url: {1}'
+                                .format(version, auth_url))
+
+                logging.info('Authenticating with Keystone version: '
+                             '{0}, auth_url: {1}, username: {2}, project: {3}'.
+                             format(self.auth_version, self.auth_url,
+                                    self.username, self.project_name))
 
     def get_opts_dicts(self):
         """
@@ -392,8 +394,8 @@ class OpenstackOpts(object):
             opts.pop('tenant_id', None)
             opts.pop('tenant_name', None)
 
-        elif self.auth_version in ['2.0', '2'] or self.identity_api_version in \
-                ['2.0', '2']:
+        elif (self.auth_version in ['2.0', '2'] or
+              self.identity_api_version in ['2.0', '2']):
             opts['auth_version'] = opts['identity_api_version'] = '2.0'
             # these parameters won't work with keystone v2.0
             opts.pop('project_id', None)
@@ -455,7 +457,7 @@ class OpenstackOpts(object):
             compute_api_version=src_dict.get('OS_COMPUTE_API_VERSION', 2),
             volume_api_version=src_dict.get('OS_VOLUME_API_VERSION', 2),
             image_api_version=src_dict.get('OS_IMAGE_API_VERSION', 2)
-                             )
+        )
 
 
 class DryRunSwiftclientConnectionWrapper(object):

@@ -112,9 +112,10 @@ def build_os_options():
                    dest='os_region_name'),
         cfg.StrOpt('os-token',
                    default=env('OS_TOKEN'),
-                   help='Specify an existing token to use instead of retrieving'
-                        ' one via authentication (e.g. with username & '
-                        'password). Defaults to env[OS_TOKEN].',
+                   help='Specify an existing token to use instead of '
+                        'retrieving one via authentication '
+                        '(e.g. with username & password). Defaults '
+                        'to env[OS_TOKEN].',
                    dest='os_token'),
         cfg.StrOpt('os-identity-api-version',
                    default=env('OS_IDENTITY_API_VERSION'),
@@ -243,11 +244,10 @@ class Client(object):
 
         self.backups = backups.BackupsManager(self, verify=self.verify)
         self.registration = registration.RegistrationManager(
-                self, verify=self.verify)
+            self, verify=self.verify)
         self.jobs = jobs.JobManager(self, verify=self.verify)
         self.actions = actions.ActionManager(self, verify=self.verify)
         self.sessions = sessions.SessionManager(self, verify=self.verify)
-
 
     @cached_property
     def session(self):

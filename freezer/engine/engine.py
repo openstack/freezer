@@ -18,7 +18,7 @@ Freezer general utils functions
 
 import abc
 import multiprocessing
-from multiprocessing.queues import  SimpleQueue
+from multiprocessing.queues import SimpleQueue
 import six
 # PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
 from six.moves import queue
@@ -39,8 +39,8 @@ logging = log.getLogger(__name__)
 class BackupEngine(object):
     """
     The main part of making a backup and making a restore is the mechanism of
-    implementing it. For a long time Freezer had only one mechanism of doing it -
-    invoking gnutar and it was heavy hard-coded.
+    implementing it. For a long time Freezer had only one mechanism of
+    doing it - invoking gnutar and it was heavy hard-coded.
 
     Currently we are going to support many different approaches.
     One of them is rsync. Having many different implementations requires to
@@ -122,10 +122,10 @@ class BackupEngine(object):
                 return False
 
         got_exception = None
-        got_exception = (handle_except_queue(read_except_queue)
-                         or got_exception)
-        got_exception = (handle_except_queue(write_except_queue)
-                         or got_exception)
+        got_exception = (handle_except_queue(read_except_queue) or
+                         got_exception)
+        got_exception = (handle_except_queue(write_except_queue) or
+                         got_exception)
 
         if (got_exception):
             raise EngineException("Engine error. Failed to backup.")
@@ -220,10 +220,10 @@ class BackupEngine(object):
                     return False
 
             got_exception = None
-            got_exception = (handle_except_SimpleQueue(read_except_queue)
-                             or got_exception)
-            got_exception = (handle_except_SimpleQueue(write_except_queue)
-                             or got_exception)
+            got_exception = (handle_except_SimpleQueue(read_except_queue) or
+                             got_exception)
+            got_exception = (handle_except_SimpleQueue(write_except_queue) or
+                             got_exception)
 
             if tar_stream.exitcode or got_exception:
                 raise EngineException("Engine error. Failed to restore file.")

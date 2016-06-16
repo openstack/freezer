@@ -48,6 +48,7 @@ class BaseFreezerCliTest(base.BaseFreezerTest):
             uri = cls.get_auth_url(),
             cli_dir = '/usr/local/bin' # devstack default
             )
+        cls.cli.cli_dir = ''
 
     def delete_job(self, job_id):
         self.cli.freezer_scheduler(action='job-delete', flags='-c test_node -j {}'.format(job_id))

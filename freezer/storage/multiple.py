@@ -41,13 +41,17 @@ class MultipleStorage(base.Storage):
     def write_backup(self, rich_queue, backup):
         output_queues = [streaming.RichQueue() for x in self.storages]
         except_queues = [queue.Queue() for x in self.storages]
-        threads = [streaming.QueuedThread(
-            storage.write_backup, output_queue, except_queue, kwargs={"backup": backup}) for
-            storage, output_queue, except_queue in zip(self.storages, output_queues, except_queues)]
+        threads = ([streaming.QueuedThread(storage.write_backup, output_queue,
+                    except_queue, kwargs={"backup": backup}) for
+                    storage, output_queue, except_queue in
+                    zip(self.storages, output_queues, except_queues)])
+
         for thread in threads:
             thread.daemon = True
             thread.start()
+
         StorageManager(rich_queue, output_queues).transmit()
+
         for thread in threads:
             thread.join()
 
@@ -62,8 +66,8 @@ class MultipleStorage(base.Storage):
 
         got_exception = None
         for except_queue in except_queues:
-            got_exception = (handle_exception_queue(except_queue)
-                             or got_exception)
+            got_exception = (handle_exception_queue(except_queue) or
+                             got_exception)
 
         if (got_exception):
             raise StorageException("Storage error. Failed to write backup.")
@@ -90,23 +94,23 @@ class MultipleStorage(base.Storage):
         self.storages = storages
 
     def download_freezer_meta_data(self, backup):
-        # TODO. Need to implement.
+        # TODO(DEKLAN): Need to implement.
         pass
 
     def get_file(self, from_path, to_path):
-        # TODO. Need to implement.
+        # TODO(DEKLAN): Need to implement.
         pass
 
     def meta_file_abs_path(self, backup):
-        # TODO. Need to implement.
+        # TODO(DEKLAN): Need to implement.
         pass
 
     def upload_freezer_meta_data(self, backup, meta_dict):
-        # TODO. Need to implement.
+        # TODO(DEKLAN): Need to implement.
         pass
 
 
-class StorageManager:
+class StorageManager(object):
 
     def __init__(self, input_queue, output_queues):
         """

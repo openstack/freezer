@@ -110,7 +110,7 @@ def lvm_snap(backup_opt_dict):
                              uuid.uuid4().hex)
 
     backup_opt_dict.path_to_backup = os.path.join(backup_opt_dict.lvm_dirmount,
-                                  lvm_info['snap_path'])
+                                                  lvm_info['snap_path'])
 
     if not validate_lvm_params(backup_opt_dict):
         logging.info('[*] No LVM requested/configured')
@@ -297,7 +297,8 @@ def validate_lvm_params(backup_opt_dict):
 
 
 def _umount(path):
-    # TODO: check if cwd==path and change working directory to unmount ?
+    # TODO(ANONYMOUS): check if cwd==path
+    # and change working directory to unmount ?
     umount_proc = subprocess.Popen('{0} -l -f {1}'.format(
         utils.find_executable('umount'), path),
         stdin=subprocess.PIPE,

@@ -117,7 +117,7 @@ class BackupOs(object):
             'status': 'available',
         }
         backups = cinder.backups.list(search_opts=search_opts)
-        if len(backups) > 0 :
+        if len(backups) > 0:
             incremental = True
         else:
             incremental = False

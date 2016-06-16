@@ -26,7 +26,7 @@ def is_windows():
     return True if sys.platform == 'win32' else False
 
 
-class DisableFileSystemRedirection:
+class DisableFileSystemRedirection(object):
     """
     When a 32 bit program runs on a 64 bit operating system the paths
     to C:/Windows/System32 automatically get redirected to the 32 bit
@@ -36,8 +36,10 @@ class DisableFileSystemRedirection:
 
     def __init__(self):
         if is_windows():
-            self._disable = ctypes.windll.kernel32.Wow64DisableWow64FsRedirection
-            self._revert = ctypes.windll.kernel32.Wow64RevertWow64FsRedirection
+            self._disable = (ctypes.windll.kernel32.
+                             Wow64DisableWow64FsRedirection)
+            self._revert = (ctypes.windll.kernel32.
+                            Wow64RevertWow64FsRedirection)
         else:
             raise Exception("Useless if not windows")
 

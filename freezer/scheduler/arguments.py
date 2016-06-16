@@ -43,7 +43,7 @@ def get_common_opts():
             _LOG.error('OS error: {0}'.format(err))
         except IOError:
             _LOG.error('Cannot create the directory {0}'
-                        .format(scheduler_conf_d))
+                       .format(scheduler_conf_d))
 
     _COMMON = [
         cfg.StrOpt('job',
@@ -84,8 +84,8 @@ def get_common_opts():
                    dest='jobs_dir',
                    short='f',
                    help='Used to store/retrieve files on local storage, '
-                        'including those exchanged with the api service.Default'
-                        ' value is {0} (Env: FREEZER_SCHEDULER_CONF_D)'
+                        'including those exchanged with the api service. '
+                        'Default value is {0} (Env: FREEZER_SCHEDULER_CONF_D)'
                    .format(scheduler_conf_d)),
         cfg.IntOpt('interval',
                    default=60,
@@ -150,9 +150,9 @@ def setup_logging():
                            'freezer=INFO']
 
     _DEFAULT_LOGGING_CONTEXT_FORMAT = ('%(asctime)s.%(msecs)03d %(process)d '
-                                       '%(levelname)s %(name)s [%(request_id)s '
-                                       '%(user_identity)s] %(instance)s'
-                                       '%(message)s')
+                                       '%(levelname)s %(name)s '
+                                       '[%(request_id)s %(user_identity)s] '
+                                       '%(instance)s%(message)s')
     log.set_defaults(_DEFAULT_LOGGING_CONTEXT_FORMAT, _DEFAULT_LOG_LEVELS)
     log.setup(CONF, 'freezer-scheduler', version=FREEZER_VERSION)
 
