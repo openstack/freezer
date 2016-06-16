@@ -16,11 +16,16 @@ limitations under the License.
 Freezer general utils functions
 """
 import multiprocessing
+from multiprocessing.queues import  SimpleQueue
+import six
+# PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
+from six.moves import queue
 import time
 
 from oslo_config import cfg
 from oslo_log import log
 
+from freezer.engine.exceptions import EngineException
 from freezer.utils import streaming
 from freezer.utils import utils
 
@@ -77,18 +82,51 @@ class BackupEngine(object):
         """
         manifest = backup.storage.download_meta_file(backup)
         input_queue = streaming.RichQueue(queue_size)
+
+        read_except_queue = queue.Queue()
+        write_except_queue = queue.Queue()
+
         read_stream = streaming.QueuedThread(
-            self.backup_stream, input_queue,
-            kwargs={"backup_path": backup_path, "manifest_path": manifest})
+            self.backup_stream,
+            input_queue,
+            read_except_queue,
+            kwargs={"backup_path": backup_path,
+                    "manifest_path": manifest})
+
         write_stream = streaming.QueuedThread(
-            backup.storage.write_backup, input_queue,
+            backup.storage.write_backup,
+            input_queue,
+            write_except_queue,
             kwargs={"backup": backup})
+
         read_stream.daemon = True
         write_stream.daemon = True
+
         read_stream.start()
         write_stream.start()
+
         read_stream.join()
         write_stream.join()
+
+        # queue handling is different from SimpleQueue handling.
+        def handle_except_queue(except_queue):
+            if not except_queue.empty():
+                while not except_queue.empty():
+                    e = except_queue.get_nowait()
+                    logging.critical('Engine error: {0}'.format(e))
+                return True
+            else:
+                return False
+
+        got_exception = None
+        got_exception = (handle_except_queue(read_except_queue)
+                         or got_exception)
+        got_exception = (handle_except_queue(write_except_queue)
+                         or got_exception)
+
+        if (got_exception):
+            raise EngineException("Engine error. Failed to backup.")
+
         self.post_backup(backup, manifest)
 
     def post_backup(self, backup, manifest_file):
@@ -98,22 +136,31 @@ class BackupEngine(object):
         """
         raise NotImplementedError("Should have implemented this")
 
-    def read_blocks(self, backup, write_pipe, read_pipe):
+    def read_blocks(self, backup, write_pipe, read_pipe, except_queue):
         # Close the read pipe in this child as it is unneeded
         # and download the objects from swift in chunks. The
         # Chunk size is set by RESP_CHUNK_SIZE and sent to che write
         # pipe
-        read_pipe.close()
-        for block in backup.storage.backup_blocks(backup):
-            write_pipe.send_bytes(block)
 
-        # Closing the pipe after checking no data
-        # is still available in the pipe.
-        while True:
-            if not write_pipe.poll():
-                write_pipe.close()
-                break
-            time.sleep(1)
+        try:
+
+            read_pipe.close()
+            for block in backup.storage.backup_blocks(backup):
+                write_pipe.send_bytes(block)
+
+            # Closing the pipe after checking no data
+            # is still available in the pipe.
+            while True:
+                if not write_pipe.poll():
+                    write_pipe.close()
+                    break
+                time.sleep(1)
+
+        except IOError:
+            pass
+
+        except Exception as e:
+            except_queue.put(e)
 
     def restore(self, backup, restore_path, overwrite):
         """
@@ -129,17 +176,28 @@ class BackupEngine(object):
         for level in range(0, backup.level + 1):
             b = backup.full_backup.increments[level]
             logging.info("Restore backup {0}".format(b))
+
+            # Use SimpleQueue because Queue does not work on Mac OS X.
+            read_except_queue = SimpleQueue()
+
             read_pipe, write_pipe = multiprocessing.Pipe()
             process_stream = multiprocessing.Process(
                 target=self.read_blocks,
-                args=(b, write_pipe, read_pipe))
+                args=(b, write_pipe, read_pipe, read_except_queue))
+
             process_stream.daemon = True
             process_stream.start()
             write_pipe.close()
 
             # Start the tar pipe consumer process
+
+            # Use SimpleQueue because Queue does not work on Mac OS X.
+            write_except_queue = SimpleQueue()
+
             tar_stream = multiprocessing.Process(
-                target=self.restore_level, args=(restore_path, read_pipe))
+                target=self.restore_level,
+                args=(restore_path, read_pipe, backup, write_except_queue))
+
             tar_stream.daemon = True
             tar_stream.start()
             read_pipe.close()
@@ -147,8 +205,24 @@ class BackupEngine(object):
             process_stream.join()
             tar_stream.join()
 
-            if tar_stream.exitcode:
-                raise Exception('failed to restore file')
+            # SimpleQueue handling is different from queue handling.
+            def handle_except_SimpleQueue(except_queue):
+                if not except_queue.empty():
+                    while not except_queue.empty():
+                        e = except_queue.get()
+                        logging.critical('Engine error: {0}'.format(e))
+                    return True
+                else:
+                    return False
+
+            got_exception = None
+            got_exception = (handle_except_SimpleQueue(read_except_queue)
+                             or got_exception)
+            got_exception = (handle_except_SimpleQueue(write_except_queue)
+                             or got_exception)
+
+            if tar_stream.exitcode or got_exception:
+                raise EngineException("Engine error. Failed to restore file.")
 
         logging.info(
             '[*] Restore execution successfully executed \
