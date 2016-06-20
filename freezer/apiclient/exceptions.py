@@ -16,6 +16,9 @@ limitations under the License.
 """
 
 import json
+from oslo_log import log
+
+LOG = log.getLogger(__name__)
 
 
 class ApiClientException(Exception):
@@ -35,7 +38,7 @@ class ApiClientException(Exception):
         """
         try:
             body = json.loads(r.text)
-            message = "[*] Error {0}: {1}".format(
+            message = "Error {0}: {1}".format(
                 r.status_code,
                 body['description'])
         except Exception:
@@ -52,7 +55,7 @@ class ApiClientException(Exception):
         :return: string with error message or None if it fails
         """
         try:
-            message = "[*] Error {0}: {1}".format(
+            message = "Error {0}: {1}".format(
                 r.status_code,
                 r.text)
         except Exception:

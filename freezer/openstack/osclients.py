@@ -17,18 +17,16 @@ import time
 from cinderclient import client as cclient
 from glanceclient import client as gclient
 from novaclient import client as nclient
-from oslo_config import cfg
 from oslo_log import log
 import swiftclient
 
 from freezer.utils import utils
 
-CONF = cfg.CONF
-logging = log.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 
 class ClientManager:
-    
+
     """
     :type swift: swiftclient.Connection
     :type glance: glanceclient.v1.client.Client
@@ -98,7 +96,7 @@ class ClientManager:
         :return: instance of cinder client
         """
         options = self.options
-        logging.info("[*] Creation of cinder client")
+        LOG.info("Creation of cinder client")
         self.cinder = cclient.Client(
             version="2",
             username=options.user_name,
@@ -119,7 +117,7 @@ class ClientManager:
         :return: instance of swift client
         """
         options = self.options
-        logging.info("[*] Creation of swift client")
+        LOG.info("Creation of swift client")
 
         self.swift = swiftclient.client.Connection(
             authurl=options.auth_url,
@@ -145,7 +143,7 @@ class ClientManager:
 
         options = self.options
 
-        logging.info("[*] Creation of glance client")
+        LOG.info("Creation of glance client")
 
         self.glance = OpenStackImagesShell()._get_versioned_client('1',
             utils.Bunch(os_username=options.user_name,
@@ -166,7 +164,7 @@ class ClientManager:
         :return:
         """
         options = self.options
-        logging.info("[*] Creation of nova client")
+        LOG.info("Creation of nova client")
 
         self.nova = nclient.Client(
             version='2',
@@ -192,11 +190,11 @@ class ClientManager:
             display_name=snapshot_name,
             force=True)
 
-        logging.debug("Snapshot for volume with id {0}".format(volume.id))
+        LOG.debug("Snapshot for volume with id {0}".format(volume.id))
 
         while snapshot.status != "available":
             try:
-                logging.debug("Snapshot status: " + snapshot.status)
+                LOG.debug("Snapshot status: " + snapshot.status)
                 snapshot = self.get_cinder().volume_snapshots.get(snapshot.id)
                 if snapshot.status == "error":
                     raise Exception("snapshot has error state")
@@ -204,7 +202,7 @@ class ClientManager:
             except Exception as e:
                 if str(e) == "snapshot has error state":
                     raise e
-                logging.exception(e)
+                LOG.exception(e)
         return snapshot
 
     def do_copy_volume(self, snapshot):
@@ -219,12 +217,12 @@ class ClientManager:
 
         while volume.status != "available":
             try:
-                logging.info("[*] Volume copy status: " + volume.status)
+                LOG.info("Volume copy status: " + volume.status)
                 volume = self.get_cinder().volumes.get(volume.id)
                 time.sleep(5)
             except Exception as e:
-                logging.exception(e)
-                logging.warn("[*] Exception getting volume status")
+                LOG.exception(e)
+                LOG.warn("Exception getting volume status")
         return volume
 
     def make_glance_image(self, image_volume_name, copy_volume):
@@ -244,15 +242,15 @@ class ClientManager:
         while image.status != "active":
             try:
                 time.sleep(5)
-                logging.info("Image status: " + image.status)
+                LOG.info("Image status: " + image.status)
                 image = self.get_glance().images.get(image.id)
                 if image.status in ("killed", "deleted"):
                     raise Exception("Image have killed state")
             except Exception as e:
                 if image.status in ("killed", "deleted"):
                     raise e
-                logging.exception(e)
-                logging.warn("Exception getting image status")
+                LOG.exception(e)
+                LOG.warn("Exception getting image status")
         return image
 
     def clean_snapshot(self, snapshot):
@@ -260,7 +258,7 @@ class ClientManager:
         Deletes snapshot
         :param snapshot: snapshot name
         """
-        logging.info("[*] Deleting existed snapshot: " + snapshot.id)
+        LOG.info("Deleting existed snapshot: " + snapshot.id)
         self.get_cinder().volume_snapshots.delete(snapshot)
 
     def download_image(self, image):
@@ -269,9 +267,9 @@ class ClientManager:
         :param image: Image object for downloading
         :return: stream of image data
         """
-        logging.debug("Download image enter")
+        LOG.debug("Download image enter")
         stream = self.get_glance().images.data(image.id)
-        logging.debug("Stream with size {0}".format(image.size))
+        LOG.debug("Stream with size {0}".format(image.size))
         return utils.ReSizeStream(stream, image.size, 1000000)
 
 

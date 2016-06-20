@@ -18,14 +18,11 @@ Freezer Backup modes related functions
 import os
 import time
 
-from oslo_config import cfg
 from oslo_log import log
 
 from freezer.utils import utils
 
-CONF = cfg.CONF
-logging = log.getLogger(__name__)
-home = os.path.expanduser("~")
+LOG = log.getLogger(__name__)
 
 
 class BackupOs:
@@ -68,15 +65,15 @@ class BackupOs:
             try:
                 image = glance.images.get(image_id)
             except Exception as e:
-                logging.error(e)
+                LOG.error(e)
 
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(instance_id, utils.DateTime.now().timestamp)
-        logging.info("[*] Uploading image to swift")
+        LOG.info("Uploading image to swift")
         headers = {"x-object-meta-name": instance._info['name'],
                    "x-object-meta-flavor-id": instance._info['flavor']['id']}
         self.storage.add_stream(stream, package, headers)
-        logging.info("[*] Deleting temporary image")
+        LOG.info("Deleting temporary image")
         glance.images.delete(image)
 
     def backup_cinder_by_glance(self, volume_id):
@@ -91,24 +88,24 @@ class BackupOs:
         cinder = client_manager.get_cinder()
 
         volume = cinder.volumes.get(volume_id)
-        logging.debug("Creation temporary snapshot")
+        LOG.debug("Creation temporary snapshot")
         snapshot = client_manager.provide_snapshot(
             volume, "backup_snapshot_for_volume_%s" % volume_id)
-        logging.debug("Creation temporary volume")
+        LOG.debug("Creation temporary volume")
         copied_volume = client_manager.do_copy_volume(snapshot)
-        logging.debug("Creation temporary glance image")
+        LOG.debug("Creation temporary glance image")
         image = client_manager.make_glance_image("name", copied_volume)
-        logging.debug("Download temporary glance image {0}".format(image.id))
+        LOG.debug("Download temporary glance image {0}".format(image.id))
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(volume_id, utils.DateTime.now().timestamp)
-        logging.debug("Uploading image to swift")
+        LOG.debug("Uploading image to swift")
         headers = {}
         self.storage.add_stream(stream, package, headers=headers)
-        logging.debug("Deleting temporary snapshot")
+        LOG.debug("Deleting temporary snapshot")
         client_manager.clean_snapshot(snapshot)
-        logging.debug("Deleting temporary volume")
+        LOG.debug("Deleting temporary volume")
         cinder.volumes.delete(copied_volume)
-        logging.debug("Deleting temporary image")
+        LOG.debug("Deleting temporary image")
         client_manager.get_glance().images.delete(image.id)
 
     def backup_cinder(self, volume_id, name=None, description=None):

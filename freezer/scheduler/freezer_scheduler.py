@@ -113,7 +113,7 @@ class FreezerScheduler(object):
             try:
                 return self.client.jobs.update(job_id, job_doc)
             except Exception as e:
-                LOG.error("[*] Job update error: {0}".format(e))
+                LOG.error("Job update error: {0}".format(e))
 
     def update_job_status(self, job_id, status):
         doc = {'job_schedule': {'status': status}}
@@ -133,7 +133,7 @@ class FreezerScheduler(object):
         try:
             work_job_doc_list = self.get_jobs()
         except Exception as e:
-            LOG.error("[*] Unable to get jobs: {0}".format(e))
+            LOG.error("Unable to get jobs: {0}".format(e))
             return
 
         work_job_id_list = []

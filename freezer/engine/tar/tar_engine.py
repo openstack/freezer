@@ -15,13 +15,16 @@ limitations under the License.
 
 Freezer general utils functions
 """
-import logging
 import os
 import subprocess
+
+from oslo_log import log
 
 from freezer.engine import engine
 from freezer.engine.tar import tar_builders
 from freezer.utils import winutils
+
+LOG = log.getLogger(__name__)
 
 
 class TarBackupEngine(engine.BackupEngine):
@@ -52,7 +55,7 @@ class TarBackupEngine(engine.BackupEngine):
         self.main_storage.upload_meta_file(backup, manifest)
 
     def backup_data(self, backup_path, manifest_path):
-        logging.info("Tar engine backup stream enter")
+        LOG.info("Tar engine backup stream enter")
         tar_command = tar_builders.TarCommandBuilder(
             backup_path, self.compression_algo, self.is_windows)
         if self.encrypt_pass_file:
@@ -64,7 +67,7 @@ class TarBackupEngine(engine.BackupEngine):
 
         command = tar_command.build()
 
-        logging.info("Execution command: \n{}".format(command))
+        LOG.info("Execution command: \n{}".format(command))
 
         tar_process = subprocess.Popen(command, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, shell=True)
@@ -76,7 +79,7 @@ class TarBackupEngine(engine.BackupEngine):
 
         self.check_process_output(tar_process, 'Backup')
 
-        logging.info("Tar engine streaming end")
+        LOG.info("Tar engine streaming end")
 
     def restore_level(self, restore_path, read_pipe, backup, except_queue):
         """
@@ -117,12 +120,13 @@ class TarBackupEngine(engine.BackupEngine):
                 while True:
                     tar_process.stdin.write(read_pipe.recv_bytes())
             except EOFError:
-                logging.info('[*] Pipe closed as EOF reached. '
-                             'Data transmitted successfully')
+                LOG.info('Pipe closed as EOF reached. '
+                         'Data transmitted successfully')
             finally:
                 self.check_process_output(tar_process, 'Restore')
 
         except Exception as e:
+            LOG.exception(e)
             except_queue.put(e)
 
     @staticmethod
@@ -142,10 +146,10 @@ class TarBackupEngine(engine.BackupEngine):
         tar_err = process.communicate()[1]
 
         if tar_err:
-            logging.error('{0} error: {1}'.format(function, tar_err))
+            LOG.error('{0} error: {1}'.format(function, tar_err))
 
         if process.returncode:
-            logging.error('{0} return code is not 0'
-                          .format(process.returncode))
+            LOG.error('{0} return code is not 0'
+                      .format(process.returncode))
             raise Exception('{0} process failed with return code: {1}'
                             .format(function, process.returncode))

@@ -27,11 +27,9 @@ from freezer.snapshot import snapshot
 from freezer.utils import exec_cmd
 from freezer.utils import utils
 
-from oslo_config import cfg
 from oslo_log import log
 
-CONF = cfg.CONF
-logging = log.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 
 class Job:
@@ -46,21 +44,21 @@ class Job:
         self.engine = conf_dict.engine
 
     def execute(self):
-        logging.info('[*] Action not implemented')
+        LOG.info('Action not implemented')
 
     @staticmethod
     def executemethod(func):
         def wrapper(self):
             self.start_time = utils.DateTime.now()
-            logging.info('[*] Job execution Started at: {0}'.
+            LOG.info('Job execution Started at: {0}'.
                          format(self.start_time))
 
             retval = func(self)
 
             end_time = utils.DateTime.now()
-            logging.info('[*] Job execution Finished, at: {0}'.
+            LOG.info('Job execution Finished, at: {0}'.
                          format(end_time))
-            logging.info('[*] Job time Elapsed: {0}'.
+            LOG.info('Job time Elapsed: {0}'.
                          format(end_time - self.start_time))
             return retval
         return wrapper
@@ -78,9 +76,9 @@ class BackupJob(Job):
         try:
             (out, err) = utils.create_subprocess('sync')
             if err:
-                logging.error('Error while sync exec: {0}'.format(err))
+                LOG.error('Error while sync exec: {0}'.format(err))
         except Exception as error:
-            logging.error('Error while sync exec: {0}'.format(error))
+            LOG.error('Error while sync exec: {0}'.format(error))
         if not self.conf.mode:
             raise ValueError("Empty mode")
         mod_name = 'freezer.mode.{0}.{1}'.format(
@@ -158,13 +156,13 @@ class BackupJob(Job):
                                     self.storage)
 
         if backup_media == 'nova':
-            logging.info('[*] Executing nova backup')
+            LOG.info('Executing nova backup')
             backup_os.backup_nova(self.conf.nova_inst_id)
         elif backup_media == 'cindernative':
-            logging.info('[*] Executing cinder backup')
+            LOG.info('Executing cinder backup')
             backup_os.backup_cinder(self.conf.cindernative_vol_id)
         elif backup_media == 'cinder':
-            logging.info('[*] Executing cinder snapshot')
+            LOG.info('Executing cinder snapshot')
             backup_os.backup_cinder_by_glance(self.conf.cinder_vol_id)
         else:
             raise Exception('unknown parameter backup_media %s' % backup_media)
@@ -175,7 +173,7 @@ class RestoreJob(Job):
     @Job.executemethod
     def execute(self):
         conf = self.conf
-        logging.info('[*] Executing FS restore...')
+        LOG.info('Executing FS restore...')
         restore_timestamp = None
 
         restore_abs_path = conf.restore_abs_path
@@ -218,11 +216,11 @@ class AdminJob(Job):
 class ExecJob(Job):
     @Job.executemethod
     def execute(self):
-        logging.info('[*] exec job....')
+        LOG.info('exec job....')
         if self.conf.command:
-            logging.info('[*] Executing exec job....')
+            LOG.info('Executing exec job....')
             exec_cmd.execute(self.conf.command)
         else:
-            logging.warning(
-                '[*] No command info options were set. Exiting.')
+            LOG.warning(
+                'No command info options were set. Exiting.')
         return {}

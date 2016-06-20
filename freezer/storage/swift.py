@@ -16,15 +16,13 @@ limitations under the License.
 """
 
 import json
-from oslo_config import cfg
 from oslo_log import log
 import requests.exceptions
 import time
 
 from freezer.storage import base
 
-CONF = cfg.CONF
-logging = log.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 
 class SwiftStorage(base.Storage):
@@ -74,24 +72,24 @@ class SwiftStorage(base.Storage):
         success = False
         while not success:
             try:
-                logging.info(
-                    '[*] Uploading file chunk index: {0}'.format(path))
+                LOG.info(
+                    'Uploading file chunk index: {0}'.format(path))
                 self.swift().put_object(
                     self.segments, path, content,
                     content_type='application/octet-stream',
                     content_length=len(content))
-                logging.info('[*] Data successfully uploaded!')
+                LOG.info('Data successfully uploaded!')
                 success = True
             except Exception as error:
-                logging.info(
-                    '[*] Retrying to upload file chunk index: {0}'.format(
+                LOG.info(
+                    'Retrying to upload file chunk index: {0}'.format(
                         path))
                 time.sleep(60)
                 self.client_manager.create_swift()
                 count += 1
                 if count == 10:
-                    logging.critical('[*] Error: add_object: {0}'
-                                     .format(error))
+                    LOG.critical('Error: add_object: {0}'
+                                 .format(error))
                     raise Exception("cannot add object to storage")
 
     def upload_manifest(self, backup):
@@ -104,10 +102,10 @@ class SwiftStorage(base.Storage):
         self.client_manager.create_swift()
         headers = {'x-object-manifest':
                    u'{0}/{1}'.format(self.segments, backup)}
-        logging.info('[*] Uploading Swift Manifest: {0}'.format(backup))
+        LOG.info('Uploading Swift Manifest: {0}'.format(backup))
         self.swift().put_object(container=self.container, obj=str(backup),
                                 contents=u'', headers=headers)
-        logging.info('[*] Manifest successfully uploaded!')
+        LOG.info('Manifest successfully uploaded!')
 
     def upload_meta_file(self, backup, meta_file):
         # Upload swift manifest for segments
@@ -116,7 +114,7 @@ class SwiftStorage(base.Storage):
         self.client_manager.create_swift()
 
         # Upload tar incremental meta data file and remove it
-        logging.info('[*] Uploading tar meta data file: {0}'.format(
+        LOG.info('Uploading tar meta data file: {0}'.format(
             backup.tar()))
         with open(meta_file, 'r') as meta_fd:
             self.swift().put_object(
@@ -205,7 +203,7 @@ class SwiftStorage(base.Storage):
             return [b for b in base.Backup.parse_backups(names, self)
                     if b.hostname_backup_name == hostname_backup_name]
         except Exception as error:
-            raise Exception('[*] Error: get_object_list: {0}'.format(error))
+            raise Exception('Error: get_object_list: {0}'.format(error))
 
     def backup_blocks(self, backup):
         """
@@ -219,7 +217,7 @@ class SwiftStorage(base.Storage):
                 self.container, str(backup),
                 resp_chunk_size=self.chunk_size)[1]
         except requests.exceptions.SSLError as e:
-            logging.warning(e)
+            LOG.warning(e)
             chunks = self.client_manager.create_swift().get_object(
                 self.container, str(backup),
                 resp_chunk_size=self.chunk_size)[1]

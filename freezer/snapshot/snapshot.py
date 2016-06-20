@@ -17,17 +17,13 @@ Freezer Backup modes related functions
 """
 import os
 
-from oslo_config import cfg
 from oslo_log import log
 
 from freezer.snapshot import lvm
 from freezer.snapshot import vss
 from freezer.utils import winutils
 
-
-CONF = cfg.CONF
-logging = log.getLogger(__name__)
-home = os.path.expanduser("~")
+LOG = log.getLogger(__name__)
 
 
 def snapshot_create(backup_opt_dict):

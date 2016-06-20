@@ -13,8 +13,12 @@
 # limitations under the License.
 
 
+from oslo_log import log
+
 from freezer.storage import base
 from freezer.utils import utils
+
+LOG = log.getLogger(__name__)
 
 
 class FsLikeStorage(base.Storage):

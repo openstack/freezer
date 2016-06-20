@@ -17,7 +17,11 @@ limitations under the License.
 import json
 import requests
 
+from oslo_log import log
+
 from freezer.apiclient import exceptions
+
+LOG = log.getLogger(__name__)
 
 
 class BackupsManager(object):
@@ -50,7 +54,7 @@ class BackupsManager(object):
 
     def list(self, limit=10, offset=0, search=None):
         """
-        Retrieves a list of backup infos
+        Retrieves a list of backups
 
         :param limit: number of result to return (optional, default 10)
         :param offset: order of first document (optional, default 0)

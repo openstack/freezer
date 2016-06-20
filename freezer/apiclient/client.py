@@ -23,6 +23,7 @@ from keystoneclient.auth.identity import v2
 from keystoneclient.auth.identity import v3
 from keystoneclient import session as ksc_session
 from oslo_config import cfg
+from oslo_log import log
 
 from freezer.apiclient import actions
 from freezer.apiclient import backups
@@ -31,8 +32,7 @@ from freezer.apiclient import registration
 from freezer.apiclient import sessions
 from freezer.utils import utils
 
-CONF = cfg.CONF
-
+LOG = log.getLogger(__name__)
 
 FREEZER_SERVICE_TYPE = 'backup'
 

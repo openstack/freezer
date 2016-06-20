@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
+
+from oslo_log import log
 
 from freezer.utils import utils
 from freezer.utils import winutils
+
+LOG = log.getLogger(__name__)
 
 
 def vss_create_shadow_copy(windows_volume):
@@ -68,7 +71,7 @@ def vss_create_shadow_copy(windows_volume):
             ['powershell.exe', '-executionpolicy', 'unrestricted',
              '-command', script, '-volume', windows_volume])
         if err != '':
-            raise Exception('[*] Error creating a new shadow copy on {0}'
+            raise Exception('Error creating a new shadow copy on {0}'
                             ', error {1}' .format(windows_volume, err))
 
         for line in out.split('\n'):
@@ -78,8 +81,7 @@ def vss_create_shadow_copy(windows_volume):
                 shadow_id = line.split('=')[1].strip().lower() + '}'
                 shadow_id = shadow_id[1:]
 
-        logging.info('[*] Created shadow copy {0}'.
-                     format(shadow_id))
+        LOG.info('Created shadow copy {0}'.format(shadow_id))
 
         return shadow_path, shadow_id
 
@@ -96,13 +98,12 @@ def vss_delete_shadow_copy(shadow_id, windows_volume):
                '/shadow={0}'.format(shadow_id), '/quiet']
         (out, err) = utils.create_subprocess(cmd)
         if err != '':
-            raise Exception('[*] Error deleting shadow copy with id {0}'
+            raise Exception('Error deleting shadow copy with id {0}'
                             ', error {1}' .format(shadow_id, err))
 
         vss_delete_symlink(windows_volume)
 
-        logging.info('[*] Deleting shadow copy {0}'.
-                     format(shadow_id))
+        LOG.info('Deleting shadow copy {0}'.format(shadow_id))
 
         return True
 
@@ -114,6 +115,6 @@ def vss_delete_symlink(windows_volume):
         if os.path.exists(path):
             os.rmdir(path)
     except Exception:
-        logging.error('Failed to delete shadow copy symlink {0}'.
-                          format(os.path.join(windows_volume,
-                                              'freezer_shadowcopy')))
+        LOG.error('Failed to delete shadow copy symlink {0}'.
+                  format(os.path.join(windows_volume,
+                                      'freezer_shadowcopy')))

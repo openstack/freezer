@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+
 import os
 import re
 
+from oslo_log import log
+
 from freezer.utils import utils
+
+LOG = log.getLogger(__name__)
 
 
 class Storage(object):
@@ -104,7 +108,7 @@ class Storage(object):
         if recent_to_date:
             backups = [b for b in backups
                        if b.timestamp <= recent_to_date]
-        err_msg = '[*] No matching backup name "{0}" found'\
+        err_msg = 'No matching backup name "{0}" found'\
             .format(hostname_backup_name)
         if not backups:
             raise IndexError(err_msg)
@@ -314,9 +318,8 @@ class Backup:
                 backup.tar_meta = name in tar_names
                 backups.append(backup)
             except Exception as e:
-                logging.exception(e)
-                logging.error("cannot parse backup name: {0}"
-                              .format(name))
+                LOG.exception(e)
+                LOG.error("cannot parse backup name: {0}".format(name))
         backups.sort(
             key=lambda x: (x.hostname_backup_name, x.timestamp, x.level))
         zero_backups = []
@@ -333,8 +336,8 @@ class Backup:
                     last_backup.add_increment(backup.backup(storage,
                                                             last_backup))
                 else:
-                    logging.error("Incremental backup without parent: {0}"
-                                  .format(backup))
+                    LOG.error("Incremental backup without parent: {0}"
+                              .format(backup))
 
         return zero_backups
 

@@ -13,14 +13,17 @@
 # limitations under the License.
 
 
-import logging
 import os
 import re
 
 from six.moves import configparser
 from six.moves import cStringIO
 
+from oslo_log import log
+
 from freezer.utils import utils
+
+LOG = log.getLogger(__name__)
 
 
 class Config:
@@ -29,8 +32,8 @@ class Config:
     def parse(config_path):
         if config_path:
             if not os.path.exists(config_path):
-                logging.error("[*] Critical Error: Configuration file {0} not"
-                              " found".format(config_path))
+                LOG.error("Critical Error: Configuration file {0} not"
+                          " found".format(config_path))
                 raise Exception("Configuration file {0} not found !".format(
                     config_path))
         config = configparser.SafeConfigParser()
@@ -91,12 +94,12 @@ def ini_parse(lines):
         try:
             # TODO: Remove the parsing of ini-like file via regex
             conf = find_all(INI, lines)
-            logging.warning("Using non-INI files for database configuration "
-                            "file is deprecated. Falling back to Regex.")
-            logging.warning("INI parser error was: {}".format(str(e)))
+            LOG.warning("Using non-INI files for database configuration "
+                        "file is deprecated. Falling back to Regex.")
+            LOG.warning("INI parser error was: {}".format(str(e)))
             return conf
         except Exception:
-            logging.warning("Couldn't parse non-INI config file using Regex")
+            LOG.warning("Couldn't parse non-INI config file using Regex")
             raise
 
 def find_all(regex, lines):

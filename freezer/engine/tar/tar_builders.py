@@ -17,6 +17,10 @@ Freezer Tar related functions
 """
 from freezer.utils import utils
 
+from oslo_log import log
+
+LOG = log.getLogger(__name__)
+
 
 class TarCommandBuilder:
     """
@@ -159,6 +163,6 @@ def get_tar_flag_from_algo(compression):
     }
     compression_exec = utils.get_executable_path(compression)
     if not compression_exec:
-        raise Exception("[*] Critical Error: [*] {0} executable not found ".
+        raise Exception("Critical Error: {0} executable not found ".
                         format(compression))
     return algo.get(compression)

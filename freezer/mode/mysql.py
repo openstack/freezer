@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from oslo_log import log
+
 from freezer.mode import mode
 from freezer.utils import config
+
+LOG = log.getLogger(__name__)
 
 
 class MysqlMode(mode.Mode):
@@ -68,4 +72,4 @@ class MysqlMode(mode.Mode):
                 passwd=parsed_config.get("password", False))
             self.cursor = None
         except Exception as error:
-            raise Exception('[*] MySQL: {0}'.format(error))
+            raise Exception('MySQL: {0}'.format(error))

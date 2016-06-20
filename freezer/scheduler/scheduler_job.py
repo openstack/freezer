@@ -29,7 +29,7 @@ from six.moves import configparser
 
 
 CONF = cfg.CONF
-logging = log.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 
 class StopState(object):
@@ -133,13 +133,13 @@ class Job(object):
     def create(scheduler, executable, job_doc):
         job = Job(scheduler, executable, job_doc)
         if job.job_doc_status in ['running', 'scheduled']:
-            logging.warning('Resetting {0} status from job {1}'
-                            .format(job.job_doc_status, job.id))
+            LOG.warning('Resetting {0} status from job {1}'
+                        .format(job.job_doc_status, job.id))
         if job.job_doc_status == 'stop' and not job.event:
-            logging.info('Job {0} was stopped.'.format(job.id))
+            LOG.info('Job {0} was stopped.'.format(job.id))
             job.event = Job.STOP_EVENT
         elif not job.event:
-            logging.info('Autostart Job {0}'.format(job.id))
+            LOG.info('Autostart Job {0}'.format(job.id))
             job.event = Job.START_EVENT
         return job
 
@@ -153,7 +153,7 @@ class Job(object):
     def remove(self):
         with self.scheduler.lock:
             # delegate to state object
-            logging.info('REMOVE job {0}'.format(self.id))
+            LOG.info('REMOVE job {0}'.format(self.id))
             self.state.remove(self)
 
     @property
@@ -262,13 +262,13 @@ class Job(object):
             next_event = job_doc['job_schedule'].get('event', '')
             while next_event:
                 if next_event == Job.STOP_EVENT:
-                    logging.info('JOB {0} event: STOP'.format(self.id))
+                    LOG.info('JOB {0} event: STOP'.format(self.id))
                     next_event = self.state.stop(self, job_doc)
                 elif next_event == Job.START_EVENT:
-                    logging.info('JOB {0} event: START'.format(self.id))
+                    LOG.info('JOB {0} event: START'.format(self.id))
                     next_event = self.state.start(self, job_doc)
                 elif next_event == Job.ABORT_EVENT:
-                    logging.info('JOB {0} event: ABORT'.format(self.id))
+                    LOG.info('JOB {0} event: ABORT'.format(self.id))
                     next_event = self.state.abort(self, job_doc)
 
     def upload_metadata(self, metadata_string):
@@ -276,10 +276,10 @@ class Job(object):
             metadata = json.loads(metadata_string)
             if metadata:
                 self.scheduler.upload_metadata(metadata)
-                logging.info("[*] Job {0}, freezer action metadata uploaded"
-                             .format(self.id))
+                LOG.info("Job {0}, freezer action metadata uploaded"
+                         .format(self.id))
         except Exception as e:
-            logging.error('[*] metrics upload error: {0}'.format(e))
+            LOG.error('metrics upload error: {0}'.format(e))
 
     def execute_job_action(self, job_action):
         max_retries = job_action.get('max_retries', 1)
@@ -304,7 +304,7 @@ class Job(object):
                 utils.delete_file(config_file_name)
 
             if error:
-                logging.error("[*] Freezer client error: {0}".format(error))
+                LOG.error("Freezer client error: {0}".format(error))
             elif output:
                 self.upload_metadata(output)
 
@@ -312,21 +312,21 @@ class Job(object):
                 # ERROR
                 tries -= 1
                 if tries:
-                    logging.warning('[*] Job {0} failed {1} action,'
-                                    ' retrying in {2} seconds'
-                                    .format(self.id, action_name,
-                                            max_retries_interval))
+                    LOG.warning('Job {0} failed {1} action,'
+                                ' retrying in {2} seconds'
+                                .format(self.id, action_name,
+                                        max_retries_interval))
                     # sleeping with the bloody lock, but we don't want other
                     # actions to mess with our stuff like fs snapshots, do we ?
                     time.sleep(max_retries_interval)
             else:
                 # SUCCESS
-                logging.info('[*] Job {0} action {1}'
-                             ' returned success exit code'.
-                             format(self.id, action_name))
+                LOG.info('Job {0} action {1}'
+                         ' returned success exit code'.
+                         format(self.id, action_name))
                 return Job.SUCCESS_RESULT
-        logging.error('[*] Job {0} action {1} failed after {2} tries'
-                      .format(self.id, action_name, max_retries))
+        LOG.error('Job {0} action {1} failed after {2} tries'
+                  .format(self.id, action_name, max_retries))
 
         return Job.FAIL_RESULT
 
@@ -343,7 +343,7 @@ class Job(object):
         result = Job.SUCCESS_RESULT
         with self.scheduler.execution_lock:
             with self.scheduler.lock:
-                logging.info('job {0} running'.format(self.id))
+                LOG.info('job {0} running'.format(self.id))
                 self.state = RunningState
                 self.job_doc_status = Job.RUNNING_STATUS
                 self.scheduler.update_job_status(self.id, self.job_doc_status)
@@ -352,9 +352,9 @@ class Job(object):
             # if the job contains exec action and the scheduler passes the
             # parameter --disable-exec job execuation should fail
             if self.contains_exec() and CONF.disable_exec:
-                logging.info("Job {0} failed because it contains exec action "
-                             "and exec actions are disabled by scheduler"
-                             .format(self.id))
+                LOG.info("Job {0} failed because it contains exec action "
+                         "and exec actions are disabled by scheduler"
+                         .format(self.id))
                 self.result = Job.FAIL_RESULT
                 self.finish()
                 return
@@ -368,8 +368,8 @@ class Job(object):
                 else:
                     freezer_action = job_action.get('freezer_action', {})
                     action_name = freezer_action.get('action', '')
-                    logging.warning("[*]skipping {0} action".
-                                    format(action_name))
+                    LOG.warning("skipping {0} action".
+                                format(action_name))
             self.result = result
             self.finish()
 
@@ -409,12 +409,12 @@ class Job(object):
                     self.session_tag = resp['session_tag']
                     return
             except Exception as e:
-                logging.error('[*]Error while starting session {0}. {1}'.
-                              format(self.session_id, e))
-            logging.warning('[*]Retrying to start session {0}'.
-                            format(self.session_id))
+                LOG.error('Error while starting session {0}. {1}'.
+                          format(self.session_id, e))
+            LOG.warning('Retrying to start session {0}'.
+                        format(self.session_id))
             retry -= 1
-        logging.error('[*]Unable to start session {0}'.format(self.session_id))
+        LOG.error('Unable to start session {0}'.format(self.session_id))
 
     def end_session(self, result):
         if not self.session_id:
@@ -429,22 +429,22 @@ class Job(object):
                 if resp['result'] == 'success':
                     return
             except Exception as e:
-                logging.error('[*]Error while ending session {0}. {1}'.
-                              format(self.session_id, e))
-            logging.warning('[*]Retrying to end session {0}'.
-                            format(self.session_id))
+                LOG.error('Error while ending session {0}. {1}'.
+                          format(self.session_id, e))
+            LOG.warning('Retrying to end session {0}'.
+                        format(self.session_id))
             retry -= 1
-        logging.error('[*]Unable to end session {0}'.format(self.session_id))
+        LOG.error('Unable to end session {0}'.format(self.session_id))
 
     def schedule(self):
         try:
             kwargs = self.get_schedule_args()
             self.scheduler.add_job(self.execute, id=self.id, **kwargs)
         except Exception as e:
-            logging.error("[*] Unable to schedule job {0}: {1}".
-                          format(self.id, e))
+            LOG.error("Unable to schedule job {0}: {1}".
+                      format(self.id, e))
 
-        logging.info('scheduler job with parameters {0}'.format(kwargs))
+        LOG.info('scheduler job with parameters {0}'.format(kwargs))
 
         if self.scheduled:
             self.job_doc_status = Job.SCHEDULED_STATUS

@@ -95,7 +95,7 @@ class NoDaemon:
 
     @staticmethod
     def handle_program_exit(signum, frame):
-        logging.info('[*] Got signal {0}. Exiting ...'.format(signum))
+        logging.info('Got signal {0}. Exiting ...'.format(signum))
         NoDaemon.exit_flag = True
         NoDaemon.instance.daemonizable.stop()
 
@@ -107,16 +107,16 @@ class NoDaemon:
         setup_logging(log_file)
         while not NoDaemon.exit_flag:
             try:
-                logging.info('[*] Starting in no-daemon mode')
+                logging.info('Starting in no-daemon mode')
                 self.daemonizable.start()
                 NoDaemon.exit_flag = True
             except Exception as e:
                 if dump_stack_trace:
                     logging.error(traceback.format_exc(e))
-                logging.error('[*] Restarting procedure in no-daemon mode '
+                logging.error('Restarting procedure in no-daemon mode '
                               'after Fatal Error: {0}'.format(e))
                 sleep(10)
-        logging.info('[*] Done exiting')
+        logging.info('Done exiting')
 
     def stop(self):
         pass
@@ -178,17 +178,17 @@ class Daemon:
             setup_logging(log_file)
             while not Daemon.exit_flag:
                 try:
-                    logging.info('[*] freezer daemon starting, pid: {0}'.
+                    logging.info('freezer daemon starting, pid: {0}'.
                                  format(self.pid))
                     self.daemonizable.start()
                     Daemon.exit_flag = True
                 except Exception as e:
                     if dump_stack_trace:
                         logging.error(traceback.format_exc(e))
-                    logging.error('[*] Restarting daemonized procedure '
+                    logging.error('Restarting daemonized procedure '
                                   'after Fatal Error: {0}'.format(e))
                     sleep(10)
-            logging.info('[*] freezer daemon done, pid: {0}'.format(self.pid))
+            logging.info('freezer daemon done, pid: {0}'.format(self.pid))
 
     def stop(self):
         pid = self.pid

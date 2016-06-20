@@ -19,8 +19,12 @@ import io
 import os
 import shutil
 
+from oslo_log import log
+
 from freezer.storage import fslike
 from freezer.utils import utils
+
+LOG = log.getLogger(__name__)
 
 
 class LocalStorage(fslike.FsLikeStorage):
