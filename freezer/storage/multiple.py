@@ -15,15 +15,13 @@
 # PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
 from six.moves import queue
 
-from oslo_config import cfg
 from oslo_log import log
 
 from freezer.storage import base
 from freezer.storage.exceptions import StorageException
 from freezer.utils import streaming
 
-CONF = cfg.CONF
-logging = log.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 
 class MultipleStorage(base.Storage):
@@ -59,7 +57,7 @@ class MultipleStorage(base.Storage):
             if not except_queue.empty:
                 while not except_queue.empty():
                     e = except_queue.get_nowait()
-                    logging.critical('Storage error: {0}'.format(e))
+                    LOG.critical('Storage error: {0}'.format(e))
                 return True
             else:
                 return False
@@ -133,7 +131,7 @@ class StorageManager(object):
                     else:
                         output_queue.put(message)
                 except Exception as e:
-                    logging.exception(e)
+                    LOG.exception(e)
                     StorageManager.one_fails_all_fail(
                         self.input_queue, self.output_queues)
                     self.broken_output_queues.add(output_queue)

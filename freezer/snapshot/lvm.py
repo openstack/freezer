@@ -16,14 +16,17 @@ limitations under the License.
 Freezer LVM related functions
 """
 
-import logging
 import os
 import re
 import subprocess
 import uuid
 
+from oslo_log import log
+
 from freezer.common import config as freezer_config
 from freezer.utils import utils
+
+LOG = log.getLogger(__name__)
 
 
 def lvm_snap_remove(backup_opt_dict):
@@ -39,12 +42,12 @@ def lvm_snap_remove(backup_opt_dict):
     try:
         _umount(backup_opt_dict.lvm_dirmount)
     except Exception as e:
-        logging.warning("Snapshot unmount errror: {0}".format(e))
+        LOG.warning("Snapshot unmount errror: {0}".format(e))
     lv = os.path.join('/dev',
                       backup_opt_dict.lvm_volgroup,
                       backup_opt_dict.lvm_snapname)
     _lvremove(lv)
-    logging.info('[*] Snapshot volume {0} removed'.format(lv))
+    LOG.info('Snapshot volume {0} removed'.format(lv))
 
 
 def get_vol_fs_type(vol_name):
@@ -54,8 +57,8 @@ def get_vol_fs_type(vol_name):
     file system type
     """
     if os.path.exists(vol_name) is False:
-        err = '[*] Provided volume name not found: {0} '.format(vol_name)
-        logging.exception(err)
+        err = 'Provided volume name not found: {0} '.format(vol_name)
+        LOG.exception(err)
         raise Exception(err)
 
     file_cmd = '{0} -0 -bLs --no-pad --no-buffer --preserve-date \
@@ -67,12 +70,12 @@ def get_vol_fs_type(vol_name):
     (file_out, file_err) = file_process.communicate()
     file_match = re.search(r'(\S+?) filesystem data', file_out, re.I)
     if file_match is None:
-        err = '[*] File system type not guessable: {0}'.format(file_err)
-        logging.exception(err)
+        err = 'File system type not guessable: {0}'.format(file_err)
+        LOG.exception(err)
         raise Exception(err)
     else:
         filesys_type = file_match.group(1)
-        logging.info('[*] File system {0} found for volume {1}'.format(
+        LOG.info('File system {0} found for volume {1}'.format(
             filesys_type, vol_name))
         return filesys_type.lower().strip()
 
@@ -115,7 +118,7 @@ def lvm_snap(backup_opt_dict):
                                                   lvm_info['snap_path'])
 
     if not validate_lvm_params(backup_opt_dict):
-        logging.info('[*] No LVM requested/configured')
+        LOG.info('No LVM requested/configured')
         return False
 
     utils.create_dir(backup_opt_dict.lvm_dirmount)
@@ -145,9 +148,9 @@ def lvm_snap(backup_opt_dict):
     if lvm_process.returncode:
         raise Exception('lvm snapshot creation error: {0}'.format(lvm_err))
 
-    logging.debug('[*] {0}'.format(lvm_out))
-    logging.warning('[*] Logical volume "{0}" created'.
-                    format(backup_opt_dict.lvm_snapname))
+    LOG.debug('{0}'.format(lvm_out))
+    LOG.warning('Logical volume "{0}" created'.
+                format(backup_opt_dict.lvm_snapname))
 
     # Guess the file system of the provided source volume and st mount
     # options accordingly
@@ -170,16 +173,16 @@ def lvm_snap(backup_opt_dict):
         executable=utils.find_executable('bash'))
     mount_err = mount_process.communicate()[1]
     if 'already mounted' in mount_err:
-        logging.warning('[*] Volume {0} already mounted on {1}\
+        LOG.warning('Volume {0} already mounted on {1}\
         '.format(abs_snap_name, backup_opt_dict.lvm_dirmount))
         return True
     if mount_err:
-        logging.error("[*] Snapshot mount error. Removing snapshot")
+        LOG.error("Snapshot mount error. Removing snapshot")
         lvm_snap_remove(backup_opt_dict)
         raise Exception('lvm snapshot mounting error: {0}'.format(mount_err))
     else:
-        logging.warning(
-            '[*] Volume {0} succesfully mounted on {1}'.format(
+        LOG.warning(
+            'Volume {0} succesfully mounted on {1}'.format(
                 abs_snap_name, backup_opt_dict.lvm_dirmount))
 
     return True
@@ -264,11 +267,11 @@ def validate_lvm_params(backup_opt_dict):
              True snapshot is requested and parameters are valid
     """
     if backup_opt_dict.lvm_snapperm not in ('ro', 'rw'):
-        raise ValueError('[*] Error: Invalid value for option lvm-snap-perm: '
+        raise ValueError('Error: Invalid value for option lvm-snap-perm: '
                          '{}'.format(backup_opt_dict.lvm_snapperm))
 
     if not backup_opt_dict.path_to_backup:
-        raise ValueError('[*] Error: no path-to-backup and '
+        raise ValueError('Error: no path-to-backup and '
                          'no lvm-auto-snap provided')
 
     if not backup_opt_dict.lvm_srcvol and not backup_opt_dict.lvm_volgroup:
@@ -276,24 +279,24 @@ def validate_lvm_params(backup_opt_dict):
         return False
 
     if not backup_opt_dict.lvm_srcvol:
-        raise ValueError('[*] Error: no lvm-srcvol and '
+        raise ValueError('Error: no lvm-srcvol and '
                          'no lvm-auto-snap provided')
     if not backup_opt_dict.lvm_volgroup:
-        raise ValueError('[*] Error: no lvm-volgroup and '
+        raise ValueError('Error: no lvm-volgroup and '
                          'no lvm-auto-snap provided')
 
-    logging.info('[*] Source LVM Volume: {0}'.format(
+    LOG.info('Source LVM Volume: {0}'.format(
         backup_opt_dict.lvm_srcvol))
-    logging.info('[*] LVM Volume Group: {0}'.format(
+    LOG.info('LVM Volume Group: {0}'.format(
         backup_opt_dict.lvm_volgroup))
-    logging.info('[*] Snapshot name: {0}'.format(
+    LOG.info('Snapshot name: {0}'.format(
         backup_opt_dict.lvm_snapname))
-    logging.info('[*] Snapshot size: {0}'.format(
+    LOG.info('Snapshot size: {0}'.format(
         backup_opt_dict.lvm_snapsize))
-    logging.info('[*] Directory where the lvm snaphost will be mounted on:'
-                 ' {0}'.format(backup_opt_dict.lvm_dirmount.strip()))
-    logging.info('[*] Path to backup (including snapshot): {0}'
-                 .format(backup_opt_dict.path_to_backup))
+    LOG.info('Directory where the lvm snaphost will be mounted on:'
+             ' {0}'.format(backup_opt_dict.lvm_dirmount.strip()))
+    LOG.info('Path to backup (including snapshot): {0}'
+             .format(backup_opt_dict.path_to_backup))
 
     return True
 
@@ -312,7 +315,7 @@ def _umount(path):
         raise Exception('Impossible to umount {0}. {1}'
                         .format(path, mount_err))
     os.rmdir(path)
-    logging.info('[*] Volume {0} unmounted'.format(path))
+    LOG.info('Volume {0} unmounted'.format(path))
 
 
 def _lvremove(lv):
@@ -326,8 +329,8 @@ def _lvremove(lv):
         output, error = lvremove_proc.communicate()
         if lvremove_proc.returncode:
             if "contains a filesystem in use" in error:
-                logging.warning("Couldn't remove volume {0}. "
-                                "It is still in use.".format(lv))
+                LOG.warning("Couldn't remove volume {0}. "
+                            "It is still in use.".format(lv))
                 log_volume_holding_process(lv)
             else:
                 break
@@ -349,7 +352,7 @@ def log_volume_holding_process(lv):
             # lsof is quite long, so no need to add a sleep here
             utils.find_executable('lsof'), dev_id[0], dev_id[1])
         process = subprocess.check_output([command], shell=True)
-        logging.warning("Process holding the volume is '{}'".format(process))
+        LOG.warning("Process holding the volume is '{}'".format(process))
     except Exception as e:
-        logging.warning("Could not get informations on the process holding the"
-                        " volume: {}".format(str(e)))
+        LOG.warning("Could not get informations on the process holding the"
+                    " volume: {}".format(str(e)))

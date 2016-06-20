@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+
+from oslo_log import log
 
 from freezer.mode import mode
 from freezer.utils import config
 from freezer.utils import utils
 from freezer.utils import winutils
+
+LOG = log.getLogger(__name__)
 
 
 class SqlserverMode(mode.Mode):
@@ -46,13 +49,13 @@ class SqlserverMode(mode.Mode):
         """ Stop a SQL Server instance to
         perform the backup of the db files """
 
-        logging.info('[*] Stopping SQL Server for backup')
+        LOG.info('Stopping SQL Server for backup')
         with winutils.DisableFileSystemRedirection():
             cmd = 'net stop "SQL Server ({0})"'\
                 .format(self.sql_server_instance)
             (out, err) = utils.create_subprocess(cmd)
             if err != '':
-                raise Exception('[*] Error while stopping SQL Server,'
+                raise Exception('Error while stopping SQL Server,'
                                 ', error {0}'.format(err))
 
     def start_sql_server(self):
@@ -63,9 +66,9 @@ class SqlserverMode(mode.Mode):
                 self.sql_server_instance)
             (out, err) = utils.create_subprocess(cmd)
             if err != '':
-                raise Exception('[*] Error while starting SQL Server'
+                raise Exception('Error while starting SQL Server'
                                 ', error {0}'.format(err))
-            logging.info('[*] SQL Server back to normal')
+            LOG.info('SQL Server back to normal')
 
     def prepare(self):
         self.stop_sql_server()

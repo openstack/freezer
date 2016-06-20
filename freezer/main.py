@@ -46,6 +46,7 @@ def freezer_main(backup_args):
     """
 
     if not backup_args.quiet:
+        LOG.info("Begin freezer agent process with args: {0}".format(sys.argv))
         LOG.info('log file at {0}'.format(CONF.get('log_file')))
 
     if backup_args.max_priority:
@@ -86,7 +87,7 @@ def freezer_main(backup_args):
     if hasattr(backup_args, 'trickle_command'):
         if "tricklecount" in os.environ:
             if int(os.environ.get("tricklecount")) > 1:
-                LOG.critical("[*] Trickle seems to be not working,  Switching "
+                LOG.critical("Trickle seems to be not working,  Switching "
                              "to normal mode ")
                 return run_job(backup_args, storage)
 
@@ -107,12 +108,16 @@ def freezer_main(backup_args):
             utils.delete_file(backup_args.tmp_file)
 
         if process.returncode:
-            LOG.warn("[*] Trickle Error: {0}".format(error))
-            LOG.info("[*] Switching to work without trickle ...")
+            LOG.warn("Trickle Error: {0}".format(error))
+            LOG.info("Switching to work without trickle ...")
             return run_job(backup_args, storage)
 
     else:
-        return run_job(backup_args, storage)
+
+        run_job(backup_args, storage)
+
+    if not backup_args.quiet:
+        LOG.info("End freezer agent process successfully")
 
 
 def run_job(conf, storage):
@@ -134,7 +139,7 @@ def run_job(conf, storage):
 
 def fail(exit_code, e, quiet, do_log=True):
     """ Catch the exceptions and write it to log """
-    msg = '[*] Critical Error: {0}\n'.format(e)
+    msg = 'Critical Error: {0}\n'.format(e)
     if not quiet:
         sys.stderr.write(msg)
     if do_log:
@@ -189,6 +194,7 @@ def main():
     """freezer-agent binary main execution"""
     backup_args = None
     try:
+
         freezer_config.config()
         freezer_config.setup_logging()
         backup_args = freezer_config.get_backup_args()
@@ -200,8 +206,11 @@ def main():
             CONF.print_help()
             sys.exit(1)
         freezer_main(backup_args)
+
     except Exception as err:
         quiet = backup_args.quiet if backup_args else False
+        LOG.exception(err)
+        LOG.critical("End freezer agent process unsuccessfully")
         return fail(1, err, quiet)
 
 if __name__ == '__main__':

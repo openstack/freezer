@@ -19,7 +19,6 @@ Freezer general utils functions
 import datetime
 import errno
 import fnmatch as fn
-import logging
 import os
 import subprocess
 import sys
@@ -30,7 +29,6 @@ from functools import wraps
 from oslo_config import cfg
 from oslo_log import log
 from six.moves import configparser
-
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
@@ -59,15 +57,15 @@ def create_dir(directory, do_log=True):
     try:
         if not os.path.isdir(expanded_dir_name):
             if do_log:
-                logging.warning('[*] Directory {0} does not exists,\
+                LOG.warning('Directory {0} does not exists,\
                 creating...'.format(expanded_dir_name))
             os.makedirs(expanded_dir_name)
         else:
             if do_log:
-                logging.warning('[*] Directory {0} found!'.format(
+                LOG.warning('Directory {0} found!'.format(
                     expanded_dir_name))
     except Exception as error:
-        err = '[*] Error while creating directory {0}: {1}\
+        err = 'Error while creating directory {0}: {1}\
             '.format(expanded_dir_name, error)
         raise Exception(err)
 
@@ -126,8 +124,8 @@ def get_mount_from_path(path):
     """
 
     if not os.path.exists(path):
-        logging.critical('[*] Error: provided path does not exist: {0}'
-                         .format(path))
+        LOG.critical('Error: provided path does not exist: {0}'
+                     .format(path))
         raise IOError
 
     mount_point_path = os.path.abspath(path)
@@ -230,8 +228,8 @@ class ReSizeStream(object):
         return self
 
     def next(self):
-        logging.info("Transmitted {0} of {1}".format(self.transmitted,
-                                                     self.length))
+        LOG.info("Transmitted {0} of {1}".format(self.transmitted,
+                                                 self.length))
         chunk_size = self.chunk_size
         if len(self.reminder) > chunk_size:
             result = self.reminder[:chunk_size]
@@ -338,7 +336,7 @@ def alter_proxy(proxy):
     os.environ.pop("HTTPS_PROXY", None)
     if proxy_value.startswith('http://') or \
             proxy_value.startswith('https://'):
-        logging.info('[*] Using proxy {0}'.format(proxy_value))
+        LOG.info('Using proxy {0}'.format(proxy_value))
         os.environ['HTTP_PROXY'] = str(proxy_value)
         os.environ['HTTPS_PROXY'] = str(proxy_value)
     else:
@@ -356,7 +354,7 @@ def shield(func):
         try:
             return func(*args, **kwargs)
         except Exception as error:
-            logging.error(error)
+            LOG.error(error)
     return wrapper
 
 
@@ -366,7 +364,7 @@ def delete_file(path_to_file):
     try:
         os.remove(path_to_file)
     except Exception:
-        logging.warning("Error deleting file {0}".format(path_to_file))
+        LOG.warning("Error deleting file {0}".format(path_to_file))
 
 
 def walk_path(path, exclude, ignorelinks, callback, *kargs, **kwargs):
@@ -498,7 +496,7 @@ def set_max_process_priority():
     # children processes inherit niceness from father
     try:
         LOG.warning(
-            '[*] Setting freezer execution with high CPU and I/O priority')
+            'Setting freezer execution with high CPU and I/O priority')
         PID = os.getpid()
         # Set cpu priority
         os.nice(-19)
@@ -509,4 +507,4 @@ def set_max_process_priority():
             u'-p', u'{0}'.format(PID)
         ])
     except Exception as priority_error:
-        LOG.warning('[*] Priority: {0}'.format(priority_error))
+        LOG.warning('Priority: {0}'.format(priority_error))

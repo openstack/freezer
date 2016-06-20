@@ -24,15 +24,13 @@ import six
 from six.moves import queue
 import time
 
-from oslo_config import cfg
 from oslo_log import log
 
 from freezer.engine.exceptions import EngineException
 from freezer.utils import streaming
 from freezer.utils import utils
 
-CONF = cfg.CONF
-logging = log.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -116,7 +114,7 @@ class BackupEngine(object):
             if not except_queue.empty():
                 while not except_queue.empty():
                     e = except_queue.get_nowait()
-                    logging.critical('Engine error: {0}'.format(e))
+                    LOG.exception('Engine error: {0}'.format(e))
                 return True
             else:
                 return False
@@ -170,16 +168,16 @@ class BackupEngine(object):
         """
         :type backup: freezer.storage.Backup
         """
-        logging.info("Creation restore path: {0}".format(restore_path))
+        LOG.info("Creation restore path: {0}".format(restore_path))
         utils.create_dir_tree(restore_path)
         if not overwrite and not utils.is_empty_dir(restore_path):
             raise Exception(
                 "Restore dir is not empty. "
                 "Please use --overwrite or provide different path.")
-        logging.info("Creation restore path completed")
+        LOG.info("Creation restore path completed")
         for level in range(0, backup.level + 1):
             b = backup.full_backup.increments[level]
-            logging.info("Restore backup {0}".format(b))
+            LOG.info("Restore backup {0}".format(b))
 
             # Use SimpleQueue because Queue does not work on Mac OS X.
             read_except_queue = SimpleQueue()
@@ -214,7 +212,7 @@ class BackupEngine(object):
                 if not except_queue.empty():
                     while not except_queue.empty():
                         e = except_queue.get()
-                        logging.critical('Engine error: {0}'.format(e))
+                        LOG.exception('Engine error: {0}'.format(e))
                     return True
                 else:
                     return False
@@ -228,8 +226,8 @@ class BackupEngine(object):
             if tar_stream.exitcode or got_exception:
                 raise EngineException("Engine error. Failed to restore.")
 
-        logging.info(
-            '[*] Restore execution successfully executed \
+        LOG.info(
+            'Restore execution successfully executed \
              for backup name {0}'.format(backup))
 
     @abc.abstractmethod

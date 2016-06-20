@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from oslo_log import log
 
 from freezer.mode import mode
+
+LOG = log.getLogger(__name__)
 
 
 class MongoDbMode(mode.Mode):
@@ -42,8 +44,8 @@ class MongoDbMode(mode.Mode):
         except ImportError:
             raise ImportError('please install pymongo module')
 
-        logging.info('[*] MongoDB backup is being executed...')
-        logging.info('[*] Checking is the localhost is Master/Primary...')
+        LOG.info('MongoDB backup is being executed...')
+        LOG.info('Checking is the localhost is Master/Primary...')
         # todo unhardcode this
         mongodb_port = '27017'
         local_hostname = conf.hostname
@@ -51,5 +53,5 @@ class MongoDbMode(mode.Mode):
         mongo_client = pymongo.MongoClient(db_host_port)
         master_dict = dict(mongo_client.admin.command("isMaster"))
         if master_dict['me'] != master_dict['primary']:
-            raise Exception('[*] localhost {0} is not Master/Primary,\
+            raise Exception('localhost {0} is not Master/Primary,\
                 exiting...'.format(local_hostname))

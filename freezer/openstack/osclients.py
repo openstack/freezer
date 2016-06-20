@@ -22,13 +22,11 @@ from glanceclient.client import Client as glance_client
 from keystoneauth1 import loading
 from keystoneauth1 import session
 from novaclient.client import Client as nova_client
-from oslo_config import cfg
 from oslo_log import log
 
 from freezer.utils import utils
 
-CONF = cfg.CONF
-logging = log.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 
 class OSClientManager(object):
@@ -194,11 +192,11 @@ class OSClientManager(object):
             name=snapshot_name,
             force=True)
 
-        logging.debug("Snapshot for volume with id {0}".format(volume.id))
+        LOG.debug("Snapshot for volume with id {0}".format(volume.id))
 
         while snapshot.status != "available":
             try:
-                logging.debug("Snapshot status: " + snapshot.status)
+                LOG.debug("Snapshot status: " + snapshot.status)
                 snapshot = self.get_cinder().volume_snapshots.get(snapshot.id)
                 if snapshot.status == "error":
                     raise Exception("snapshot has error state")
@@ -206,7 +204,7 @@ class OSClientManager(object):
             except Exception as e:
                 if str(e) == "snapshot has error state":
                     raise e
-                logging.exception(e)
+                LOG.exception(e)
         return snapshot
 
     def do_copy_volume(self, snapshot):
@@ -221,12 +219,12 @@ class OSClientManager(object):
 
         while volume.status != "available":
             try:
-                logging.info("[*] Volume copy status: " + volume.status)
+                LOG.info("Volume copy status: " + volume.status)
                 volume = self.get_cinder().volumes.get(volume.id)
                 time.sleep(5)
             except Exception as e:
-                logging.exception(e)
-                logging.warn("[*] Exception getting volume status")
+                LOG.exception(e)
+                LOG.warn("Exception getting volume status")
         return volume
 
     def make_glance_image(self, image_volume_name, copy_volume):
@@ -246,15 +244,15 @@ class OSClientManager(object):
         while image.status != "active":
             try:
                 time.sleep(5)
-                logging.info("Image status: " + image.status)
+                LOG.info("Image status: " + image.status)
                 image = self.get_glance().images.get(image.id)
                 if image.status in ("killed", "deleted"):
                     raise Exception("Image have killed state")
             except Exception as e:
                 if image.status in ("killed", "deleted"):
                     raise e
-                logging.exception(e)
-                logging.warn("Exception getting image status")
+                LOG.exception(e)
+                LOG.warn("Exception getting image status")
         return image
 
     def clean_snapshot(self, snapshot):
@@ -262,7 +260,7 @@ class OSClientManager(object):
         Deletes snapshot
         :param snapshot: snapshot name
         """
-        logging.info("[*] Deleting existed snapshot: " + snapshot.id)
+        LOG.info("Deleting existed snapshot: " + snapshot.id)
         self.get_cinder().volume_snapshots.delete(snapshot)
 
     def download_image(self, image):
@@ -271,9 +269,9 @@ class OSClientManager(object):
         :param image: Image object for downloading
         :return: stream of image data
         """
-        logging.debug("Download image enter")
+        LOG.debug("Download image enter")
         stream = self.get_glance().images.data(image.id)
-        logging.debug("Stream with size {0}".format(image.size))
+        LOG.debug("Stream with size {0}".format(image.size))
         return utils.ReSizeStream(stream, image.size, 1000000)
 
 
@@ -365,10 +363,10 @@ class OpenstackOpts(object):
                                 'Generated from auth_url: {1}'
                                 .format(version, auth_url))
 
-                logging.info('Authenticating with Keystone version: '
-                             '{0}, auth_url: {1}, username: {2}, project: {3}'.
-                             format(self.auth_version, self.auth_url,
-                                    self.username, self.project_name))
+                LOG.info('Authenticating with Keystone version: '
+                         '{0}, auth_url: {1}, username: {2}, project: {3}'.
+                         format(self.auth_version, self.auth_url,
+                                self.username, self.project_name))
 
     def get_opts_dicts(self):
         """

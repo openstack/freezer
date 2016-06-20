@@ -18,6 +18,10 @@ Freezer general utils functions
 from six.moves import queue
 import threading
 
+from oslo_log import log
+
+LOG = log.getLogger(__name__)
+
 
 class Wait(Exception):
     pass
@@ -104,6 +108,7 @@ class QueuedThread(threading.Thread):
         try:
             super(QueuedThread, self).run()
         except Exception as e:
+            LOG.exception(e)
             self._exception_queue.put_nowait(e)
             self.rich_queue.force_stop()
             # Thread will exit at this point.

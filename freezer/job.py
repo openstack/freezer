@@ -34,7 +34,7 @@ from oslo_log import log
 from oslo_utils import importutils
 
 CONF = cfg.CONF
-logging = log.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -51,11 +51,11 @@ class Job(object):
 
     def execute(self):
         start_time = utils.DateTime.now()
-        logging.info('[*] Job execution Started at: {0}'.format(start_time))
+        LOG.info('Job execution Started at: {0}'.format(start_time))
         retval = self.execute_method()
         end_time = utils.DateTime.now()
-        logging.info('[*] Job execution Finished, at: {0}'.format(end_time))
-        logging.info('[*] Job time Elapsed: {0}'.format(end_time - start_time))
+        LOG.info('Job execution Finished, at: {0}'.format(end_time))
+        LOG.info('Job time Elapsed: {0}'.format(end_time - start_time))
         return retval
 
     @abc.abstractmethod
@@ -73,9 +73,9 @@ class BackupJob(Job):
         try:
             (out, err) = utils.create_subprocess('sync')
             if err:
-                logging.error('Error while sync exec: {0}'.format(err))
+                LOG.error('Error while sync exec: {0}'.format(err))
         except Exception as error:
-            logging.error('Error while sync exec: {0}'.format(error))
+            LOG.error('Error while sync exec: {0}'.format(error))
         if not self.conf.mode:
             raise ValueError("Empty mode")
         mod_name = 'freezer.mode.{0}.{1}'.format(
@@ -154,8 +154,8 @@ class BackupJob(Job):
                                    self.conf.dereference_symlink == 'hard')
                     consistency_checksum = CheckSum(
                         filepath, ignorelinks=ignorelinks).compute()
-                    logging.info('[*] Computed checksum for consistency {0}'.
-                                 format(consistency_checksum))
+                    LOG.info('Computed checksum for consistency {0}'.
+                             format(consistency_checksum))
                     self.conf.consistency_checksum = consistency_checksum
 
                 hostname_backup_name = self.conf.hostname_backup_name
@@ -181,13 +181,13 @@ class BackupJob(Job):
                                     self.storage)
 
         if backup_media == 'nova':
-            logging.info('[*] Executing nova backup')
+            LOG.info('Executing nova backup')
             backup_os.backup_nova(self.conf.nova_inst_id)
         elif backup_media == 'cindernative':
-            logging.info('[*] Executing cinder backup')
+            LOG.info('Executing cinder backup')
             backup_os.backup_cinder(self.conf.cindernative_vol_id)
         elif backup_media == 'cinder':
-            logging.info('[*] Executing cinder snapshot')
+            LOG.info('Executing cinder snapshot')
             backup_os.backup_cinder_by_glance(self.conf.cinder_vol_id)
         else:
             raise Exception('unknown parameter backup_media %s' % backup_media)
@@ -198,7 +198,7 @@ class RestoreJob(Job):
 
     def execute_method(self):
         conf = self.conf
-        logging.info('[*] Executing FS restore...')
+        LOG.info('Executing FS restore...')
         restore_timestamp = None
 
         restore_abs_path = conf.restore_abs_path
@@ -215,7 +215,7 @@ class RestoreJob(Job):
                     restore_checksum = CheckSum(restore_abs_path,
                                                 ignorelinks=True)
                     if restore_checksum.compare(backup_checksum):
-                        logging.info('[*] Consistency check success.')
+                        LOG.info('Consistency check success.')
                     else:
                         raise ConsistencyCheckException(
                             "Backup Consistency Check failed: backup checksum "
@@ -261,11 +261,11 @@ class AdminJob(Job):
 class ExecJob(Job):
 
     def execute_method(self):
-        logging.info('[*] exec job....')
+        LOG.info('exec job....')
         if self.conf.command:
-            logging.info('[*] Executing exec job....')
+            LOG.info('Executing exec job....')
             exec_cmd.execute(self.conf.command)
         else:
-            logging.warning(
-                '[*] No command info options were set. Exiting.')
+            LOG.warning(
+                'No command info options were set. Exiting.')
         return {}

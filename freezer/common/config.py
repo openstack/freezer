@@ -552,7 +552,7 @@ def get_backup_args():
                             'trickle', path=":".join(os.environ.get('PATH')))
 
         if trickle_executable:
-            LOG.info("[*] Info: Starting trickle ...")
+            LOG.info("Info: Starting trickle ...")
             trickle_command = '{0} -d {1} -u {2} '.\
                 format(trickle_executable,
                        getattr(backup_args, 'download_limit') or -1,
@@ -570,7 +570,7 @@ def get_backup_args():
             else:
                 os.environ["tricklecount"] = str(1)
         else:
-            LOG.warn("[*] Trickle not found. Switching to normal mode without "
+            LOG.warn("Trickle not found. Switching to normal mode without "
                      "limiting bandwidth")
             if backup_args.config:
                 # remove index tmp_file from backup arguments dict

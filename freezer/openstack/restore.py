@@ -16,13 +16,11 @@ limitations under the License.
 Freezer restore modes related functions
 """
 
-from oslo_config import cfg
 from oslo_log import log
 
 from freezer.utils import utils
 
-CONF = cfg.CONF
-logging = log.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 
 class RestoreOs(object):
@@ -46,7 +44,7 @@ class RestoreOs(object):
 
         if not backups:
             msg = "Cannot find backups for path: %s" % path
-            logging.error(msg)
+            LOG.error(msg)
             raise BaseException(msg)
         return backups[-1]
 
@@ -63,7 +61,7 @@ class RestoreOs(object):
         stream = swift.get_object(self.container, "%s/%s" % (path, backup),
                                   resp_chunk_size=10000000)
         length = int(stream[0]["x-object-meta-length"])
-        logging.info("[*] Creation glance image")
+        LOG.info("Creation glance image")
         image = glance.images.create(
             data=utils.ReSizeStream(stream[1], length, 1),
             container_format="bare", disk_format="raw")
@@ -83,8 +81,8 @@ class RestoreOs(object):
             x.created_at.split('.')[0]) >= restore_from_timestamp])
 
         if not backups_filter:
-            logging.warning("no available backups for cinder volume,"
-                            "restore newest backup")
+            LOG.warning("no available backups for cinder volume,"
+                        "restore newest backup")
             backup = max(backups, key=lambda x: x.created_at)
             cinder.restores.restore(backup_id=backup.id)
         else:
@@ -107,10 +105,10 @@ class RestoreOs(object):
         size = length / gb
         if length % gb > 0:
             size += 1
-        logging.info("[*] Creation volume from image")
+        LOG.info("Creation volume from image")
         self.client_manager.get_cinder().volumes.create(size,
                                                         imageRef=image.id)
-        logging.info("[*] Deleting temporary image")
+        LOG.info("Deleting temporary image")
         self.client_manager.get_glance().images.delete(image)
 
     def restore_nova(self, instance_id, restore_from_timestamp):
@@ -123,5 +121,5 @@ class RestoreOs(object):
         (info, image) = self._create_image(instance_id, restore_from_timestamp)
         nova = self.client_manager.get_nova()
         flavor = nova.flavors.get(info['x-object-meta-flavor-id'])
-        logging.info("[*] Creation an instance")
+        LOG.info("Creation an instance")
         nova.servers.create(info['x-object-meta-name'], image, flavor)
