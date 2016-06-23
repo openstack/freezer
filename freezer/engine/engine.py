@@ -226,14 +226,14 @@ class BackupEngine(object):
                              got_exception)
 
             if tar_stream.exitcode or got_exception:
-                raise EngineException("Engine error. Failed to restore file.")
+                raise EngineException("Engine error. Failed to restore.")
 
         logging.info(
             '[*] Restore execution successfully executed \
              for backup name {0}'.format(backup))
 
     @abc.abstractmethod
-    def restore_level(self, restore_path, read_pipe, backup):
+    def restore_level(self, restore_path, read_pipe, backup, except_queue):
         pass
 
     @abc.abstractmethod

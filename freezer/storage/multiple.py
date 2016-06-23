@@ -70,7 +70,7 @@ class MultipleStorage(base.Storage):
                              got_exception)
 
         if (got_exception):
-            raise StorageException("Storage error. Failed to write backup.")
+            raise StorageException("Storage error. Failed to backup.")
 
     def find_all(self, hostname_backup_name):
         backups = [b.find_all(hostname_backup_name) for b in self.storages]
