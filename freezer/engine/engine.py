@@ -15,8 +15,9 @@ limitations under the License.
 
 Freezer general utils functions
 """
+import abc
 import multiprocessing
-from multiprocessing.queues import  SimpleQueue
+from multiprocessing.queues import SimpleQueue
 import six
 # PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
 from six.moves import queue
@@ -222,14 +223,15 @@ class BackupEngine(object):
                              or got_exception)
 
             if tar_stream.exitcode or got_exception:
-                raise EngineException("Engine error. Failed to restore file.")
+                raise EngineException("Engine error. Failed to restore.")
 
         logging.info(
             '[*] Restore execution successfully executed \
              for backup name {0}'.format(backup))
 
-    def restore_level(self, restore_path, read_pipe):
-        raise NotImplementedError("Should have implemented this")
+    @abc.abstractmethod
+    def restore_level(self, restore_path, read_pipe, backup, except_queue):
+        pass
 
     def backup_data(self, backup_path, manifest_path):
         """

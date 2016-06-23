@@ -73,26 +73,10 @@ class TarBackupEngine(engine.BackupEngine):
         while tar_chunk:
             yield tar_chunk
             tar_chunk = read_pipe.read(self.chunk_size)
-        tar_err = tar_process.communicate()[1]
-        if tar_err:
-            logging.exception('[*] Backup error: {0}'.format(tar_err))
-            os._exit(1)
-        if tar_process.returncode:
-            logging.error('[*] Backup return code is not 0')
-            os._exit(1)
+
+        self.check_process_output(tar_process, 'Backup')
+
         logging.info("Tar engine streaming end")
-
-    @staticmethod
-    def check_process_output(process):
-        tar_err = process.communicate()[1]
-
-        if tar_err:
-            logging.exception('[*] Restore error: {0}'.format(tar_err))
-            os._exit(1)
-
-        if process.returncode:
-            logging.error('[*] Restore return code is not 0')
-            os._exit(1)
 
     def restore_level(self, restore_path, read_pipe, backup, except_queue):
         """
@@ -135,8 +119,33 @@ class TarBackupEngine(engine.BackupEngine):
             except EOFError:
                 logging.info('[*] Pipe closed as EOF reached. '
                              'Data transmitted successfully')
-
-            self.check_process_output(tar_process)
+            finally:
+                self.check_process_output(tar_process, 'Restore')
 
         except Exception as e:
             except_queue.put(e)
+
+    @staticmethod
+    def check_process_output(process, function):
+
+        """Check process stderr and return code to determine if error occurred.
+
+        Check process stderr for any non-empty value.
+        Check process return code for any non-zero value.
+        Log error message and raise an exception if error occurred.
+
+        :param process: the multiprocessing process to check
+        :param function: a string: ('Restore' | 'Backup') for error message
+        :returns: None -- Do nothing and return None if no error occurred
+        :raises: Exception -- Raise Exception if error occurred
+        """
+        tar_err = process.communicate()[1]
+
+        if tar_err:
+            logging.error('{0} error: {1}'.format(function, tar_err))
+
+        if process.returncode:
+            logging.error('{0} return code is not 0'
+                          .format(process.returncode))
+            raise Exception('{} process failed with return code: {1}'
+                            .format(function, process.returncode))
