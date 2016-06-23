@@ -116,7 +116,7 @@ class TestDaemon(unittest.TestCase):
         mock_expanduser.return_value = '/home/chet'
         mock_gettempdir.return_value = '/tempus_fugit'
         retval = self.daemon.pid_fname
-        self.assertEqual(retval, '/tempus_fugit/freezer_sched_chet.pid')
+        self.assertEqual('/tempus_fugit/freezer_sched_chet.pid', retval)
 
     @patch('freezer.scheduler.daemon.os.path.isfile')
     def test_pid_not_exists(self, mock_isfile):
