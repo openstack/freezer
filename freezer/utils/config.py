@@ -85,7 +85,7 @@ def ini_parse(lines):
     :return:
     """
     try:
-        fd = cStringIO.StringIO(lines)
+        fd = cStringIO(lines)
         parser = configparser.ConfigParser()
         parser.readfp(fd)
         return dict(parser.items('default'))
