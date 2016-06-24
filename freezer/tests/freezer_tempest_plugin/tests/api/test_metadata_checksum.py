@@ -11,8 +11,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import json
-import os
 import subprocess
 
 from freezer.tests.freezer_tempest_plugin.tests.api import base
@@ -29,108 +27,57 @@ class TestFreezerMetadataChecksum(base.BaseFreezerTest):
     def setUp(self):
         super(TestFreezerMetadataChecksum, self).setUp()
 
-        # create a source tree to backup with a few empty files
-        # (files must be empty to avoid encoding errors with pure random data)
-        self.source_tree = Temp_Tree()
-        self.source_tree.add_random_data(size=0)
-
-        self.storage_tree = Temp_Tree()
-        self.dest_tree = Temp_Tree()
-
-        self.freezer_backup_name = 'freezer-test-backup-checksum-0'
-
-        self.metadata_out = os.path.join(
-            self.storage_tree.path,
-            self.freezer_backup_name + '.json')
-
         self.environ = super(TestFreezerMetadataChecksum, self).get_environ()
+        self.dest_tree = Temp_Tree()
+        self.backup_name = 'backup_checksum_test'
 
     def tearDown(self):
         super(TestFreezerMetadataChecksum, self).tearDown()
 
-        self.source_tree.cleanup()
         self.dest_tree.cleanup()
-        self.storage_tree.cleanup()
 
     @test.attr(type="gate")
     def test_freezer_fs_backup_valid_checksum(self):
         # perform a normal backup, but enable consistency checks and save the
         # metadata to disk
-        backup_args = ['freezer-agent',
-                       '--path-to-backup',
-                       self.source_tree.path,
-                       '--container',
-                       self.storage_tree.path,
-                       '--backup-name',
-                       self.freezer_backup_name,
-                       '--storage',
-                       'local',
-                       '--consistency_check',
-                       '--metadata-out',
-                       self.metadata_out]
+        metadata_path = self.create_local_backup(consistency_check=True)
 
-        self.run_subprocess(backup_args, 'Test backup to local storage.')
+        metadata = base.load_metadata(metadata_path)
 
         # load the stored metadata to retrieve the computed checksum
-        with open(self.metadata_out) as f:
-            metadata = json.load(f)
-            self.assertIn('consistency_checksum', metadata,
-                          'Checksum must exist in stored metadata.')
+        self.assertIn('consistency_checksum', metadata,
+                      'Checksum must exist in stored metadata.')
 
-            checksum = metadata['consistency_checksum']
-            restore_args = ['freezer-agent',
-                            '--action',
-                            'restore',
-                            '--restore-abs-path',
-                            self.dest_tree.path,
-                            '--container',
-                            self.storage_tree.path,
-                            '--backup-name',
-                            self.freezer_backup_name,
-                            '--storage',
-                            'local',
-                            '--consistency_checksum',
-                            checksum]
+        checksum = metadata['consistency_checksum']
+        restore_args = ['freezer-agent',
+                        '--action', 'restore',
+                        '--restore-abs-path', self.dest_tree.path,
+                        '--container', metadata['container'],
+                        '--backup-name', self.backup_name,
+                        '--storage', 'local',
+                        '--consistency_checksum', checksum]
 
-            self.run_subprocess(restore_args,
-                                'Test restore from local storage with '
-                                'computed checksum.')
+        self.run_subprocess(restore_args,
+                            'Test restore from local storage with '
+                            'computed checksum.')
 
     @test.attr(type="gate")
     def test_freezer_fs_backup_bad_checksum(self):
         # as above, but we'll ignore the computed checksum
-        backup_args = ['freezer-agent',
-                       '--path-to-backup',
-                       self.source_tree.path,
-                       '--container',
-                       self.storage_tree.path,
-                       '--backup-name',
-                       self.freezer_backup_name,
-                       '--storage',
-                       'local',
-                       '--consistency_check',
-                       '--metadata-out',
-                       self.metadata_out]
-
-        self.run_subprocess(backup_args, 'Test backup to local storage.')
+        metadata_path = self.create_local_backup(consistency_check=True)
+        metadata = base.load_metadata(metadata_path)
 
         # make a failing sha256 checksum (assuming no added path string)
         bad_checksum = '0' * 64
 
         # attempt to restore using the bad checksum
         restore_args = ['freezer-agent',
-                        '--action',
-                        'restore',
-                        '--restore-abs-path',
-                        self.dest_tree.path,
-                        '--container',
-                        self.storage_tree.path,
-                        '--backup-name',
-                        self.freezer_backup_name,
-                        '--storage',
-                        'local',
-                        '--consistency_checksum',
-                        bad_checksum]
+                        '--action', 'restore',
+                        '--restore-abs-path', self.dest_tree.path,
+                        '--container', metadata['container'],
+                        '--backup-name', self.backup_name,
+                        '--storage', 'local',
+                        '--consistency_checksum', bad_checksum]
 
         process = subprocess.Popen(restore_args,
                                    stdout=subprocess.PIPE,
