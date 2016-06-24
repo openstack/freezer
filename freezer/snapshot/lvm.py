@@ -314,13 +314,40 @@ def _umount(path):
 
 
 def _lvremove(lv):
-    lvremove_proc = subprocess.Popen(
-        '{0} -f {1}'.format(utils.find_executable('lvremove'), lv),
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, shell=True,
-        executable=utils.find_executable('bash'))
-    output, error = lvremove_proc.communicate()
-    if lvremove_proc.returncode:
-        raise Exception(
-            'unable to remove snapshot {0}. {1}'.format(lv, error))
+    for attempt in range(5):
+        lvremove_proc = subprocess.Popen(
+            '{0} -f {1}'.format(utils.find_executable('lvremove'), lv),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, shell=True,
+            executable=utils.find_executable('bash'))
+        output, error = lvremove_proc.communicate()
+        if lvremove_proc.returncode:
+            if "contains a filesystem in use" in error:
+                logging.warning("Couldn't remove volume {0}. "
+                                "It is still in use.".format(lv))
+                log_volume_holding_process(lv)
+            else:
+                break
+        else:
+            return
+    # Raise if five attempts made or different error than fs in use
+    raise Exception('Unable to remove snapshot {0}. {1}'.format(lv, error))
+
+
+def log_volume_holding_process(lv):
+    try:
+        # Let's try to provide more information on the failure
+        devices = [i.split("\t") for i in subprocess.check_output([
+            utils.find_executable('dmsetup'), "ls"]).splitlines()]
+        dev_id = [i[1].strip("()").split(":") for i in devices if
+                  lv.split("/").pop() in i[0] and
+                  not i[0].endswith("cow")][0]
+        command = "{} | grep {},{}".format(
+            # lsof is quite long, so no need to add a sleep here
+            utils.find_executable('lsof'), dev_id[0], dev_id[1])
+        process = subprocess.check_output([command], shell=True)
+        logging.warning("Process holding the volume is '{}'".format(process))
+    except Exception as e:
+        logging.warning("Could not get informations on the process holding the"
+                        " volume: {}".format(str(e)))
