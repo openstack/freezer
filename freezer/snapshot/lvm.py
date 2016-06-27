@@ -1,5 +1,5 @@
 """
-(c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+(c) Copyright 2014-2016 Hewlett-Packard Development Company, L.P.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -90,10 +90,12 @@ def lvm_snap(backup_opt_dict):
     :param backup_opt_dict: the configuration dict
     :return: True if the snapshot has been taken, False otherwise
     """
+    lvm_uuid = uuid.uuid4().hex
+
     if not backup_opt_dict.lvm_snapname:
         backup_opt_dict.lvm_snapname = \
             "{0}_{1}".format(freezer_config.DEFAULT_LVM_SNAP_BASENAME,
-                             uuid.uuid4().hex)
+                             lvm_uuid)
 
     # adjust/check lvm parameters according to provided path_to_backup
     lvm_info = get_lvm_info(backup_opt_dict.path_to_backup)
@@ -107,7 +109,7 @@ def lvm_snap(backup_opt_dict):
     if not backup_opt_dict.lvm_dirmount:
         backup_opt_dict.lvm_dirmount = \
             "{0}_{1}".format(freezer_config.DEFAULT_LVM_MOUNT_BASENAME,
-                             uuid.uuid4().hex)
+                             lvm_uuid)
 
     backup_opt_dict.path_to_backup = os.path.join(backup_opt_dict.lvm_dirmount,
                                                   lvm_info['snap_path'])
@@ -297,8 +299,8 @@ def validate_lvm_params(backup_opt_dict):
 
 
 def _umount(path):
-    # TODO(ANONYMOUS): check if cwd==path
-    # and change working directory to unmount ?
+    if os.getcwd().startswith(path):
+        os.chdir('/')
     umount_proc = subprocess.Popen('{0} -l -f {1}'.format(
         utils.find_executable('umount'), path),
         stdin=subprocess.PIPE,
@@ -307,9 +309,9 @@ def _umount(path):
     (umount_out, mount_err) = umount_proc.communicate()
 
     if umount_proc.returncode:
-        raise Exception('impossible to umount {0}. {1}'
+        raise Exception('Impossible to umount {0}. {1}'
                         .format(path, mount_err))
-
+    os.rmdir(path)
     logging.info('[*] Volume {0} unmounted'.format(path))
 
 
