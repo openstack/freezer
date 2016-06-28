@@ -149,5 +149,5 @@ class TarBackupEngine(engine.BackupEngine):
         if process.returncode:
             logging.error('{0} return code is not 0'
                           .format(process.returncode))
-            raise Exception('{} process failed with return code: {1}'
+            raise Exception('{0} process failed with return code: {1}'
                             .format(function, process.returncode))
