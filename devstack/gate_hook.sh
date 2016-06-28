@@ -15,6 +15,11 @@
 
 set -ex
 
+# Link the log file so it will be collected by the CI system
+if [ -n "$BASE" ] && [ -d "$BASE/logs" ]; then
+  sudo ln -sf /home/tempest/.freezer/freezer.log $BASE/logs/freezer.log
+fi
+
 echo "Start Gate Hook"
 
 export DEVSTACK_LOCAL_CONFIG="enable_plugin freezer https://git.openstack.org/openstack/freezer"
@@ -23,8 +28,5 @@ export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin freezer-api https://git.openst
 export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service s-proxy s-object s-container s-account"
 
 $BASE/new/devstack-gate/devstack-vm-gate.sh
-
-# Copy log file so it will be collected by the CI system
-sudo cp /home/tempest/.freezer/freezer.log $BASE/logs/
 
 echo "End Gate Hook"
