@@ -325,23 +325,26 @@ class Test_validate_lvm_params(unittest.TestCase):
         self.assertRaises(Exception, lvm.validate_lvm_params, self.backup_opt)
 
 
-
 class Test_umount(unittest.TestCase):
 
     @patch('freezer.snapshot.lvm.subprocess.Popen')
-    def test_return_none_on_success(self, mock_popen):
+    @patch('freezer.snapshot.lvm.os')
+    def test_return_none_on_success(self, mock_os, mock_popen):
         mock_process = Mock()
         mock_process.communicate.return_value = '', ''
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
+        mock_os.rmdir.return_value = None
         self.assertIsNone(lvm._umount('path'))
 
     @patch('freezer.snapshot.lvm.subprocess.Popen')
-    def test_raises_on_popen_returncode_not_0(self, mock_popen):
+    @patch('freezer.snapshot.lvm.os')
+    def test_raises_on_popen_returncode_not_0(self, mock_os, mock_popen):
         mock_process = Mock()
         mock_process.communicate.return_value = '', ''
         mock_process.returncode = 1
         mock_popen.return_value = mock_process
+        mock_os.rmdir.return_value = None
         self.assertRaises(Exception, lvm._umount, 'path')
 
 
