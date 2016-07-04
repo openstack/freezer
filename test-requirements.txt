@@ -5,10 +5,10 @@ flake8<2.6.0,>=2.5.4 # MIT
 hacking<0.11,>=0.10.2
 coverage>=3.6 # Apache-2.0
 discover # BSD
-mock>=1.2 # BSD
-pylint==1.4.5 # GNU GPL v2
+mock>=2.0 # BSD
+pylint==1.4.5 # GPLv2
 python-subunit>=0.0.18 # Apache-2.0/BSD
-sphinx!=1.2.0,!=1.3b1,<1.3,>=1.1.2 # BSD
+sphinx!=1.3b1,<1.3,>=1.2.1 # BSD
 oslosphinx!=3.4.0,>=2.5.0 # Apache-2.0
 testrepository>=0.0.18 # Apache-2.0/BSD
 testtools>=1.4.0 # MIT
