@@ -19,7 +19,7 @@ from freezer.mode import mode
 LOG = log.getLogger(__name__)
 
 
-class MongoDbMode(mode.Mode):
+class MongoMode(mode.Mode):
     """
     Execute the necessary tasks for file system backup mode
     """
