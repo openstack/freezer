@@ -195,18 +195,18 @@ class Daemon(object):
         if pid:
             os.kill(self.pid, signal.SIGTERM)
         else:
-            print ('Not Running')
+            print('Not Running')
 
     def status(self):
         pid = self.pid
         if pid:
-            print ('Running with pid: {0}'.format(pid))
+            print('Running with pid: {0}'.format(pid))
         else:
-            print ('Not Running')
+            print('Not Running')
 
     def reload(self):
         pid = self.pid
         if pid:
             os.kill(pid, signal.SIGHUP)
         else:
-            print ('Not Running')
+            print('Not Running')

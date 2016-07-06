@@ -101,7 +101,7 @@ def freezer_main(backup_args):
         while process.poll() is None:
             line = process.stdout.readline().strip()
             if line != '':
-                print (line)
+                print(line)
         output, error = process.communicate()
 
         if hasattr(backup_args, 'tmp_file'):
