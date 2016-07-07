@@ -142,7 +142,11 @@ class BackupJob(Job):
                 filepath = '.'
                 chdir_path = os.path.expanduser(
                     os.path.normpath(self.conf.path_to_backup.strip()))
-
+                if not os.path.exists(chdir_path):
+                    msg = 'Path to backup does not exist {}'.format(
+                        chdir_path)
+                    LOG.critical(msg)
+                    raise IOError(msg)
                 if not os.path.isdir(chdir_path):
                     filepath = os.path.basename(chdir_path)
                     chdir_path = os.path.dirname(chdir_path)
