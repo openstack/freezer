@@ -126,6 +126,14 @@ class OSClientManager(object):
             os_options['auth_token'] = self.swift_args.pop('token')
         if 'auth_version' in self.swift_args.keys():
             auth_version = self.swift_args.get('auth_version')
+        os_options['project_domain_name'] = \
+            self.swift_args.get('project_domain_name')
+        os_options['user_domain_name'] = \
+            self.swift_args.get('user_domain_name')
+        os_options['project_domain_id'] = \
+            self.swift_args.get('project_domain_id')
+        os_options['user_domain_id'] = self.swift_args.get('user_domain_id')
+        os_options['project_id'] = self.swift_args.get('project_id')
 
         tenant_name = self.swift_args.get('project_name') or self.swift_args.\
             get('tenant_name')
