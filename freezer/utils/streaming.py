@@ -112,4 +112,4 @@ class QueuedThread(threading.Thread):
             self._exception_queue.put_nowait(e)
             self.rich_queue.force_stop()
             # Thread will exit at this point.
-            raise e
+            raise
