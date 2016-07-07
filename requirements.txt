@@ -5,7 +5,7 @@ astroid<1.4.0 # LGPL # breaks pylint 1.4.4
 setuptools>=16.0 # PSF/ZPL
 pbr>=1.6 # Apache-2.0
 python-swiftclient>=2.2.0 # Apache-2.0
-python-keystoneclient!=1.8.0,!=2.1.0,>=1.6.0 # Apache-2.0
+python-keystoneclient!=1.8.0,!=2.1.0,<3.0.0,>=1.6.0 # Apache-2.0
 python-cinderclient>=1.3.1 # Apache-2.0
 python-glanceclient>=2.0.0 # Apache-2.0
 python-novaclient!=2.33.0,>=2.29.0 # Apache-2.0
