@@ -398,10 +398,16 @@ def get_backup_args():
     conf = None
     if CONF.get('config'):
         conf = freezer_config.Config.parse(CONF.get('config'))
+
+        # force log_config_append to always exists in defaults even if not
+        # provided.
+        defaults['log_config_append'] = None
+
         defaults.update(conf.default)
-        # TODO: restore_from_host is deprecated and to be removed
-        defaults['hostname'] = conf.default.get('hostname') or \
-                               conf.default.get('restore_from_host')
+
+        # TODO(ANONYMOUS): restore_from_host is deprecated and to be removed
+        defaults['hostname'] = (conf.default.get('hostname') or
+                                conf.default.get('restore_from_host'))
         # override default oslo values
         levels = {
             'all': log.NOTSET,

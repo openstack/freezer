@@ -185,6 +185,10 @@ def main():
         backup_args = freezer_config.get_backup_args()
         if backup_args.config:
             # reload logging configuration to force oslo use the new log path
+            if backup_args.log_config_append:
+                CONF.set_override('log_config_append',
+                                  backup_args.log_config_append)
+
             freezer_config.setup_logging()
 
         if len(sys.argv) < 2:
