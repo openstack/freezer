@@ -37,7 +37,7 @@ The following features are available:
 -  Backup file system using point-in-time snapshot
 -  Strong encryption supported: AES-256-CFB
 -  Backup file system tree directly (without volume snapshot)
--  Backup journaled MongoDB directory tree using lvm snapshot to Swift
+-  Backup journalled MongoDB directory tree using lvm snapshot to Swift
 -  Backup MySQL with lvm snapshot
 -  Restore data from a specific date automatically to file system
 -  Low storage consumption as the backup are uploaded as a stream
@@ -60,7 +60,7 @@ Freezer Components
 | Component         | Description                                                                                                                                    |
 +===================+================================================================================================================================================+
 | Freezer Web UI    | Web interface that interacts with the Freezer API to configure and change settings.                                                            |
-|                   | It provides most of the features from the Freezer Agent CLI, advanced scheduler settings such as multi-node backup synchronization,                 |
+|                   | It provides most of the features from the Freezer Agent CLI, advanced scheduler settings such as multi-node backup synchronization,            |
 |                   | metrics, and reporting.                                                                                                                        |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer Scheduler | A client side component, running on the node where the data backup is to be executed.                                                          |
@@ -75,7 +75,7 @@ Freezer Components
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer Agent     | Multiprocessing Python software that runs on the client side, where the data backup is to be executed.                                         |
 |                   | It can be executed standalone or by the Freezer Scheduler.                                                                                     |
-|                   | The Freezer Agent provides a flexible way to execute backup, restore and other actions on a running system.                                         |
+|                   | The Freezer Agent provides a flexible way to execute backup, restore and other actions on a running system.                                    |
 |                   | In order to provide flexibility in terms of data integrity, speed, performance, resources usage, etc the freezer agent offers a                |
 |                   | wide range of options to execute optimized backup according the available resources as:                                                        |
 |                   |                                                                                                                                                |
@@ -88,7 +88,7 @@ Freezer Components
 |                   |   - Parallel upload to pluggable storage media (i.e., upload backup to swift and to a remote node by ssh,                                      |
 |                   |     or upload to two or more independent swift instances with different credentials, etc)                                                      |
 |                   |   - Execute file based incremental (like tar), block based incremental (like rsync algorithm) and differential based backup and restore        |
-|                   |   - Multiplatform as it can be run on Linux, Windows, \*BSD and OSX                                                                            |
+|                   |   - Multi-platform as it can be run on Linux, Windows, \*BSD and OSX                                                                           |
 |                   |   - Automatic removal of old backups                                                                                                           |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer API       | The API is used to store and provide metadata to the Freezer Web UI and to the Freezer Scheduler.                                              |
@@ -337,6 +337,7 @@ Execute a MySQL backup using lvm snapshot::
     freezer_mysql-backup-prod --mode mysql --backup-name mysql-ops002
 
 Cinder backups
+==============
 
 To make a cinder backup you should provide cinder-vol-id or cindernative-vol-id
 parameters in command line arguments. Freezer doesn't do any additional checks
@@ -355,6 +356,7 @@ Execute a MySQL backup with Cinder::
    --cinder-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Nova backups
+============
 
 To make a Nova backup you should provide a Nova parameter in the arguments.
 Freezer doesn't do any additional checks and assumes that making a backup
@@ -375,68 +377,77 @@ All the freezer-agent activities are logged into /var/log/freezer.log.
 
 
 Swift, Local and SSH Storage
------------------------------
+----------------------------
 
 Freezer can use:
 
- local storage - a folder that is available in the same OS (may be mounted)
+* local storage - a folder that is available in the same OS (may be mounted)
+* Swift storage - OS object storage
+* SSH storage - a folder on a remote machine
 
- To use local storage specify "--storage local"
- And use "--container <path-to-folder-with-backups>"
- Backup example::
+Local Storage
+=============
+
+To use local storage specify "--storage local"
+And use "--container <path-to-folder-with-backups>"
+Backup example::
 
    $ sudo freezer-agent --path-to-backup /data/dir/to/backup
    --container /tmp/my_backup_path/ --backup-name my-backup-name
    --storage local
 
- Restore example::
+Restore example::
 
    $ sudo freezer-agent --action restore --restore-abs-path /data/dir/to/backup
    --container /tmp/my_backup_path/ --backup-name my-backup-name
    --storage local
 
- Swift storage - OS object storage
 
- To use swift storage specify "--storage swift" or omit "--storage" parameter
- altogether (Swift storage is the default).
- And use "--container <swift-container-name>"
+Swift storage
+=============
 
- Backup example::
+To use swift storage specify "--storage swift" or omit "--storage" parameter
+altogether (Swift storage is the default).
+And use "--container <swift-container-name>"
+
+Backup example::
 
    $ sudo freezer-agent --path-to-backup /data/dir/to/backup
    --container freezer-container --backup-name my-backup-name
    --storage swift
 
- Restore example::
+Restore example::
 
    $ sudo freezer-agent --action restore --restore-abs-path /data/dir/to/backup
    --container freezer-container --backup-name my-backup-name
    --storage swift
 
- SSH storage - a folder on a remote machine
+SSH storage
+===========
 
- To use ssh storage specify "--storage ssh"
- And use "--container <path-to-folder-with-backups-on-remote-machine>"
- Also you should specify ssh-username, ssh-key and ssh-host parameters.
- ssh-port is optional parameter, default is 22.
+To use ssh storage specify "--storage ssh"
+And use "--container <path-to-folder-with-backups-on-remote-machine>"
+Also you should specify ssh-username, ssh-key and ssh-host parameters.
+ssh-port is optional parameter, default is 22.
 
- ssh-username for user ubuntu should be "--ssh-username ubuntu"
- ssh-key should be path to your secret ssh key "--ssh-key <path-to-secret-key>"
- ssh-host can be ip of remote machine or resolvable dns name "--ssh-host 8.8.8.8"
+ssh-username for user ubuntu should be "--ssh-username ubuntu"
+ssh-key should be path to your secret ssh key "--ssh-key <path-to-secret-key>"
+ssh-host can be ip of remote machine or resolvable dns name "--ssh-host 8.8.8.8"
 
- Backup example::
+Backup example::
 
    $ sudo freezer-agent --path-to-backup /data/dir/to/backup
    --container /remote-machine-path/ --backup-name my-backup-name
    --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa
    --ssh-host 8.8.8.8
 
- Restore example::
+Restore example::
 
   $ sudo freezer-agent  --action restore --restore-abs-pat /data/dir/to/backup
   --container /remote-machine-path/ --backup-name my-backup-name
   --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa
   --ssh-host 8.8.8.8
+
 
 Restore
 -------
@@ -497,10 +508,10 @@ Remove backups older then 1 day::
     $ freezer-agent --action admin --container freezer_dev-test --remove-older-then 1 --backup-name dev-test-01
 
 
-Cinder restore currently creates a volume with the contents of the saved one, but
-doesn't implement deattach of existing volume and attach of the new one to the
-vm. You should implement these steps manually. To create a new volume from
-existing content run the next command:
+Cinder restore currently creates a volume with the contents of the saved one,
+but doesn't implement detachment of existing volume and attachment of the new
+one to the vm. You should implement these steps manually. To create a new volume
+from existing content run the next command:
 
 Execute a cinder restore::
 
@@ -574,18 +585,14 @@ The Freezer architecture is composed of the following components:
 |                   |   - Execute file based incremental (like tar), block based incremental (like rsync algorithm) and differential based backup and restore        |
 |                   |   - Multi-platform as it can be run on Linux, Windows, \*BSD and OSX                                                                           |
 |                   |   - Automatic removal of old backups                                                                                                           |
-<<<<<<< HEAD
 |                   |                                                                                                                                                |
-|                   | freezerc binary is deprecated and won't be available in next releases. Use freezer-agent instead.                                              |
-=======
-|                   | "freezerc" binary is deprecated and won't be available in next releases. Use freezer-agent instead .                                             |
->>>>>>> New Better & Well Formatted Docs with Sphinx
+|                   | "freezerc" binary is deprecated and won't be available in next releases. Use freezer-agent instead.                                            |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer API       | The API is used to store and provide metadata to the Freezer Web UI and to the Freezer Scheduler.                                              |
 |                   | Also the API is used to store session information for multi node backup synchronization. No workload data is stored in the API.                |
 |                   | For more information on the API please refer to: freezer_api/README.rst                                                                        |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| DB Elasticsearch  | Backend used by the API to store and retrieve metrics, metadata sessions information, job status, etc.                                         |
+| DB ElasticSearch  | Backend used by the API to store and retrieve metrics, metadata sessions information, job status, etc.                                         |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Freezer currently uses GNU Tar under the hood to execute incremental backup and
@@ -678,7 +685,8 @@ Nova and Cinder Backups
 If our data is stored on cinder volume or nova instance disk, we can implement
 file backup using nova snapshots or volume backups.
 
-Nova backups:
+Nova backups
+============
 
 If you provide nova arguments in the parameters, freezer assumes that all
 necessary data is located on instance disk and it can be successfully stored
@@ -698,7 +706,8 @@ this snapshot. Instance will have different id and old instance should be
 terminated manually.
 
 
-Cinder backups:
+Cinder backups
+==============
 
 Cinder has its own mechanism for backups, and freezer supports it. But it also
 allows creating a glance image from volume and uploading to swift.
@@ -768,7 +777,7 @@ positional arguments::
 
   freezer-scheduler start|stop
 
-It can be also be started as a foreground process using the --no-daemon flag::
+It can be also be started as a foreground process using the ``--no-daemon`` flag::
 
   freezer-scheduler --no-daemon start
 
@@ -778,8 +787,9 @@ or by a babysitting process such as systemd.
 The cli-tool version is used to manage the jobs in the API.
 A "job" is basically a container; a document which contains one
 or more "actions".
-An action contains the instructions for the freezer-agent. They are the same parameters
-that would be passed to the agent on the command line. For example:
+
+An action contains the instructions for the freezer-agent. They are the same
+parameters that would be passed to the agent on the command line. For example:
 "backup_name", "path_to_backup", "max_level"
 
 To sum it up, a job is a sequence of parameters that the scheduler pulls
@@ -790,13 +800,13 @@ The scheduler understands the "scheduling" part of the job document,
 which it uses to actually schedule the job, while the rest of the parameters
 are substantially opaque.
 
-It may also be useful to use the "-c" parameter to specify the client-id that
+It may also be useful to use the ``-c`` parameter to specify the client-id that
 the scheduler will use when interacting with the API.
 
 The purpose of the *client-id* is to associate a job with the
 scheduler instance which is supposed to execute that job.
 
-A single openstack user could manage different resources on different nodes
+A single OpenStack user could manage different resources on different nodes
 (and actually may even have different freezer-scheduler instances running
 on the same node with different local privileges, for example),
 and the client-id allows him to associate the specific scheduler instance
@@ -864,15 +874,14 @@ Misc
 
 Dependencies notes
 ------------------
-In stable/kilo and stable/liberty the module peppep3134daemon is imported
-from local path
-rather than pip. This generated many issues
-as the package is not in the global-requirements.txt
-of kilo and liberty. Also pbr in the kilo release
-does not support env markers which further complicated
-the installation.
+In stable/kilo and stable/liberty the module ``pep3143daemon`` is imported
+from local path rather than pip. This generated many issues as the package
+is not in the global-requirements.txt of kilo and liberty.
 
-Please check the FAQ to: FAQ.rst
+Also pbr in the kilo release does not support env markers which further
+complicated the installation.
+
+Please check the `FAQ <FAQ.rst>`_ too.
 
 Available options::
 
@@ -1196,9 +1205,16 @@ this will print all options to the screen you direct the output to a file if you
 Bandwidth limitation (Trickle)
 ------------------------------
 
-Trickle for bandwidth limiting ( How it works ):
-We have 3 cases to handle
-1- User used --upload-limit or --download-limit from the cli
+Trickle for bandwidth limiting (How it works ):
+
+We have 3 cases to handle:
+
+1. User used ``--upload-limit`` or ``--download-limit`` from the CLI
+2. User used configuration files to execute an action
+3. A combination of both of these options.
+
+User used --upload-limit or -download-limit from the CLI
+========================================================
 We need to remove these limits from the cli arguments and then run trickle
 using subprocess
 
@@ -1210,7 +1226,8 @@ this will be translated to::
 
     # trickle -u 1024 -d -1 freezer-agent --action backup -F /etc/ -C freezer
 
-2- User used config files to execute an action
+User used config files to execute an action
+===========================================
 
 We need to create a new config file without the limits So we will get the all
 the arguments provided and remove limits then run trickle using subprocess
@@ -1249,10 +1266,14 @@ The new config file has the following arguments::
     backup_name = freezer_jobs
     path_to_backup = /etc
 
-3- Hybrid using config file and cli options
-we will use a mix of both procedures:
-- remove limits (cli or config )
-- reproduce the same command again with trickle
+Hybrid approach using config file and CLI options
+=================================================
+
+We will use a mix of both procedures:
+
+* remove limits (cli or config )
+* reproduce the same command again with trickle
+
 EX::
 
  $ freezer-agent --config /home/user/job2.ini --upload-limit 1k
