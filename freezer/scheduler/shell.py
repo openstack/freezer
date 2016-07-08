@@ -96,7 +96,7 @@ def do_session_create(client, args):
         raise Exception("Parameter --file required")
     session_doc = utils.load_doc_from_json_file(args.fname)
     session_id = client.sessions.create(session_doc)
-    print ("Created session {0}".format(session_id))
+    print("Created session {0}".format(session_id))
 
 
 def do_session_get(client, args):

@@ -214,7 +214,7 @@ def main():
             return doers[CONF.action](apiclient, CONF)
         except Exception as e:
             LOG.error(e)
-            print ('ERROR {0}'.format(e))
+            print('ERROR {0}'.format(e))
             return 70  # os.EX_SOFTWARE
 
     freezer_scheduler = FreezerScheduler(apiclient=apiclient,
@@ -222,7 +222,7 @@ def main():
                                          job_path=CONF.jobs_dir)
 
     if CONF.no_daemon:
-        print ('Freezer Scheduler running in no-daemon mode')
+        print('Freezer Scheduler running in no-daemon mode')
         LOG.debug('Freezer Scheduler running in no-daemon mode')
         daemon = NoDaemon(daemonizable=freezer_scheduler)
     else:
