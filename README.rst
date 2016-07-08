@@ -994,8 +994,7 @@ optional arguments:
                         Python logging module documentation. Note that when
                         logging configuration files are used all logging
                         configuration is defined in the configuration file and
-                        other logging configuration options are ignored (for
-                        example, log_format).
+                        other logging configuration options are ignored.
   --log-date-format DATE_FORMAT
                         Defines the format string for %(asctime)s in log
                         records. Default: None . This option is ignored if
