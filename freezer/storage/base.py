@@ -13,8 +13,10 @@
 # limitations under the License.
 
 
+import abc
 import os
 import re
+import time
 
 from oslo_log import log
 
@@ -137,7 +139,7 @@ class Storage(object):
         """
         raise NotImplementedError("Should have implemented this")
 
-    def remove_older_than(self, remove_older_timestamp, hostname_backup_name):
+    def remove_before_date(self, remove_older_timestamp, hostname_backup_name):
         """
         Removes backups which are older than the specified timestamp
         :type remove_older_timestamp: int
@@ -145,10 +147,23 @@ class Storage(object):
         """
         backups = self.find_all(hostname_backup_name)
         backups = [b for b in backups
-                   if b.latest_update.timestamp < remove_older_timestamp]
+                   if b.latest_update.timestamp <= remove_older_timestamp]
         for b in backups:
             b.storage.remove_backup(b)
 
+    def remove_older_than(self, days, hostname_backup_name):
+        """Removes backups older than n amount of days.
+        :param days: int
+        :param hostname_backup_name: str
+        :return:
+        """
+        now = time.time()
+        seconds_old = utils.days_to_seconds(days)
+        to_delete_timestamp = now - seconds_old
+        return self.remove_before_date(to_delete_timestamp,
+                                       hostname_backup_name)
+
+    @abc.abstractmethod
     def info(self):
         raise NotImplementedError("Should have implemented this")
 
@@ -299,6 +314,7 @@ class Backup:
     @staticmethod
     def parse_backups(names, storage):
         """
+
         :param names:
         :type names: list[str] - file names of backups.
         :type storage: freezer.storage.base.Storage
@@ -306,6 +322,7 @@ class Backup:
         :rtype: list[freezer.storage.base.Backup]
         :return: list of zero level backups
         """
+        # TODO(m3m0): rename this function
         prefix = 'tar_metadata_'
         tar_names = set([x[len(prefix):]
                          for x in names if x.startswith(prefix)])

@@ -109,7 +109,6 @@ def freezer_main(backup_args):
             return run_job(backup_args, storage)
 
     else:
-
         run_job(backup_args, storage)
 
     if not backup_args.quiet:
@@ -123,7 +122,15 @@ def run_job(conf, storage):
         'info': job.InfoJob,
         'admin': job.AdminJob,
         'exec': job.ExecJob}[conf.action](conf, storage)
+
     response = freezer_job.execute()
+
+    # Inject remove-from-date functionality for a backup and restore jobs
+    if ((conf.remove_before_date or conf.remove_from_date or
+            conf.remove_older_than) and conf.action != 'admin'):
+        # TODO(m3m0): return something here
+        job.AdminJob(conf, storage).execute()
+        # TODO(m3m0): delete all backups from the api.
 
     if conf.metadata_out and response:
         if conf.metadata_out == '-':

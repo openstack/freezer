@@ -60,15 +60,15 @@ DEFAULT_PARAMS = {
     'max_segment_size': 33554432, 'lvm_srcvol': False,
     'download_limit': -1, 'hostname': False, 'remove_from_date': False,
     'restart_always_level': False, 'lvm_dirmount': None,
-    'dereference_symlink': '',
-    'config': False, 'mysql_conf': False,
+    'dereference_symlink': '', 'remove_before_date': False,
+    'config': False, 'mysql_conf': False, 'remove_older_than': False,
     'insecure': False, 'lvm_snapname': None,
     'lvm_snapperm': 'ro', 'snapshot': False,
     'max_priority': False, 'max_level': False, 'path_to_backup': False,
     'encrypt_pass_file': False, 'volume': False, 'proxy': False,
     'cinder_vol_id': '', 'cindernative_vol_id': '',
     'nova_inst_id': '', '__version__': FREEZER_VERSION,
-    'remove_older_than': None, 'restore_from_date': False,
+    'restore_from_date': False,
     'upload_limit': -1, 'always_level': False, 'version': False,
     'dry_run': False, 'lvm_snapsize': DEFAULT_LVM_SNAPSIZE,
     'restore_abs_path': False, 'log_file': None, 'log_level': "info",
@@ -169,26 +169,28 @@ _COMMON = [
                     " --max-backup-level. Default False (Disabled)"),
     cfg.FloatOpt('restart-always-level',
                  dest='restart_always_level',
-                 help="Restart the backup from level 0 after n days. Valid only"
-                      " if --always-level option if set. If --always-level is "
-                      "used together with --remove-older-then, there might be "
+                 help="Restart the backup from level 0 after n days. Valid "
+                      "only if --always-level option is set.  If "
+                      "--always-level is used together with "
+                      "--remove-older-than, there might be "
                       "the chance where the initial level 0 will be removed. "
                       "Default False (Disabled)"),
-    cfg.FloatOpt('remove-older-than',
-                 short='R',
-                 dest='remove_older_than',
-                 help="Checks in the specified container for object older than "
-                      "the specified days. If i.e. 30 is specified, it will "
-                      "remove the remote object older than 30 days. Default "
-                      "False (Disabled) The option --remove-older-then is "
-                      "deprecated and will be removed soon",
-                 deprecated_for_removal=True),
     cfg.StrOpt('remove-from-date',
                dest='remove_from_date',
                help="Checks the specified container and removes objects older "
                     "than the provided datetime in the form "
                     "'YYYY-MM-DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. "
-                    "Make sure the 'T' is between date and time "),
+                    "Make sure the 'T' is between date and time, Deprecated "
+                    "favor of --remove-before-date",
+               deprecated_for_removal=True),
+    cfg.StrOpt('remove-before-date',
+               dest='remove_before_date',
+               help="Checks the specified container and removes objects older "
+                    "than the provided datetime in the form "
+                    "'YYYY-MM-DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. "
+                    "Make sure the 'T' is between date and time , it also "
+                    "supports timestamp values",
+               deprecated_name='remove_from_date'),
     cfg.StrOpt('no-incremental',
                dest='no_incremental',
                help="Disable incremental feature. By default freezer build the"
@@ -260,8 +262,32 @@ _COMMON = [
                     "be found. "
                     "Please provide datetime in format 'YYYY-MM-DDThh:mm:ss' "
                     "i.e. '1979-10-03T23:23:23'. Make sure the 'T' is between "
-                    "date and time Default None."
+                    "date and time Default None.",
                ),
+    cfg.FloatOpt('remove-older-than',
+                 short='R',
+                 dest='remove_older_than',
+                 help="Checks in the specified container for objects older "
+                      "than the specified number of days. "
+                      "If i.e. 30 is specified, it "
+                      "will remove the remote object older than 30 days. "
+                      "Default False (Disabled)"),
+    cfg.StrOpt('remove-before-date',
+               dest='remove_before_date',
+               help="Checks the specified container and removes objects older "
+                    "than the provided datetime in the form "
+                    "'YYYY-MM-DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. "
+                    "Make sure the 'T' is between date and time , it also "
+                    "supports timestamp values",
+               deprecated_name='remove_from_date'),
+    cfg.StrOpt('remove-from-date',
+               dest='remove_from_date',
+               help="Checks the specified container and removes objects older "
+                    "than the provided datetime in the form "
+                    "'YYYY-MM-DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. "
+                    "Make sure the 'T' is between date and time, Deprecated "
+                    "favor of --remove-before-date",
+               deprecated_for_removal=True),
     cfg.StrOpt('max-priority',
                dest='max_priority',
                help="Set the cpu process to the highest priority (i.e. -20 on "

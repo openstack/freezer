@@ -19,6 +19,7 @@ Freezer general utils functions
 import datetime
 import errno
 import os
+import re
 import subprocess
 import sys
 import time
@@ -193,9 +194,12 @@ def create_subprocess(cmd):
 
 
 def date_to_timestamp(date):
-    fmt = '%Y-%m-%dT%H:%M:%S'
-    opt_backup_date = datetime.datetime.strptime(date, fmt)
-    return int(time.mktime(opt_backup_date.timetuple()))
+    try:
+        fmt = '%Y-%m-%dT%H:%M:%S'
+        opt_backup_date = datetime.datetime.strptime(date, fmt)
+        return int(time.mktime(opt_backup_date.timetuple()))
+    except Exception:
+        raise Exception('Invalid ISO date format')
 
 
 class Bunch:
@@ -464,3 +468,25 @@ def abort_subprocess(signum, frame):
         LOG.error(traceback.print_exc())
     finally:
         sys.exit(33)
+
+
+def days_to_seconds(n):
+    """
+    86400 seconds in a day
+    :param n: number of days
+    :return: int
+    """
+    return n * 86400
+
+
+def is_iso_date(date):
+    iso_f = re.compile('^(\d{4})-0?(\d+)-0?(\d+)[T ]0?(\d+):0?(\d+):0?(\d+)$')
+    return re.match(iso_f, date)
+
+
+def is_timestamp(ts):
+    try:
+        ts = int(ts)
+        return True
+    except ValueError:
+        raise Exception('Invalid timestamp')
