@@ -64,7 +64,8 @@ DEFAULT_PARAMS = {
     'vssadmin': False, 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': False,
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
-    'ssh_port': 22, 'compression': 'gzip', 'overwrite': False
+    'ssh_port': 22, 'compression': 'gzip', 'overwrite': False,
+    'remove_before_date': False
 }
 
 
@@ -202,6 +203,13 @@ def backup_arguments():
               'The option --remove-older-then is deprecated '
               'and will be removed soon'),
         dest='remove_older_than', type=float, default=None)
+    arg_parser.add_argument(
+        '--remove-before-date', action='store',
+        help=("Checks the specified container and removes objects older than"
+              " the provided datetime in the form 'YYYY-MM-DDThh:mm:ss' i.e."
+              " '1974-03-25T23:23:23'. Make sure the 'T' is between date and"
+              " time , it also supports timestamp values"),
+        dest='remove_before_date', type=float, default=None)
     arg_parser.add_argument(
         '--remove-from-date', action='store',
         help=('Checks the specified container and removes objects older than '

@@ -180,10 +180,10 @@ class TestBackup(unittest.TestCase):
             base.Backup(t, "host_backup", 5000),
         ]
         t.remove_backup = mock.Mock()
-        t.remove_older_than(3000, "host_backup")
+        t.remove_before_date(3000, "host_backup")
         t.remove_backup.assert_any_call(r1)
         t.remove_backup.assert_any_call(r2)
-        assert t.remove_backup.call_count == 2
+        assert t.remove_backup.call_count == 3
 
     def test_create_backup(self):
         t = base.Storage(None, skip_prepare=True)
