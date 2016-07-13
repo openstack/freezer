@@ -16,24 +16,25 @@ import hashlib
 import os
 
 from six.moves import StringIO
+from six import PY2  # True if running on Python 2
 
 from freezer.utils import utils
 
 
 class CheckSum(object):
     """
-    Checksum a file or directory with sha256 or md5 alogrithms.
+    Checksum a file or directory with sha256 or md5 algorithms.
 
     This is used by backup and restore jobs to check for backup consistency.
 
     - **parameters**::
         :param path: the path to the file or directory to checksum
         :type path: string
-        :param hasher_type: the hasher algorithm to use for checksum
+        :param hasher_type: the hashing algorithm to use for checksum
         :type hasher_type: string
         :param hasher: hasher object for the specified hasher_type
-        :type hasher: hashlib oject
-        :param blocksize: the size of blocks to read when checksuming
+        :type hasher: hashlib object
+        :param blocksize: the max. size of block to read when hashing a file
         :type blocksize: integer
         :param exclude: pattern of files to exclude
         :type exclude: string
@@ -72,7 +73,7 @@ class CheckSum(object):
             self.hasher_size = 32
         else:
             raise ValueError(
-                "Unknown hasher_type for checksum: %s" % hasher_type)
+                "Unknown hasher_type for checksum: {}".format(hasher_type))
 
     def get_files_hashes_in_path(self):
         """
@@ -89,8 +90,8 @@ class CheckSum(object):
         Open filename and calculate its hash.
         Append the hash to the previous result and stores the checksum for
         this concatenation
-        :param filename: path to file
-        :type filename: string
+        :param filepath: path to file
+        :type filepath: string
         :return: string containing the hash of the given file
         """
         if (os.path.isfile(filepath) and not (
@@ -108,12 +109,21 @@ class CheckSum(object):
     def hashfile(self, afile):
         """
         Checksum a single file with the chosen algorithm.
-        The file is read per chunk.
+        The file is read in chunks of self.blocksize.
         :return: string
         """
+        # encode_buffer = False
+
         buf = afile.read(self.blocksize)
-        while len(buf) > 0:
-            buf = buf.encode("utf-8")
+        while buf:
+            # Need to use string-escape for Python 2 non-unicode strings. For
+            # Python 2 unicode strings and all Python 3 strings, we need to use
+            # unicode-escape. The effect of them is the same.
+            if PY2 and isinstance(buf, str):
+                buf = buf.encode('string-escape')
+            else:
+                buf = buf.encode('unicode-escape')
+
             self.hasher.update(buf)
             buf = afile.read(self.blocksize)
         return self.hasher.hexdigest()
@@ -128,10 +138,10 @@ class CheckSum(object):
     def compute(self):
         """
         Compute the checksum for the given path.
-        If a single file is provided, the result is its checksum concacatenated
+        If a single file is provided, the result is its checksum concatenated
         with its name.
         If a directory is provided, the result is the checksum of the checksum
-        concatenatin for each file.
+        concatenation for each file.
         :return: string
         """
         self.checksum = self.get_files_hashes_in_path()

@@ -34,11 +34,11 @@ CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
 
-def create_dir_tree(dir):
+def create_dir_tree(directory_path):
     try:
-        os.makedirs(dir)
+        os.makedirs(directory_path)
     except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(dir):
+        if exc.errno == errno.EEXIST and os.path.isdir(directory_path):
             pass
         else:
             raise exc
@@ -57,8 +57,8 @@ def create_dir(directory, do_log=True):
     try:
         if not os.path.isdir(expanded_dir_name):
             if do_log:
-                LOG.warning('Directory {0} does not exists,\
-                creating...'.format(expanded_dir_name))
+                LOG.warning('Directory {0} does not exist, creating...'.format(
+                    expanded_dir_name))
             os.makedirs(expanded_dir_name)
         else:
             if do_log:
@@ -413,7 +413,7 @@ def exclude_path(path, exclude):
     :return: True if path matches the exclude pattern, False otherwise
     """
     for name in path.split('/'):
-        if (fn.fnmatch(name, exclude) or os.path.basename(path) == exclude):
+        if fn.fnmatch(name, exclude) or os.path.basename(path) == exclude:
             return True
     return False
 
@@ -497,14 +497,14 @@ def set_max_process_priority():
     try:
         LOG.warning(
             'Setting freezer execution with high CPU and I/O priority')
-        PID = os.getpid()
+        pid = os.getpid()
         # Set cpu priority
         os.nice(-19)
         # Set I/O Priority to Real Time class with level 0
         subprocess.call([
             u'{0}'.format(find_executable("ionice")),
             u'-c', u'1', u'-n', u'0', u'-t',
-            u'-p', u'{0}'.format(PID)
+            u'-p', u'{0}'.format(pid)
         ])
     except Exception as priority_error:
         LOG.warning('Priority: {0}'.format(priority_error))
