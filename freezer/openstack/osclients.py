@@ -203,7 +203,7 @@ class OSClientManager(object):
                 time.sleep(5)
             except Exception as e:
                 if str(e) == "snapshot has error state":
-                    raise e
+                    raise
                 LOG.exception(e)
         return snapshot
 
@@ -250,7 +250,7 @@ class OSClientManager(object):
                     raise Exception("Image have killed state")
             except Exception as e:
                 if image.status in ("killed", "deleted"):
-                    raise e
+                    raise
                 LOG.exception(e)
                 LOG.warn("Exception getting image status")
         return image
