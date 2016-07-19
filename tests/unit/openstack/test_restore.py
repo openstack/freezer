@@ -28,7 +28,12 @@ class TestRestore(unittest.TestCase):
         ros = restore.RestoreOs(backup_opt.client_manager, backup_opt.container)
         ros.restore_cinder_by_glance(35, 34)
 
-    def test_restore_cinder(self):
+    def test_restore_cinder_with_backup_id(self):
+        backup_opt = commons.BackupOpt1()
+        ros = restore.RestoreOs(backup_opt.client_manager, backup_opt.container)
+        ros.restore_cinder(35, 34, 33)
+
+    def test_restore_cinder_without_backup_id(self):
         backup_opt = commons.BackupOpt1()
         ros = restore.RestoreOs(backup_opt.client_manager, backup_opt.container)
         ros.restore_cinder(35, 34)
