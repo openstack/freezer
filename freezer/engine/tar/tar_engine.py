@@ -89,13 +89,9 @@ class TarBackupEngine(engine.BackupEngine):
 
         try:
 
-            metadata = backup.metadata()
-            if not self.encrypt_pass_file and metadata.get("encryption", False):
-                raise Exception("Cannot restore encrypted backup without key")
-
             tar_command = tar_builders.TarCommandRestoreBuilder(
                 restore_path,
-                metadata.get('compression', self.compression_algo),
+                self.compression_algo,
                 self.is_windows)
 
             if self.encrypt_pass_file:
