@@ -585,7 +585,6 @@ def get_backup_args():
                      "limiting bandwidth")
             if backup_args.config:
                 # remove index tmp_file from backup arguments dict
-                backup_args.__dict__.pop('tmp_file')
                 utils.delete_file(conf_file.name)
 
     return backup_args
