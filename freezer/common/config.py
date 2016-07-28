@@ -389,6 +389,13 @@ _COMMON = [
                     "backup consistency_checksum provided. "
                     "Allows verification that the restored file(s) matches "
                     "the original file(s) before backup. "),
+    cfg.BoolOpt('incremental',
+                default=False,
+                help="When the option is set, freezer will"
+                     "do a cindernative incremental backup"
+                     "instead of the default full backup."
+                     "And if True, but volume do not have a base"
+                     "full backup, freezer will do a full backup first"),
 ]
 
 
