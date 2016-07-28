@@ -80,7 +80,6 @@ DEFAULT_PARAMS = {
     'consistency_check': False, 'consistency_checksum': None,
 }
 
-
 _COMMON = [
     cfg.StrOpt('action',
                choices=['backup', 'restore', 'info', 'admin', 'exec'],
@@ -373,28 +372,29 @@ _COMMON = [
                 dest='overwrite',
                 help='With overwrite removes files from restore path before '
                      'restore.'),
-    cfg.BoolOpt('consistency_check',
+    cfg.BoolOpt('consistency-check',
                 dest='consistency_check',
-                help="When true will checksum the files before backup. "
-                     "The commuted backup checksum is stored as backup "
-                     "metadata and can be retrieved through the freezer-api. "
-                     "On restore it is possible to check for consistency. "
+                help="Computes the checksum of the fileset before backup. "
+                     "This checksum is stored as part of the backup metadata, "
+                     "which can be obtained either by using --metadata-out or "
+                     "through the freezer API. "
+                     "On restore, it is possible to verify for consistency. "
                      "Please note this option is currently only available "
                      "for file system backups. "
-                     "Please also note backup consistency is a resource "
-                     "consuming operation so use it carefully."),
-    cfg.StrOpt('consistency_checksum',
+                     "Please also note checking backup consistency is a "
+                     "resource intensive operation, so use it carefully!",
+                deprecated_name='consistency_check'),
+    cfg.StrOpt('consistency-checksum',
                dest='consistency_checksum',
-               help="Checksum the restored file(s) and compares to the "
-                    "backup consistency_checksum provided. "
-                    "Allows verification that the restored file(s) matches "
-                    "the original file(s) before backup. "),
+               help="Compute the checksum of the restored file(s) and compare "
+                    "it to the (provided) checksum to verify that the backup "
+                    "was successful",
+               deprecated_name='consistency_checksum'),
     cfg.BoolOpt('incremental',
                 default=False,
-                help="When the option is set, freezer will"
-                     "do a cindernative incremental backup"
-                     "instead of the default full backup."
-                     "And if True, but volume do not have a base"
+                help="When the option is set, freezer will perform a "
+                     "cindernative incremental backup instead of the default "
+                     "full backup. And if True, but volume do not have a base"
                      "full backup, freezer will do a full backup first"),
 ]
 
