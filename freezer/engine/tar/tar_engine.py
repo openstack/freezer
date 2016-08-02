@@ -130,6 +130,7 @@ class TarBackupEngine(engine.BackupEngine):
         except Exception as e:
             LOG.exception(e)
             except_queue.put(e)
+            raise
 
     @staticmethod
     def check_process_output(process, function):
