@@ -160,6 +160,7 @@ class BackupEngine(object):
 
         except Exception as e:
             except_queue.put(e)
+            raise
 
     def restore(self, backup, restore_path, overwrite):
         """
