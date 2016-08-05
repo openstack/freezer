@@ -112,7 +112,7 @@ class TarCommandRestoreBuilder(object):
     DRY_RUN_TEMPLATE = '{0} {1} --incremental --list ' \
         '--ignore-zeros --warning=none'
     UNIX_TEMPLATE = '{0} {1} --incremental --extract --unlink-first ' \
-        '--ignore-zeros --warning=none --overwrite --directory {2}'
+        '--ignore-zeros --warning=none --directory {2}'
     OPENSSL_DEC = "{openssl_path} enc -d -aes-256-cfb -pass file:{file}"
 
     def __init__(self, restore_path, compression_algo, is_windows,
