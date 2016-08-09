@@ -221,6 +221,14 @@ class Job(object):
         return self.job_doc['job_schedule'].get('schedule_interval', '')
 
     @property
+    def schedule_start_date(self):
+        return self.job_doc['job_schedule'].get('schedule_start_date', '')
+
+    @property
+    def schedule_end_date(self):
+        return self.job_doc['job_schedule'].get('schedule_end_date', '')
+
+    @property
     def schedule_cron_fields(self):
         cron_fields = ['year', 'month', 'day', 'week', 'day_of_week',
                        'hour', 'minute', 'second']
@@ -233,15 +241,39 @@ class Job(object):
         return self.scheduler.is_scheduled(self.id)
 
     def get_schedule_args(self):
+        def get_start_date(date):
+            # start_date format "%Y-%m-%dT%H:%M:%S"
+            now = datetime.datetime.now()
+            start_date = now + datetime.timedelta(0, 2, 0)
+            if (utils.date_to_timestamp(date) >
+                    utils.date_to_timestamp(now.isoformat().split('.')[0])):
+                start_date = datetime.datetime.strptime(
+                    date, "%Y-%m-%dT%H:%M:%S")
+            return start_date
+
+        def get_end_date(start, end):
+            # start end format "%Y-%m-%dT%H:%M:%S"
+            end_date = datetime.datetime.strptime(end, "%Y-%m-%dT%H:%M:%S")
+            if (utils.date_to_timestamp(start) > utils.date_to_timestamp(end)):
+                end_date = None
+            return end_date
+        kwargs_date = {}
+        if self.schedule_start_date:
+            kwargs_date.update({
+                'start_date': get_start_date(self.schedule_start_date)
+            })
+            if self.schedule_end_date:
+                end_date = get_end_date(self.schedule_start_date,
+                                        self.schedule_end_date)
+                kwargs_date.update({
+                    'end_date': end_date
+                })
         if self.schedule_date:
             return {'trigger': 'date',
                     'run_date': self.schedule_date}
         elif self.schedule_interval:
             kwargs = {'trigger': 'interval'}
-            if not self.schedule_date:
-                kwargs.update({
-                    'start_date': datetime.datetime.now() +
-                    datetime.timedelta(0, 2, 0)})
+            kwargs.update(kwargs_date)
             if self.schedule_interval == 'continuous':
                 kwargs.update({'seconds': 1})
             else:
@@ -251,7 +283,8 @@ class Job(object):
         else:
             cron_fields = self.schedule_cron_fields
             if cron_fields:
-                return {'trigger': 'cron'}.update(cron_fields)
+                kwargs = {'trigger': 'cron'}.update(kwargs_date)
+                return kwargs.update(cron_fields)
         # no scheduling information, schedule to start within a few seconds
         return {'trigger': 'date',
                 'run_date': datetime.datetime.now() +
