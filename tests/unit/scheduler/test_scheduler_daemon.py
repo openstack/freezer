@@ -21,20 +21,6 @@ import signal
 from freezer.scheduler import daemon
 
 
-class TestLogging(unittest.TestCase):
-
-    @patch('freezer.scheduler.daemon.logging')
-    def test_setup_logging_default(self, mock_logging):
-        res = daemon.setup_logging(None)
-        self.assertEqual('/var/log/freezer-scheduler.log', res)
-
-    @patch('freezer.utils.utils.create_dir')
-    @patch('freezer.scheduler.daemon.logging')
-    def test_setup_logging_userdefined(self, mock_logging, mock_createdir):
-        res = daemon.setup_logging('mylogfile')
-        self.assertEqual('mylogfile', res)
-
-
 class TestNoDaemon(unittest.TestCase):
 
     @patch('freezer.scheduler.daemon.signal')
@@ -45,24 +31,21 @@ class TestNoDaemon(unittest.TestCase):
     def test_create(self):
         self.assertIsInstance(self.daemon, daemon.NoDaemon)
 
-    @patch('freezer.scheduler.daemon.logging')
-    def test_exit_handler(self, mock_logging):
+    def test_exit_handler(self):
         daemon.NoDaemon.exit_flag = False
         self.daemon.handle_program_exit(33, None)
         self.assertEquals(daemon.NoDaemon.exit_flag, True)
         self.assertTrue(self.daemonizable.stop.called)
 
-    @patch('freezer.scheduler.daemon.logging')
-    def test_reload_handler(self, mock_logging):
+    def test_reload_handler(self):
         daemon.NoDaemon.exit_flag = False
         self.daemon.handle_reload(33, None)
         self.assertEquals(daemon.NoDaemon.exit_flag, False)
         self.assertTrue(self.daemonizable.reload.called)
 
-    @patch('freezer.scheduler.daemon.logging')
-    def test_start_exit_ok(self, mock_logging):
+    def test_start_exit_ok(self):
         daemon.NoDaemon.exit_flag = False
-        res = self.daemon.start(log_file=None, dump_stack_trace=False)
+        res = self.daemon.start(dump_stack_trace=False)
         self.assertIsNone(res)
         self.assertEquals(daemon.NoDaemon.exit_flag, True)
         self.assertTrue(self.daemonizable.start.called)
@@ -135,10 +118,9 @@ class TestDaemon(unittest.TestCase):
     #
     #     self.assertEquals(res, 125)
 
-    @patch('freezer.scheduler.daemon.logging')
     @patch('freezer.scheduler.daemon.PidFile')
     @patch('freezer.scheduler.daemon.DaemonContext')
-    def test_start(self, mock_DaemonContext, mock_PidFile, mock_logging):
+    def test_start(self, mock_DaemonContext, mock_PidFile):
         daemon.Daemon.exit_flag = False
         res = self.daemon.start()
         self.assertIsNone(res)

@@ -33,6 +33,21 @@ else:
     DEFAULT_FREEZER_SCHEDULER_CONF_D = '/etc/freezer/scheduler/conf.d'
 
 
+def add_filter():
+
+    class NoLogFilter(log.logging.Filter):
+        def filter(self, record):
+            return False
+
+    log_filter = NoLogFilter()
+    log.logging.getLogger("apscheduler.scheduler").\
+        addFilter(log_filter)
+    log.logging.getLogger("apscheduler.executors.default").\
+        addFilter(log_filter)
+    log.logging.getLogger("requests.packages.urllib3.connectionpool").\
+        addFilter(log_filter)
+
+
 def get_common_opts():
     scheduler_conf_d = os.environ.get('FREEZER_SCHEDULER_CONF_D',
                                       DEFAULT_FREEZER_SCHEDULER_CONF_D)
@@ -153,6 +168,7 @@ def setup_logging():
                                        '%(levelname)s %(name)s '
                                        '[%(request_id)s %(user_identity)s] '
                                        '%(instance)s%(message)s')
+    add_filter()
     log.set_defaults(_DEFAULT_LOGGING_CONTEXT_FORMAT, _DEFAULT_LOG_LEVELS)
     log.setup(CONF, 'freezer-scheduler', version=FREEZER_VERSION)
 

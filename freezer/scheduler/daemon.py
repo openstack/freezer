@@ -15,55 +15,20 @@ limitations under the License.
 
 """
 
-import logging
 import os
 import signal
 import traceback
 
+from oslo_log import log
 from tempfile import gettempdir
 from time import sleep
 
 
 from freezer.lib.pep3143daemon import DaemonContext
 from freezer.lib.pep3143daemon import PidFile
-from freezer.utils import utils
 
 
-def setup_logging(log_file):
-
-    class NoLogFilter(logging.Filter):
-        def filter(self, record):
-            return False
-
-    def configure_logging(file_name):
-        expanded_file_name = os.path.expanduser(file_name)
-        expanded_dir_name = os.path.dirname(expanded_file_name)
-        utils.create_dir(expanded_dir_name, do_log=False)
-        logging.basicConfig(
-            filename=expanded_file_name,
-            level=logging.INFO,
-            format=('%(asctime)s %(name)s %(levelname)s %(message)s'))
-        # filter out some annoying messages
-        # not the best position for this code
-        log_filter = NoLogFilter()
-        logging.getLogger("apscheduler.scheduler").\
-            addFilter(log_filter)
-        logging.getLogger("apscheduler.executors.default").\
-            addFilter(log_filter)
-        logging.getLogger("requests.packages.urllib3.connectionpool").\
-            addFilter(log_filter)
-        return expanded_file_name
-
-    log_file_paths = [log_file] if log_file else [
-        '/var/log/freezer-scheduler.log',
-        '~/.freezer/freezer-scheduler.log']
-    for file_name in log_file_paths:
-        try:
-            return configure_logging(file_name)
-        except IOError:
-            pass
-
-    raise Exception("Unable to write to log file")
+LOG = log.getLogger(__name__)
 
 
 class NoDaemon(object):
@@ -95,7 +60,7 @@ class NoDaemon(object):
 
     @staticmethod
     def handle_program_exit(signum, frame):
-        logging.info('Got signal {0}. Exiting ...'.format(signum))
+        LOG.info('Got signal {0}. Exiting ...'.format(signum))
         NoDaemon.exit_flag = True
         NoDaemon.instance.daemonizable.stop()
 
@@ -103,20 +68,19 @@ class NoDaemon(object):
     def handle_reload(signum, frame):
         NoDaemon.instance.daemonizable.reload()
 
-    def start(self, log_file=None, dump_stack_trace=False):
-        setup_logging(log_file)
+    def start(self, dump_stack_trace=False):
         while not NoDaemon.exit_flag:
             try:
-                logging.info('Starting in no-daemon mode')
+                LOG.info('Starting in no-daemon mode')
                 self.daemonizable.start()
                 NoDaemon.exit_flag = True
             except Exception as e:
                 if dump_stack_trace:
-                    logging.error(traceback.format_exc(e))
-                logging.error('Restarting procedure in no-daemon mode '
-                              'after Fatal Error: {0}'.format(e))
+                    LOG.error(traceback.format_exc(e))
+                LOG.error('Restarting procedure in no-daemon mode '
+                          'after Fatal Error: {0}'.format(e))
                 sleep(10)
-        logging.info('Done exiting')
+        LOG.info('Done exiting')
 
     def stop(self):
         pass
@@ -172,23 +136,22 @@ class Daemon(object):
                 return int(f.read())
         return None
 
-    def start(self, log_file=None, dump_stack_trace=False):
+    def start(self, dump_stack_trace=False):
         pidfile = PidFile(self.pid_fname)
         with DaemonContext(pidfile=pidfile, signal_map=self.signal_map):
-            setup_logging(log_file)
             while not Daemon.exit_flag:
                 try:
-                    logging.info('freezer daemon starting, pid: {0}'.
-                                 format(self.pid))
+                    LOG.info('freezer daemon starting, pid: {0}'.
+                             format(self.pid))
                     self.daemonizable.start()
                     Daemon.exit_flag = True
                 except Exception as e:
                     if dump_stack_trace:
-                        logging.error(traceback.format_exc(e))
-                    logging.error('Restarting daemonized procedure '
-                                  'after Fatal Error: {0}'.format(e))
+                        LOG.error(traceback.format_exc(e))
+                    LOG.error('Restarting daemonized procedure '
+                              'after Fatal Error: {0}'.format(e))
                     sleep(10)
-            logging.info('freezer daemon done, pid: {0}'.format(self.pid))
+            LOG.info('freezer daemon done, pid: {0}'.format(self.pid))
 
     def stop(self):
         pid = self.pid
