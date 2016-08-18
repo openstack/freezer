@@ -23,7 +23,10 @@ from freezer.tests.commons import *
 from freezer.utils import utils
 
 
-class TestUtils(unittest.TestCase):
+class TestUtils(FreezerBaseTestCase):
+
+    def setUp(self):
+        super(TestUtils, self).setUp()
 
     def test_create_dir(self):
 

@@ -453,7 +453,7 @@ class OpenstackOpts(object):
             endpoint_type=src_dict.get('OS_ENDPOINT_TYPE', 'publicURL'),
             cacert=src_dict.get('OS_CACERT', None),
             identity_api_version=src_dict.get('OS_IDENTITY_API_VERSION', None),
-            insecure=src_dict.get('OS_INSECURE', False),
+            insecure=src_dict.get('OS_INSECURE', CONF.get('insecure', False)),
             token=src_dict.get('OS_TOKEN', None),
             interface=src_dict.get('OS_INTERFACE', None),
             user_domain_name=src_dict.get('OS_USER_DOMAIN_NAME', None),

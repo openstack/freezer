@@ -396,12 +396,12 @@ _COMMON = [
 ]
 
 
-def config():
+def config(args=[]):
     CONF.register_opts(_COMMON)
     CONF.register_cli_opts(_COMMON)
     default_conf = None
     log.register_options(CONF)
-    CONF(args=sys.argv[1:],
+    CONF(args=args,
          project='freezer',
          default_config_files=default_conf,
          version=FREEZER_VERSION)

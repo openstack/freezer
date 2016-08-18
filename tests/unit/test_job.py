@@ -16,14 +16,17 @@ limitations under the License.
 
 """
 
-from mock import patch, Mock
-import unittest
+from mock import patch
 
 from freezer.tests.commons import *
 from freezer import job as jobs
 
 
-class TestJob(unittest.TestCase):
+class TestJob(FreezerBaseTestCase):
+
+    def setUp(self):
+        super(TestJob, self).setUp()
+
     def test_execute(self):
         opt = BackupOpt1()
         job = jobs.InfoJob(opt, opt.storage)
@@ -31,6 +34,9 @@ class TestJob(unittest.TestCase):
 
 
 class TestInfoJob(TestJob):
+
+    def setUp(self):
+        super(TestInfoJob, self).setUp()
 
     def test_execute_nothing_to_do(self):
         backup_opt = BackupOpt1()
@@ -44,6 +50,9 @@ class TestInfoJob(TestJob):
 
 
 class TestBackupJob(TestJob):
+
+    def setUp(self):
+        super(TestBackupJob, self).setUp()
 
     def test_execute_backup_fs_no_incremental_and_backup_level_raise(self):
         backup_opt = BackupOpt1()
@@ -61,6 +70,10 @@ class TestBackupJob(TestJob):
 
 
 class TestAdminJob(TestJob):
+
+    def setUp(self):
+        super(TestAdminJob, self).setUp()
+
     def test_execute(self):
         backup_opt = BackupOpt1()
         jobs.AdminJob(backup_opt, backup_opt.storage).execute()
@@ -69,6 +82,7 @@ class TestAdminJob(TestJob):
 class TestExecJob(TestJob):
 
     def setUp(self):
+        super(TestExecJob, self).setUp()
         #init mock_popen
         self.popen = patch('freezer.utils.exec_cmd.subprocess.Popen')
         self.mock_popen = self.popen.start()
@@ -77,6 +91,7 @@ class TestExecJob(TestJob):
         self.mock_popen.return_value.communicate.return_value = ['some stderr']
 
     def tearDown(self):
+        super(TestExecJob, self).tearDown()
         self.popen.stop()
 
     def test_execute_nothing_to_do(self):
