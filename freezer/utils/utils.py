@@ -30,6 +30,8 @@ from oslo_config import cfg
 from oslo_log import log
 from six.moves import configparser
 
+import psutil
+
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
@@ -510,3 +512,15 @@ def set_max_process_priority():
         ])
     except Exception as priority_error:
         LOG.warning('Priority: {0}'.format(priority_error))
+
+
+def terminate_subprocess(pid, name):
+    try:
+        process = psutil.Process(pid)
+        if process.name.startswith(name):
+            process.terminate()
+        else:
+            LOG.warning('The name {} does not match the pid {}'.format(
+                name, pid))
+    except Exception:
+        LOG.error('Process {} does not exists anymore'.format(pid))

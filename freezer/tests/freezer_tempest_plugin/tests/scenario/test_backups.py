@@ -76,7 +76,7 @@ class BaseFreezerCliTest(base.BaseFreezerTest):
 
         self.fail('Could not find job: {}'.format(job_id)) 
 
-    def wait_for_job_status(self, job_id, status, timeout=360):
+    def wait_for_job_status(self, job_id, status, timeout=720):
         start = time.time()
 
         while True:
@@ -231,14 +231,12 @@ class TestFreezerScenario(BaseFreezerCliTest):
 
         self.cli.freezer_scheduler(action='start', flags='-c test_node')
 
-
     def tearDown(self):
         super(TestFreezerScenario, self).tearDown()
         self.source_tree.cleanup()
         self.dest_tree.cleanup()
 
         self.cli.freezer_scheduler(action='stop', flags='-c test_node')
-
 
     def test_simple_backup(self):
         backup_job = {
@@ -247,9 +245,10 @@ class TestFreezerScenario(BaseFreezerCliTest):
                   "freezer_action": {
                       "action": "backup",
                       "mode": "fs",
+                      "storage": "local",
                       "backup_name": "backup1",
                       "path_to_backup": self.source_tree.path,
-                      "container": "freezer_test",
+                      "container": "/tmp/freezer_test/",
                   },
                   "max_retries": 3,
                   "max_retries_interval": 60
@@ -262,9 +261,10 @@ class TestFreezerScenario(BaseFreezerCliTest):
               {
                   "freezer_action": {
                       "action": "restore",
+                      "storage": "local",
                       "restore_abs_path": self.dest_tree.path,
                       "backup_name": "backup1",
-                      "container": "freezer_test",
+                      "container": "/tmp/freezer_test/",
                   },
                   "max_retries": 3,
                   "max_retries_interval": 60
@@ -274,6 +274,7 @@ class TestFreezerScenario(BaseFreezerCliTest):
         }
 
         backup_job_id = self.create_job(backup_job)
+        self.cli.freezer_scheduler(action='job-start', flags='-c test_node -j {}'.format(backup_job_id))
         self.wait_for_job_status(backup_job_id, 'completed')
         self.assertJobColumnEqual(backup_job_id, JOB_TABLE_RESULT_COLUMN, 'success')
 
@@ -281,8 +282,4 @@ class TestFreezerScenario(BaseFreezerCliTest):
         self.wait_for_job_status(restore_job_id, 'completed')
         self.assertJobColumnEqual(restore_job_id, JOB_TABLE_RESULT_COLUMN, 'success')
 
-
         self.assertTrue(self.source_tree.is_equal(self.dest_tree))
-
-
-

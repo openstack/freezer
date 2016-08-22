@@ -72,7 +72,7 @@ class ScheduledState(object):
 
     @staticmethod
     def abort(job, doc):
-        return ScheduledState.stop(job, doc)
+        return StopState.stop(job, doc)
 
     @staticmethod
     def start(job, doc):
@@ -97,7 +97,8 @@ class RunningState(object):
     @staticmethod
     def abort(job, doc):
         job.event = Job.ABORT_EVENT
-        return Job.NO_EVENT
+        job.scheduler.update_job(job.id, job.job_doc)
+        return Job.ABORTED_RESULT
 
     @staticmethod
     def start(job, doc):
@@ -303,6 +304,9 @@ class Job(object):
                 elif next_event == Job.ABORT_EVENT:
                     LOG.info('JOB {0} event: ABORT'.format(self.id))
                     next_event = self.state.abort(self, job_doc)
+                elif next_event == Job.ABORTED_RESULT:
+                    LOG.info('JOB {0} aborted.'.format(self.id))
+                    break
 
     def upload_metadata(self, metadata_string):
         try:
@@ -323,7 +327,6 @@ class Job(object):
         action_name = freezer_action.get('action', '')
         config_file_name = None
         while tries:
-
             with tempfile.NamedTemporaryFile(delete=False) as config_file:
                 self.save_action_to_file(freezer_action, config_file)
                 config_file_name = config_file.name
@@ -333,6 +336,17 @@ class Job(object):
                                                 stdout=subprocess.PIPE,
                                                 stderr=subprocess.PIPE,
                                                 env=os.environ.copy())
+
+                # store the pid for this process in the api
+                try:
+                    self.job_doc['job_schedule']['current_pid'] = \
+                        self.process.pid
+
+                    self.scheduler.update_job(self.job_doc['job_id'],
+                                              self.job_doc)
+                except Exception as error:
+                    LOG.error("Error saving the process id {}".format(error))
+
                 output, error = self.process.communicate()
                 # ensure the tempfile gets deleted
                 utils.delete_file(config_file_name)
@@ -342,7 +356,11 @@ class Job(object):
             elif output:
                 self.upload_metadata(output)
 
-            if self.process.returncode:
+            if self.process.returncode == -15:
+                # This means the job action was aborted by the scheduler.
+                return Job.ABORTED_RESULT
+
+            elif self.process.returncode:
                 # ERROR
                 tries -= 1
                 if tries:
@@ -396,9 +414,13 @@ class Job(object):
             for job_action in self.job_doc.get('job_actions', []):
                 if job_action.get('mandatory', False) or\
                         (result == Job.SUCCESS_RESULT):
+
                     action_result = self.execute_job_action(job_action)
                     if action_result == Job.FAIL_RESULT:
                         result = Job.FAIL_RESULT
+
+                    if action_result == Job.ABORTED_RESULT:
+                        result = Job.ABORTED_RESULT
                 else:
                     freezer_action = job_action.get('freezer_action', {})
                     action_name = freezer_action.get('action', '')
@@ -473,7 +495,9 @@ class Job(object):
     def schedule(self):
         try:
             kwargs = self.get_schedule_args()
-            self.scheduler.add_job(self.execute, id=self.id, **kwargs)
+            self.scheduler.add_job(self.execute, id=self.id,
+                                   executor='threadpool',
+                                   misfire_grace_time=3600, **kwargs)
         except Exception as e:
             LOG.error("Unable to schedule job {0}: {1}".
                       format(self.id, e))

@@ -277,3 +277,10 @@ def do_backup_list(client, args):
             table.add_row(row)
         l = list_func(offset=offset)
     print(table)
+
+
+def do_job_abort(client, args):
+    if not args.job_id:
+        raise Exception("Parameter --job required")
+    client.jobs.abort_job(args.job_id)
+    print("Job {0} aborted".format(args.job_id))

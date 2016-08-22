@@ -18,8 +18,9 @@ limitations under the License.
 import six
 import sys
 import threading
+import time
 
-from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 from distutils import spawn
 from oslo_config import cfg
 from oslo_log import log
@@ -29,6 +30,7 @@ from freezer.scheduler import arguments
 from freezer.scheduler import scheduler_job
 from freezer.scheduler import shell
 from freezer.scheduler import utils
+from freezer.utils import utils as freezer_utils
 from freezer.utils import winutils
 
 
@@ -60,12 +62,18 @@ class FreezerScheduler(object):
         self.execution_lock = threading.Lock()
         job_defaults = {
             'coalesce': True,
-            'max_instances': 1
+            'max_instances': 2
         }
-        self.scheduler = BlockingScheduler(job_defaults=job_defaults)
+        executors = {
+            'default': {'type': 'threadpool', 'max_workers': 1},
+            'threadpool': {'type': 'threadpool', 'max_workers': 10}
+        }
+        self.scheduler = BackgroundScheduler(job_defaults=job_defaults,
+                                             executors=executors)
         if self.client:
             self.scheduler.add_job(self.poll, 'interval',
-                                   seconds=interval, id='api_poll')
+                                   seconds=interval, id='api_poll',
+                                   executor='default')
 
         self.add_job = self.scheduler.add_job
         self.remove_job = self.scheduler.remove_job
@@ -108,6 +116,15 @@ class FreezerScheduler(object):
         utils.do_register(self.client)
         self.poll()
         self.scheduler.start()
+        try:
+            while True:
+                # Due to the new Background scheduler nature, we need to keep
+                # the main thread alive.
+                time.sleep(1)
+        except (KeyboardInterrupt, SystemExit):
+            # Not strictly necessary if daemonic mode is enabled but
+            # should be done if possible
+            self.scheduler.shutdown(wait=False)
 
     def update_job(self, job_id, job_doc):
         if self.client:
@@ -145,6 +162,14 @@ class FreezerScheduler(object):
             work_job_id_list.append(job_id)
             job = self.jobs.get(job_id, None) or self.create_job(job_doc)
             if job:
+
+                # check for abort status
+                if (job_doc['job_schedule']['event'] == 'abort' and
+                   job_doc['job_schedule']['result'] != 'aborted'):
+
+                    pid = int(job_doc['job_schedule']['current_pid'])
+                    freezer_utils.terminate_subprocess(pid, 'freezer-agent')
+
                 job.process_event(job_doc)
 
         # request removal of any job that has been removed in the api
