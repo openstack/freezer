@@ -30,6 +30,7 @@ except Exception:
         print(json.dumps(doc, indent=4))
 
 from freezer.utils import utils as freezer_utils
+from freezer.utils.utils import DateTime
 
 
 def do_session_remove_job(client, args):
@@ -235,3 +236,48 @@ def do_client_list(client, args):
                            client_doc.get('description', '')])
         l = client.registration.list(offset=offset)
     print(table)
+
+
+def do_backup_list(client, args):
+    list_func = client.backups.list_all if args.all else client.backups.list
+    if args.long:
+        fields = ["backup uuid", "job-id", "client-id", "container",
+                  "hostname", "backup name", "timestamp", "level", "path"]
+    else:
+        fields = ["backup uuid", "container", "backup name", "timestamp",
+                  "level", "path"]
+    table = PrettyTable(fields)
+    l = list_func()
+    offset = 0
+    while l:
+        offset += len(l)
+        for doc in l:
+            metadata_doc = doc['backup_metadata']
+            timestamp = int(metadata_doc.get('time_stamp', 0))
+            if args.long:
+                row = [doc['backup_uuid'],
+                       metadata_doc.get('job_id', ''),
+                       metadata_doc.get('client_id', ''),
+                       metadata_doc.get('container', ''),
+                       metadata_doc.get('hostname', ''),
+                       metadata_doc.get('backup_name', ''),
+                       str(DateTime(timestamp)),
+                       metadata_doc.get('curr_backup_level', ''),
+                       metadata_doc.get('fs_real_path', '')]
+            else:
+                row = [doc['backup_uuid'],
+                       metadata_doc.get('container', ''),
+                       metadata_doc.get('backup_name', ''),
+                       str(DateTime(timestamp)),
+                       metadata_doc.get('curr_backup_level', ''),
+                       metadata_doc.get('fs_real_path', '')]
+            table.add_row(row)
+        l = list_func(offset=offset)
+    print(table)
+
+
+def do_job_abort(client, args):
+    if not args.job_id:
+        raise Exception("Parameter --job required")
+    client.jobs.abort_job(args.job_id)
+    print("Job {0} aborted".format(args.job_id))

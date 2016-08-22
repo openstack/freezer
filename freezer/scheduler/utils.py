@@ -17,10 +17,19 @@ limitations under the License.
 
 import json
 import os
+import signal
 import socket
 import uuid
 
+
+import psutil
+
+from oslo_log import log
+
 import freezer.apiclient.exceptions
+
+
+LOG = log.getLogger(__name__)
 
 CONFIG_FILE_EXT = '.conf'
 
@@ -99,3 +108,15 @@ def get_active_jobs_from_api(client):
             break
         offset += len(jobs)
     return job_list
+
+
+def terminate_subprocess(pid, name):
+    try:
+        process = psutil.Process(pid)
+        if process.name.startswith(name):
+            os.kill(pid, signal.SIGUSR1)
+        else:
+            LOG.warning('The name {} does not match the pid {}'.format(
+                name, pid))
+    except Exception:
+        LOG.debug('Process {} does not exists anymore'.format(pid))

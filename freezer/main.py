@@ -18,6 +18,7 @@ Freezer main execution function
 """
 import json
 import os
+import signal
 import subprocess
 import sys
 
@@ -199,6 +200,9 @@ def main():
         if len(sys.argv) < 2:
             CONF.print_help()
             sys.exit(1)
+
+        signal.signal(signal.SIGUSR1, utils.abort_subprocess)
+
         freezer_main(backup_args)
     except Exception as err:
         quiet = backup_args.quiet if backup_args else False

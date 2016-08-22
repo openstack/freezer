@@ -22,11 +22,13 @@ import os
 import subprocess
 import sys
 import time
+import traceback
 
 from distutils import spawn as distspawn
 from functools import wraps
 from oslo_log import log
 from six.moves import configparser
+
 
 LOG = log.getLogger(__name__)
 
@@ -336,6 +338,7 @@ def alter_proxy(proxy):
     else:
         raise Exception('Proxy has unknown scheme')
 
+
 def is_bsd():
     return 'darwin' in sys.platform or 'bsd' in sys.platform
 
@@ -450,3 +453,14 @@ def set_max_process_priority():
         ])
     except Exception as priority_error:
         LOG.warning('Priority: {0}'.format(priority_error))
+
+
+def abort_subprocess(signum, frame):
+    try:
+        LOG.warning('Process {} has been aborted by the scheduler'.format(
+            os.getpid()))
+        raise Exception('Aborting process')
+    except Exception:
+        LOG.error(traceback.print_exc())
+    finally:
+        sys.exit(33)
