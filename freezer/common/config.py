@@ -612,11 +612,13 @@ def get_backup_args():
     return backup_args
 
 
-def prepare_logging(log_file='~/.freezer/freezer.log'):
+def prepare_logging(log_file=None):
     """
     Creates log directory and log file if no log files provided
     :return:
     """
+    if not log_file:
+        log_file = os.path.join(home, '.freezer', 'freezer.log')
     expanded_file_name = os.path.expanduser(log_file)
     expanded_dir_name = os.path.dirname(expanded_file_name)
     utils.create_dir(expanded_dir_name, do_log=False)
