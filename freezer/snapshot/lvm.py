@@ -181,7 +181,7 @@ def lvm_snap(backup_opt_dict):
         raise Exception('lvm snapshot mounting error: {0}'.format(mount_err))
     else:
         LOG.warning(
-            'Volume {0} succesfully mounted on {1}'.format(
+            'Volume {0} successfully mounted on {1}'.format(
                 abs_snap_name, backup_opt_dict.lvm_dirmount))
 
     return True
