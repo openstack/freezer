@@ -21,7 +21,10 @@ from freezer.openstack import restore
 from freezer.tests import commons
 
 
-class TestRestore(unittest.TestCase):
+class TestRestore(commons.FreezerBaseTestCase):
+
+    def setUp(self):
+        super(TestRestore, self).setUp()
 
     def test_restore_cinder_by_glance(self):
         backup_opt = commons.BackupOpt1()

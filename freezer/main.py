@@ -202,7 +202,7 @@ def main():
     backup_args = None
     try:
 
-        freezer_config.config()
+        freezer_config.config(args=sys.argv[1:])
         freezer_config.setup_logging()
         backup_args = freezer_config.get_backup_args()
         if backup_args.config:

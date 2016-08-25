@@ -15,24 +15,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from mock import MagicMock
-from mock import Mock
-
 import swiftclient
 import multiprocessing
 import subprocess
 import time
-import os
 import pymongo
 import re
+import os
+import six
+import testtools
+
+from mock import MagicMock
+from mock import Mock
+from oslo_config import cfg
+from oslo_config import fixture as cfg_fixture
+
 from glanceclient.common.utils import IterableWithLength
 from freezer.storage import swift
 from freezer.utils import utils
 from freezer.openstack.osclients import OpenstackOpts
 from freezer.openstack.osclients import OSClientManager
 from freezer.engine.tar import tar_engine
+from freezer.common import config
 
+
+CONF = cfg.CONF
 os.environ['OS_REGION_NAME'] = 'testregion'
 os.environ['OS_TENANT_ID'] = '0123456789'
 os.environ['OS_PASSWORD'] = 'testpassword'
@@ -41,7 +48,7 @@ os.environ['OS_USERNAME'] = 'testusername'
 os.environ['OS_TENANT_NAME'] = 'testtenantename'
 
 
-class FakeSubProcess:
+class FakeSubProcess(object):
     def __init__(self, opt1=True, stdin=True, stdout=True,
             stderr=True, shell=True, executable=True, env={},
             bufsize=4096):
@@ -70,7 +77,7 @@ class FakeSubProcess:
             return True
 
 
-class FakeSubProcess3:
+class FakeSubProcess3(object):
     def __init__(self, opt1=True, stdin=True, stdout=True,
             stderr=True, shell=True, executable=True):
         return None
@@ -93,7 +100,7 @@ class FakeSubProcess3:
             return True
 
 
-class FakeSubProcess6:
+class FakeSubProcess6(object):
     def __init__(self):
         pass
 
@@ -110,7 +117,7 @@ class FakeSubProcess6:
         return '', 'error'
 
 
-class FakeIdObject:
+class FakeIdObject(object):
     def __init__(self, id):
         self.id = id
         self.status = "available"
@@ -119,14 +126,14 @@ class FakeIdObject:
         self.created_at = '2016-05-12T02:00:22.000000'
 
 
-class FakeCinderClient:
+class FakeCinderClient(object):
     def __init__(self):
         self.volumes = FakeCinderClient.Volumes()
         self.volume_snapshots = FakeCinderClient.VolumeSnapshot
         self.backups = FakeCinderClient.Backups()
         self.restores = FakeCinderClient.Restores()
 
-    class Backups:
+    class Backups(object):
         def __init__(self):
             pass
 
@@ -136,7 +143,7 @@ class FakeCinderClient:
         def list(self, **kwargs):
             return [FakeIdObject(4)]
 
-    class Volumes:
+    class Volumes(object):
         def __init__(self):
             pass
 
@@ -157,7 +164,7 @@ class FakeCinderClient:
         def delete(volume):
             pass
 
-    class VolumeSnapshot:
+    class VolumeSnapshot(object):
         def __init__(self):
             pass
 
@@ -169,7 +176,7 @@ class FakeCinderClient:
         def delete(snapshot):
             pass
 
-    class Restores:
+    class Restores(object):
         def __init__(self):
             pass
 
@@ -178,11 +185,11 @@ class FakeCinderClient:
             pass
 
 
-class FakeGlanceClient:
+class FakeGlanceClient(object):
     def __init__(self):
         self.images = FakeGlanceClient.Images()
 
-    class Images:
+    class Images(object):
         def __init__(self):
             pass
 
@@ -199,12 +206,12 @@ class FakeGlanceClient:
             return FakeIdObject("10")
 
 
-class FakeSwiftClient:
+class FakeSwiftClient(object):
 
     def __init__(self):
         pass
 
-    class client:
+    class client(object):
         def __init__(self):
             pass
 
@@ -262,7 +269,7 @@ class FakeSwiftClient:
                          'x-object-meta-name': "name"}, "abc"]
 
 
-class BackupOpt1:
+class BackupOpt1(object):
 
     def __init__(self):
         self.dereference_symlink = 'none'
@@ -445,7 +452,8 @@ class Os:
     def chdir2(cls, directory1=True):
         raise Exception
 
-class FakeDisableFileSystemRedirection:
+
+class FakeDisableFileSystemRedirection(object):
     success = True
 
     def __enter__(self):
@@ -454,3 +462,22 @@ class FakeDisableFileSystemRedirection:
     def __exit__(self, type, value, traceback):
         if self.success:
             return True
+
+
+class FreezerBaseTestCase(testtools.TestCase):
+
+    def setUp(self):
+        if six.PY34:
+            super().setUp()
+        else:
+            super(FreezerBaseTestCase, self).setUp()
+
+        self._config_fixture = self.useFixture(cfg_fixture.Config())
+        config.config(args=[])
+        self.addCleanup(CONF.reset)
+
+    def tearDown(self):
+        if six.PY34:
+            super().tearDown()
+        else:
+            super(FreezerBaseTestCase, self).tearDown()
