@@ -77,6 +77,7 @@ DEFAULT_PARAMS = {
     'ssh_port': DEFAULT_SSH_PORT, 'compression': 'gzip',
     'overwrite': False,
     'consistency_check': False, 'consistency_checksum': None,
+    'nova_restore_network': None,
 }
 
 _COMMON = [
@@ -393,6 +394,12 @@ _COMMON = [
                      "cindernative incremental backup instead of the default "
                      "full backup. And if True, but volume do not have a base"
                      "full backup, freezer will do a full backup first"),
+    cfg.StrOpt('nova-restore-network',
+               dest='nova_restore_network',
+               help="ID of the network to attach to the restored VM. "
+                    "In the case of a project containing multiple networks, "
+                    "it is necessary to provide the ID of the network to "
+                    "attach to the restored VM.")
 ]
 
 

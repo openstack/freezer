@@ -121,21 +121,33 @@ class RestoreOs(object):
         size = length / gb
         if length % gb > 0:
             size += 1
-        LOG.info("Creation volume from image")
+        LOG.info("Creating volume from image")
         self.client_manager.get_cinder().volumes.create(size,
                                                         imageRef=image.id)
         LOG.info("Deleting temporary image")
         self.client_manager.get_glance().images.delete(image)
 
-    def restore_nova(self, instance_id, restore_from_timestamp):
+    def restore_nova(self, instance_id, restore_from_timestamp,
+                     nova_network=None):
         """
         :param restore_from_timestamp:
         :type restore_from_timestamp: int
         :param instance_id: id of attached nova instance
+        :param nova_network: id of network
         :return:
         """
-        (info, image) = self._create_image(instance_id, restore_from_timestamp)
         nova = self.client_manager.get_nova()
+        network_list = nova.networks.findall()
+        if len(network_list) > 1 and (nova_network is None):
+            raise Exception("The parameter --nova-restore-network is required")
+        get_nova_network = nova.networks.get(nova_network)
+        if nova_network and (get_nova_network not in network_list):
+            raise Exception("The network %s is invalid" % nova_network)
+        (info, image) = self._create_image(instance_id, restore_from_timestamp)
         flavor = nova.flavors.get(info['x-object-meta-flavor-id'])
-        LOG.info("Creation an instance")
-        nova.servers.create(info['x-object-meta-name'], image, flavor)
+        LOG.info("Creating an instance")
+        if nova_network is None:
+            nova.servers.create(info['x-object-meta-name'], image, flavor)
+        else:
+            nova.servers.create(info['x-object-meta-name'], image, flavor,
+                                nics=[{'net-id': nova_network}])

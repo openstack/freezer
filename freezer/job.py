@@ -225,7 +225,11 @@ class RestoreJob(Job):
 
         res = restore.RestoreOs(conf.client_manager, conf.container)
         if conf.backup_media == 'nova':
-            res.restore_nova(conf.nova_inst_id, restore_timestamp)
+            nova_network = None
+            if conf.nova_restore_network:
+                nova_network = conf.nova_restore_network
+            res.restore_nova(conf.nova_inst_id, restore_timestamp,
+                             nova_network)
         elif conf.backup_media == 'cinder':
             res.restore_cinder_by_glance(conf.cinder_vol_id, restore_timestamp)
         elif conf.backup_media == 'cindernative':
