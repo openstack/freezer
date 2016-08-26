@@ -113,4 +113,4 @@ class QueuedThread(threading.Thread):
             self.rich_queue.force_stop()
             # Thread will exit at this point.
             # @todo print the error using traceback.print_exc(file=sys.stdout)
-            raise e
+            raise
