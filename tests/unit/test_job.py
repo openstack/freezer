@@ -58,6 +58,8 @@ class TestBackupJob(TestJob):
         backup_opt = BackupOpt1()
         backup_opt.mode = 'default'
         backup_opt.no_incremental = True
+        backup_opt.max_level = None
+        backup_opt.always_level = None
         job = jobs.BackupJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)
 
@@ -95,7 +97,9 @@ class TestExecJob(TestJob):
         self.popen.stop()
 
     def test_execute_nothing_to_do(self):
+        self.mock_popen.return_value.returncode = 0
         backup_opt = BackupOpt1()
+        backup_opt.command = 'ls '
         jobs.ExecJob(backup_opt, backup_opt.storage).execute()
 
     def test_execute_script(self):

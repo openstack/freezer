@@ -349,7 +349,7 @@ class BackupOpt1(object):
 
         self.client_manager.get_nova = Mock(return_value=nova_client)
 
-        self.command = None
+        self.command = ''
 
 
 class Os:

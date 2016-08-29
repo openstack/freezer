@@ -48,6 +48,27 @@ class Job(object):
         self.conf = conf_dict
         self.storage = storage
         self.engine = conf_dict.engine
+        self._general_validation()
+        self._validate()
+
+    @abc.abstractmethod
+    def _validate(self):
+        """
+        Method that validates if all arguments available to execute the job
+        or not
+        :return: True or raise an error
+        """
+        pass
+
+    def _general_validation(self):
+        """
+        Apply general validation rules.
+        :return: True or raise an error
+        """
+        if not self.conf.action:
+            raise ValueError("Please provide a valid action with --action")
+
+        LOG.info("Validating args for the {0} job.".format(self.conf.action))
 
     @abc.abstractmethod
     def execute(self):
@@ -55,12 +76,33 @@ class Job(object):
 
 
 class InfoJob(Job):
+
+    def _validate(self):
+        # no validation required for this job
+        pass
+
     def execute(self):
         self.storage.info()
 
 
 class BackupJob(Job):
+
+    def _validate(self):
+        if not self.conf.path_to_backup:
+            raise ValueError('path-to-backup argument must be provided')
+        if self.conf.no_incremental and (self.conf.max_level or
+                                         self.conf.always_level):
+            raise Exception(
+                'no-incremental option is not compatible '
+                'with backup level options')
+
     def execute(self):
+        LOG.info('Backup job started. '
+                 'backup_name: {0}, container: {1}, hostname: {2}, mode: {3},'
+                 ' Storage: {4}, compression: {5}'
+                 .format(self.conf.backup_name, self.conf.container,
+                         self.conf.hostname, self.conf.mode, self.conf.storage,
+                         self.conf.compression))
         try:
             (out, err) = utils.create_subprocess('sync')
             if err:
@@ -73,7 +115,6 @@ class BackupJob(Job):
             self.conf.mode, self.conf.mode.capitalize() + 'Mode')
         app_mode = importutils.import_object(mod_name, self.conf)
         backup_level = self.backup(app_mode)
-
         level = backup_level or 0
 
         metadata = {
@@ -125,6 +166,7 @@ class BackupJob(Job):
         self.conf.time_stamp = time_stamp
 
         if backup_media == 'fs':
+            LOG.info('Path to backup: {0}'.format(self.conf.path_to_backup))
             app_mode.prepare()
             snapshot_taken = snapshot.snapshot_create(self.conf)
             if snapshot_taken:
@@ -134,7 +176,7 @@ class BackupJob(Job):
                 chdir_path = os.path.expanduser(
                     os.path.normpath(self.conf.path_to_backup.strip()))
                 if not os.path.exists(chdir_path):
-                    msg = 'Path to backup does not exist {}'.format(
+                    msg = 'Path to backup does not exist {0}'.format(
                         chdir_path)
                     LOG.critical(msg)
                     raise IOError(msg)
@@ -174,14 +216,18 @@ class BackupJob(Job):
                                     self.storage)
 
         if backup_media == 'nova':
-            LOG.info('Executing nova backup')
+            LOG.info('Executing nova backup. Instance ID: {0}'.format(
+                self.conf.nova_inst_id))
             backup_os.backup_nova(self.conf.nova_inst_id)
         elif backup_media == 'cindernative':
-            LOG.info('Executing cinder backup')
+            LOG.info('Executing cinder native backup. Volume ID: {0}, '
+                     'incremental: {1}'.format(self.conf.cindernative_vol_id,
+                                               self.conf.incremental))
             backup_os.backup_cinder(self.conf.cindernative_vol_id,
                                     incremental=self.conf.incremental)
         elif backup_media == 'cinder':
-            LOG.info('Executing cinder snapshot')
+            LOG.info('Executing cinder snapshot. Volume ID: {0}'.format(
+                self.conf.cinder_vol_id))
             backup_os.backup_cinder_by_glance(self.conf.cinder_vol_id)
         else:
             raise Exception('unknown parameter backup_media %s' % backup_media)
@@ -189,6 +235,19 @@ class BackupJob(Job):
 
 
 class RestoreJob(Job):
+
+    def _validate(self):
+        if not self.conf.restore_abs_path and not self.conf.nova_inst_id \
+                and not self.conf.cinder_vol_id and not \
+                self.conf.cindernative_vol_id:
+            raise ValueError("--restore-abs-path is required")
+        if not self.conf.container:
+            raise ValueError("--container is required")
+        if self.conf.no_incremental and (self.conf.max_level or
+                                         self.conf.always_level):
+            raise Exception(
+                'no-incremental option is not compatible '
+                'with backup level options')
 
     def execute(self):
         conf = self.conf
@@ -222,17 +281,25 @@ class RestoreJob(Job):
                     "Backup Consistency Check failed: could not checksum file"
                     " {0} ({1})".format(e.filename, e.strerror))
             return {}
-
         res = restore.RestoreOs(conf.client_manager, conf.container)
         if conf.backup_media == 'nova':
+            LOG.info("Restoring nova backup. Instance ID: {0}, timestamp: {1}"
+                     .format(conf.nova_inst_id, restore_timestamp))
             nova_network = None
             if conf.nova_restore_network:
                 nova_network = conf.nova_restore_network
             res.restore_nova(conf.nova_inst_id, restore_timestamp,
                              nova_network)
         elif conf.backup_media == 'cinder':
+            LOG.info("Restoring cinder backup from glance. Volume ID: {0}, "
+                     "timestamp: {1}".format(conf.cinder_vol_id,
+                                             restore_timestamp))
             res.restore_cinder_by_glance(conf.cinder_vol_id, restore_timestamp)
         elif conf.backup_media == 'cindernative':
+            LOG.info("Restoring cinder native backup. Volume ID {0}, Backup ID"
+                     " {1}, timestamp: {2}".format(conf.cindernative_vol_id,
+                                                   conf.cindernative_backup_id,
+                                                   restore_timestamp))
             res.restore_cinder(conf.cindernative_vol_id,
                                conf.cindernative_backup_id,
                                restore_timestamp)
@@ -242,6 +309,13 @@ class RestoreJob(Job):
 
 
 class AdminJob(Job):
+
+    def _validate(self):
+        # no validation required in this job
+        if not self.conf.remove_from_date and not self.conf.remove_older_than:
+            raise ValueError("You need to provide to remove backup older "
+                             "than this time. You can use --remove-older-than "
+                             "or --remove-from-date")
 
     def execute(self):
         if self.conf.remove_from_date:
@@ -259,10 +333,14 @@ class AdminJob(Job):
 
 class ExecJob(Job):
 
+    def _validate(self):
+        if not self.conf.command:
+            raise ValueError("--command option is required")
+
     def execute(self):
-        LOG.info('exec job....')
         if self.conf.command:
-            LOG.info('Executing exec job....')
+            LOG.info('Executing exec job. Command: {0}'
+                     .format(self.conf.command))
             exec_cmd.execute(self.conf.command)
         else:
             LOG.warning(

@@ -34,7 +34,6 @@ from freezer.storage import ssh
 from freezer.storage import swift
 from freezer.utils import config
 from freezer.utils import utils
-from freezer.utils import validator
 from freezer.utils import winutils
 
 CONF = cfg.CONF
@@ -54,8 +53,6 @@ def freezer_main(backup_args):
 
     backup_args.__dict__['hostname_backup_name'] = "{0}_{1}".format(
         backup_args.hostname, backup_args.backup_name)
-
-    validator.validate(backup_args)
 
     max_segment_size = backup_args.max_segment_size
     if (backup_args.storage ==
