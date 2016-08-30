@@ -65,10 +65,14 @@ class Job(object):
         Apply general validation rules.
         :return: True or raise an error
         """
+        LOG.info("Validating args for the {0} job.".format(self.conf.action))
         if not self.conf.action:
             raise ValueError("Please provide a valid action with --action")
 
-        LOG.info("Validating args for the {0} job.".format(self.conf.action))
+        if self.conf.action in ('backup', 'restore', 'admin') \
+                and self.conf.backup_media == 'fs' \
+                and not self.conf.backup_name:
+            raise ValueError('A value for --backup-name is required')
 
     @abc.abstractmethod
     def execute(self):
