@@ -228,7 +228,7 @@ def do_job_list(client, args):
 
 def do_client_list(client, args):
     table = prettytable.PrettyTable(["client_id", "hostname", "description"])
-    l = client.registration.list()
+    l = client.clients.list()
     offset = 0
     while l:
         offset += len(l)
@@ -237,7 +237,7 @@ def do_client_list(client, args):
             table.add_row([client_doc['client_id'],
                            client_doc.get('hostname', ''),
                            client_doc.get('description', '')])
-        l = client.registration.list(offset=offset)
+        l = client.clients.list(offset=offset)
     print(table)
 
 
