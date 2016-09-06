@@ -17,11 +17,7 @@ limitations under the License.
 import json
 import requests
 
-from oslo_log import log
-
 from freezer.apiclient import exceptions
-
-LOG = log.getLogger(__name__)
 
 
 class BackupsManager(object):

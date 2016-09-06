@@ -17,10 +17,6 @@ Freezer Tar related functions
 """
 from freezer.utils import utils
 
-from oslo_log import log
-
-LOG = log.getLogger(__name__)
-
 
 class TarCommandBuilder(object):
     """

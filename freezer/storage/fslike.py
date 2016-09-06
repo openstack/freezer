@@ -15,11 +15,7 @@
 import abc
 import six
 
-from oslo_log import log
-
 from freezer.storage import physical
-
-LOG = log.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)

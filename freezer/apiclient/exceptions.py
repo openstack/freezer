@@ -16,9 +16,6 @@ limitations under the License.
 """
 
 import json
-from oslo_log import log
-
-LOG = log.getLogger(__name__)
 
 
 class ApiClientException(Exception):

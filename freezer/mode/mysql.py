@@ -12,12 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from oslo_log import log
-
 from freezer.mode import mode
 from freezer.utils import config
-
-LOG = log.getLogger(__name__)
 
 
 class MysqlMode(mode.Mode):
