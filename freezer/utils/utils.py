@@ -26,11 +26,10 @@ import time
 
 from distutils import spawn as distspawn
 from functools import wraps
-from oslo_config import cfg
 from oslo_log import log
 from six.moves import configparser
 
-CONF = cfg.CONF
+
 LOG = log.getLogger(__name__)
 
 
