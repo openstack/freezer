@@ -14,16 +14,16 @@
 # limitations under the License.
 
 import os
-import swiftclient
 import time
 
-from cinderclient.client import Client as cinder_client
-from glanceclient.client import Client as glance_client
+from cinderclient import client as cinder_client
+from glanceclient import client as glance_client
 from keystoneauth1 import loading
 from keystoneauth1 import session
-from novaclient.client import Client as nova_client
+from novaclient import client as nova_client
 from oslo_config import cfg
 from oslo_log import log
+import swiftclient
 
 from freezer.utils import utils
 
@@ -78,8 +78,8 @@ class OSClientManager(object):
         Use pre-initialized session to create an instance of nova client.
         :return: novaclient instance
         """
-        self.nova = nova_client(self.compute_version, session=self.sess,
-                                **self.client_kwargs)
+        self.nova = nova_client.Client(self.compute_version, session=self.sess,
+                                       **self.client_kwargs)
         return self.nova
 
     def create_glance(self):
@@ -92,8 +92,9 @@ class OSClientManager(object):
         if 'insecure' in self.client_kwargs.keys():
             self.client_kwargs.pop('insecure')
 
-        self.glance = glance_client(self.image_version, session=self.sess,
-                                    **self.client_kwargs)
+        self.glance = glance_client.Client(self.image_version,
+                                           session=self.sess,
+                                           **self.client_kwargs)
         return self.glance
 
     def create_cinder(self):
@@ -101,8 +102,9 @@ class OSClientManager(object):
         Use pre-initialized session to create an instance of cinder client.
         :return: cinderclient instance
         """
-        self.cinder = cinder_client(self.volume_version, session=self.sess,
-                                    **self.client_kwargs)
+        self.cinder = cinder_client.Client(self.volume_version,
+                                           session=self.sess,
+                                           **self.client_kwargs)
         return self.cinder
 
     def create_swift(self):

@@ -18,20 +18,18 @@ limitations under the License.
 
 import json
 import os
+
+import prettytable
 import six
+
+from freezer.utils import utils as freezer_utils
 import utils
-
-from freezer.utils.utils import DateTime
-
-from prettytable import PrettyTable
 
 try:
     from betterprint import pprint
 except Exception:
     def pprint(doc):
         print(json.dumps(doc, indent=4))
-
-from freezer.utils import utils as freezer_utils
 
 
 def do_session_remove_job(client, args):
@@ -70,7 +68,8 @@ def do_session_list_job(client, args):
         raise Exception("Parameter --session required")
     session_doc = client.sessions.get(args.session_id)
     jobs = session_doc.get('jobs', {})
-    table = PrettyTable(["job_id", "status", "result", "client_id"])
+    table = prettytable.PrettyTable(["job_id", "status", "result",
+                                     "client_id"])
     for job_id, job_data in six.iteritems(jobs):
         table.add_row([job_id,
                        job_data['status'],
@@ -120,8 +119,8 @@ def do_session_list(client, args):
 
     :return: None
     """
-    table = PrettyTable(["session_id", "tag", "status",
-                         "description", "jobs", "last_start"])
+    table = prettytable.PrettyTable(["session_id", "tag", "status",
+                                     "description", "jobs", "last_start"])
     session_docs = client.sessions.list()
     offset = 0
     while session_docs:
@@ -208,8 +207,9 @@ def _job_list(client, args):
 
 
 def do_job_list(client, args):
-    table = PrettyTable(["job_id", "client-id", "description", "# actions",
-                         "status", "event", "result", "session_id"])
+    table = prettytable.PrettyTable(["job_id", "client-id", "description",
+                                     "# actions", "status", "event",
+                                     "result", "session_id"])
     for doc in _job_list(client, args):
         job_scheduling = doc.get('job_schedule', {})
         job_status = job_scheduling.get('status', '')
@@ -227,7 +227,7 @@ def do_job_list(client, args):
 
 
 def do_client_list(client, args):
-    table = PrettyTable(["client_id", "hostname", "description"])
+    table = prettytable.PrettyTable(["client_id", "hostname", "description"])
     l = client.registration.list()
     offset = 0
     while l:
@@ -249,7 +249,7 @@ def do_backup_list(client, args):
     else:
         fields = ["backup uuid", "container", "backup name", "timestamp",
                   "level", "path"]
-    table = PrettyTable(fields)
+    table = prettytable.PrettyTable(fields)
     l = list_func()
     offset = 0
     while l:
@@ -264,14 +264,14 @@ def do_backup_list(client, args):
                        metadata_doc.get('container', ''),
                        metadata_doc.get('hostname', ''),
                        metadata_doc.get('backup_name', ''),
-                       str(DateTime(timestamp)),
+                       str(freezer_utils.DateTime(timestamp)),
                        metadata_doc.get('curr_backup_level', ''),
                        metadata_doc.get('fs_real_path', '')]
             else:
                 row = [doc['backup_uuid'],
                        metadata_doc.get('container', ''),
                        metadata_doc.get('backup_name', ''),
-                       str(DateTime(timestamp)),
+                       str(freezer_utils.DateTime(timestamp)),
                        metadata_doc.get('curr_backup_level', ''),
                        metadata_doc.get('fs_real_path', '')]
             table.add_row(row)

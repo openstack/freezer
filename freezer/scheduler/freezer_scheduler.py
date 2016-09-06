@@ -15,15 +15,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-import six
+
+from distutils import spawn
 import sys
 import threading
 import time
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from distutils import spawn
+from apscheduler.schedulers import background
 from oslo_config import cfg
 from oslo_log import log
+import six
 
 from freezer.apiclient import client
 from freezer.scheduler import arguments
@@ -31,7 +32,6 @@ from freezer.scheduler import scheduler_job
 from freezer.scheduler import shell
 from freezer.scheduler import utils
 from freezer.utils import winutils
-
 
 if winutils.is_windows():
     from win_daemon import Daemon
@@ -67,8 +67,10 @@ class FreezerScheduler(object):
             'default': {'type': 'threadpool', 'max_workers': 1},
             'threadpool': {'type': 'threadpool', 'max_workers': 10}
         }
-        self.scheduler = BackgroundScheduler(job_defaults=job_defaults,
-                                             executors=executors)
+        self.scheduler = background.BackgroundScheduler(
+            job_defaults=job_defaults,
+            executors=executors)
+
         if self.client:
             self.scheduler.add_job(self.poll, 'interval',
                                    seconds=interval, id='api_poll',
