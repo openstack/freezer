@@ -260,7 +260,7 @@ def main():
             daemon = Daemon(daemonizable=freezer_scheduler)
 
     if CONF.action == 'start':
-        daemon.start(log_file=CONF.log_file)
+        daemon.start()
     elif CONF.action == 'stop':
         daemon.stop()
     elif CONF.action == 'reload':
