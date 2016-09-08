@@ -161,8 +161,7 @@ def setup_logging():
                            'qpid=WARN', 'stevedore=WARN', 'oslo_log=INFO',
                            'iso8601=WARN', 'urllib3.connectionpool=WARN',
                            'requests.packages.urllib3.connectionpool=WARN',
-                           'websocket=WARN', 'keystonemiddleware=WARN',
-                           'freezer=INFO']
+                           'websocket=WARN', 'keystonemiddleware=WARN']
 
     _DEFAULT_LOGGING_CONTEXT_FORMAT = ('%(asctime)s.%(msecs)03d %(process)d '
                                        '%(levelname)s %(name)s '
