@@ -490,3 +490,13 @@ def is_timestamp(ts):
         return True
     except ValueError:
         raise Exception('Invalid timestamp')
+
+
+def cast_to_int(value):
+    if value:
+        try:
+            return int(value)
+        except ValueError:
+            raise TypeError("{} is not a valid integer.".format(value))
+    else:
+        return value

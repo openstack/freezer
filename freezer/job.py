@@ -41,6 +41,12 @@ class Job:
         self.storage = storage
         self.engine = conf_dict.engine
 
+        #TODO remove this when we switch to --config-file instead of --config
+        self.conf.max_level = utils.cast_to_int(self.conf.max_level)
+        self.conf.always_level = utils.cast_to_int(self.conf.always_level)
+        self.conf.max_segment_size = utils.cast_to_int(
+            self.conf.max_segment_size)
+
     def execute(self):
         LOG.info('Action not implemented')
 
