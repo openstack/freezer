@@ -132,7 +132,7 @@ _COMMON = [
     cfg.StrOpt('lvm-srcvol',
                dest='lvm_srcvol',
                default=DEFAULT_PARAMS['lvm_srcvol'],
-               help="Set the lvm volume you want to take a snaphost from. "
+               help="Set the lvm volume you want to take a snapshot from. "
                     "Default no volume"),
     cfg.StrOpt('lvm-snapname',
                dest='lvm_snapname',
