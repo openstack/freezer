@@ -114,7 +114,7 @@ def terminate_subprocess(pid, name):
     try:
         process = psutil.Process(pid)
         if process.name.startswith(name):
-            os.kill(pid, signal.SIGUSR1)
+            os.kill(pid, signal.SIGTERM)
         else:
             LOG.warning('The name {} does not match the pid {}'.format(
                 name, pid))

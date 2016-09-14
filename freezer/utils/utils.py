@@ -23,7 +23,6 @@ import re
 import subprocess
 import sys
 import time
-import traceback
 
 from distutils import spawn as distspawn
 from functools import wraps
@@ -457,17 +456,6 @@ def set_max_process_priority():
         ])
     except Exception as priority_error:
         LOG.warning('Priority: {0}'.format(priority_error))
-
-
-def abort_subprocess(signum, frame):
-    try:
-        LOG.warning('Process {} has been aborted by the scheduler'.format(
-            os.getpid()))
-        raise Exception('Aborting process')
-    except Exception:
-        LOG.error(traceback.print_exc())
-    finally:
-        sys.exit(33)
 
 
 def days_to_seconds(n):
