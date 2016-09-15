@@ -15,16 +15,16 @@
 from freezer.mode import mode
 
 
-class NovaMode(mode.Mode):
+class CinderMode(mode.Mode):
     """
-    Execute a nova backup/restore
+    Execute a cinder backup
     """
     def __init__(self, conf):
         self.conf = conf
 
     @property
     def name(self):
-        return "nova"
+        return "cinder"
 
     @property
     def version(self):

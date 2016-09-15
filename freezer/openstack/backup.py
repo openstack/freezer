@@ -93,7 +93,8 @@ class BackupOs(object):
         LOG.debug("Creation temporary volume")
         copied_volume = client_manager.do_copy_volume(snapshot)
         LOG.debug("Creation temporary glance image")
-        image = client_manager.make_glance_image("name", copied_volume)
+        image = client_manager.make_glance_image(copied_volume.id,
+                                                 copied_volume)
         LOG.debug("Download temporary glance image {0}".format(image.id))
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(volume_id, utils.DateTime.now().timestamp)
