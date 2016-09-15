@@ -16,6 +16,8 @@ limitations under the License.
 Freezer restore modes related functions
 """
 
+import time
+
 from oslo_log import log
 
 from freezer.utils import utils
@@ -37,11 +39,11 @@ class RestoreOs(object):
         :return:
         """
         swift = self.client_manager.get_swift()
-        info, backups = swift.get_container(self.container, path=path)
+        path = "{0}_segments/{1}/".format(self.container, path)
+        info, backups = swift.get_container(self.container, prefix=path)
         backups = sorted(
             map(lambda x: int(x["name"].rsplit("/", 1)[-1]), backups))
         backups = list(filter(lambda x: x >= restore_from_timestamp, backups))
-
         if not backups:
             msg = "Cannot find backups for path: %s" % path
             LOG.error(msg)
@@ -58,13 +60,16 @@ class RestoreOs(object):
         swift = self.client_manager.get_swift()
         glance = self.client_manager.get_glance()
         backup = self._get_backups(path, restore_from_timestamp)
+        path = "{0}_segments/{1}/{2}".format(self.container, path, backup)
+
         stream = swift.get_object(self.container, "%s/%s" % (path, backup),
                                   resp_chunk_size=10000000)
         length = int(stream[0]["x-object-meta-length"])
         LOG.info("Creation glance image")
         image = glance.images.create(
-            data=utils.ReSizeStream(stream[1], length, 1),
             container_format="bare", disk_format="raw")
+        glance.images.upload(image.id,
+                             utils.ReSizeStream(stream[1], length, 1))
         return stream[0], image
 
     def restore_cinder(self, volume_id=None,
@@ -146,8 +151,21 @@ class RestoreOs(object):
         (info, image) = self._create_image(instance_id, restore_from_timestamp)
         flavor = nova.flavors.get(info['x-object-meta-flavor-id'])
         LOG.info("Creating an instance")
+        instance = None
         if nova_network is None:
-            nova.servers.create(info['x-object-meta-name'], image, flavor)
+            instance = nova.servers.create(info['x-object-meta-name'], image,
+                                           flavor)
         else:
-            nova.servers.create(info['x-object-meta-name'], image, flavor,
-                                nics=[{'net-id': nova_network}])
+            instance = nova.servers.create(info['x-object-meta-name'], image,
+                                           flavor,
+                                           nics=[{'net-id': nova_network}])
+        # loop and wait till the server is up then remove the image
+        # let's wait 100 second
+        LOG.info('Delete instance image from glance {0}'.format(image))
+        for i in range(0, 360):
+            time.sleep(10)
+            instance = nova.servers.get(instance)
+            if not instance.__dict__['OS-EXT-STS:task_state']:
+                glance = self.client_manager.create_glance()
+                glance.images.delete(image.id)
+                return

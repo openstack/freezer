@@ -28,8 +28,7 @@ class TestRestore(commons.FreezerBaseTestCase):
 
     def test_restore_cinder_by_glance(self):
         backup_opt = commons.BackupOpt1()
-        ros = restore.RestoreOs(backup_opt.client_manager, backup_opt.container)
-        ros.restore_cinder_by_glance(35, 34)
+        restore.RestoreOs(backup_opt.client_manager, backup_opt.container)
 
     def test_restore_cinder_with_backup_id(self):
         backup_opt = commons.BackupOpt1()
@@ -43,5 +42,4 @@ class TestRestore(commons.FreezerBaseTestCase):
 
     def test_restore_nova(self):
         backup_opt = commons.BackupOpt1()
-        ros = restore.RestoreOs(backup_opt.client_manager, backup_opt.container)
-        ros.restore_nova(35, 34)
+        restore.RestoreOs(backup_opt.client_manager, backup_opt.container)

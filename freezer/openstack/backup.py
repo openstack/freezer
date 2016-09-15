@@ -69,8 +69,8 @@ class BackupOs(object):
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(instance_id, utils.DateTime.now().timestamp)
         LOG.info("Uploading image to swift")
-        headers = {"x-object-meta-name": instance._info['name'],
-                   "x-object-meta-flavor-id": instance._info['flavor']['id']}
+        headers = {"x-object-meta-name": instance.name,
+                   "x-object-meta-flavor-id": str(instance.flavor.get('id'))}
         self.storage.add_stream(stream, package, headers)
         LOG.info("Deleting temporary image {0}".format(image))
         glance.images.delete(image.id)

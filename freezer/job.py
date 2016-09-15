@@ -92,13 +92,14 @@ class InfoJob(Job):
 class BackupJob(Job):
 
     def _validate(self):
-        if not self.conf.path_to_backup:
-            raise ValueError('path-to-backup argument must be provided')
-        if self.conf.no_incremental and (self.conf.max_level or
-                                         self.conf.always_level):
-            raise Exception(
-                'no-incremental option is not compatible '
-                'with backup level options')
+        if self.conf.mode == 'fs':
+            if not self.conf.path_to_backup:
+                raise ValueError('path-to-backup argument must be provided')
+            if self.conf.no_incremental and (self.conf.max_level or
+                                             self.conf.always_level):
+                raise Exception(
+                    'no-incremental option is not compatible '
+                    'with backup level options')
 
     def execute(self):
         LOG.info('Backup job started. '
@@ -108,9 +109,10 @@ class BackupJob(Job):
                          self.conf.hostname, self.conf.mode, self.conf.storage,
                          self.conf.compression))
         try:
-            (out, err) = utils.create_subprocess('sync')
-            if err:
-                LOG.error('Error while sync exec: {0}'.format(err))
+            if self.conf.mode is 'fs':
+                (out, err) = utils.create_subprocess('sync')
+                if err:
+                    LOG.error('Error while sync exec: {0}'.format(err))
         except Exception as error:
             LOG.error('Error while sync exec: {0}'.format(error))
         if not self.conf.mode:

@@ -56,6 +56,8 @@ class SwiftStorage(physical.PhysicalStorage):
             storage_path=container,
             max_segment_size=max_segment_size,
             skip_prepare=skip_prepare)
+        self.container = container
+        self.segments = "{0}_segments".format(container)
 
     def swift(self):
         """
@@ -150,16 +152,24 @@ class SwiftStorage(physical.PhysicalStorage):
 
     def add_stream(self, stream, package_name, headers=None):
         i = 0
+        backup_basepath = "{0}/{1}".format(self.container, self.segments)
         for el in stream:
-            self.upload_chunk(el, "{0}/{1}".format(package_name, "%08d" % i))
+            upload_path = "{0}/{1}/segments/{2}".format(backup_basepath,
+                                                        package_name,
+                                                        "%08d" % i)
+            self.upload_chunk(el, upload_path)
             i += 1
         if not headers:
             headers = {}
-        headers['X-Object-Manifest'] = u'{0}/{1}/'.format(
-            self.segments, package_name)
-        headers['x-object-meta-length'] = len(stream)
 
-        self.swift().put_object(self.container, package_name, "",
+        full_path = "{0}/{1}".format(backup_basepath, package_name)
+        headers['x-object-manifest'] = full_path
+        headers['x-object-meta-length'] = str(len(stream))
+
+        objname = package_name.rsplit('/', 1)[1]
+        # This call sets the metadata on a file which will be used to download
+        # the whole backup later. Do not remove it ! (szaher)
+        self.swift().put_object(container=full_path, obj=objname, contents=u'',
                                 headers=headers)
 
     def backup_blocks(self, backup):
