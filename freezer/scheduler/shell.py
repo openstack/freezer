@@ -164,14 +164,14 @@ def do_job_start(client, args):
     if not args.job_id:
         raise Exception("Parameter --job required")
     client.jobs.start_job(args.job_id)
-    print("Job {0} started".format(args.job_id))
+    print("Start request sent for job {0}".format(args.job_id))
 
 
 def do_job_stop(client, args):
     if not args.job_id:
         raise Exception("Parameter --job required")
     client.jobs.stop_job(args.job_id)
-    print("Job {0} stopped".format(args.job_id))
+    print("Stop request sent for job {0}".format(args.job_id))
 
 
 def do_job_download(client, args):
@@ -280,4 +280,4 @@ def do_job_abort(client, args):
     if not args.job_id:
         raise Exception("Parameter --job required")
     client.jobs.abort_job(args.job_id)
-    print("Job {0} aborted".format(args.job_id))
+    print("Abort request sent for job {0}".format(args.job_id))
