@@ -442,7 +442,7 @@ Example of Config file for two local storages and one swift storage:
 
 .. code:: bash
 
-    [default]
+    [DEFAULT]
     action = backup
     mode = fs
     path_to_backup = /foo/

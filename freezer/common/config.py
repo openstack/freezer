@@ -407,7 +407,9 @@ _COMMON = [
                ),
     cfg.StrOpt('config',
                dest='config',
+               deprecated_for_removal=True,
                default=DEFAULT_PARAMS['config'],
+               deprecated_reason="Deprecated in favor of --config-file",
                help="Config file abs path. Option arguments are provided from "
                     "config file. When config file is used any option from "
                     "command line provided take precedence."),
