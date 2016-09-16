@@ -322,8 +322,11 @@ class Job(object):
             elif output:
                 self.upload_metadata(output)
 
-            if self.process.returncode == 33:
-                # This means the job action was aborted by the scheduler.
+            if self.process.returncode == -15:
+                # This means the job action was aborted by the scheduler
+                LOG.warning('Freezer-agent was killed by the scheduler. '
+                            'Cleanup should be done manually: container, '
+                            'mountpoint and lvm snapshots.')
                 return Job.ABORTED_RESULT
 
             elif self.process.returncode:

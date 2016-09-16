@@ -18,7 +18,6 @@ Freezer main execution function
 """
 import json
 import os
-import signal
 import subprocess
 import sys
 
@@ -208,14 +207,13 @@ def main():
             CONF.print_help()
             sys.exit(1)
 
-        signal.signal(signal.SIGUSR1, utils.abort_subprocess)
-
         freezer_main(backup_args)
     except Exception as err:
         quiet = backup_args.quiet if backup_args else False
         LOG.exception(err)
         LOG.critical("End freezer agent process unsuccessfully")
         return fail(1, err, quiet)
+
 
 if __name__ == '__main__':
 
