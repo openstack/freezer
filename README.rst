@@ -346,7 +346,7 @@ data in the future.
 
 Execute a cinder backup::
 
-    $ freezer-agent --cinder-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezer-agent --mode cinder --cinder-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Execute a MySQL backup with Cinder::
 
@@ -364,7 +364,7 @@ of that instance will be sufficient to restore your data in future.
 
 Execute a nova backup::
 
-    $ freezer-agent --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezer-agent --mode nova --nova-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Execute a MySQL backup with Nova::
 
