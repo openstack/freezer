@@ -25,7 +25,7 @@ import tempfile
 import unittest
 import paramiko
 
-FREEZERC = distutils.spawn.find_executable('freezerc')
+FREEZERC = distutils.spawn.find_executable('freezer-agent')
 
 
 class CommandFailed(Exception):

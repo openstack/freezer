@@ -229,7 +229,7 @@ class BaseFreezerTest(tempest.test.BaseTestCase):
             backup_args += ['--compression', compression]
 
         if consistency_check:
-            backup_args += ['--consistency_check']
+            backup_args += ['--consistency-check']
 
         if incremental:
             if always_level is not None:

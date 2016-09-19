@@ -55,7 +55,7 @@ class TestFreezerMetadataChecksum(base.BaseFreezerTest):
                         '--container', metadata['container'],
                         '--backup-name', self.backup_name,
                         '--storage', 'local',
-                        '--consistency_checksum', checksum]
+                        '--consistency-checksum', checksum]
 
         self.run_subprocess(restore_args,
                             'Test restore from local storage with '
@@ -77,7 +77,7 @@ class TestFreezerMetadataChecksum(base.BaseFreezerTest):
                         '--container', metadata['container'],
                         '--backup-name', self.backup_name,
                         '--storage', 'local',
-                        '--consistency_checksum', bad_checksum]
+                        '--consistency-checksum', bad_checksum]
 
         process = subprocess.Popen(restore_args,
                                    stdout=subprocess.PIPE,

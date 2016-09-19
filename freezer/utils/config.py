@@ -17,7 +17,6 @@ import os
 import re
 
 from six.moves import configparser
-from six.moves import cStringIO
 
 from oslo_log import log
 
@@ -81,28 +80,15 @@ def osrc_parse(lines):
     return find_all(EXPORT, lines)
 
 
-def ini_parse(lines):
+def ini_parse(fd):
     """
-    :param lines:
-    :type lines: str
+    :param fd:
+    :type fd: file_descriptor
     :return:
     """
-    try:
-        fd = cStringIO(lines)
-        parser = configparser.ConfigParser()
-        parser.readfp(fd)
-        return dict(parser.items('default'))
-    except Exception as e:
-        try:
-            # TODO(ANONYMOUS): Remove the parsing of ini-like file via regex
-            conf = find_all(INI, lines)
-            LOG.warning("Using non-INI files for database configuration "
-                        "file is deprecated. Falling back to Regex.")
-            LOG.warning("INI parser error was: {}".format(str(e)))
-            return conf
-        except Exception:
-            LOG.warning("Couldn't parse non-INI config file using Regex")
-            raise
+    parser = configparser.ConfigParser()
+    parser.readfp(fd)
+    return dict(parser.items('default'))
 
 
 def find_all(regex, lines):

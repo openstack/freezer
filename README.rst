@@ -586,7 +586,6 @@ The Freezer architecture is composed of the following components:
 |                   |   - Multi-platform as it can be run on Linux, Windows, \*BSD and OSX                                                                           |
 |                   |   - Automatic removal of old backups                                                                                                           |
 |                   |                                                                                                                                                |
-|                   | "freezerc" binary is deprecated and won't be available in next releases. Use freezer-agent instead.                                            |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer API       | The API is used to store and provide metadata to the Freezer Web UI and to the Freezer Scheduler.                                              |
 |                   | Also the API is used to store session information for multi node backup synchronization. No workload data is stored in the API.                |
@@ -1018,15 +1017,6 @@ optional arguments:
                         If no default is set, logging will go to stderr as
                         defined by use_stderr. This option is ignored if
                         log_config_append is set.
-  --log-format FORMAT   DEPRECATED. A logging.Formatter log message format
-                        string which may use any of the available
-                        logging.LogRecord attributes. This option is
-                        deprecated. Please use logging_context_format_string
-                        and logging_default_format_string instead. This option
-                        is ignored if log_config_append is set.
-  --lvm-auto-snap LVM_AUTO_SNAP
-                        Automatically guess the volume group and volume name
-                        for given PATH.
   --lvm-dirmount LVM_DIRMOUNT
                         Set the directory you want to mount the lvm snapshot
                         to. If not provided, a unique name will be generated
@@ -1114,8 +1104,7 @@ optional arguments:
                         Checks in the specified container for object older
                         than the specified days. If i.e. 30 is specified, it
                         will remove the remote object older than 30 days.
-                        Default False (Disabled) The option --remove-older-
-                        then is deprecated and will be removed soon
+                        Default False (Disabled) 
   --restart-always-level RESTART_ALWAYS_LEVEL
                         Restart the backup from level 0 after n days. Valid
                         only if --always-level option if set. If --always-

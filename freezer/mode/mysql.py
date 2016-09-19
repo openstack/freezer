@@ -56,7 +56,7 @@ class MysqlMode(mode.Mode):
             raise ImportError('Please install PyMySQL module')
 
         with open(conf.mysql_conf, 'r') as mysql_file_fd:
-            parsed_config = config.ini_parse(mysql_file_fd.read())
+            parsed_config = config.ini_parse(mysql_file_fd)
         # Initialize the DB object and connect to the db according to
         # the db mysql backup file config
         self.released = False

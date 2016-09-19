@@ -6,7 +6,7 @@ Please check README.rst for further installation instructions.
 Install from sources::
 ----------------------
 
-You have now the freezerc tool installed in /usr/local/bin/freezerc
+You have now the freezer-agent tool installed in /usr/local/bin/freezer-agent
 
 Please execute the following command to all the available options::
 
