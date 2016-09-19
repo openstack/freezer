@@ -206,7 +206,7 @@ def main():
     doers = _get_doers(shell)
     doers.update(_get_doers(utils))
 
-    possible_actions = doers.keys() + ['start', 'stop', 'status']
+    possible_actions = doers.keys() + ['start', 'stop', 'status', 'reload']
 
     arguments.parse_args(possible_actions)
     arguments.setup_logging()
@@ -214,6 +214,11 @@ def main():
     if CONF.action is None:
         CONF.print_help()
         return 65  # os.EX_DATAERR
+
+    if CONF.action not in ['start', 'stop', 'status', 'reload']:
+        sys.stderr.write("Using freezer-scheduler as a command line client is "
+                         "deprecated. Please use the freezer command line tool"
+                         " from python-freezerclient.")
 
     apiclient = None
     insecure = False

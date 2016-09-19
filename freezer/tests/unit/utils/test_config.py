@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six.moves import cStringIO
 import unittest
 
 from freezer.utils import config
@@ -20,50 +21,33 @@ from freezer.utils import config
 class TestConfig(unittest.TestCase):
     def test_export(self):
         string = """unset OS_DOMAIN_NAME
-        export OS_AUTH_URL="http://abracadabra/v3"
-        export OS_PROJECT_NAME=abracadabra_project
-        export OS_USERNAME=abracadabra_username
-        export OS_PASSWORD=abracadabra_password
-        export OS_PROJECT_DOMAIN_NAME=Default
-        export OS_USER_DOMAIN_NAME=Default
-        export OS_IDENTITY_API_VERSION=3
-        export OS_AUTH_VERSION=3
-        export OS_CACERT=/etc/ssl/certs/ca-certificates.crt
-        export OS_ENDPOINT_TYPE=internalURL"""
+export OS_AUTH_URL="http://abracadabra/v3"
+export OS_PROJECT_NAME=abracadabra_project
+export OS_USERNAME=abracadabra_username
+export OS_PASSWORD=abracadabra_password
+export OS_PROJECT_DOMAIN_NAME=Default
+export OS_USER_DOMAIN_NAME=Default
+export OS_IDENTITY_API_VERSION=3
+export OS_AUTH_VERSION=3
+export OS_CACERT=/etc/ssl/certs/ca-certificates.crt
+export OS_ENDPOINT_TYPE=internalURL"""
 
         res = config.osrc_parse(string)
         self.assertEqual("http://abracadabra/v3", res["OS_AUTH_URL"])
 
-    def test_ini_like(self):
-        string = """# This is a comment line
-        #
-        host = 127.0.0.1
-        port = 3306
-        user = openstack
-        password = 'aNiceQuotedPassword'
-        password2 = "aNiceQuotedPassword"
-        spaced =   value"""
-
-        res = config.ini_parse(string)
-        self.assertEqual('127.0.0.1', res['host'])
-        self.assertEqual('openstack', res['user'])
-        self.assertEqual('3306', res['port'])
-        self.assertEqual('aNiceQuotedPassword', res['password'])
-        self.assertEqual('aNiceQuotedPassword', res['password2'])
-        self.assertEqual('value', res['spaced'])
-
     def test_ini(self):
         string = """[default]
-        # This is a comment line
-        #
-        host = 127.0.0.1
-        port = 3306
-        user = openstack
-        password = 'aNiceQuotedPassword'
-        password2 = "aNiceQuotedPassword"
-        spaced =   value"""
+# This is a comment line
+#
+host = 127.0.0.1
+port = 3306
+user = openstack
+password = 'aNiceQuotedPassword'
+password2 = "aNiceQuotedPassword"
+spaced =   value"""
 
-        res = config.ini_parse(string)
+        fd = cStringIO(string)
+        res = config.ini_parse(fd)
         self.assertEqual('127.0.0.1', res['host'])
         self.assertEqual('openstack', res['user'])
         self.assertEqual('3306', res['port'])

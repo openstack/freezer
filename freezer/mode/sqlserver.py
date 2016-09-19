@@ -35,7 +35,7 @@ class SqlserverMode(mode.Mode):
         self.released = False
         with open(conf.sql_server_conf, 'r') as sql_conf_file_fd:
             self.sql_server_instance = \
-                config.ini_parse(sql_conf_file_fd.read())["instance"]
+                config.ini_parse(sql_conf_file_fd)["instance"]
 
     @property
     def name(self):

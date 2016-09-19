@@ -123,12 +123,6 @@ _COMMON = [
                     "backup. When used, the lvm parameters will be guessed "
                     "and/or the  default values will be used, on windows it "
                     "will invoke  vssadmin"),
-    cfg.StrOpt('lvm-auto-snap',
-               dest='lvm_auto_snap',
-               default=DEFAULT_PARAMS['lvm_auto_snap'],
-               help="(Deprecated) Please use --snapshot instead"
-                    "Automatically guess the volume group and volume name for "
-                    "given PATH."),
     cfg.StrOpt('lvm-srcvol',
                dest='lvm_srcvol',
                default=DEFAULT_PARAMS['lvm_srcvol'],
@@ -218,7 +212,6 @@ _COMMON = [
     cfg.StrOpt('hostname',
                dest='hostname',
                default=DEFAULT_PARAMS['hostname'],
-               deprecated_name='restore-from-host',
                help="Set hostname to execute actions. If you are executing "
                     "freezer from one host but you want to delete objects "
                     "belonging to another host then you can set this option "
@@ -427,15 +420,13 @@ _COMMON = [
                      "Please note this option is currently only available "
                      "for file system backups. "
                      "Please also note checking backup consistency is a "
-                     "resource intensive operation, so use it carefully!",
-                deprecated_name='consistency_check'),
+                     "resource intensive operation, so use it carefully!"),
     cfg.StrOpt('consistency-checksum',
                dest='consistency_checksum',
                default=DEFAULT_PARAMS['consistency_checksum'],
                help="Compute the checksum of the restored file(s) and compare "
                     "it to the (provided) checksum to verify that the backup "
-                    "was successful",
-               deprecated_name='consistency_checksum'),
+                    "was successful"),
     cfg.BoolOpt('incremental',
                 default=DEFAULT_PARAMS['incremental'],
                 help="When the option is set, freezer will perform a "
@@ -494,9 +485,6 @@ def get_backup_args():
 
         defaults.update(conf.default)
 
-        # TODO(ANONYMOUS): restore_from_host is deprecated and to be removed
-        defaults['hostname'] = (conf.default.get('hostname') or
-                                conf.default.get('restore_from_host'))
         # override default oslo values
         levels = {
             'all': log.NOTSET,
@@ -590,9 +578,6 @@ def get_backup_args():
 
     # TODO(enugaev): move it to new command line param backup_media
 
-    if backup_args.lvm_auto_snap:
-        raise Exception('lvm-auto-snap is deprecated. '
-                        'Please use --snapshot instead')
     backup_media = 'fs'
     if backup_args.cinder_vol_id:
         backup_media = 'cinder'
