@@ -145,6 +145,10 @@ class Storage(object):
         :type remove_older_timestamp: int
         :type hostname_backup_name: str
         """
+        LOG.info('Removing backups older than {0} for {1}'.format(
+            remove_older_timestamp,
+            hostname_backup_name
+        ))
         backups = self.find_all(hostname_backup_name)
         backups = [b for b in backups
                    if b.latest_update.timestamp <= remove_older_timestamp]

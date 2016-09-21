@@ -219,7 +219,7 @@ class AdminJob(Job):
                                             self.conf.hostname_backup_name)
             return {}
         elif self.conf.remove_older_than:
-            self.storage.remove_older_than(self.conf.remove_before_date,
+            self.storage.remove_older_than(self.conf.remove_older_than,
                                            self.conf.hostname_backup_name)
             return {}
 
