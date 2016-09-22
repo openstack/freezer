@@ -375,7 +375,7 @@ _COMMON = [
                dest='compression',
                default=DEFAULT_PARAMS['compression'],
                choices=['gzip', 'bzip2', 'xz'],
-               help="compression algorithm to use. gzip is default algorithm"
+               help="Compression algorithm to use. Gzip is default algorithm"
                ),
     cfg.StrOpt('storage',
                dest='storage',
@@ -419,7 +419,7 @@ _COMMON = [
     cfg.BoolOpt('consistency-check',
                 dest='consistency_check',
                 default=DEFAULT_PARAMS['consistency_check'],
-                help="Computes the checksum of the fileset before backup. "
+                help="Compute the checksum of the fileset before backup. "
                      "This checksum is stored as part of the backup metadata, "
                      "which can be obtained either by using --metadata-out or "
                      "through the freezer API. "
