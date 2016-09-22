@@ -167,7 +167,7 @@ _COMMON = [
                     "point always a backup level 3 will be executed.  It will "
                     "not restart from level 0. This option has precedence over"
                     " --max-backup-level. Default False (Disabled)"),
-    cfg.FloatOpt('restart-always-level',
+    cfg.IntOpt('restart-always-level',
                  dest='restart_always_level',
                  help="Restart the backup from level 0 after n days. Valid "
                       "only if --always-level option is set.  If "
@@ -264,7 +264,7 @@ _COMMON = [
                     "i.e. '1979-10-03T23:23:23'. Make sure the 'T' is between "
                     "date and time Default None.",
                ),
-    cfg.FloatOpt('remove-older-than',
+    cfg.IntOpt('remove-older-than',
                  short='R',
                  dest='remove_older_than',
                  help="Checks in the specified container for objects older "
