@@ -15,6 +15,7 @@
 
 import os
 import re
+import six
 
 from six.moves import configparser
 from six.moves import cStringIO
@@ -36,7 +37,11 @@ class Config(object):
                           " found".format(config_path))
                 raise Exception("Configuration file {0} not found !".format(
                     config_path))
-        config = configparser.SafeConfigParser()
+        # SafeConfigParser was deprecated in Python 3.2
+        if six.PY3:
+            config = configparser.ConfigParser()
+        else:
+            config = configparser.SafeConfigParser()
         config.read([config_path])
         sections = config.sections()
         storages = []
