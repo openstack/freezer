@@ -497,19 +497,9 @@ def get_backup_args():
         # TODO(ANONYMOUS): restore_from_host is deprecated and to be removed
         defaults['hostname'] = (conf.default.get('hostname') or
                                 conf.default.get('restore_from_host'))
-        # override default oslo values
-        levels = {
-            'all': log.NOTSET,
-            'debug': log.DEBUG,
-            'warn': log.WARN,
-            'info': log.INFO,
-            'error': log.ERROR,
-            'critical': log.CRITICAL
-        }
 
         if defaults['log_file']:
-            CONF.set_override('log_file', defaults['log_file'], levels.get(
-                log.NOTSET))
+            CONF.set_override('log_file', defaults['log_file'])
 
         CONF.set_override('default_log_levels', _DEFAULT_LOG_LEVELS)
 
