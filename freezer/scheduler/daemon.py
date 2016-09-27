@@ -31,6 +31,18 @@ from freezer.lib.pep3143daemon import PidFile
 LOG = log.getLogger(__name__)
 
 
+def get_filenos(logger):
+    """
+    Get a list of file no from logger
+    """
+    filenos = []
+    for handler in logger.handlers:
+        filenos.append(handler.stream.fileno())
+    if logger.parent:
+        filenos += get_filenos(logger.parent)
+    return filenos
+
+
 class NoDaemon(object):
     """
     A class which shares the same interface as the Daemon class,
@@ -138,7 +150,9 @@ class Daemon(object):
 
     def start(self, dump_stack_trace=False):
         pidfile = PidFile(self.pid_fname)
-        with DaemonContext(pidfile=pidfile, signal_map=self.signal_map):
+        files_preserve = get_filenos(LOG.logger)
+        with DaemonContext(pidfile=pidfile, signal_map=self.signal_map,
+                           files_preserve=files_preserve):
             while not Daemon.exit_flag:
                 try:
                     LOG.info('freezer daemon starting, pid: {0}'.
