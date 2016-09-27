@@ -30,7 +30,6 @@ from freezer.scheduler import arguments
 from freezer.scheduler import scheduler_job
 from freezer.scheduler import shell
 from freezer.scheduler import utils
-from freezer.utils import utils as freezer_utils
 from freezer.utils import winutils
 
 
@@ -162,13 +161,10 @@ class FreezerScheduler(object):
             work_job_id_list.append(job_id)
             job = self.jobs.get(job_id, None) or self.create_job(job_doc)
             if job:
-
                 # check for abort status
-                if (job_doc['job_schedule']['event'] == 'abort' and
-                   job_doc['job_schedule']['result'] != 'aborted'):
-
+                if job_doc['job_schedule']['event'] == 'abort':
                     pid = int(job_doc['job_schedule']['current_pid'])
-                    freezer_utils.terminate_subprocess(pid, 'freezer-agent')
+                    utils.terminate_subprocess(pid, 'freezer-agent')
 
                 job.process_event(job_doc)
 
