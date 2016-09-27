@@ -207,9 +207,8 @@ class Job(object):
     @staticmethod
     def save_action_to_file(action, f):
         parser = configparser.ConfigParser()
-        parser.add_section('action')
         for action_k, action_v in action.items():
-            parser.set('action', action_k, action_v)
+            parser.set('DEFAULT', action_k, action_v)
         parser.write(f)
         f.seek(0)
 
@@ -330,7 +329,7 @@ class Job(object):
             with tempfile.NamedTemporaryFile(delete=False) as config_file:
                 self.save_action_to_file(freezer_action, config_file)
                 config_file_name = config_file.name
-                freezer_command = '{0} --metadata-out - --config {1}'.\
+                freezer_command = '{0} --metadata-out - --config-file {1}'.\
                     format(self.executable, config_file.name)
                 self.process = subprocess.Popen(freezer_command.split(),
                                                 stdout=subprocess.PIPE,

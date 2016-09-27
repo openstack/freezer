@@ -744,7 +744,7 @@ Osrc should be a path to file with Openstack Credentials like::
 
 Example of Config file for two local storages and one swift storage::
 
-  [default]
+  [DEFAULT]
   action = backup
   mode = fs
   path_to_backup = /foo/
@@ -1223,7 +1223,7 @@ the arguments provided and remove limits then run trickle using subprocess
 
 EX: We have a config file contains::
 
-    [default]
+    [DEFAULT]
     action = backup
     storage = ssh
     ssh_host = 127.0.0.1
@@ -1245,7 +1245,7 @@ this will be translated to::
 
 The new config file has the following arguments::
 
-    [default]
+    [DEFAULT]
     action = backup
     storage = ssh
     ssh_host = 127.0.0.1
