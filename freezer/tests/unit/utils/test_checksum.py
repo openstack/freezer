@@ -103,7 +103,7 @@ class TestChecksum(unittest.TestCase):
         chksum = CheckSum('onedir')
         chksum.count = 2
         result = chksum.compute()
-        self.assertEquals(self.dir_compute, result)
+        self.assertEqual(self.dir_compute, result)
 
     @patch('freezer.utils.checksum.CheckSum.get_files_hashes_in_path')
     def test_compute_file(self, mock_get_checksum):
@@ -114,7 +114,7 @@ class TestChecksum(unittest.TestCase):
         chksum = CheckSum('onefile')
         chksum.count = 1
         result = chksum.compute()
-        self.assertEquals(self.file_compute, result)
+        self.assertEqual(self.file_compute, result)
 
     @patch('freezer.utils.checksum.CheckSum.get_files_hashes_in_path')
     def test_compare_dir_match(self, mock_get_hashes):

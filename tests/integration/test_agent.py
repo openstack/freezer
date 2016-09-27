@@ -214,9 +214,9 @@ class TestBackupSSH(common.TestFS):
         # file_list = self.get_file_list_ssh(sub_path)
 
         self.assertIn('backup_name', result)
-        self.assertEquals(result['backup_name'], backup_args['backup_name'])
+        self.assertEqual(result['backup_name'], backup_args['backup_name'])
         self.assertIn('container', result)
-        self.assertEquals(result['container'], self.container)
+        self.assertEqual(result['container'], self.container)
 
         result = common.execute_freezerc(restore_args)
         self.assertIsNotNone(result)
@@ -401,9 +401,9 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         self.assertIsNotNone(result)
         result = json.loads(result)
         self.assertIn('backup_name', result)
-        self.assertEquals(result['backup_name'], backup_args['backup_name'])
+        self.assertEqual(result['backup_name'], backup_args['backup_name'])
         self.assertIn('container', result)
-        self.assertEquals(result['container'], backup_args['container'])
+        self.assertEqual(result['container'], backup_args['container'])
 
         # It may be reasonable to insert a check of the files in the
         # swift container
@@ -464,9 +464,9 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         self.assertIsNotNone(result)
         result = json.loads(result)
         self.assertIn('backup_name', result)
-        self.assertEquals(result['backup_name'], backup_args['backup_name'])
+        self.assertEqual(result['backup_name'], backup_args['backup_name'])
         self.assertIn('container', result)
-        self.assertEquals(result['container'], backup_args['container'])
+        self.assertEqual(result['container'], backup_args['container'])
 
         # It may be reasonable to insert a check of the files in the
         # swift container
@@ -574,9 +574,9 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         self.assertIsNotNone(result)
         result = json.loads(result)
         self.assertIn('backup_name', result)
-        self.assertEquals(result['backup_name'], backup_args['backup_name'])
+        self.assertEqual(result['backup_name'], backup_args['backup_name'])
         self.assertIn('container', result)
-        self.assertEquals(result['container'], backup_args['container'])
+        self.assertEqual(result['container'], backup_args['container'])
 
         # It may be reasonable to insert a check of the files in the
         # swift container

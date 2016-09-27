@@ -34,20 +34,20 @@ class TestNoDaemon(unittest.TestCase):
     def test_exit_handler(self):
         daemon.NoDaemon.exit_flag = False
         self.daemon.handle_program_exit(33, None)
-        self.assertEquals(daemon.NoDaemon.exit_flag, True)
+        self.assertEqual(daemon.NoDaemon.exit_flag, True)
         self.assertTrue(self.daemonizable.stop.called)
 
     def test_reload_handler(self):
         daemon.NoDaemon.exit_flag = False
         self.daemon.handle_reload(33, None)
-        self.assertEquals(daemon.NoDaemon.exit_flag, False)
+        self.assertEqual(daemon.NoDaemon.exit_flag, False)
         self.assertTrue(self.daemonizable.reload.called)
 
     def test_start_exit_ok(self):
         daemon.NoDaemon.exit_flag = False
         res = self.daemon.start(dump_stack_trace=False)
         self.assertIsNone(res)
-        self.assertEquals(daemon.NoDaemon.exit_flag, True)
+        self.assertEqual(daemon.NoDaemon.exit_flag, True)
         self.assertTrue(self.daemonizable.start.called)
     #
     # @patch('freezer.scheduler.daemon.logging')
@@ -58,8 +58,8 @@ class TestNoDaemon(unittest.TestCase):
     #     res = self.daemon.start(log_file=None, dump_stack_trace=True)
     #
     #     self.assertIsNone(res)
-    #     self.assertEquals(daemon.NoDaemon.exit_flag, True)
-    #     self.assertEquals(self.daemonizable.start.call_count, 2)
+    #     self.assertEqual(daemon.NoDaemon.exit_flag, True)
+    #     self.assertEqual(self.daemonizable.start.call_count, 2)
     #     self.assertTrue(mock_logging.error.called)
 
     def test_has_stop_method(self):
@@ -116,7 +116,7 @@ class TestDaemon(unittest.TestCase):
     #     with patch("__builtin__.open", mocked_open_function):
     #         res = self.daemon.pid
     #
-    #     self.assertEquals(res, 125)
+    #     self.assertEqual(res, 125)
 
     @patch('freezer.scheduler.daemon.PidFile')
     @patch('freezer.scheduler.daemon.DaemonContext')
@@ -124,7 +124,7 @@ class TestDaemon(unittest.TestCase):
         daemon.Daemon.exit_flag = False
         res = self.daemon.start()
         self.assertIsNone(res)
-        self.assertEquals(daemon.Daemon.exit_flag, True)
+        self.assertEqual(daemon.Daemon.exit_flag, True)
         self.assertTrue(self.daemonizable.start.called)
     #
     # @patch('freezer.scheduler.daemon.logging')
@@ -137,8 +137,8 @@ class TestDaemon(unittest.TestCase):
     #     res = self.daemon.start(log_file=None, dump_stack_trace=True)
     #
     #     self.assertIsNone(res)
-    #     self.assertEquals(daemon.Daemon.exit_flag, True)
-    #     self.assertEquals(self.daemonizable.start.call_count, 2)
+    #     self.assertEqual(daemon.Daemon.exit_flag, True)
+    #     self.assertEqual(self.daemonizable.start.call_count, 2)
     #     self.assertTrue(mock_logging.error.called)
 
     # @patch('freezer.scheduler.daemon.os')
