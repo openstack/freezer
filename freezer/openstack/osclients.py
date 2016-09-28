@@ -286,6 +286,28 @@ class OSClientManager(object):
         LOG.debug("Stream with size {0}".format(image.size))
         return utils.ReSizeStream(stream, image.size, 1000000)
 
+    def create_image(self, name, container_format, disk_format, data=None):
+        LOG.info("Creating glance image")
+        glance = self.get_glance()
+        image = glance.images.create(name=name,
+                                     container_format=container_format,
+                                     disk_format=disk_format)
+        if image is None:
+            msg = "Failed to create glance image {}".format(name)
+            LOG.error(msg)
+            raise BaseException(msg)
+        if data is None:
+            return image
+        glance.images.upload(image.id, data)
+        while image.status not in ('active', 'killed'):
+            LOG.info("Waiting for glance image upload")
+            time.sleep(5)
+            image = glance.images.get(image.id)
+        if image.status == 'killed':
+            raise BaseException('Failed to upload data into image')
+        LOG.info("Created glance image {}".format(image.id))
+        return image
+
 
 class OpenstackOpts(object):
     """

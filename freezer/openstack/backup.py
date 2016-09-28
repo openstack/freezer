@@ -70,7 +70,8 @@ class BackupOs(object):
         package = "{0}/{1}".format(instance_id, utils.DateTime.now().timestamp)
         LOG.info("Uploading image to swift")
         headers = {"x-object-meta-name": instance.name,
-                   "x-object-meta-flavor-id": str(instance.flavor.get('id'))}
+                   "x-object-meta-flavor-id": str(instance.flavor.get('id')),
+                   'x-object-meta-length': str(len(stream))}
         self.storage.add_stream(stream, package, headers)
         LOG.info("Deleting temporary image {0}".format(image))
         glance.images.delete(image.id)
@@ -99,7 +100,14 @@ class BackupOs(object):
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(volume_id, utils.DateTime.now().timestamp)
         LOG.debug("Uploading image to swift")
-        headers = {}
+        headers = {'x-object-meta-length': str(len(stream)),
+                   'volume_name': volume.name,
+                   'volume_type': volume.volume_type,
+                   'availability_zone': volume.availability_zone
+                   }
+        attachments = volume._info['attachments']
+        if attachments:
+            headers['server'] = attachments[0]['server_id']
         self.storage.add_stream(stream, package, headers=headers)
         LOG.debug("Deleting temporary snapshot")
         client_manager.clean_snapshot(snapshot)

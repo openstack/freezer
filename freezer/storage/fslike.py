@@ -16,6 +16,7 @@ import abc
 import six
 
 from freezer.storage import physical
+import json
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -73,3 +74,27 @@ class FsLikeStorage(physical.PhysicalStorage):
         :return:
         """
         pass
+
+    def add_stream(self, stream, package_name, headers=None):
+        """
+        :param stream: data
+        :param package_name: path
+        :param headers: backup metadata infomation
+        :return:
+        """
+        split = package_name.rsplit('/', 1)
+        # create backup_basedir
+        backup_basedir = "{0}/{1}".format(self.storage_path,
+                                          package_name)
+        self.create_dirs(backup_basedir)
+        # define backup_data_name
+        backup_basepath = "{0}/{1}".format(backup_basedir,
+                                           split[0])
+        backup_metadata = "%s/metadata" % backup_basedir
+        # write backup to backup_basepath
+        with self.open(backup_basepath, 'wb') as backup_file:
+            for el in stream:
+                backup_file.write(el)
+        # write data matadata to backup_metadata
+        with self.open(backup_metadata, 'wb') as backup_meta:
+            backup_meta.write(json.dumps(headers))

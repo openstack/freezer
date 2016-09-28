@@ -16,6 +16,8 @@ limitations under the License.
 Freezer restore modes related functions
 """
 
+import json
+import os
 import time
 
 from oslo_log import log
@@ -26,9 +28,10 @@ LOG = log.getLogger(__name__)
 
 
 class RestoreOs(object):
-    def __init__(self, client_manager, container):
+    def __init__(self, client_manager, container, storage):
         self.client_manager = client_manager
         self.container = container
+        self.storage = storage
 
     def _get_backups(self, path, restore_from_timestamp):
         """
@@ -38,11 +41,21 @@ class RestoreOs(object):
         :type restore_from_timestamp: int
         :return:
         """
-        swift = self.client_manager.get_swift()
-        path = "{0}_segments/{1}/".format(self.container, path)
-        info, backups = swift.get_container(self.container, prefix=path)
-        backups = sorted(
-            map(lambda x: int(x["name"].rsplit("/", 1)[-1]), backups))
+        if self.storage == "swift":
+            swift = self.client_manager.get_swift()
+            path = "{0}_segments/{1}/".format(self.container, path)
+            info, backups = swift.get_container(self.container, prefix=path)
+            backups = sorted(
+                map(lambda x: int(x["name"].rsplit("/", 1)[-1]), backups))
+        elif self.storage == "local":
+            path = "{0}/{1}".format(self.container, path)
+            backups = os.listdir(os.path.abspath(path))
+        else:
+            # TODO(dstepanenko): handle ssh storage type here
+            msg = ("{} storage type is not supported at the moment."
+                   " Try (local or  swift)".format(self.storage))
+            print(msg)
+            raise BaseException(msg)
         backups = list(filter(lambda x: x >= restore_from_timestamp, backups))
         if not backups:
             msg = "Cannot find backups for path: %s" % path
@@ -58,19 +71,43 @@ class RestoreOs(object):
         :return:
         """
         swift = self.client_manager.get_swift()
-        glance = self.client_manager.get_glance()
         backup = self._get_backups(path, restore_from_timestamp)
-        path = "{0}_segments/{1}/{2}".format(self.container, path, backup)
-
-        stream = swift.get_object(self.container, "%s/%s" % (path, backup),
-                                  resp_chunk_size=10000000)
-        length = int(stream[0]["x-object-meta-length"])
-        LOG.info("Creation glance image")
-        image = glance.images.create(
-            container_format="bare", disk_format="raw")
-        glance.images.upload(image.id,
-                             utils.ReSizeStream(stream[1], length, 1))
-        return stream[0], image
+        if self.storage == 'swift':
+            path = "{0}_segments/{1}/{2}".format(self.container, path, backup)
+            stream = swift.get_object(self.container,
+                                      "{}/{}".format(path, backup),
+                                      resp_chunk_size=10000000)
+            length = int(stream[0]["x-object-meta-length"])
+            data = utils.ReSizeStream(stream[1], length, 1)
+            info = stream[0]
+            image = self.client_manager.create_image(
+                name="restore_{}".format(path),
+                container_format="bare",
+                disk_format="raw",
+                data=data)
+            return info, image
+        elif self.storage == 'local':
+            image_file = "{0}/{1}/{2}/{3}".format(self.container, path,
+                                                  backup, path)
+            metadata_file = "{0}/{1}/{2}/metadata".format(self.container,
+                                                          path, backup)
+            try:
+                data = open(image_file, 'rb')
+            except Exception:
+                msg = "Failed to open image file {}".format(image_file)
+                LOG.error(msg)
+                raise BaseException(msg)
+            info = json.load(file(metadata_file))
+            image = self.client_manager.create_image(
+                name="restore_{}".format(path),
+                container_format="bare",
+                disk_format="raw",
+                data=data)
+            return info, image
+        else:
+            # TODO(yangyapeng) ssh storage need to implement
+            # storage is ssh storage
+            return {}
 
     def restore_cinder(self, volume_id=None,
                        backup_id=None,
@@ -127,9 +164,23 @@ class RestoreOs(object):
         if length % gb > 0:
             size += 1
         LOG.info("Creating volume from image")
-        self.client_manager.get_cinder().volumes.create(size,
-                                                        imageRef=image.id)
-        LOG.info("Deleting temporary image")
+        cinder_client = self.client_manager.get_cinder()
+        volume = cinder_client.volumes.create(size,
+                                              imageRef=image.id,
+                                              name=info['volume_name'])
+        while volume.status != "available":
+            try:
+                LOG.info("Volume copy status: " + volume.status)
+                volume = cinder_client.volumes.get(volume.id)
+                if volume.status == "error":
+                    raise Exception("Volume copy status: error")
+                time.sleep(5)
+            except Exception as e:
+                LOG.exception(e)
+                if volume.status != "error":
+                    LOG.warn("Exception getting volume status")
+
+        LOG.info("Deleting temporary image {}".format(image.id))
         self.client_manager.get_glance().images.delete(image.id)
 
     def restore_nova(self, instance_id, restore_from_timestamp,

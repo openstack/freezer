@@ -170,13 +170,12 @@ class SwiftStorage(physical.PhysicalStorage):
 
         full_path = "{0}/{1}".format(backup_basepath, package_name)
         headers['x-object-manifest'] = full_path
-        headers['x-object-meta-length'] = str(len(stream))
 
         objname = package_name.rsplit('/', 1)[1]
         # This call sets the metadata on a file which will be used to download
         # the whole backup later. Do not remove it ! (szaher)
         self.swift().put_object(container=full_path, obj=objname, contents=u'',
-                                headers=headers)
+                                content_length=len(u''), headers=headers)
 
     def backup_blocks(self, backup):
         """

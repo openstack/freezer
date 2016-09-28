@@ -26,20 +26,32 @@ class TestRestore(commons.FreezerBaseTestCase):
 
     def test_restore_cinder_by_glance(self):
         backup_opt = commons.BackupOpt1()
-        restore.RestoreOs(backup_opt.client_manager, backup_opt.container)
+        restore.RestoreOs(backup_opt.client_manager, backup_opt.container,
+                          backup_opt.storage)
+
+    def test_restore_cinder_by_glance_from_local(self):
+        backup_opt = commons.BackupOpt1()
+        restore.RestoreOs(backup_opt.client_manager, backup_opt.container,
+                          'local')
 
     def test_restore_cinder_with_backup_id(self):
         backup_opt = commons.BackupOpt1()
         ros = restore.RestoreOs(backup_opt.client_manager,
-                                backup_opt.container)
+                                backup_opt.container, backup_opt.storage)
         ros.restore_cinder(35, 34, 33)
 
     def test_restore_cinder_without_backup_id(self):
         backup_opt = commons.BackupOpt1()
         ros = restore.RestoreOs(backup_opt.client_manager,
-                                backup_opt.container)
+                                backup_opt.container, backup_opt.storage)
         ros.restore_cinder(35, 34)
 
     def test_restore_nova(self):
         backup_opt = commons.BackupOpt1()
-        restore.RestoreOs(backup_opt.client_manager, backup_opt.container)
+        restore.RestoreOs(backup_opt.client_manager, backup_opt.container,
+                          backup_opt.storage)
+
+    def test_restore_nova_from_local(self):
+        backup_opt = commons.BackupOpt1()
+        restore.RestoreOs(backup_opt.client_manager, backup_opt.container,
+                          'local')
