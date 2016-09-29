@@ -77,7 +77,7 @@ Freezer Components
 |                   | It can be executed standalone or by the Freezer Scheduler.                                                                                     |
 |                   | The Freezer Agent provides a flexible way to execute backup, restore and other actions on a running system.                                    |
 |                   | In order to provide flexibility in terms of data integrity, speed, performance, resources usage, etc the freezer agent offers a                |
-|                   | wide range of options to execute optimized backup according the available resources as:                                                        |
+|                   | wide range of options to execute optimized backup according to the available resources as:                                                        |
 |                   |                                                                                                                                                |
 |                   |   - Segments size (the amount of memory used)                                                                                                  |
 |                   |   - Queues size (optimize backups where I/O, bandwidth, memory or CPU is a constraint)                                                         |
@@ -572,7 +572,7 @@ The Freezer architecture is composed of the following components:
 |                   | It can be executed standalone or by the Freezer Scheduler.                                                                                     |
 |                   | The freezer-agent provides a flexible way to execute backup, restore and other actions on a running system.                                    |
 |                   | In order to provide flexibility in terms of data integrity, speed, performance, resources usage, etc the freezer agent offers a                |
-|                   | wide range of options to execute optimized backup according the available resources as:                                                        |
+|                   | wide range of options to execute optimized backup according to the available resources as:                                                        |
 |                   |                                                                                                                                                |
 |                   |   - Segments size (the amount of memory used)                                                                                                  |
 |                   |   - Queues size (optimize backups where I/O, bandwidth, memory or CPU is a constraint)                                                         |
@@ -1104,7 +1104,7 @@ optional arguments:
                         Checks in the specified container for object older
                         than the specified days. If i.e. 30 is specified, it
                         will remove the remote object older than 30 days.
-                        Default False (Disabled) 
+                        Default False (Disabled)
   --restart-always-level RESTART_ALWAYS_LEVEL
                         Restart the backup from level 0 after n days. Valid
                         only if --always-level option if set. If --always-
