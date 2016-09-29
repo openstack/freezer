@@ -320,8 +320,8 @@ class Job(object):
             LOG.error('metrics upload error: {0}'.format(e))
 
     def execute_job_action(self, job_action):
-        max_retries = job_action.get('max_retries', 1)
-        tries = max_retries
+        max_tries = (job_action.get('max_retries', 0) + 1)
+        tries = max_tries
         freezer_action = job_action.get('freezer_action', {})
         max_retries_interval = job_action.get('max_retries_interval', 60)
         action_name = freezer_action.get('action', '')
@@ -381,7 +381,7 @@ class Job(object):
                          format(self.id, action_name))
                 return Job.SUCCESS_RESULT
         LOG.error('Job {0} action {1} failed after {2} tries'
-                  .format(self.id, action_name, max_retries))
+                  .format(self.id, action_name, max_tries))
 
         return Job.FAIL_RESULT
 
