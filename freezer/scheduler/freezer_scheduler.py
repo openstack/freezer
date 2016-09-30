@@ -180,10 +180,7 @@ class FreezerScheduler(object):
             self.jobs.pop(k)
 
     def stop(self):
-        try:
-            self.scheduler.shutdown(wait=False)
-        except Exception:
-            pass
+        sys.exit()
 
     def reload(self):
         LOG.warning("reload not supported")
