@@ -15,12 +15,8 @@
 
 from oslo_config import cfg
 
+service_option = cfg.BoolOpt('freezer',
+                             default=True,
+                             help="Whether or not freezer is expected to be "
+                                  "available")
 
-service_available_group = cfg.OptGroup(name="service_available",
-                                       title="Available OpenStack Services")
-
-ServiceAvailableGroup = [
-    cfg.BoolOpt("freezer",
-                default=True,
-                help="Whether or not Freezer is expected to be available"),
-]
