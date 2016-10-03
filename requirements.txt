@@ -23,4 +23,4 @@ six>=1.9.0 # MIT
 # Not in global-requirements
 apscheduler # MIT License
 
-psutil>=1.1.1,<2.0.0 # BSD
+psutil<2.0.0,>=1.1.1 # BSD
