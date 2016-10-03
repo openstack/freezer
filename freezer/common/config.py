@@ -33,7 +33,7 @@ LOG = log.getLogger(__name__)
 home = os.path.expanduser("~")
 
 DEFAULT_LVM_SNAPSIZE = '1G'
-DEFAULT_LVM_MOUNT_BASENAME = '/var/lib/freezer'
+DEFAULT_LVM_MOUNT_BASEDIR = '/var/lib/freezer'
 DEFAULT_LVM_SNAP_BASENAME = 'freezer_backup_snap'
 DEFAULT_SSH_PORT = 22
 
@@ -152,8 +152,8 @@ _COMMON = [
                dest='lvm_dirmount',
                default=DEFAULT_PARAMS['lvm_dirmount'],
                help="Set the directory you want to mount the lvm snapshot to. "
-                    "If not provided, a unique name will be generated with "
-                    "thebasename {0} ".format(DEFAULT_LVM_MOUNT_BASENAME)),
+                    "If not provided, a unique directory will be generated in "
+                    "{0} ".format(DEFAULT_LVM_MOUNT_BASEDIR)),
     cfg.StrOpt('lvm-volgroup',
                dest='lvm_volgroup',
                default=DEFAULT_PARAMS['lvm_volgroup'],

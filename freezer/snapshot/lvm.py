@@ -109,9 +109,10 @@ def lvm_snap(backup_opt_dict):
         backup_opt_dict.lvm_srcvol = lvm_info['srcvol']
 
     if not backup_opt_dict.lvm_dirmount:
+        utils.create_dir(freezer_config.DEFAULT_LVM_MOUNT_BASEDIR)
         backup_opt_dict.lvm_dirmount = \
-            "{0}_{1}".format(freezer_config.DEFAULT_LVM_MOUNT_BASENAME,
-                             lvm_uuid)
+            "{0}/mount_{1}".format(freezer_config.DEFAULT_LVM_MOUNT_BASEDIR,
+                                   lvm_uuid)
 
     backup_opt_dict.path_to_backup = os.path.join(backup_opt_dict.lvm_dirmount,
                                                   lvm_info['snap_path'])
