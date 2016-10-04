@@ -26,7 +26,7 @@ from oslo_config import cfg
 from oslo_log import log
 
 from freezer.common import config as freezer_config
-from freezer.engine.tar import tar_engine
+from freezer.engine import manager as engine_manager
 from freezer import job
 from freezer.openstack import osclients
 from freezer.storage import local
@@ -35,7 +35,6 @@ from freezer.storage import ssh
 from freezer.storage import swift
 from freezer.utils import config
 from freezer.utils import utils
-from freezer.utils import winutils
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
@@ -69,16 +68,16 @@ def freezer_main(backup_args):
     else:
         storage = storage_from_dict(backup_args.__dict__, max_segment_size)
 
-    backup_args.engine = tar_engine.TarBackupEngine(
-        backup_args.compression,
-        backup_args.dereference_symlink,
-        backup_args.exclude,
-        storage,
-        winutils.is_windows(),
-        backup_args.max_segment_size,
-        backup_args.encrypt_pass_file,
-        backup_args.dry_run)
-
+    engine_loader = engine_manager.EngineManager()
+    backup_args.engine = engine_loader.load_engine(
+        compression=backup_args.compression,
+        symlinks=backup_args.dereference_symlink,
+        exclude=backup_args.exclude,
+        storage=storage,
+        max_segment_size=backup_args.max_segment_size,
+        encrypt_key=backup_args.encrypt_pass_file,
+        dry_run=backup_args.dry_run
+    )
     if hasattr(backup_args, 'trickle_command'):
         if "tricklecount" in os.environ:
             if int(os.environ.get("tricklecount")) > 1:

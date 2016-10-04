@@ -31,12 +31,12 @@ from oslo_config import cfg
 from oslo_config import fixture as cfg_fixture
 
 from glanceclient.common.utils import IterableWithLength
+from freezer.common import config
 from freezer.storage import swift
 from freezer.utils import utils
+from freezer.engine.tar import tar as tar_engine
 from freezer.openstack.osclients import OpenstackOpts
 from freezer.openstack.osclients import OSClientManager
-from freezer.engine.tar import tar_engine
-from freezer.common import config
 
 
 CONF = cfg.CONF
@@ -340,7 +340,7 @@ class BackupOpt1(object):
         self.storage = swift.SwiftStorage(self.client_manager,
                                           self.container,
                                           self.max_segment_size)
-        self.engine = tar_engine.TarBackupEngine(
+        self.engine = tar_engine.TarEngine(
             self.compression, self.dereference_symlink,
             self.exclude, self.storage, 1000, False)
         self.client_manager.get_glance = Mock(return_value=FakeGlanceClient())

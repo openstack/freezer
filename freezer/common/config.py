@@ -78,7 +78,7 @@ DEFAULT_PARAMS = {
     'overwrite': False, 'incremental': None,
     'consistency_check': False, 'consistency_checksum': None,
     'nova_restore_network': None, 'cindernative_backup_id': None,
-    'sync': True
+    'sync': True, 'engine_name': 'tar'
 }
 
 _COMMON = [
@@ -110,6 +110,11 @@ _COMMON = [
                help="Set the technology to back from. Options are, fs "
                     "(filesystem),mongo (MongoDB), mysql (MySQL), sqlserver "
                     "(SQL Server) Default set to fs"),
+    cfg.StrOpt('engine',
+               short='e',
+               dest='engine_name',
+               default=DEFAULT_PARAMS['engine_name'],
+               help="Engine to be used for backup/restore."),
     cfg.StrOpt('container',
                short='C',
                default=DEFAULT_PARAMS['container'],

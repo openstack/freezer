@@ -27,25 +27,25 @@ from freezer.utils import winutils
 LOG = log.getLogger(__name__)
 
 
-class TarBackupEngine(engine.BackupEngine):
+class TarEngine(engine.BackupEngine):
 
     def __init__(
-            self, compression_algo, dereference_symlink, exclude, storage,
-            is_windows, max_segment_size, encrypt_pass_file=None,
+            self, compression, symlinks, exclude, storage,
+            max_segment_size, encrypt_key=None,
             dry_run=False):
         """
             :type storage: freezer.storage.base.Storage
         :return:
         """
-        self.compression_algo = compression_algo
-        self.encrypt_pass_file = encrypt_pass_file
-        self.dereference_symlink = dereference_symlink
+        self.compression_algo = compression
+        self.encrypt_pass_file = encrypt_key
+        self.dereference_symlink = symlinks
         self.exclude = exclude
         self.storage = storage
-        self.is_windows = is_windows
+        self.is_windows = winutils.is_windows()
         self.dry_run = dry_run
         self.max_segment_size = max_segment_size
-        super(TarBackupEngine, self).__init__(storage=storage)
+        super(TarEngine, self).__init__(storage=storage)
 
     @property
     def name(self):

@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-Freezer general utils functions
 """
 
 import abc
@@ -29,7 +28,7 @@ import time
 
 from oslo_log import log
 
-from freezer.engine.exceptions import EngineException
+from freezer.exceptions import engine as engine_exceptions
 from freezer.storage import base
 from freezer.utils import streaming
 from freezer.utils import utils
@@ -178,8 +177,10 @@ class BackupEngine(object):
             got_exception = (handle_except_queue(write_except_queue) or
                              got_exception)
 
-            if (got_exception):
-                raise EngineException("Engine error. Failed to backup.")
+            if got_exception:
+                raise engine_exceptions.EngineException(
+                    "Engine error. Failed to backup."
+                )
 
             with open(freezer_meta, mode='wb') as b_file:
                 b_file.write(json.dumps(self.metadata()))
@@ -288,7 +289,9 @@ class BackupEngine(object):
                              got_exception)
 
             if tar_stream.exitcode or got_exception:
-                raise EngineException("Engine error. Failed to restore.")
+                raise engine_exceptions.EngineException(
+                    "Engine error. Failed to restore."
+                )
 
         LOG.info(
             'Restore completed successfully for backup name '
