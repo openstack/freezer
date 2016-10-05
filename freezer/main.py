@@ -18,6 +18,7 @@ Freezer main execution function
 """
 import json
 import os
+import prettytable
 import subprocess
 import sys
 
@@ -108,10 +109,7 @@ def freezer_main(backup_args):
 
     else:
 
-        run_job(backup_args, storage)
-
-    if not backup_args.quiet:
-        LOG.info("End freezer agent process successfully")
+        return run_job(backup_args, storage)
 
 
 def run_job(conf, storage):
@@ -129,13 +127,25 @@ def run_job(conf, storage):
     LOG.info('Job execution Finished, at: {0}'.format(end_time))
     LOG.info('Job time Elapsed: {0}'.format(end_time - start_time))
     LOG.info('Backup metadata received: {0}'.format(json.dumps(response)))
+    if not conf.quiet:
+        LOG.info("End freezer agent process successfully")
 
     if conf.metadata_out and response:
         if conf.metadata_out == '-':
             sys.stdout.write(json.dumps(response))
+            sys.stdout.flush()
         else:
             with open(conf.metadata_out, 'w') as outfile:
                 outfile.write(json.dumps(response))
+    elif response:
+        pp = prettytable.PrettyTable(["Property", "Value"])
+        for k, v in response.items():
+            k = k.replace("_", " ")
+            pp.add_row([k, v])
+        sys.stdout.writelines(pp.get_string())
+        sys.stdout.flush()
+    else:
+        return
 
 
 def fail(exit_code, e, quiet, do_log=True):
@@ -143,6 +153,7 @@ def fail(exit_code, e, quiet, do_log=True):
     msg = 'Critical Error: {0}\n'.format(e)
     if not quiet:
         sys.stderr.write(msg)
+        sys.stderr.flush()
     if do_log:
         LOG.critical(msg)
     return exit_code

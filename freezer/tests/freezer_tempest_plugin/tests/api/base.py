@@ -160,7 +160,6 @@ class BaseFreezerTest(tempest.test.BaseTestCase):
 
         return os.environ
 
-
     def run_subprocess(self, sub_process_args, fail_message):
 
         proc = subprocess.Popen(sub_process_args,
@@ -173,10 +172,6 @@ class BaseFreezerTest(tempest.test.BaseTestCase):
         self.assertEqual(0, proc.returncode,
                          fail_message + " Output: {0}. "
                                         "Error: {1}".format(out, err))
-
-        self.assertEqual('', out,
-                       fail_message + " Output: {0}. "
-                                      "Error: {1}".format(out, err))
 
         self.assertEqual('', err,
                          fail_message + " Output: {0}. "
