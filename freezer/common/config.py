@@ -77,7 +77,8 @@ DEFAULT_PARAMS = {
     'ssh_port': DEFAULT_SSH_PORT, 'compression': 'gzip',
     'overwrite': False, 'incremental': None,
     'consistency_check': False, 'consistency_checksum': None,
-    'nova_restore_network': None, 'cindernative_backup_id': None
+    'nova_restore_network': None, 'cindernative_backup_id': None,
+    'sync': True
 }
 
 _COMMON = [
@@ -123,6 +124,13 @@ _COMMON = [
                     "backup. When used, the lvm parameters will be guessed "
                     "and/or the  default values will be used, on windows it "
                     "will invoke  vssadmin"),
+    cfg.BoolOpt('sync',
+                dest='sync',
+                default=DEFAULT_PARAMS['sync'],
+                help="Flush file system buffers. Force changed blocks to disk,"
+                     " update the super block. Default is {0}".format(
+                    DEFAULT_PARAMS['sync']
+                )),
     cfg.StrOpt('lvm-srcvol',
                dest='lvm_srcvol',
                default=DEFAULT_PARAMS['lvm_srcvol'],
