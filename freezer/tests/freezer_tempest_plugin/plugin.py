@@ -16,7 +16,6 @@
 
 import os
 
-from tempest import config
 from tempest.test_discover import plugins
 
 from freezer.tests.freezer_tempest_plugin import config as freezer_config
@@ -30,9 +29,8 @@ class FreezerTempestPlugin(plugins.TempestPlugin):
         return full_test_dir, base_path
 
     def register_opts(self, conf):
-        config.register_opt_group(
-            conf, freezer_config.service_available_group,
-            freezer_config.ServiceAvailableGroup)
+        conf.register_opt(freezer_config.service_option,
+                          group='service_available')
 
     def get_opt_lists(self):
-        pass
+        return [('service_available', [freezer_config.service_option])]
