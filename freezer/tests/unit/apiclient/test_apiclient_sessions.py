@@ -182,9 +182,9 @@ class TestSessionManager(unittest.TestCase):
 
         args = mock_requests.post.call_args[0]
         kwargs = mock_requests.post.call_args[1]
-        self.assertEquals(endpoint, args[0])
-        self.assertEquals(data, json.loads(kwargs['data']))
-        self.assertEquals(self.headers, kwargs['headers'])
+        self.assertEqual(endpoint, args[0])
+        self.assertEqual(data, json.loads(kwargs['data']))
+        self.assertEqual(self.headers, kwargs['headers'])
 
     @patch('freezer.apiclient.sessions.requests')
     def test_start_session_raise_ApiClientException_when_api_return_error_code(self, mock_requests):
@@ -209,9 +209,9 @@ class TestSessionManager(unittest.TestCase):
 
         args = mock_requests.post.call_args[0]
         kwargs = mock_requests.post.call_args[1]
-        self.assertEquals(endpoint, args[0])
-        self.assertEquals(data, json.loads(kwargs['data']))
-        self.assertEquals(self.headers, kwargs['headers'])
+        self.assertEqual(endpoint, args[0])
+        self.assertEqual(data, json.loads(kwargs['data']))
+        self.assertEqual(self.headers, kwargs['headers'])
 
     @patch('freezer.apiclient.sessions.requests')
     def test_end_session_raise_ApiClientException_when_api_return_error_code(self, mock_requests):

@@ -192,7 +192,7 @@ class Test_lvm_snap(unittest.TestCase):
     #     expected_result = {'volgroup': 'vg_test',
     #                        'snap_path': 'some-snap-path',
     #                        'srcvol': 'lvm_device'}
-    #     self.assertEquals(res, expected_result)
+    #     self.assertEqual(res, expected_result)
 
     # @patch('freezer.snapshot.lvm.subprocess.Popen')
     # @patch('freezer.snapshot.lvm.lvm_guess')
@@ -213,7 +213,7 @@ class Test_lvm_snap(unittest.TestCase):
     #     expected_result = {'volgroup': 'vg_test',
     #                        'snap_path': 'some-snap-path',
     #                        'srcvol': 'lvm_device'}
-    #     self.assertEquals(res, expected_result)
+    #     self.assertEqual(res, expected_result)
     #
     # @patch('freezer.snapshot.lvm.subprocess.Popen')
     # @patch('freezer.snapshot.lvm.lvm_guess')
@@ -242,7 +242,7 @@ class Test_lvm_guess(unittest.TestCase):
         res = lvm.lvm_guess(mount_point_path, mount_points, source)
 
         expected_result = (None, None, None)
-        self.assertEquals(res, expected_result)
+        self.assertEqual(res, expected_result)
 
     def test_unsing_proc_mounts(self):
         mount_points = ['rootfs / rootfs rw 0 0\n', 'sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0\n', 'proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0\n', 'udev /dev devtmpfs rw,relatime,size=2010616k,nr_inodes=502654,mode=755 0 0\n', 'devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0\n', 'tmpfs /run tmpfs rw,nosuid,noexec,relatime,size=404836k,mode=755 0 0\n', '/dev/mapper/fabuntu--vg-root / ext4 rw,relatime,errors=remount-ro,data=ordered 0 0\n', 'none /sys/fs/cgroup tmpfs rw,relatime,size=4k,mode=755 0 0\n', 'none /sys/fs/fuse/connections fusectl rw,relatime 0 0\n', 'none /sys/kernel/debug debugfs rw,relatime 0 0\n', 'none /sys/kernel/security securityfs rw,relatime 0 0\n', 'cgroup /sys/fs/cgroup/cpuset cgroup rw,relatime,cpuset 0 0\n', 'cgroup /sys/fs/cgroup/cpu cgroup rw,relatime,cpu 0 0\n', 'cgroup /sys/fs/cgroup/cpuacct cgroup rw,relatime,cpuacct 0 0\n', 'cgroup /sys/fs/cgroup/memory cgroup rw,relatime,memory 0 0\n', 'none /run/lock tmpfs rw,nosuid,nodev,noexec,relatime,size=5120k 0 0\n', 'none /run/shm tmpfs rw,nosuid,nodev,relatime 0 0\n', 'none /run/user tmpfs rw,nosuid,nodev,noexec,relatime,size=102400k,mode=755 0 0\n', 'cgroup /sys/fs/cgroup/devices cgroup rw,relatime,devices 0 0\n', 'none /sys/fs/pstore pstore rw,relatime 0 0\n', 'cgroup /sys/fs/cgroup/freezer cgroup rw,relatime,freezer 0 0\n', 'cgroup /sys/fs/cgroup/blkio cgroup rw,relatime,blkio 0 0\n', 'cgroup /sys/fs/cgroup/perf_event cgroup rw,relatime,perf_event 0 0\n', 'cgroup /sys/fs/cgroup/hugetlb cgroup rw,relatime,hugetlb 0 0\n', '/dev/sda1 /boot ext2 rw,relatime 0 0\n', 'systemd /sys/fs/cgroup/systemd cgroup rw,nosuid,nodev,noexec,relatime,name=systemd 0 0\n', '/dev/mapper/vg_prova-lv_prova_vol1 /home/pippo ext4 rw,relatime,data=ordered 0 0\n']
@@ -252,7 +252,7 @@ class Test_lvm_guess(unittest.TestCase):
         res = lvm.lvm_guess(mount_point_path, mount_points, source)
 
         expected_result = ('vg_prova', 'lv_prova_vol1', '/dev/vg_prova/lv_prova_vol1')
-        self.assertEquals(res, expected_result)
+        self.assertEqual(res, expected_result)
 
     def test_unsing_mount(self):
         mount_points = ['/dev/mapper/fabuntu--vg-root on / type ext4 (rw,errors=remount-ro)',
@@ -288,7 +288,7 @@ class Test_lvm_guess(unittest.TestCase):
         res = lvm.lvm_guess(mount_point_path, mount_points, source)
 
         expected_result = ('vg_prova', 'lv_prova_vol1', '/dev/vg_prova/lv_prova_vol1')
-        self.assertEquals(res, expected_result)
+        self.assertEqual(res, expected_result)
 
 
 class Test_validate_lvm_params(unittest.TestCase):

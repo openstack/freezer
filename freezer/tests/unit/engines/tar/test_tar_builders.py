@@ -26,7 +26,7 @@ class TestTarCommandBuilder(unittest.TestCase):
             .TarCommandBuilder(".", "gzip", False, "gnutar")
 
     def test_build(self):
-        self.assertEquals(
+        self.assertEqual(
             self.builder.build(),
             "gnutar --create -z --warning=none --no-check-device "
             "--one-file-system --preserve-permissions "
@@ -34,7 +34,7 @@ class TestTarCommandBuilder(unittest.TestCase):
 
     def test_build_listed(self):
         self.builder.set_listed_incremental("listed-file.tar")
-        self.assertEquals(
+        self.assertEqual(
             self.builder.build(),
             "gnutar --create -z --warning=none --no-check-device "
             "--one-file-system --preserve-permissions --same-owner --seek "
@@ -45,7 +45,7 @@ class TestTarCommandBuilder(unittest.TestCase):
         self.builder.set_encryption("encrypt_pass_file", "openssl")
         self.builder.set_dereference("hard")
         self.builder.set_exclude("excluded_files")
-        self.assertEquals(
+        self.assertEqual(
             self.builder.build(),
             "gnutar --create -z --warning=none --no-check-device "
             "--one-file-system --preserve-permissions --same-owner "
@@ -61,7 +61,7 @@ class TestTarCommandBuilder(unittest.TestCase):
         self.builder.set_encryption("encrypt_pass_file", "openssl")
         self.builder.set_dereference("hard")
         self.builder.set_exclude("excluded_files")
-        self.assertEquals(
+        self.assertEqual(
             self.builder.build(),
             'gnutar -c -z --incremental --unlink-first --ignore-zeros '
             '--hard-dereference --listed-incremental=listed-file.tar '
@@ -75,20 +75,20 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
             "restore_path", "gzip", False, "gnutar")
 
     def test(self):
-        self.assertEquals(
+        self.assertEqual(
             self.builder.build(),
             "gnutar -z --incremental --extract --unlink-first --ignore-zeros "
             "--warning=none --directory restore_path")
 
     def test_dry_run(self):
         self.builder.set_dry_run()
-        self.assertEquals(
+        self.assertEqual(
             self.builder.build(),
             "gnutar -z --incremental --list --ignore-zeros --warning=none")
 
     def test_all_args(self):
         self.builder.set_encryption("encrypt_pass_file", "openssl")
-        self.assertEquals(
+        self.assertEqual(
             self.builder.build(),
             "openssl enc -d -aes-256-cfb -pass file:encrypt_pass_file | gnutar "
             "-z --incremental --extract --unlink-first --ignore-zeros"
@@ -98,7 +98,7 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
         self.builder = tar_builders.TarCommandRestoreBuilder(
             "restore_path", "gzip", True, "gnutar")
         self.builder.set_encryption("encrypt_pass_file", "openssl")
-        self.assertEquals(
+        self.assertEqual(
             self.builder.build(),
             'openssl enc -d -aes-256-cfb -pass file:encrypt_pass_file '
             '| gnutar -x -z --incremental --unlink-first --ignore-zeros')
