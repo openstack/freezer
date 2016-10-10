@@ -17,6 +17,7 @@ limitations under the License.
 
 import json
 import logging
+import os
 import requests.exceptions
 import time
 
@@ -102,7 +103,8 @@ class SwiftStorage(base.Storage):
                    u'{0}/{1}'.format(self.segments, backup)}
         logging.info('[*] Uploading Swift Manifest: {0}'.format(backup))
         self.swift().put_object(container=self.container, obj=str(backup),
-                                contents=u'', headers=headers)
+                                contents=u'', headers=headers,
+                                content_length=len(u''))
         logging.info('[*] Manifest successfully uploaded!')
 
     def upload_meta_file(self, backup, meta_file):
@@ -114,9 +116,11 @@ class SwiftStorage(base.Storage):
         # Upload tar incremental meta data file and remove it
         logging.info('[*] Uploading tar meta data file: {0}'.format(
             backup.tar()))
+
+        size = os.path.getsize(meta_file)
         with open(meta_file, 'r') as meta_fd:
             self.swift().put_object(
-                self.container, backup.tar(), meta_fd)
+                self.container, backup.tar(), meta_fd, content_length=size)
 
     def prepare(self):
         """
