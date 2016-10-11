@@ -348,6 +348,7 @@ Freezer can use:
   --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa
   --ssh-host 8.8.8.8
 
+**Note** ssh keys with passphrase are not supported at the moment.
 Restore
 -------
 
@@ -400,9 +401,9 @@ List remote objects in container::
     $ sudo freezerc --action info --container freezer_testcontainer -l
 
 
-Remove backups older then 1 day::
+Remove backups older than a date::
 
-    $ freezerc --action admin --container freezer_dev-test --remove-older-then 1 --backup-name dev-test-01
+    $ freezer-agent --action admin --container freezer_dev-test --remove-before-date 2016-07-11T00:00:00 --backup-name dev-test-01
 
 
 Cinder restore currently creates a volume with the contents of the saved one, but
@@ -444,8 +445,9 @@ Freezer architectural components are the following:
 Freezer uses GNU Tar under the hood to execute incremental backup and
 restore. When a key is provided, it uses OpenSSL to encrypt data.
 (AES-256-CFB)
-=============
-Freezer architecture is composed by the following components:
+
+Freezer components.
+-------------------
 
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Component         | Description                                                                                                                                    |
@@ -987,3 +989,92 @@ optional arguments:
                         Remote username for ssh storage only
   --ssh-host SSH_HOST   Remote host for ssh storage only
   --ssh-port SSH_PORT   Remote port for ssh storage only (default 22)
+=======
+
+Scheduler Options
+-----------------
+
+To get an updated sample of freezer-scheduler configuration you the following command::
+
+    oslo-config-generator --config-file config-generator/scheduler.conf
+
+you will find the update sample file in etc/scheduler.conf.sample
+
+Agent Options
+-------------
+
+To list options available in freezer-agent use the following command::
+
+    oslo-config-generator --namespace freezer --namespace oslo.log
+
+this will print all options to the screen you direct the output to a file if you want::
+
+    oslo-config-generator --namespace freezer --namespace oslo.log --output-file etc/agent.conf.sample
+
+
+Bandwidth limitation (Trickle)
+------------------------------
+
+Trickle for bandwidth limiting ( How it works ):
+We have 3 cases to handle
+1- User used --upload-limit or --download-limit from the cli
+We need to remove these limits from the cli arguments and then run trickle
+using subprocess
+
+EX::
+
+    # freezer-agent --action backup -F /etc/ -C freezer --upload-limit = 1k
+
+this will be translated to::
+
+    # trickle -u 1024 -d -1 freezer-agent --action backup -F /etc/ -C freezer
+
+2- User used config files to execute an action
+
+We need to create a new config file without the limits So we will get the all
+the arguments provided and remove limits then run trickle using subprocess
+
+EX: We have a config file contains::
+
+    [default]
+    action = backup
+    storage = ssh
+    ssh_host = 127.0.0.1
+    ssh_username = saad
+    ssh_key = /home/saad/.ssh/saad
+    container = /home/saad/backups_freezers
+    backup_name = freezer_jobs
+    path_to_backup = /etc
+    upload_limit=2k
+    download_limit=1k
+
+and we are going to execute this job as follow::
+
+    freezer-agent --config /home/user/job1.ini
+
+this will be translated to::
+
+    trickle -u 2048 -d 1024 freezer-agent --config /tmp/freezer_job_x21aj29
+
+The new config file has the following arguments::
+
+    [default]
+    action = backup
+    storage = ssh
+    ssh_host = 127.0.0.1
+    ssh_username = saad
+    ssh_key = /home/saad/.ssh/saad
+    container = /home/saad/backups_freezers
+    backup_name = freezer_jobs
+    path_to_backup = /etc
+
+3- Hybrid using config file and cli options
+we will use a mix of both procedures:
+- remove limits (cli or config )
+- reproduce the same command again with trickle
+EX::
+
+ $ freezer-agent --config /home/user/job2.ini --upload-limit 1k
+
+The Freezer logo is released under the licence Attribution 3.0 Unported (CC BY3.0).
+

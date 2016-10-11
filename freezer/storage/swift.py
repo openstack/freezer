@@ -174,11 +174,11 @@ class SwiftStorage(base.Storage):
         for i in range(backup.latest_update.level, -1, -1):
             if i in backup.increments:
                 # remove segment
-                self.remove(self.segments, backup.increments[i])
+                self.remove(self.segments, backup.increments[i].__repr__())
                 # remove tar
                 self.remove(self.container, backup.increments[i].tar())
                 # remove manifest
-                self.remove(self.container, backup.increments[i])
+                self.remove(self.container, backup.increments[i].__repr__())
 
     def add_stream(self, stream, package_name, headers=None):
         i = 0

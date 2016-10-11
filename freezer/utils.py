@@ -24,6 +24,7 @@ import re
 import subprocess
 import sys
 import time
+import traceback
 
 from distutils import spawn as distspawn
 from functools import wraps
@@ -285,9 +286,12 @@ def create_subprocess(cmd):
 
 
 def date_to_timestamp(date):
-    fmt = '%Y-%m-%dT%H:%M:%S'
-    opt_backup_date = datetime.datetime.strptime(date, fmt)
-    return int(time.mktime(opt_backup_date.timetuple()))
+    try:
+        fmt = '%Y-%m-%dT%H:%M:%S'
+        opt_backup_date = datetime.datetime.strptime(date, fmt)
+        return int(time.mktime(opt_backup_date.timetuple()))
+    except Exception:
+        raise Exception('Invalid ISO date format')
 
 
 class Bunch:
@@ -525,3 +529,56 @@ class Namespace(dict):
     @staticmethod
     def delattr(ns, name):
         return object.__delattr__(ns, name)
+
+
+def set_max_process_priority():
+    """ Set freezer in max priority on the os """
+    # children processes inherit niceness from father
+    try:
+        logging.warning(
+            'Setting freezer execution with high CPU and I/O priority')
+        PID = os.getpid()
+        # Set cpu priority
+        os.nice(-19)
+        # Set I/O Priority to Real Time class with level 0
+        subprocess.call([
+            u'{0}'.format(find_executable("ionice")),
+            u'-c', u'1', u'-n', u'0', u'-t',
+            u'-p', u'{0}'.format(PID)
+        ])
+    except Exception as priority_error:
+        logging.warning('Priority: {0}'.format(priority_error))
+
+
+def abort_subprocess(signum, frame):
+    try:
+        logging.warning('Process {} has been aborted by the scheduler'.format(
+            os.getpid()))
+        raise Exception('Aborting process')
+    except Exception:
+        logging.error(traceback.print_exc())
+    finally:
+        sys.exit(33)
+
+
+def days_to_seconds(n):
+    """
+    86400 seconds in a day
+    :param n: number of days
+    :return: int
+    """
+    return n * 86400
+
+
+def is_iso_date(date):
+    iso_f = re.compile('^(\d{4})-0?(\d+)-0?(\d+)[T ]0?(\d+):0?(\d+):0?(\d+)$')
+    return re.match(iso_f, date)
+
+
+def is_timestamp(ts):
+    try:
+        ts = int(ts)
+        return True
+    except ValueError:
+        raise Exception('Invalid timestamp')
+

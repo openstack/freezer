@@ -293,6 +293,7 @@ class BackupOpt1:
         self.max_level = '0'
         self.hostname_backup_name = "hostname_backup_name"
         self.remove_older_than = '0'
+        self.remove_before_date = '2016-07-12T11:13:40'
         self.max_segment_size = '0'
         self.time_stamp = 123456789
         self.container = 'test-container'

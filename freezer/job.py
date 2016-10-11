@@ -14,17 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-
-import datetime
+import logging
 import sys
-import time
 
 from freezer import backup
 from freezer import exec_cmd
 from freezer import restore
 from freezer import utils
-
-import logging
 
 
 class Job:
@@ -146,16 +142,23 @@ class RestoreJob(Job):
 class AdminJob(Job):
     @Job.executemethod
     def execute(self):
-        if self.conf.remove_from_date:
-            timestamp = utils.date_to_timestamp(self.conf.remove_from_date)
-        else:
-            timestamp = datetime.datetime.now() - \
-                datetime.timedelta(days=self.conf.remove_older_than)
-            timestamp = int(time.mktime(timestamp.timetuple()))
+        if self.conf.remove_before_date:
 
-        self.storage.remove_older_than(timestamp,
-                                       self.conf.hostname_backup_name)
-        return {}
+            if utils.is_iso_date(self.conf.remove_before_date):
+                timestamp = utils.date_to_timestamp(
+                    self.conf.remove_before_date)
+            elif utils.is_timestamp(self.conf.remove_before_date):
+                timestamp = self.conf.remove_before_date
+            else:
+                raise Exception('Expecting ISO date or valid timestamp.')
+
+            self.storage.remove_before_date(timestamp,
+                                            self.conf.hostname_backup_name)
+            return {}
+        elif self.conf.remove_older_than:
+            self.storage.remove_older_than(self.conf.remove_older_than,
+                                           self.conf.hostname_backup_name)
+            return {}
 
 
 class ExecJob(Job):
