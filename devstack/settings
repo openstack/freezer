@@ -18,6 +18,7 @@
 # Set up default directories
 FREEZER_DIR=$DEST/freezer
 FREEZER_CONF_DIR=${FREEZER_CONF_DIR:-/etc/freezer}
+FREEZER_JOBS_DIR=${FREEZER_JOBS_DIR:-/etc/freezer/scheduler/conf.d}
 FREEZER_CONF_FILE=$FREEZER_CONF_DIR/scheduler.conf
 FREEZER_LOG_DIR=$DEST/logs
 
