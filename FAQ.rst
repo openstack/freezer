@@ -2,24 +2,24 @@
 FAQ
 ===
 
-1)  **What is freezer**?
+1)  **What is freezer?**
     Is a tool to automate data backup and restore
-    process using OpenStack Swift and/or other media storage
+    process using OpenStack Swift and/or other media storage.
 
 2)  **Does freezer support incremental backup?**
-    Yes. Incremental backup are done using GNU tar incremental features
+    Yes. Incremental backup are done using GNU tar incremental features.
 
 3)  **Does freezer check the file contents to establish if a file was modified?**
     Freezer check for changes at mtime and ctime in
     every file inode to evaluate if a file changed or not.
 
-4)  **Why GNU tar rather then rsync?**
+4)  **Why GNU tar rather than rsync?**
     Both approaches are good. Rsync check
     the file content, while tar check the file inode. In our
     environment, we need to backup directories with size > 400GB and
     hundreds of thousands of files. Rsync approach is effective but slow.
-    Tar is fast as it needs to check only the file inodes, rather then
-    the full file content. Rsync backup type will be added pretty soon
+    Tar is fast as it needs to check only the file inodes, rather than
+    the full file content. Rsync backup type will be added pretty soon.
 
 5)  *Does freezer support encrypted backup?*
     Yes. Freezer encrypt data using OpenSSL (AES-256-CFB).
@@ -35,7 +35,7 @@ FAQ
 
 8)  **What Application backup does freezer support currently?**
     MongoDB, MySQL to have a higher level of data consistency, while
-    any appplication is supported for crash consistent data integrity.
+    any application is supported for crash consistent data integrity.
 
 9)  **How does the MongoDB backup happens?**
     Freezer required journal enabled in Mongo and lvm volume to execute backup.
@@ -59,7 +59,7 @@ FAQ
     c. Directory in the local host (i.e. NFS/CIFS mounted volumes)
 
 14) **Does freezer has any Web UI or API?**
-    Yes. Freezer has REST API and a Web UI integrated with Horizon
+    Yes. Freezer has REST API and a Web UI integrated with Horizon.
 
 15) **Does Freezer detect removed files between incremental executions?**
     Yes.
@@ -68,20 +68,22 @@ FAQ
     We hope so, as soon as we can.
 
 17) **Does freezer support Windows?**
-    Yes. The freezer agent and scheduler can be executed on Windows
+    Yes. The freezer agent and scheduler can be executed on Windows.
 
 18) **What is being used on Windows to execute file system snapshots?**
-    Curretnly VSS are used to support point in time snapshots
+    Currently VSS are used to support point in time snapshots.
 
-19) **What applications are supported in Windows for  consisten backups?**
-    SQL Server (--mode sqlserver)
+19) **What applications are supported in Windows for  consistent backups?**
+    SQL Server (--mode sqlserver).
 
 20) **Are there examples of OpenStack projects that use Freezer that I can look at?**
-    Not currently
+    Not currently.
 
 21) **My service has it's own task scheduler. What is the recommended way to schedule Freezer runs?**
-    If you want to use the freezer-api and freezer-web-ui in horizon, you need to use the freezer-scheduler.
-    If you do not need the api and web ui, you can just execute the freezer-agent from crontab or any other scheduler.
+    If you want to use the freezer-api and freezer-web-ui in horizon, you need to use the
+    freezer-scheduler.
+    If you do not need the api and web ui, you can just execute the freezer-agent from crontab or
+    any other scheduler.
 
 22) **What are the benefits of using the API and Web UI?**
     - You can start backup and restore jobs on any node from the Web UI
@@ -95,7 +97,8 @@ FAQ
     dependencies.
 
 24) **What are the options for backing up MySQL/Percona?**
-    a. Make use of filesystem snapshots (LVM) using the "--mode mysql" option.  It's supported natively by Freezer and suitable for large databases.
+    a. Make use of filesystem snapshots (LVM) using the "--mode mysql" option.  It's supported
+    natively by Freezer and suitable for large databases.
         This instructs freezer to execute the following steps:
         - flush tables and lock the DB
         - take an LVM snapshot
