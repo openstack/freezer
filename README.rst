@@ -454,7 +454,7 @@ Restore
 
 As a general rule, when you execute a restore, the application that
 writes or reads data should be stopped so that during the restore
-operation, the restored data is not inadvertantly read or written by the
+operation, the restored data is not inadvertently read or written by the
 application.
 
 There are 3 main options that need to be set for data restore
