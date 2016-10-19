@@ -235,8 +235,14 @@ class Job(object):
     def schedule_cron_fields(self):
         cron_fields = ['year', 'month', 'day', 'week', 'day_of_week',
                        'hour', 'minute', 'second']
+        cron_schedule = {}
+        for cron in self.job_doc['job_schedule'].keys():
+            if cron.startswith('schedule_'):
+                cron_key = cron.split('_', 1)[1]
+                cron_schedule.update({
+                    cron_key: self.job_doc['job_schedule'][cron]})
         return {key: value
-                for key, value in self.job_doc['job_schedule'].items()
+                for key, value in cron_schedule.items()
                 if key in cron_fields}
 
     @property
@@ -284,6 +290,7 @@ class Job(object):
                 kwargs.update({unit: int(val)})
             return kwargs
         else:
+            kwargs = {'trigger': 'cron'}
             cron_fields = self.schedule_cron_fields
             if cron_fields:
                 kwargs = {'trigger': 'cron'}.update(kwargs_date)
