@@ -130,6 +130,8 @@ class Job(object):
     SUCCESS_RESULT = 'success'
     ABORTED_RESULT = 'aborted'
 
+    TIME_NULL = -1
+
     @staticmethod
     def create(scheduler, executable, job_doc):
         job = Job(scheduler, executable, job_doc)
@@ -394,14 +396,31 @@ class Job(object):
                 return True
         return False
 
+    def update_job_schedule_doc(self, **kwargs):
+        """
+        Updates the job_schedule section of the job doc with the
+        provided keyword args. No checks about accepted key/values
+        are being made here since they may vary in the future.
+
+        :param kwargs: keyword args to add
+        :return: None
+        """
+        job_schedule = self.job_doc['job_schedule']
+        job_schedule.update(kwargs)
+
     def execute(self):
         result = Job.SUCCESS_RESULT
         with self.scheduler.execution_lock:
             with self.scheduler.lock:
                 LOG.info('job {0} running'.format(self.id))
                 self.state = RunningState
-                self.job_doc_status = Job.RUNNING_STATUS
-                self.scheduler.update_job_status(self.id, self.job_doc_status)
+                self.update_job_schedule_doc(status=Job.RUNNING_STATUS,
+                                             result="",
+                                             time_started=int(time.time()),
+                                             time_ended=Job.TIME_NULL)
+                self.scheduler.update_job_schedule(
+                    self.id,
+                    self.job_doc['job_schedule'])
 
             self.start_session()
             # if the job contains exec action and the scheduler passes the
@@ -433,6 +452,7 @@ class Job(object):
             self.finish()
 
     def finish(self):
+        self.update_job_schedule_doc(time_ended=int(time.time()))
         self.end_session(self.result)
         with self.scheduler.lock:
             if self.event == Job.REMOVE_EVENT:
@@ -453,7 +473,9 @@ class Job(object):
             else:
                 self.job_doc_status = Job.SCHEDULED_STATUS
                 self.state = ScheduledState
-                self.scheduler.update_job_status(self.id, self.job_doc_status)
+                self.scheduler.update_job_schedule(
+                    self.id,
+                    self.job_doc['job_schedule'])
 
     def start_session(self):
         if not self.session_id:

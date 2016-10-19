@@ -132,6 +132,18 @@ class FreezerScheduler(object):
             except Exception as e:
                 LOG.error("Job update error: {0}".format(e))
 
+    def update_job_schedule(self, job_id, job_schedule):
+        """
+        Pushes to the API the updates the job_schedule information
+        of the job_doc
+
+        :param job_id: id of the job to modify
+        :param job_schedule: dict containing the job_scheduler information
+        :return: None
+        """
+        doc = {'job_schedule': job_schedule}
+        self.update_job(job_id, doc)
+
     def update_job_status(self, job_id, status):
         doc = {'job_schedule': {'status': status}}
         self.update_job(job_id, doc)
