@@ -11,6 +11,7 @@ sphinx!=1.3b1,<1.4,>=1.2.1 # BSD
 oslosphinx>=4.7.0 # Apache-2.0
 testrepository>=0.0.18 # Apache-2.0/BSD
 testtools>=1.4.0 # MIT
+reno>=1.8.0  # Apache2
 
 # Tempest Plugin
 tempest-lib>=0.14.0 # Apache-2.0
