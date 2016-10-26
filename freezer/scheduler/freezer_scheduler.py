@@ -223,7 +223,7 @@ def main():
     if CONF.action not in ['start', 'stop', 'status', 'reload']:
         sys.stderr.write("Using freezer-scheduler as a command line client is "
                          "deprecated. Please use the freezer command line tool"
-                         " from python-freezerclient.")
+                         " from python-freezerclient.\n")
 
     apiclient = None
     insecure = False
