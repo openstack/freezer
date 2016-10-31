@@ -27,7 +27,7 @@ class OpenstackOptions:
     def __init__(self, user_name, tenant_name, project_name, auth_url,
                  password, identity_api_version, tenant_id=None,
                  region_name=None, endpoint_type=None, cert=None,
-                 insecure=False, verify=True):
+                 insecure=False, verify=True, project_domain_name= None, user_domain_name = None):
         self.user_name = user_name
         self.tenant_name = tenant_name
         self.auth_url = auth_url
@@ -44,7 +44,8 @@ class OpenstackOptions:
            (self.tenant_name or self.project_name)):
             raise Exception("Please set up in your env:"
                             "OS_USERNAME, OS_TENANT_NAME/OS_PROJECT_NAME,"
-                            " OS_AUTH_URL, OS_PASSWORD")
+                            " OS_AUTH_URL, OS_PASSWORD"
+                            "OS_PROJECT_DOMAIN_NAME, OS_USER_DOMAIN_NAME")
 
     @property
     def os_options(self):
@@ -58,7 +59,9 @@ class OpenstackOptions:
                 'project_name': self.project_name,
                 'identity_api_version': self.identity_api_version,
                 'region_name': self.region_name,
-                'endpoint_type': self.endpoint_type}
+                'endpoint_type': self.endpoint_type,
+                'project_domain_name': self.project_domain_name,
+                'user_domain_name': self.user_domain_name}
 
     @staticmethod
     def create_from_env():
@@ -77,5 +80,7 @@ class OpenstackOptions:
             tenant_id=src_dict.get('OS_TENANT_ID', None),
             region_name=src_dict.get('OS_REGION_NAME', None),
             endpoint_type=src_dict.get('OS_ENDPOINT_TYPE', None),
-            cert=src_dict.get('OS_CERT', None)
+            cert=src_dict.get('OS_CERT', None),
+            project_domain_name=src_dict.get('OS_PROJECT_DOMAIN_NAME', None),
+            user_domain_name=src_dict.get('OS_USER_DOMAIN_NAME', None)
         )
