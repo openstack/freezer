@@ -321,6 +321,7 @@ MySQL backup requires a basic configuration file. The following is an
 example of the config::
 
     $ sudo cat /root/.freezer/db.conf
+    [default]
     host = your.mysql.host.ip
     user = backup
     password = userpassword
