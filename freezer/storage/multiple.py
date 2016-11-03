@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from oslo_log import log
 # PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
 from six.moves import queue
 
-from oslo_log import log
-
 from freezer.storage import base
-from freezer.storage.exceptions import StorageException
+from freezer.storage import exceptions
 from freezer.utils import streaming
 
 LOG = log.getLogger(__name__)
@@ -62,7 +61,8 @@ class MultipleStorage(base.Storage):
                              got_exception)
 
         if (got_exception):
-            raise StorageException("Storage error. Failed to backup.")
+            raise exceptions.StorageException(
+                "Storage error. Failed to backup.")
 
     def get_level_zero(self,
                        engine,

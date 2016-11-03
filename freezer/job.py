@@ -15,23 +15,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
+
 import abc
 import datetime
 import os
-import six
 import sys
 import time
-
-from freezer.openstack import backup
-from freezer.openstack import restore
-from freezer.snapshot import snapshot
-from freezer.utils.checksum import CheckSum
-from freezer.utils import exec_cmd
-from freezer.utils import utils
 
 from oslo_config import cfg
 from oslo_log import log
 from oslo_utils import importutils
+import six
+
+from freezer.openstack import backup
+from freezer.openstack import restore
+from freezer.snapshot import snapshot
+from freezer.utils import checksum
+from freezer.utils import exec_cmd
+from freezer.utils import utils
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
@@ -196,7 +197,7 @@ class BackupJob(Job):
                 if self.conf.consistency_check:
                     ignorelinks = (self.conf.dereference_symlink == 'none' or
                                    self.conf.dereference_symlink == 'hard')
-                    consistency_checksum = CheckSum(
+                    consistency_checksum = checksum.CheckSum(
                         filepath, ignorelinks=ignorelinks).compute()
                     LOG.info('Computed checksum for consistency {0}'.
                              format(consistency_checksum))
@@ -274,8 +275,8 @@ class RestoreJob(Job):
             try:
                 if conf.consistency_checksum:
                     backup_checksum = conf.consistency_checksum
-                    restore_checksum = CheckSum(restore_abs_path,
-                                                ignorelinks=True)
+                    restore_checksum = checksum.CheckSum(restore_abs_path,
+                                                         ignorelinks=True)
                     if restore_checksum.compare(backup_checksum):
                         LOG.info('Consistency check success.')
                     else:

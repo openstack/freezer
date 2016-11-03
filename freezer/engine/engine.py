@@ -18,15 +18,15 @@ limitations under the License.
 import abc
 import json
 import multiprocessing
-from multiprocessing.queues import SimpleQueue
+from multiprocessing import queues
 import shutil
-import six
-# PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
-from six.moves import queue
 import tempfile
 import time
 
 from oslo_log import log
+import six
+# PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
+from six.moves import queue
 
 from freezer.exceptions import engine as engine_exceptions
 from freezer.storage import base
@@ -179,8 +179,7 @@ class BackupEngine(object):
 
             if got_exception:
                 raise engine_exceptions.EngineException(
-                    "Engine error. Failed to backup."
-                )
+                    "Engine error. Failed to backup.")
 
             with open(freezer_meta, mode='wb') as b_file:
                 b_file.write(json.dumps(self.metadata()))
@@ -242,7 +241,7 @@ class BackupEngine(object):
         max_level = max(backups.keys())
 
         # Use SimpleQueue because Queue does not work on Mac OS X.
-        read_except_queue = SimpleQueue()
+        read_except_queue = queues.SimpleQueue()
 
         for level in range(0, max_level + 1):
             backup = backups[level]
@@ -259,7 +258,7 @@ class BackupEngine(object):
             # Start the tar pipe consumer process
 
             # Use SimpleQueue because Queue does not work on Mac OS X.
-            write_except_queue = SimpleQueue()
+            write_except_queue = queues.SimpleQueue()
 
             tar_stream = multiprocessing.Process(
                 target=self.restore_level,
@@ -290,8 +289,7 @@ class BackupEngine(object):
 
             if tar_stream.exitcode or got_exception:
                 raise engine_exceptions.EngineException(
-                    "Engine error. Failed to restore."
-                )
+                    "Engine error. Failed to restore.")
 
         LOG.info(
             'Restore completed successfully for backup name '

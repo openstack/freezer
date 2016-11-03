@@ -15,8 +15,8 @@
 import hashlib
 import os
 
-from six.moves import StringIO
-from six import PY2  # True if running on Python 2
+import six
+from six import moves
 
 from freezer.utils import utils
 
@@ -119,7 +119,7 @@ class CheckSum(object):
             # Need to use string-escape for Python 2 non-unicode strings. For
             # Python 2 unicode strings and all Python 3 strings, we need to use
             # unicode-escape. The effect of them is the same.
-            if PY2 and isinstance(buf, str):
+            if six.PY2 and isinstance(buf, str):
                 buf = buf.encode('string-escape')
             else:
                 buf = buf.encode('unicode-escape')
@@ -132,7 +132,7 @@ class CheckSum(object):
         """
         :return: the hash for a given string
         """
-        fd = StringIO(string)
+        fd = moves.StringIO(string)
         return self.hashfile(fd)
 
     def compute(self):
