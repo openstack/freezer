@@ -44,8 +44,8 @@ The Freezer Client provides a flexible way to execute backup, restore and other
 actions on a running system.
 
 In order to provide flexibility in terms of data integrity, speed, performance,
-resources usage, etc. the freezer agent offers a wide range of options to 
-execute optimized backup according the available resources as:
+resources usage, etc. the freezer agent offers a wide range of options to
+execute optimized backup according to the available resources as:
 
 - Segments size (the amount of memory used)
 - Queues size (optimize backups where I/O, bandwidth, memory or CPU is a constraint)
@@ -91,7 +91,7 @@ For more information to the API please refer to: freezer_api/README.rst
 
 Freezer Web UI
 --------------
-Web interface that interacts with the Freezer API to configure and change 
+Web interface that interacts with the Freezer API to configure and change
 settings. It provides most of the features from the Freezer Agent CLI, advanced
 scheduler settings such as multi-node backup synchronization, metrics,
 and reporting.
@@ -170,13 +170,13 @@ Agent Backup Without API
 
 .. image:: images/admin/freezer_agent_backup.png
    :width: 640 px
-   
+
 Freezer Scheduler with API
 --------------------------
 
 .. image:: images/admin/freezer_scheduler_api.png
    :width: 640 px
-   
+
 Freezer Job Session
 -------------------
 
@@ -202,19 +202,19 @@ User Guides
 -----------
 .. toctree::
    :maxdepth: 2
-   
+
    user/index
 
 Admin Guides
 ------------
 .. toctree::
    :maxdepth: 2
-   
+
    admin/index
-   
+
 Dev Guides
 ----------
 .. toctree::
    :maxdepth: 2
-   
+
    dev/index
