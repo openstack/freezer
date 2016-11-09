@@ -283,5 +283,4 @@ class Backup(object):
             metadata_content = f.readlines()
         LOG.info("metadata content download {0}".format(metadata_content))
         metadata_file.close()
-        utils.delete_file(metadata_file.name)
         return json.loads(metadata_content[0])

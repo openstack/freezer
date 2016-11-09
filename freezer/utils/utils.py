@@ -364,8 +364,9 @@ def delete_file(path_to_file):
     """
     try:
         os.remove(path_to_file)
-    except Exception:
-        LOG.warning("Error deleting file {0}".format(path_to_file))
+    except Exception as e:
+        LOG.warning("Error deleting file {0}:\n{1}".format(path_to_file,
+                                                           str(e)))
 
 
 def walk_path(path, exclude, ignorelinks, callback, *kargs, **kwargs):
