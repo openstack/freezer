@@ -15,17 +15,18 @@ from __future__ import print_function
 
 from distutils import spawn as distspawn
 import os
-from oslo_config import cfg
-from oslo_log import log
 import socket
 import sys
-from tempfile import NamedTemporaryFile
+import tempfile
+
+from oslo_config import cfg
+from oslo_log import log
+from oslo_utils import encodeutils
 
 from freezer import __version__ as FREEZER_VERSION
 from freezer.utils import config as freezer_config
 from freezer.utils import utils
 from freezer.utils import winutils
-from oslo_utils import encodeutils
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
@@ -596,7 +597,8 @@ def get_backup_args():
             not winutils.is_windows():
         # handle --config option with tmp config file
         if backup_args.config:
-            conf_file = NamedTemporaryFile(prefix='freezer_job_', delete=False)
+            conf_file = tempfile.NamedTemporaryFile(prefix='freezer_job_',
+                                                    delete=False)
             # remove the limits from the new file
             if 'upload_limit' in conf.default:
                 conf.default.pop('upload_limit')
