@@ -104,7 +104,8 @@ class SwiftStorage(base.Storage):
                    u'{0}/{1}'.format(self.segments, backup)}
         LOG.info('Uploading Swift Manifest: {0}'.format(backup))
         self.swift().put_object(container=self.container, obj=str(backup),
-                                contents=u'', headers=headers)
+                                contents=u'', headers=headers,
+                                content_length=len(u''))
         LOG.info('Manifest successfully uploaded!')
 
     def upload_meta_file(self, backup, meta_file):
