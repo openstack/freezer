@@ -15,6 +15,7 @@ limitations under the License.
 
 """
 
+import errno
 import os
 import stat
 
@@ -98,7 +99,13 @@ class SshStorage(fslike.FsLikeStorage):
         self.ftp.put(from_path, to_path)
 
     def listdir(self, directory):
-        return self.ftp.listdir(directory)
+        try:
+            return self.ftp.listdir(directory)
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                return list()
+            else:
+                raise
 
     def open(self, filename, mode):
         return self.ftp.open(filename, mode=mode)
