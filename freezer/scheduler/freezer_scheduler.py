@@ -31,6 +31,7 @@ from freezer.scheduler import arguments
 from freezer.scheduler import scheduler_job
 from freezer.scheduler import shell
 from freezer.scheduler import utils
+from freezer.utils import utils as freezer_utils
 from freezer.utils import winutils
 
 if winutils.is_windows():
@@ -254,6 +255,7 @@ def main():
             print('ERROR {0}'.format(e))
             return 70  # os.EX_SOFTWARE
 
+    freezer_utils.create_dir(CONF.jobs_dir)
     freezer_scheduler = FreezerScheduler(apiclient=apiclient,
                                          interval=int(CONF.interval),
                                          job_path=CONF.jobs_dir)

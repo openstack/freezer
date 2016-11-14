@@ -25,7 +25,6 @@ from oslo_config import cfg
 from oslo_log import log
 
 CONF = cfg.CONF
-_LOG = log.getLogger(__name__)
 
 if winutils.is_windows():
     DEFAULT_FREEZER_SCHEDULER_CONF_D = r'C:\.freezer\scheduler\conf.d'
@@ -51,14 +50,6 @@ def add_filter():
 def get_common_opts():
     scheduler_conf_d = os.environ.get('FREEZER_SCHEDULER_CONF_D',
                                       DEFAULT_FREEZER_SCHEDULER_CONF_D)
-    if not os.path.exists(DEFAULT_FREEZER_SCHEDULER_CONF_D):
-        try:
-            os.makedirs(DEFAULT_FREEZER_SCHEDULER_CONF_D)
-        except OSError as err:
-            _LOG.error('OS error: {0}'.format(err))
-        except IOError:
-            _LOG.error('Cannot create the directory {0}'
-                       .format(scheduler_conf_d))
 
     _COMMON = [
         cfg.StrOpt('job',
