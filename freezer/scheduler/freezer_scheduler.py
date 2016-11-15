@@ -35,11 +35,9 @@ from freezer.utils import utils as freezer_utils
 from freezer.utils import winutils
 
 if winutils.is_windows():
-    from win_daemon import Daemon
-    from win_daemon import NoDaemon
+    import win_daemon
 else:
-    from daemon import Daemon
-    from daemon import NoDaemon
+    import daemon as linux_daemon
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
@@ -263,15 +261,18 @@ def main():
     if CONF.no_daemon:
         print('Freezer Scheduler running in no-daemon mode')
         LOG.debug('Freezer Scheduler running in no-daemon mode')
-        daemon = NoDaemon(daemonizable=freezer_scheduler)
+        if winutils.is_windows():
+            daemon = win_daemon.NoDaemon(daemonizable=freezer_scheduler)
+        else:
+            daemon = linux_daemon.NoDaemon(daemonizable=freezer_scheduler)
     else:
         if winutils.is_windows():
-            daemon = Daemon(daemonizable=freezer_scheduler,
-                            interval=int(CONF.interval),
-                            job_path=CONF.jobs_dir,
-                            insecure=CONF.insecure)
+            daemon = win_daemon.Daemon(daemonizable=freezer_scheduler,
+                                       interval=int(CONF.interval),
+                                       job_path=CONF.jobs_dir,
+                                       insecure=CONF.insecure)
         else:
-            daemon = Daemon(daemonizable=freezer_scheduler)
+            daemon = linux_daemon.Daemon(daemonizable=freezer_scheduler)
 
     if CONF.action == 'start':
         daemon.start()
