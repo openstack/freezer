@@ -102,7 +102,7 @@ def freezer_main(backup_args):
             utils.delete_file(backup_args.tmp_file)
 
         if process.returncode:
-            LOG.warn("Trickle Error: {0}".format(error))
+            LOG.warning("Trickle Error: {0}".format(error))
             LOG.info("Switching to work without trickle ...")
             return run_job(backup_args, storage)
 

@@ -532,8 +532,8 @@ def get_backup_args():
         if log_file:
             CONF.set_default('log_file', log_file)
         else:
-            LOG.warn("log file cannot be created. Freezer will proceed with "
-                     "default stdout and stderr")
+            LOG.warning("log file cannot be created. Freezer will proceed with"
+                        " default stdout and stderr")
 
     backup_args = FreezerConfig(defaults)
 
@@ -648,8 +648,8 @@ def get_backup_args():
             else:
                 os.environ["tricklecount"] = str(1)
         else:
-            LOG.warn("Trickle not found. Switching to normal mode without "
-                     "limiting bandwidth")
+            LOG.warning("Trickle not found. Switching to normal mode without "
+                        "limiting bandwidth")
             if backup_args.config:
                 # remove index tmp_file from backup arguments dict
                 utils.delete_file(conf_file.name)
