@@ -142,6 +142,7 @@ def run_job(conf, storage):
             k = k.replace("_", " ")
             pp.add_row([k, v])
         sys.stdout.writelines(pp.get_string())
+        sys.stdout.write('\n')
         sys.stdout.flush()
     else:
         return
