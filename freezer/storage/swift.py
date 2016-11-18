@@ -112,7 +112,8 @@ class SwiftStorage(physical.PhysicalStorage):
         LOG.info('[*] Uploading Swift Manifest: {0}'.format(backup))
         split = backup.data_path.rsplit('/', 1)
         self.swift().put_object(container=split[0], obj=split[1],
-                                contents=u'', headers=headers)
+                                contents=u'', headers=headers,
+                                content_length=len(u''))
         LOG.info('Manifest successfully uploaded!')
 
     def prepare(self):
