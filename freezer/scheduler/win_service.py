@@ -57,8 +57,8 @@ class PySvc(win32serviceutil.ServiceFramework):
         win32event.SetEvent(self.hWaitStop)
 
     def main(self):
-        import freezer.apiclient.client
         from freezer.scheduler.freezer_scheduler import FreezerScheduler
+        from freezerclient.v1.client import Client
 
         servicemanager.LogMsg(
             servicemanager.EVENTLOG_INFORMATION_TYPE,
@@ -95,7 +95,7 @@ class PySvc(win32serviceutil.ServiceFramework):
                 'insecure': self.insecure
             }
 
-        client = freezer.apiclient.client.Client(**credentials)
+        client = Client(**credentials)
 
         scheduler = FreezerScheduler(
             apiclient=client, interval=int(os.environ['SERVICE_INTERVAL']),

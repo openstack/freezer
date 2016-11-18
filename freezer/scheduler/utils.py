@@ -17,15 +17,14 @@ limitations under the License.
 
 import json
 import os
-import psutil
 import signal
 import socket
 import uuid
 
-
+from freezerclient import exceptions
 from oslo_log import log
+import psutil
 
-import freezer.apiclient.exceptions
 
 LOG = log.getLogger(__name__)
 
@@ -39,8 +38,8 @@ def do_register(client, args=None):
             "hostname": socket.gethostname()
         }
         try:
-            client.registration.create(client_info)
-        except freezer.apiclient.exceptions.ApiClientException as e:
+            client.clients.create(client_info)
+        except exceptions.ApiClientException as e:
             if e.status_code == 409:
                 print("Client already registered")
             return 73  # os.EX_CANTCREAT

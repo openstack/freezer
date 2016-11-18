@@ -22,11 +22,11 @@ import threading
 import time
 
 from apscheduler.schedulers import background
+from freezerclient.v1 import client
 from oslo_config import cfg
 from oslo_log import log
 import six
 
-from freezer.apiclient import client
 from freezer.scheduler import arguments
 from freezer.scheduler import scheduler_job
 from freezer.scheduler import shell
@@ -229,13 +229,13 @@ def main():
                          " from python-freezerclient.\n")
 
     apiclient = None
-    insecure = False
+    verify = True
     if CONF.insecure:
-        insecure = True
+        verify = False
 
     if CONF.no_api is False:
         try:
-            apiclient = client.Client(opts=CONF, insecure=insecure)
+            apiclient = client.Client(opts=CONF, verify=verify)
             if CONF.client_id:
                 apiclient.client_id = CONF.client_id
         except Exception as e:
