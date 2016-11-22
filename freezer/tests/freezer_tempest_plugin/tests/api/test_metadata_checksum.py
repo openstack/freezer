@@ -13,13 +13,13 @@
 # under the License.
 import subprocess
 
-from freezer.tests.freezer_tempest_plugin.tests.api import base
-from freezer.tests.integration.common import Temp_Tree
 from tempest import test
+
+from freezer.tests.freezer_tempest_plugin.tests.api import base
+from freezer.tests.integration import common
 
 
 class TestFreezerMetadataChecksum(base.BaseFreezerTest):
-
     def __init__(self, *args, **kwargs):
         super(TestFreezerMetadataChecksum, self).__init__(*args, **kwargs)
 
@@ -28,7 +28,7 @@ class TestFreezerMetadataChecksum(base.BaseFreezerTest):
         super(TestFreezerMetadataChecksum, self).setUp()
 
         self.environ = super(TestFreezerMetadataChecksum, self).get_environ()
-        self.dest_tree = Temp_Tree()
+        self.dest_tree = common.Temp_Tree()
         self.backup_name = 'backup_checksum_test'
 
     def tearDown(self):

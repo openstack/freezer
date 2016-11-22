@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import unittest
+
 import mock
 
 from freezer.openstack import osclients
@@ -26,9 +27,10 @@ class TestOsClients(unittest.TestCase):
             auth_url="url/v3", password="password", identity_api_version="3",
             insecure=False, cacert='cert', user_domain_name='Default',
             project_domain_name='Default').get_opts_dicts()
-        self.client_manager = osclients.OSClientManager(auth_method=self.opts.pop('auth_method'),
-                                                        auth_url=self.opts.pop('auth_url'),
-                                                        **self.opts)
+        self.client_manager = osclients.OSClientManager(
+            auth_method=self.opts.pop('auth_method'),
+            auth_url=self.opts.pop('auth_url'),
+            **self.opts)
 
     def test_init(self):
         self.client_manager.get_cinder()

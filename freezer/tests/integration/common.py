@@ -15,21 +15,21 @@
 
 import distutils.spawn
 import hashlib
-import json
 import itertools
+import json
 import os
 import shutil
-import six
 import subprocess
 import tempfile
 import unittest
+
 import paramiko
+import six
 
 FREEZERC = distutils.spawn.find_executable('freezer-agent')
 
 
 class CommandFailed(Exception):
-
     def __init__(self, returncode, cmd, output, stderr):
         super(CommandFailed, self).__init__()
         self.returncode = returncode
@@ -77,14 +77,15 @@ def execute(args, must_fail=False, merge_stderr=False):
     result, result_err = proc.communicate()
 
     if not must_fail and proc.returncode != 0:
-        raise CommandFailed(proc.returncode, ' '.join(args), result, result_err)
+        raise CommandFailed(proc.returncode, ' '.join(args), result,
+                            result_err)
     if must_fail and proc.returncode == 0:
-        raise CommandFailed(proc.returncode, ' '.join(args), result, result_err)
+        raise CommandFailed(proc.returncode, ' '.join(args), result,
+                            result_err)
     return result
 
 
 class Temp_Tree(object):
-
     def __init__(self, suffix='', dir=None, create=True):
         self.create = create
         if create:
@@ -118,7 +119,7 @@ class Temp_Tree(object):
             for y in range(nfile):
                 abs_pathname = self.create_file_with_random_data(
                     dir_path=subdir_path, size=size)
-                rel_path_name = abs_pathname[len(self.path)+1:]
+                rel_path_name = abs_pathname[len(self.path) + 1:]
                 self.files.append(rel_path_name)
 
     def create_file_with_random_data(self, dir_path, size=1024):
@@ -155,7 +156,7 @@ class Temp_Tree(object):
         """
         self.files = []
         for root, dirs, files in os.walk(self.path):
-            rel_base = root[len(self.path)+1:]
+            rel_base = root[len(self.path) + 1:]
             self.files.extend([os.path.join(rel_base, x) for x in files])
         return self.files
 
@@ -220,8 +221,8 @@ class TestFS(unittest.TestCase):
     os_region = os.environ.get('FREEZER_TEST_OS_REGION_NAME')
     os_password = os.environ.get('FREEZER_TEST_OS_PASSWORD')
     os_auth_url = os.environ.get('FREEZER_TEST_OS_AUTH_URL')
-    use_os = (os_tenant_name and os_user_name and os_region
-              and os_password and os_auth_url)
+    use_os = (os_tenant_name and os_user_name and os_region and
+              os_password and os_auth_url)
     if use_os:
         os.environ['OS_USERNAME'] = os_user_name
         os.environ['OS_TENANT_NAME'] = os_tenant_name

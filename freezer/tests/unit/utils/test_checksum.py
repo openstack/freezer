@@ -12,30 +12,31 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from mock import Mock, patch, mock_open
 import sys
-from six.moves import StringIO
 import unittest
+
+import mock
+from mock import patch
+from six import moves
 
 from freezer.utils.checksum import CheckSum
 
 
 class TestChecksum(unittest.TestCase):
-
     def setUp(self):
-        self.file = Mock()
-        self.dir = Mock()
+        self.file = mock.Mock()
+        self.dir = mock.Mock()
 
         self.hello_world_md5sum = 'f36b2652200f5e88edd57963a1109146'
-        self.hello_world_sha256sum = '17b949eb67acf16bbf2605d57a01f7af4ff4b5' \
-            '7e200259de63fcebf20e75bbf5'
+        self.hello_world_sha256sum = ('17b949eb67acf16bbf2605d57a01f7af4ff4b5'
+                                      '7e200259de63fcebf20e75bbf5')
 
-        self.fake_file = StringIO(u"hello world\n")
+        self.fake_file = moves.StringIO(u"hello world\n")
         self.increment_hash_one = self.hello_world_sha256sum
-        self.increment_hash_multi = '1b4bc4ff41172a5f29eaeffb7e9fc24c683c693' \
-            '9ab30132ad5d93a1e4a6b16e8'
-        self.increment_hash_emptydir = "6b6c6a3d7548cc4396b3dacc6c2750c3"\
-            "da53f379d20996cbdd2c18be00c3742c"
+        self.increment_hash_multi = ('1b4bc4ff41172a5f29eaeffb7e9fc24c683c693'
+                                     '9ab30132ad5d93a1e4a6b16e8')
+        self.increment_hash_emptydir = ("6b6c6a3d7548cc4396b3dacc6c2750c3"
+                                        "da53f379d20996cbdd2c18be00c3742c")
         self.fake_dir = [('root', ['d1, .git'], ['a', 'b']), ]
         self.dir_files = ['root/a', 'root/b']
         self.exclude = "ro*b"
@@ -69,7 +70,8 @@ class TestChecksum(unittest.TestCase):
         with self.assertRaises(ValueError):
             CheckSum('nope', 'bulshit')
 
-    @unittest.skipIf(sys.version_info.major == 2, 'Not supported on python v 2.7')
+    @unittest.skipIf(sys.version_info.major == 2,
+                     'Not supported on python v 2.7')
     @patch('builtins.open')
     @patch('freezer.utils.checksum.os.path.isfile')
     def test_get_hash_files(self, mock_isfile, mock_open):

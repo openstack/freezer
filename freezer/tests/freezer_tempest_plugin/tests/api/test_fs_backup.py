@@ -11,40 +11,38 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
 import os
 import shutil
-
-import subprocess
 import uuid
 
-from freezer.tests.freezer_tempest_plugin.tests.api import base
 from tempest import test
+
+from freezer.tests.freezer_tempest_plugin.tests.api import base
 
 
 class TestFreezerFSBackup(base.BaseFreezerTest):
-
     def __init__(self, *args, **kwargs):
-
         super(TestFreezerFSBackup, self).__init__(*args, **kwargs)
 
     def setUp(self):
-
         super(TestFreezerFSBackup, self).setUp()
 
         test_id = uuid.uuid4().hex
 
-        self.backup_source_dir = ("/tmp/freezer-test-backup-source/"
-                             + test_id)
+        self.backup_source_dir = (
+            "/tmp/freezer-test-backup-source/" + test_id
+        )
 
         self.backup_source_sub_dir = self.backup_source_dir + "/subdir"
 
         self.restore_target_dir = (
-            "/tmp/freezer-test-backup-restore/"
-            + test_id)
+            "/tmp/freezer-test-backup-restore/" + test_id
+        )
 
         self.backup_local_storage_dir = (
-            "/tmp/freezer-test-backup-local-storage/"
-                                    + test_id)
+            "/tmp/freezer-test-backup-local-storage/" + test_id
+        )
 
         self.freezer_backup_name = 'freezer-test-backup-fs-0'
 
@@ -68,7 +66,6 @@ class TestFreezerFSBackup(base.BaseFreezerTest):
         self.environ = super(TestFreezerFSBackup, self).get_environ()
 
     def tearDown(self):
-
         super(TestFreezerFSBackup, self).tearDown()
         shutil.rmtree(self.backup_source_dir, True)
         shutil.rmtree(self.restore_target_dir, True)
@@ -76,7 +73,6 @@ class TestFreezerFSBackup(base.BaseFreezerTest):
 
     @test.attr(type="gate")
     def test_freezer_fs_backup(self):
-
         backup_args = ['freezer-agent',
                        '--path-to-backup',
                        self.backup_source_dir,
@@ -109,5 +105,6 @@ class TestFreezerFSBackup(base.BaseFreezerTest):
                      self.backup_source_dir,
                      self.restore_target_dir]
 
-        self.run_subprocess(diff_args, "Test backup restore from local storage "
+        self.run_subprocess(diff_args,
+                            "Test backup restore from local storage "
                             "diff.")

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 
 from freezer.engine.tar import tar_builders
@@ -20,10 +19,9 @@ from freezer.utils import utils
 
 
 class TestTarCommandBuilder(unittest.TestCase):
-
     def setUp(self):
-        self.builder = tar_builders\
-            .TarCommandBuilder(".", "gzip", False, "gnutar")
+        self.builder = tar_builders.TarCommandBuilder(".", "gzip", False,
+                                                      "gnutar")
 
     def test_build(self):
         self.assertEqual(
@@ -55,8 +53,8 @@ class TestTarCommandBuilder(unittest.TestCase):
             "file:encrypt_pass_file")
 
     def test_build_every_arg_windows(self):
-        self.builder = tar_builders\
-            .TarCommandBuilder(".", "gzip", True, "gnutar")
+        self.builder = tar_builders.TarCommandBuilder(".", "gzip", True,
+                                                      "gnutar")
         self.builder.set_listed_incremental("listed-file.tar")
         self.builder.set_encryption("encrypt_pass_file", "openssl")
         self.builder.set_dereference("hard")
@@ -90,8 +88,8 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
         self.builder.set_encryption("encrypt_pass_file", "openssl")
         self.assertEqual(
             self.builder.build(),
-            "openssl enc -d -aes-256-cfb -pass file:encrypt_pass_file | gnutar "
-            "-z --incremental --extract --unlink-first --ignore-zeros"
+            "openssl enc -d -aes-256-cfb -pass file:encrypt_pass_file | "
+            "gnutar -z --incremental --extract --unlink-first --ignore-zeros"
             " --warning=none --directory restore_path")
 
     def test_all_args_windows(self):

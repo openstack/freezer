@@ -11,6 +11,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
 import json
 import os
 import subprocess
@@ -18,7 +19,7 @@ import subprocess
 from tempest import test
 
 from freezer.tests.freezer_tempest_plugin.tests.api import base
-from freezer.tests.integration.common import Temp_Tree
+from freezer.tests.integration import common
 
 
 class TestFreezerCompressGzip(base.BaseFreezerTest):
@@ -31,11 +32,11 @@ class TestFreezerCompressGzip(base.BaseFreezerTest):
 
         # create a source tree to backup with a few empty files
         # (files must be empty to avoid encoding errors with pure random data)
-        self.source_tree = Temp_Tree()
+        self.source_tree = common.Temp_Tree()
         self.source_tree.add_random_data(size=0)
 
-        self.storage_tree = Temp_Tree()
-        self.dest_tree = Temp_Tree()
+        self.storage_tree = common.Temp_Tree()
+        self.dest_tree = common.Temp_Tree()
 
         self.environ = super(TestFreezerCompressGzip, self).get_environ()
 

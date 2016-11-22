@@ -12,21 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
 import unittest
 
-from freezer.snapshot import vss
-from freezer.tests.commons import (FakeDisableFileSystemRedirection, FakeSubProcess,
-    FakeSubProcess3, FakeSubProcess6)
+import mock
+
+from freezer.tests.commons import FakeDisableFileSystemRedirection
+
 
 class TestVss(unittest.TestCase):
-
     def mock_process(self, process):
         fakesubprocesspopen = process.Popen()
         mock.patch('subprocess.Popen.communicate',
                    new_callable=fakesubprocesspopen.communicate).start()
-        mock.patch('subprocess.Popen', new_callable=fakesubprocesspopen)\
-            .start()
+        mock.patch('subprocess.Popen',
+                   new_callable=fakesubprocesspopen.start())
 
     def mock_winutils(self):
         fake_disable_redirection = FakeDisableFileSystemRedirection()

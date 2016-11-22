@@ -13,23 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import datetime
-import unittest
+import os
+import time
 
 from mock import patch
 
-from freezer.tests.commons import *
+from freezer.openstack import osclients
+from freezer.tests import commons
 from freezer.utils import utils
 
 
-class TestUtils(FreezerBaseTestCase):
-
+class TestUtils(commons.FreezerBaseTestCase):
     def setUp(self):
         super(TestUtils, self).setUp()
 
     def test_create_dir(self):
-
         dir1 = '/tmp'
         dir2 = '/tmp/testnoexistent1234'
         dir3 = '~'
@@ -48,15 +47,15 @@ class TestUtils(FreezerBaseTestCase):
     #     fakere = FakeRe()
     #     re.search = fakere.search
     #     assert type(utils.get_vol_fs_type("test")) is str
-
-    #def test_get_mount_from_path(self):
-    #    dir1 = '/tmp'
-    #    dir2 = '/tmp/nonexistentpathasdf'
-    #    assert type(utils.get_mount_from_path(dir1)[0]) is str
-    #    assert type(utils.get_mount_from_path(dir1)[1]) is str
-    #    self.assertRaises(Exception, utils.get_mount_from_path, dir2)
-
-        # pytest.raises(Exception, utils.get_mount_from_path, dir2)
+    #
+    # def test_get_mount_from_path(self):
+    #     dir1 = '/tmp'
+    #     dir2 = '/tmp/nonexistentpathasdf'
+    #     assert type(utils.get_mount_from_path(dir1)[0]) is str
+    #     assert type(utils.get_mount_from_path(dir1)[1]) is str
+    #     self.assertRaises(Exception, utils.get_mount_from_path, dir2)
+    #
+    #     pytest.raises(Exception, utils.get_mount_from_path, dir2)
 
     def test_human2bytes(self):
         assert utils.human2bytes('0 B') == 0
@@ -70,9 +69,10 @@ class TestUtils(FreezerBaseTestCase):
         self.assertRaises(ValueError, utils.human2bytes, '12 foo')
 
     def test_OpenstackOptions_creation_success(self):
-        class FreezerOpts:
+        class FreezerOpts(object):
             def __init__(self, opts):
                 self.__dict__.update(opts)
+
         env_dict = dict(OS_USERNAME='testusername',
                         OS_TENANT_NAME='testtenantename',
                         OS_AUTH_URL='testauthurl',
@@ -80,7 +80,8 @@ class TestUtils(FreezerBaseTestCase):
                         OS_REGION_NAME='testregion',
                         OS_TENANT_ID='0123456789',
                         OS_AUTH_VERSION='2.0')
-        options = OpenstackOpts.create_from_dict(env_dict).get_opts_dicts()
+        options = osclients.OpenstackOpts.create_from_dict(
+            env_dict).get_opts_dicts()
         options = FreezerOpts(options)
         assert options.username == env_dict['OS_USERNAME']
         assert options.tenant_name == env_dict['OS_TENANT_NAME']
@@ -94,7 +95,8 @@ class TestUtils(FreezerBaseTestCase):
                         OS_AUTH_URL='testauthurl',
                         OS_PASSWORD='testpassword',
                         OS_AUTH_VERSION='2.0')
-        options = OpenstackOpts.create_from_dict(env_dict).get_opts_dicts()
+        options = osclients.OpenstackOpts.create_from_dict(
+            env_dict).get_opts_dicts()
         options = FreezerOpts(options)
         assert options.username == env_dict['OS_USERNAME']
         assert options.tenant_name == env_dict['OS_TENANT_NAME']
@@ -103,8 +105,8 @@ class TestUtils(FreezerBaseTestCase):
 
     def test_date_to_timestamp(self):
         # ensure that timestamp is check with appropriate timezone offset
-        assert (1417649003+time.timezone) == \
-               utils.date_to_timestamp("2014-12-03T23:23:23")
+        assert (1417649003 + time.timezone) == utils.date_to_timestamp(
+            "2014-12-03T23:23:23")
 
     def prepare_env(self):
         os.environ["HTTP_PROXY"] = 'http://proxy.original.domain:8080'
@@ -116,7 +118,7 @@ class TestUtils(FreezerBaseTestCase):
         HTTP_PROXY and HTTPS_PROXY when 'proxy' key in its dictionary
         """
         # Test wrong proxy value
-        self.assertRaises(Exception, utils.alter_proxy, 'boohoo')
+        self.assertRaises(Exception, utils.alter_proxy, 'boohoo')  # noqa
 
         # Test when there is proxy value passed
         self.prepare_env()
@@ -126,43 +128,43 @@ class TestUtils(FreezerBaseTestCase):
         assert os.environ["HTTPS_PROXY"] == test_proxy
 
     def test_exclude_path(self):
-        assert utils.exclude_path('./dir/file','file') is True
-        assert utils.exclude_path('./dir/file','*le') is True
-        assert utils.exclude_path('./dir/file','fi*') is True
-        assert utils.exclude_path('./dir/file','*fi*') is True
-        assert utils.exclude_path('./dir/file','dir') is True
-        assert utils.exclude_path('./dir/file','di*') is True
-        assert utils.exclude_path('./aaa/bbb/ccc','*bb') is True
-        assert utils.exclude_path('./aaa/bbb/ccc','bb') is False
-        assert utils.exclude_path('./a/b','c') is False
-        assert utils.exclude_path('./a/b/c','') is False
+        assert utils.exclude_path('./dir/file', 'file') is True
+        assert utils.exclude_path('./dir/file', '*le') is True
+        assert utils.exclude_path('./dir/file', 'fi*') is True
+        assert utils.exclude_path('./dir/file', '*fi*') is True
+        assert utils.exclude_path('./dir/file', 'dir') is True
+        assert utils.exclude_path('./dir/file', 'di*') is True
+        assert utils.exclude_path('./aaa/bbb/ccc', '*bb') is True
+        assert utils.exclude_path('./aaa/bbb/ccc', 'bb') is False
+        assert utils.exclude_path('./a/b', 'c') is False
+        assert utils.exclude_path('./a/b/c', '') is False
 
     @patch('freezer.utils.utils.os.walk')
     @patch('freezer.utils.utils.os.chdir')
     @patch('freezer.utils.utils.os.path.isfile')
-    def test_walk_path_dir(self,mock_isfile,mock_chdir,mock_walk):
+    def test_walk_path_dir(self, mock_isfile, mock_chdir, mock_walk):
         mock_isfile.return_value = False
         mock_chdir.return_value = None
-        mock_walk.return_value = [('.', ['d1','d2'],['f1','f2']),
-                ('./d1',[],['f3']),('./d2',[],[]),]
+        mock_walk.return_value = [('.', ['d1', 'd2'], ['f1', 'f2']),
+                                  ('./d1', [], ['f3']), ('./d2', [], []), ]
         expected = ['.', './f1', './f2', './d1', './d1/f3', './d2']
         files = []
-        count = utils.walk_path('root','',False,self.callback, files=files)
+        count = utils.walk_path('root', '', False, self.callback, files=files)
         for i in range(len(files)):
             assert expected[i] == files[i]
         assert count is len(files)
 
     @patch('freezer.utils.utils.os.path.isfile')
-    def test_walk_path_file(self,mock_isfile):
+    def test_walk_path_file(self, mock_isfile):
         mock_isfile.return_value = True
-        count = utils.walk_path('root','',False,self.callback)
+        count = utils.walk_path('root', '', False, self.callback)
         assert count is 1
 
-    def callback(self,filepath='', files=[]):
+    def callback(self, filepath='', files=[]):
         files.append(filepath)
 
 
-class TestDateTime:
+class TestDateTime(object):
     def setup(self):
         d = datetime.datetime(2015, 3, 7, 17, 47, 44, 716799)
         self.datetime = utils.DateTime(d)
@@ -172,8 +174,8 @@ class TestDateTime:
         assert isinstance(new_time, utils.DateTime)
 
     def test_timestamp(self):
-        #ensure that timestamp is check with appropriate timezone offset
-        assert (1425750464+time.timezone) == self.datetime.timestamp
+        # ensure that timestamp is check with appropriate timezone offset
+        assert (1425750464 + time.timezone) == self.datetime.timestamp
 
     def test_repr(self):
         assert '2015-03-07 17:47:44' == '{}'.format(self.datetime)
@@ -181,20 +183,22 @@ class TestDateTime:
     def test_initialize_int(self):
         d = utils.DateTime(1425750464)
         assert 1425750464 == d.timestamp
-        #ensure that time is check with appropriate timezone offset
-        t = time.strftime("%Y-%m-%d %H:%M:%S",
-              time.localtime((time.mktime(time.strptime("2015-03-07 17:47:44",
-                                                    "%Y-%m-%d %H:%M:%S")))-time.timezone))
+        # ensure that time is check with appropriate timezone offset
+        t = time.strftime(
+            "%Y-%m-%d %H:%M:%S",
+            time.localtime(
+                (time.mktime(
+                    time.strptime("2015-03-07 17:47:44",
+                                  "%Y-%m-%d %H:%M:%S"))) - time.timezone))
         assert t == '{}'.format(d)
 
     def test_initialize_string(self):
         d = utils.DateTime('2015-03-07T17:47:44')
         # ensure that timestamp is check with appropriate timezone offset
-        assert (1425750464+time.timezone) == d.timestamp
+        assert (1425750464 + time.timezone) == d.timestamp
         assert '2015-03-07 17:47:44' == '{}'.format(d)
 
     def test_sub(self):
         d2 = datetime.datetime(2015, 3, 7, 18, 18, 38, 508411)
         ts2 = utils.DateTime(d2)
         assert '0:30:53.791612' == '{}'.format(ts2 - self.datetime)
-

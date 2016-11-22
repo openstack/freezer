@@ -23,7 +23,6 @@ from freezer.tests.integration import common
 
 
 class TestSimpleExecution(common.TestFS):
-
     def test_freezerc_executes(self):
         result = common.execute_freezerc({})
         self.assertIsNotNone(result)
@@ -35,7 +34,6 @@ class TestSimpleExecution(common.TestFS):
 
 
 class TestBackupFSLocalstorage(common.TestFS):
-
     def test_trees(self):
         self.assertTreesMatch()
         self.source_tree.add_random_data()
@@ -43,7 +41,8 @@ class TestBackupFSLocalstorage(common.TestFS):
 
     def test_backup_single_level(self):
         """
-        - use the default source and destination trees in /tmp (see common.TestFS)
+        - use the default source and destination trees in /tmp
+          (see common.TestFS)
         - use temporary directory for backup storage
         - add some random data
         - check that trees don't match anymore
@@ -126,9 +125,9 @@ class TestBackupFSLocalstorage(common.TestFS):
         self.assertTreesMatchNot()
 
         backup_name = uuid.uuid4().hex
-        path_to_backup= self.source_tree.path
-        lvm_snapsize= '50M'
-        lvm_snapname= 'freezer-snap_{0}'.format(backup_name)
+        path_to_backup = self.source_tree.path
+        lvm_snapsize = '50M'
+        lvm_snapname = 'freezer-snap_{0}'.format(backup_name)
         lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
 
         with common.Temp_Tree() as storage_dir:
@@ -167,7 +166,8 @@ class TestBackupSSH(common.TestFS):
      - FREEZER_TEST_SSH_KEY
      - FREEZER_TEST_SSH_USERNAME
      - FREEZER_TEST_SSH_HOST
-     - FREEZER_TEST_CONTAINER (directory on the remote machine used to store backups)
+     - FREEZER_TEST_CONTAINER
+       (directory on the remote machine used to store backups)
     """
 
     @unittest.skipIf(not common.TestFS.use_ssh,
@@ -294,9 +294,9 @@ class TestBackupSSH(common.TestFS):
         self.assertTreesMatchNot()
 
         backup_name = uuid.uuid4().hex
-        path_to_backup= self.source_tree.path
-        lvm_snapsize= '1G'
-        lvm_snapname= 'freezer-snap_{0}'.format(backup_name)
+        path_to_backup = self.source_tree.path
+        lvm_snapsize = '1G'
+        lvm_snapname = 'freezer-snap_{0}'.format(backup_name)
         lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
 
         backup_args = {
@@ -360,6 +360,7 @@ class TestBackupUsingSwiftStorage(common.TestFS):
      - FREEZER_TEST_OS_PASSWORD
      - FREEZER_TEST_OS_AUTH_URL
     """
+
     @unittest.skipIf(not common.TestFS.use_os,
                      "Cannot test with swift, please provide"
                      "'FREEZER_TEST_OS_TENANT_NAME',"
@@ -529,7 +530,8 @@ class TestBackupUsingSwiftStorage(common.TestFS):
         self.assertIsNotNone(result)
         result = common.execute_freezerc(restore_args)
         self.assertIsNotNone(result)
-        # we cannot test if trees as a running mysql instance will modify the files
+        # we cannot test if trees as a running mysql instance
+        # will modify the files
 
     @unittest.skipIf(not common.TestFS.use_os,
                      "Cannot test with swift, please provide"

@@ -11,35 +11,33 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
 import os
 import shutil
-
-import subprocess
 import uuid
 
-from freezer.tests.freezer_tempest_plugin.tests.api import base
 from tempest import test
+
+from freezer.tests.freezer_tempest_plugin.tests.api import base
 
 
 class TestFreezerSwiftBackup(base.BaseFreezerTest):
-
     def __init__(self, *args, **kwargs):
-
         super(TestFreezerSwiftBackup, self).__init__(*args, **kwargs)
 
     def setUp(self):
-
         super(TestFreezerSwiftBackup, self).setUp()
 
         test_id = uuid.uuid4().hex
 
-        self.backup_source_dir = ("/tmp/freezer-test-backup-source/"
-                             + test_id)
+        self.backup_source_dir = (
+            "/tmp/freezer-test-backup-source/" + test_id
+        )
         self.backup_source_sub_dir = self.backup_source_dir + "/subdir"
 
         self.restore_target_dir = (
-            "/tmp/freezer-test-backup-restore/"
-            + test_id)
+            "/tmp/freezer-test-backup-restore/" + test_id
+        )
 
         self.freezer_container_name = 'freezer-test-container-0'
         self.freezer_backup_name = 'freezer-test-backup-swift-0'
@@ -61,7 +59,6 @@ class TestFreezerSwiftBackup(base.BaseFreezerTest):
         self.environ = super(TestFreezerSwiftBackup, self).get_environ()
 
     def tearDown(self):
-
         super(TestFreezerSwiftBackup, self).tearDown()
 
         shutil.rmtree(self.backup_source_dir, True)
@@ -69,7 +66,6 @@ class TestFreezerSwiftBackup(base.BaseFreezerTest):
 
     @test.attr(type="gate")
     def test_freezer_swift_backup(self):
-
         backup_args = ['freezer-agent',
                        '--path-to-backup',
                        self.backup_source_dir,
@@ -100,5 +96,5 @@ class TestFreezerSwiftBackup(base.BaseFreezerTest):
                      self.backup_source_dir,
                      self.restore_target_dir]
 
-        self.run_subprocess(diff_args, "Test backup to swift and restore diff.")
-
+        self.run_subprocess(diff_args,
+                            "Test backup to swift and restore diff.")

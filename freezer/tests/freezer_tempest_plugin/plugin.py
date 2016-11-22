@@ -13,12 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import os
 
 from tempest.test_discover import plugins
 
 from freezer.tests.freezer_tempest_plugin import config as freezer_config
+
 
 class FreezerTempestPlugin(plugins.TempestPlugin):
     def load_tests(self):

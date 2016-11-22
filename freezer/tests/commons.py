@@ -15,29 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import swiftclient
-import multiprocessing
-import subprocess
-import time
-import pymongo
-import re
 import os
+
+from glanceclient.common import utils as glance_utils
+import mock
+from oslo_config import cfg
+from oslo_config import fixture as cfg_fixture
 import six
 import testtools
 
-from mock import MagicMock
-from mock import Mock
-from oslo_config import cfg
-from oslo_config import fixture as cfg_fixture
-
-from glanceclient.common.utils import IterableWithLength
 from freezer.common import config
-from freezer.storage import swift
-from freezer.utils import utils
 from freezer.engine.tar import tar as tar_engine
-from freezer.openstack.osclients import OpenstackOpts
-from freezer.openstack.osclients import OSClientManager
-
+from freezer.openstack import osclients
+from freezer.storage import swift
 
 CONF = cfg.CONF
 os.environ['OS_REGION_NAME'] = 'testregion'
@@ -50,8 +40,8 @@ os.environ['OS_TENANT_NAME'] = 'testtenantename'
 
 class FakeSubProcess(object):
     def __init__(self, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True, env={},
-            bufsize=4096):
+                 stderr=True, shell=True, executable=True, env={},
+                 bufsize=4096):
         return None
 
     stdout = ['abcd', 'ehfg']
@@ -68,7 +58,7 @@ class FakeSubProcess(object):
     def communicate_error(cls):
         return '', 'error'
 
-    class stdin:
+    class stdin(object):
         def __call__(self, *args, **kwargs):
             return self
 
@@ -79,19 +69,19 @@ class FakeSubProcess(object):
 
 class FakeSubProcess3(object):
     def __init__(self, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
+                 stderr=True, shell=True, executable=True):
         return None
 
     @classmethod
     def Popen(cls, opt1=True, stdin=True, stdout=True,
-            stderr=True, shell=True, executable=True):
+              stderr=True, shell=True, executable=True):
         return cls
 
     @classmethod
     def communicate(cls):
         return False, False
 
-    class stdin:
+    class stdin(object):
         def __call__(self, *args, **kwargs):
             return self
 
@@ -195,7 +185,7 @@ class FakeGlanceClient(object):
 
         @staticmethod
         def data(image):
-            return IterableWithLength(iter("abc"), 3)
+            return glance_utils.IterableWithLength(iter("abc"), 3)
 
         @staticmethod
         def delete(image):
@@ -207,7 +197,6 @@ class FakeGlanceClient(object):
 
 
 class FakeSwiftClient(object):
-
     def __init__(self):
         pass
 
@@ -215,18 +204,23 @@ class FakeSwiftClient(object):
         def __init__(self):
             pass
 
-        class Connection:
-            def __init__(self, key=True, os_options=True, auth_version=True, user=True, authurl=True, tenant_name=True, retries=True, insecure=True):
+        class Connection(object):
+            def __init__(self, key=True, os_options=True, auth_version=True,
+                         user=True, authurl=True, tenant_name=True,
+                         retries=True, insecure=True):
                 self.num_try = 0
 
             def put_object(self, container, obj, contents, content_length=None,
-                   etag=None, chunk_size=None, content_type=None,
-                   headers=None, query_string=None, response_dict=None):
+                           etag=None, chunk_size=None, content_type=None,
+                           headers=None, query_string=None,
+                           response_dict=None):
                 return True
 
             def head_object(self, container_name='', object_name=''):
                 if object_name == 'has_segments':
-                    return {'x-object-manifest': 'freezer_segments/hostname_backup_name_1234567890_0'}
+                    return {
+                        'x-object-manifest': ('freezer_segments/hostname_'
+                                              'backup_name_1234567890_0')}
                 else:
                     return {}
 
@@ -243,25 +237,46 @@ class FakeSwiftClient(object):
             def get_container(self, container, *args, **kwargs):
                 if container == 'freezer_segments':
                     return ({'container_metadata': True}, [
-                        {'bytes': 251, 'last_modified': '2015-03-09T10:37:01.701170', 'hash': '9a8cbdb30c226d11bf7849f3d48831b9', 'name': 'hostname_backup_name_1234567890_0/1234567890/67108864/00000000', 'content_type': 'application/octet-stream'},
-                        {'bytes': 632, 'last_modified': '2015-03-09T11:54:27.860730', 'hash': 'd657a4035d0dcc18deaf9bfd2a3d0ebf', 'name': 'hostname_backup_name_1234567891_1/1234567891/67108864/00000000', 'content_type': 'application/octet-stream'}
+                        {'bytes': 251,
+                         'last_modified': '2015-03-09T10:37:01.701170',
+                         'hash': '9a8cbdb30c226d11bf7849f3d48831b9',
+                         'name': ('hostname_backup_name_1234567890_0/'
+                                  '1234567890/67108864/00000000'),
+                         'content_type': 'application/octet-stream'},
+                        {'bytes': 632,
+                         'last_modified': '2015-03-09T11:54:27.860730',
+                         'hash': 'd657a4035d0dcc18deaf9bfd2a3d0ebf',
+                         'name': ('hostname_backup_name_1234567891_1/'
+                                  '1234567891/67108864/00000000'),
+                         'content_type': 'application/octet-stream'}
                     ])
                 elif container == "test-container" and 'path' in kwargs:
                     return ({'container_metadata': True}, [
-                        {'bytes': 251, 'last_modified': '2015-03-09T10:37:01.701170', 'hash': '9a8cbdb30c226d11bf7849f3d48831b9', 'name': 'hostname_backup_name_1234567890_0/11417649003', 'content_type': 'application/octet-stream'},
-                        {'bytes': 632, 'last_modified': '2015-03-09T11:54:27.860730', 'hash': 'd657a4035d0dcc18deaf9bfd2a3d0ebf', 'name': 'hostname_backup_name_1234567891_1/1417649003', 'content_type': 'application/octet-stream'}
+                        {'bytes': 251,
+                         'last_modified': '2015-03-09T10:37:01.701170',
+                         'hash': '9a8cbdb30c226d11bf7849f3d48831b9',
+                         'name': ('hostname_backup_name_1234567890_0/'
+                                  '11417649003'),
+                         'content_type': 'application/octet-stream'},
+                        {'bytes': 632,
+                         'last_modified': '2015-03-09T11:54:27.860730',
+                         'hash': 'd657a4035d0dcc18deaf9bfd2a3d0ebf',
+                         'name': ('hostname_backup_name_1234567891_1/'
+                                  '1417649003'),
+                         'content_type': 'application/octet-stream'}
                     ])
                 else:
                     return [{}, []]
 
             def get_account(self, *args, **kwargs):
-                return [{'count': 0, 'bytes': 0, 'name': '1234'}, {'count': 4, 'bytes': 156095, 'name': 'a1'}], \
+                return [{'count': 0, 'bytes': 0, 'name': '1234'},
+                        {'count': 4, 'bytes': 156095, 'name': 'a1'}], \
                        [{'name': 'test-container',
-                               'bytes': 200000,
-                               'count': 1000},
-                              {'name': 'test-container-segments',
-                               'bytes': 300000,
-                               'count': 656}]
+                         'bytes': 200000,
+                         'count': 1000},
+                        {'name': 'test-container-segments',
+                         'bytes': 300000,
+                         'count': 656}]
 
             def get_object(self, *args, **kwargs):
                 return [{'x-object-meta-length': "123",
@@ -270,7 +285,6 @@ class FakeSwiftClient(object):
 
 
 class BackupOpt1(object):
-
     def __init__(self):
         self.dereference_symlink = 'none'
         self.mysql_conf = '/tmp/freezer-test-conf-file'
@@ -278,7 +292,7 @@ class BackupOpt1(object):
         self.lvm_auto_snap = '/dev/null'
         self.lvm_volgroup = 'testgroup'
         self.lvm_srcvol = 'testvol'
-        self.lvm_dirmount= '/tmp/testdir'
+        self.lvm_dirmount = '/tmp/testdir'
         self.lvm_snapsize = '1G'
         self.lvm_snapname = 'testsnapname'
         self.lvcreate_path = 'true'
@@ -328,13 +342,14 @@ class BackupOpt1(object):
         self.lvm_snapperm = 'ro'
 
         self.compression = 'gzip'
-        self.storage = MagicMock()
-        self.engine = MagicMock()
-        opts = OpenstackOpts.create_from_env().get_opts_dicts()
-        self.client_manager = OSClientManager(opts.pop('auth_url'),
-                                              opts.pop('auth_method'),
-                                              **opts)
-        self.client_manager.get_swift = Mock(
+        self.storage = mock.MagicMock()
+        self.engine = mock.MagicMock()
+        opts = osclients.OpenstackOpts.create_from_env().get_opts_dicts()
+        self.client_manager = osclients.OSClientManager(opts.pop('auth_url'),
+                                                        opts.pop(
+                                                            'auth_method'),
+                                                        **opts)
+        self.client_manager.get_swift = mock.Mock(
             return_value=FakeSwiftClient().client.Connection())
         self.client_manager.create_swift = self.client_manager.get_swift
         self.storage = swift.SwiftStorage(self.client_manager,
@@ -343,16 +358,18 @@ class BackupOpt1(object):
         self.engine = tar_engine.TarEngine(
             self.compression, self.dereference_symlink,
             self.exclude, self.storage, 1000, False)
-        self.client_manager.get_glance = Mock(return_value=FakeGlanceClient())
-        self.client_manager.get_cinder = Mock(return_value=FakeCinderClient())
-        nova_client = MagicMock()
+        self.client_manager.get_glance = mock.Mock(
+            return_value=FakeGlanceClient())
+        self.client_manager.get_cinder = mock.Mock(
+            return_value=FakeCinderClient())
+        nova_client = mock.MagicMock()
 
-        self.client_manager.get_nova = Mock(return_value=nova_client)
+        self.client_manager.get_nova = mock.Mock(return_value=nova_client)
 
         self.command = ''
 
 
-class Os:
+class Os(object):
     def __init__(self, directory=True):
         return None
 
@@ -465,7 +482,6 @@ class FakeDisableFileSystemRedirection(object):
 
 
 class FreezerBaseTestCase(testtools.TestCase):
-
     def setUp(self):
         if six.PY34:
             super().setUp()
