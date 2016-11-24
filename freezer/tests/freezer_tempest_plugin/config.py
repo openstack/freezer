@@ -19,4 +19,3 @@ service_option = cfg.BoolOpt('freezer',
                              default=True,
                              help="Whether or not freezer is expected to be "
                                   "available")
-

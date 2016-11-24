@@ -12,8 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from freezer.tests.freezer_tempest_plugin.tests.api import base
 from tempest import test
+
+from freezer.tests.freezer_tempest_plugin.tests.api import base
+
 
 class TestFreezerTestsRunning(base.BaseFreezerTest):
 

@@ -15,14 +15,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-import unittest
 
 from freezer.openstack import restore
 from freezer.tests import commons
 
 
 class TestRestore(commons.FreezerBaseTestCase):
-
     def setUp(self):
         super(TestRestore, self).setUp()
 
@@ -32,12 +30,14 @@ class TestRestore(commons.FreezerBaseTestCase):
 
     def test_restore_cinder_with_backup_id(self):
         backup_opt = commons.BackupOpt1()
-        ros = restore.RestoreOs(backup_opt.client_manager, backup_opt.container)
+        ros = restore.RestoreOs(backup_opt.client_manager,
+                                backup_opt.container)
         ros.restore_cinder(35, 34, 33)
 
     def test_restore_cinder_without_backup_id(self):
         backup_opt = commons.BackupOpt1()
-        ros = restore.RestoreOs(backup_opt.client_manager, backup_opt.container)
+        ros = restore.RestoreOs(backup_opt.client_manager,
+                                backup_opt.container)
         ros.restore_cinder(35, 34)
 
     def test_restore_nova(self):

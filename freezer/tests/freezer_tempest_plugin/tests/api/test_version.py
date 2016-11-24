@@ -14,9 +14,10 @@
 
 import subprocess
 
-from freezer.tests.freezer_tempest_plugin.tests.api import base
-from freezer import __version__ as FREEZER_VERSION
 from tempest import test
+
+from freezer import __version__ as freezer_version
+from freezer.tests.freezer_tempest_plugin.tests.api import base
 
 
 class TestFreezerVersion(base.BaseFreezerTest):
@@ -26,4 +27,4 @@ class TestFreezerVersion(base.BaseFreezerTest):
 
         version = subprocess.check_output(['freezer-agent', '--version'],
                                           stderr=subprocess.STDOUT)
-        self.assertEqual(FREEZER_VERSION, version.strip())
+        self.assertEqual(freezer_version, version.strip())

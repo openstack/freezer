@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import unittest
+
 import mock
 
-from freezer.tests.commons import *
+from freezer.tests import commons
 from freezer.utils import winutils
 
 
@@ -29,14 +31,14 @@ class TestWinutils(unittest.TestCase):
             .start()
 
     def mock_winutils(self):
-        fake_disable_redirection = FakeDisableFileSystemRedirection()
+        fake_disable_redirection = commons.FakeDisableFileSystemRedirection()
         mock.patch('winutils.DisableFileSystemRedirection.__enter__',
                    new_callable=fake_disable_redirection.__enter__)
         mock.patch('winutils.DisableFileSystemRedirection.__exit__',
                    new_callable=fake_disable_redirection.__exit__)
 
     def test_is_windows(self):
-        fake_os = Os()
+        fake_os = commons.Os()
         os.name = fake_os
         assert winutils.is_windows() is False
 
@@ -48,14 +50,16 @@ class TestWinutils(unittest.TestCase):
         assert winutils.use_shadow(path, test_volume2) == expected
 
         # test if the volume format is incorrect
-        self.assertRaises(Exception, winutils.use_shadow(path, test_volume))
+        self.assertRaises(Exception,
+                          winutils.use_shadow(path, test_volume))  # noqa
 
     # def test_start_sql_server(self):
     #     backup_opt = BackupOpt1()
     #     self.mock_process(FakeSubProcess())
     #     self.mock_winutils()
     #
-    #     assert winutils.start_sql_server(backup_opt.sql_server_instance) is not False
+    #     assert winutils.start_sql_server(
+    #         backup_opt.sql_server_instance) is not False
     #
     #     self.mock_process(FakeSubProcess3())
     #     self.assertRaises(

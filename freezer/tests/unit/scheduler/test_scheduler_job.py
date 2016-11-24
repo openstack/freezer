@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 
 from freezer.scheduler import scheduler_job
+
 
 class TestSchedulerJob(unittest.TestCase):
     def setUp(self):

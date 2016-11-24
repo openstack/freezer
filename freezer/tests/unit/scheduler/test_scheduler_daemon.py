@@ -12,20 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import unittest
-from mock import Mock, patch, mock_open
-
 import signal
+import unittest
+
+import mock
+from mock import patch
 
 from freezer.scheduler import daemon
 
 
 class TestNoDaemon(unittest.TestCase):
-
     @patch('freezer.scheduler.daemon.signal')
     def setUp(self, mock_signal):
-        self.daemonizable = Mock()
+        self.daemonizable = mock.Mock()
         self.daemon = daemon.NoDaemon(daemonizable=self.daemonizable)
 
     def test_create(self):
@@ -53,7 +52,8 @@ class TestNoDaemon(unittest.TestCase):
     # @patch('freezer.scheduler.daemon.logging')
     # def test_start_restarts_daemonizable_on_Exception(self, mock_logging):
     #     daemon.NoDaemon.exit_flag = False
-    #     self.daemonizable.start.side_effect = [Exception('test'), lambda: DEFAULT]
+    #     self.daemonizable.start.side_effect = [Exception('test'),
+    #                                            lambda: DEFAULT]
     #
     #     res = self.daemon.start(log_file=None, dump_stack_trace=True)
     #
@@ -72,25 +72,25 @@ class TestNoDaemon(unittest.TestCase):
 
 
 class TestDaemon(unittest.TestCase):
-
     def setUp(self):
-        self.daemonizable = Mock()
+        self.daemonizable = mock.Mock()
         self.daemon = daemon.Daemon(daemonizable=self.daemonizable)
 
     def test_create(self):
         self.assertIsInstance(self.daemon, daemon.Daemon)
 
     def test_handle_program_exit_calls_scheduler_stop(self):
-        self.daemon.handle_program_exit(Mock(), Mock())
+        self.daemon.handle_program_exit(mock.Mock(), mock.Mock())
         self.daemonizable.stop.assert_called_with()
 
     def test_handle_program_reload_calls_scheduler_reload(self):
-        self.daemon.handle_reload(Mock(), Mock())
+        self.daemon.handle_reload(mock.Mock(), mock.Mock())
         self.daemonizable.reload.assert_called_with()
 
     def test_signal_map_handlers(self):
         signal_map = self.daemon.signal_map
-        self.assertEqual(self.daemon.handle_program_exit, signal_map[signal.SIGTERM])
+        self.assertEqual(self.daemon.handle_program_exit,
+                         signal_map[signal.SIGTERM])
         self.assertEqual(self.daemon.handle_reload, signal_map[signal.SIGHUP])
 
     @patch('freezer.scheduler.daemon.gettempdir')
@@ -126,13 +126,15 @@ class TestDaemon(unittest.TestCase):
         self.assertIsNone(res)
         self.assertEqual(daemon.Daemon.exit_flag, True)
         self.assertTrue(self.daemonizable.start.called)
-    #
+
     # @patch('freezer.scheduler.daemon.logging')
     # @patch('freezer.scheduler.daemon.PidFile')
     # @patch('freezer.scheduler.daemon.DaemonContext')
-    # def test_start_restarts_daemonizable_on_Exception(self, mock_DaemonContext, mock_PidFile, mock_logging):
+    # def test_start_restarts_daemonizable_on_Exception(
+    #         self, mock_DaemonContext, mock_PidFile, mock_logging):
     #     daemon.Daemon.exit_flag = False
-    #     self.daemonizable.start.side_effect = [Exception('test'), lambda: DEFAULT]
+    #     self.daemonizable.start.side_effect = [Exception('test'),
+    #                                            lambda: DEFAULT]
     #
     #     res = self.daemon.start(log_file=None, dump_stack_trace=True)
     #
@@ -140,7 +142,7 @@ class TestDaemon(unittest.TestCase):
     #     self.assertEqual(daemon.Daemon.exit_flag, True)
     #     self.assertEqual(self.daemonizable.start.call_count, 2)
     #     self.assertTrue(mock_logging.error.called)
-
+    #
     # @patch('freezer.scheduler.daemon.os')
     # def test_stop_not_existing(self, mock_os):
     #     self.daemon.pid = None

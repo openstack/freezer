@@ -11,14 +11,16 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
+from datetime import datetime
+from datetime import timedelta
 import json
 import os
 import subprocess
 
-from datetime import datetime, timedelta
 from time import mktime
 
-import tempest.test
+from tempest import test
 
 from freezer.tests.integration.common import Temp_Tree
 
@@ -106,8 +108,7 @@ def save_metadata(metadata, path):
         json.dump(metadata, f)
 
 
-class BaseFreezerTest(tempest.test.BaseTestCase):
-
+class BaseFreezerTest(test.BaseTestCase):
     credentials = ['primary']
 
     def __init__(self, *args, **kwargs):
@@ -136,7 +137,8 @@ class BaseFreezerTest(tempest.test.BaseTestCase):
 
     @classmethod
     def get_auth_url(cls):
-        return cls.os_primary.auth_provider.auth_client.auth_url[:-len('/tokens')]
+        return cls.os_primary.auth_provider.auth_client.auth_url[:-len(
+            '/tokens')]
 
     @classmethod
     def setup_clients(cls):
@@ -152,8 +154,8 @@ class BaseFreezerTest(tempest.test.BaseTestCase):
 
         # Allow developers to set OS_AUTH_URL when developing so that
         # Keystone may be on a host other than localhost.
-        if not 'OS_AUTH_URL' in os.environ:
-                os.environ['OS_AUTH_URL'] = cls.get_auth_url()
+        if 'OS_AUTH_URL' not in os.environ:
+            os.environ['OS_AUTH_URL'] = cls.get_auth_url()
 
         # Mac OS X uses gtar located in /usr/local/bin
         os.environ['PATH'] = '/usr/local/bin:' + os.environ['PATH']
