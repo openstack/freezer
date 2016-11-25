@@ -25,10 +25,10 @@ import sys
 import time
 
 from distutils import spawn as distspawn
+from freezer.exceptions import utils
 from functools import wraps
 from oslo_log import log
 from six.moves import configparser
-
 
 LOG = log.getLogger(__name__)
 
@@ -510,3 +510,14 @@ def set_max_process_priority():
         ])
     except Exception as priority_error:
         LOG.warning('Priority: {0}'.format(priority_error))
+
+
+def wait_for(condition_func, wait_interval, timeout, message=None):
+    while timeout > 0:
+        if condition_func():
+            return
+
+        time.sleep(wait_interval)
+        timeout -= wait_interval
+
+    raise utils.TimeoutException(message)
