@@ -70,7 +70,7 @@ class PhysicalStorage(base.Storage):
             level=0) for t in self.listdir(path)]
         if recent_to_date:
             zeros = [zero for zero in zeros
-                     if zero.timestamp >= recent_to_date]
+                     if zero.timestamp <= recent_to_date]
         return zeros
 
     @abc.abstractmethod

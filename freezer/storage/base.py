@@ -101,7 +101,7 @@ class Storage(object):
         increments = backup.get_increments()
 
         return {level: backup for level, backup in increments.iteritems()
-                if not recent_to_date or backup.timestamp >= recent_to_date}
+                if not recent_to_date or backup.timestamp <= recent_to_date}
 
     def remove_older_than(self, engine, remove_older_timestamp,
                           hostname_backup_name):
