@@ -270,7 +270,7 @@ class RestoreJob(Job):
                 hostname_backup_name=self.conf.hostname_backup_name,
                 restore_path=restore_abs_path,
                 overwrite=conf.overwrite,
-                recent_to_date=conf.restore_from_date)
+                recent_to_date=restore_timestamp)
 
             try:
                 if conf.consistency_checksum:
