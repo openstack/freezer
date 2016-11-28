@@ -242,10 +242,9 @@ class BackupEngine(object):
 
         # Use SimpleQueue because Queue does not work on Mac OS X.
         read_except_queue = queues.SimpleQueue()
-
+        LOG.info("Restoring backup {0}".format(hostname_backup_name))
         for level in range(0, max_level + 1):
             backup = backups[level]
-            LOG.info("Restoring backup {0}".format(backup))
             read_pipe, write_pipe = multiprocessing.Pipe()
             process_stream = multiprocessing.Process(
                 target=self.read_blocks,
@@ -293,7 +292,7 @@ class BackupEngine(object):
 
         LOG.info(
             'Restore completed successfully for backup name '
-            '{0}'.format(backups[max_level]))
+            '{0}'.format(hostname_backup_name))
 
     @abc.abstractmethod
     def restore_level(self, restore_path, read_pipe, backup, except_queue):
