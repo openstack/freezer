@@ -16,9 +16,12 @@ limitations under the License.
 """
 
 import json
-from oslo_log import log
-import requests.exceptions
+import os
+import requests
 import time
+
+from oslo_log import log
+
 
 from freezer.storage import physical
 
@@ -42,8 +45,10 @@ class SwiftStorage(physical.PhysicalStorage):
     def put_file(self, from_path, to_path):
         self.client_manager.create_swift()
         split = to_path.rsplit('/', 1)
+        file_size = os.path.getsize(from_path)
         with open(from_path, 'r') as meta_fd:
-            self.swift().put_object(split[0], split[1], meta_fd)
+            self.swift().put_object(split[0], split[1], meta_fd,
+                                    content_length=file_size)
 
     def __init__(self, client_manager, container, max_segment_size,
                  skip_prepare=False):
