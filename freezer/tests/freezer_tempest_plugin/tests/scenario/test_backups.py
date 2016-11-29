@@ -24,8 +24,7 @@ from tempest.lib.cli import output_parser
 
 from freezer.tests.freezer_tempest_plugin.tests.api import base
 
-JOB_TABLE_RESULT_COLUMN = 6
-JOB_TABLE_STATUS_COLUMN = 4
+JOB_TABLE_RESULT_COLUMN = 3
 
 
 class BaseFreezerCliTest(base.BaseFreezerTest):
@@ -48,8 +47,7 @@ class BaseFreezerCliTest(base.BaseFreezerTest):
         cls.cli.cli_dir = ''
 
     def delete_job(self, job_id):
-        self.cli.freezer_scheduler(action='job-delete',
-                                   flags='-c test_node -j {}'.format(job_id))
+        self.cli.freezer_client(action='job-delete', params=job_id)
 
     def create_job(self, job_json):
 
@@ -57,12 +55,13 @@ class BaseFreezerCliTest(base.BaseFreezerTest):
             job_file.write(json.dumps(job_json))
             job_file.flush()
 
-            output = self.cli.freezer_scheduler(
+            output = self.cli.freezer_client(
                 action='job-create',
-                flags='-c test_node --file {}'.format(job_file.name)
+                params='--file {}'.format(job_file.name)
             )
-            self.assertTrue(output.startswith('Created job'))
-            job_id = output[len('Created job '):]
+            job_id = output.split()[1]
+            expected = 'Job {} created'.format(job_id)
+            self.assertEqual(expected, output.strip())
 
             self.addCleanup(self.delete_job, job_id)
 
@@ -70,8 +69,7 @@ class BaseFreezerCliTest(base.BaseFreezerTest):
 
     def find_job_in_job_list(self, job_id):
         job_list = output_parser.table(
-            self.cli.freezer_scheduler(action='job-list',
-                                       flags='-c test_node'))
+            self.cli.freezer_client(action='job-list', params='-C test_node'))
 
         for row in job_list['values']:
             if row[0].strip() == job_id.strip():
@@ -79,21 +77,17 @@ class BaseFreezerCliTest(base.BaseFreezerTest):
 
         self.fail('Could not find job: {}'.format(job_id))
 
-    def wait_for_job_status(self, job_id, status, timeout=720):
+    def wait_for_job_status(self, job_id, timeout=720):
         start = time.time()
 
         while True:
             row = self.find_job_in_job_list(job_id)
 
-            if row[JOB_TABLE_STATUS_COLUMN] == status:
+            if row[JOB_TABLE_RESULT_COLUMN]:
                 return
             elif time.time() - start > timeout:
-                self.fail(
-                    ("Status of job '{}' is '{}'. "
-                     "Expected '{}'").format(job_id,
-                                             row[JOB_TABLE_STATUS_COLUMN],
-                                             status)
-                )
+                self.fail("Status of job '{}' is '{}'."
+                          .format(job_id, row[JOB_TABLE_RESULT_COLUMN]))
             else:
                 time.sleep(1)
 
@@ -124,6 +118,12 @@ class CLIClientWithFreezer(cli_base.CLIClient):
         flags += ' --os-endpoint-type %s' % endpoint_type
         return self.cmd_with_auth(
             'freezer-scheduler', action, flags, params, fail_ok, merge_stderr)
+
+    def freezer_client(self, action, flags='', params='', fail_ok=False,
+                       endpoint_type='publicURL', merge_stderr=True):
+        flags += ' --os-endpoint-type %s' % endpoint_type
+        return self.cmd_with_auth(
+            'freezer', action, flags, params, fail_ok, merge_stderr)
 
 
 # This class is just copied from the freezer repo. Depending on where the
@@ -245,6 +245,7 @@ class TestFreezerScenario(BaseFreezerCliTest):
 
     def test_simple_backup(self):
         backup_job = {
+            "client_id": "test_node",
             "job_actions": [
                 {
                     "freezer_action": {
@@ -262,6 +263,7 @@ class TestFreezerScenario(BaseFreezerCliTest):
             "description": "a test backup"
         }
         restore_job = {
+            "client_id": "test_node",
             "job_actions": [
                 {
                     "freezer_action": {
@@ -279,15 +281,13 @@ class TestFreezerScenario(BaseFreezerCliTest):
         }
 
         backup_job_id = self.create_job(backup_job)
-        self.cli.freezer_scheduler(action='job-start',
-                                   flags='-c test_node -j {}'.format(
-                                       backup_job_id))
-        self.wait_for_job_status(backup_job_id, 'completed')
+        self.cli.freezer_client(action='job-start', params=backup_job_id)
+        self.wait_for_job_status(backup_job_id)
         self.assertJobColumnEqual(backup_job_id, JOB_TABLE_RESULT_COLUMN,
                                   'success')
 
         restore_job_id = self.create_job(restore_job)
-        self.wait_for_job_status(restore_job_id, 'completed')
+        self.wait_for_job_status(restore_job_id)
         self.assertJobColumnEqual(restore_job_id, JOB_TABLE_RESULT_COLUMN,
                                   'success')
 

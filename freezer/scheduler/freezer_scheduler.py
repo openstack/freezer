@@ -29,7 +29,6 @@ import six
 
 from freezer.scheduler import arguments
 from freezer.scheduler import scheduler_job
-from freezer.scheduler import shell
 from freezer.scheduler import utils
 from freezer.utils import utils as freezer_utils
 from freezer.utils import winutils
@@ -199,32 +198,15 @@ class FreezerScheduler(object):
         LOG.warning("reload not supported")
 
 
-def _get_doers(module):
-    doers = {}
-    for attr in (a for a in dir(module) if a.startswith('do_')):
-        command = attr[3:].replace('_', '-')
-        callback = getattr(module, attr)
-        doers[command] = callback
-    return doers
-
-
 def main():
-    doers = _get_doers(shell)
-    doers.update(_get_doers(utils))
-
-    possible_actions = doers.keys() + ['start', 'stop', 'status', 'reload']
+    possible_actions = ['start', 'stop', 'status', 'reload']
 
     arguments.parse_args(possible_actions)
     arguments.setup_logging()
 
-    if CONF.action is None:
+    if CONF.action is None or CONF.action not in possible_actions:
         CONF.print_help()
         return 65  # os.EX_DATAERR
-
-    if CONF.action not in ['start', 'stop', 'status', 'reload']:
-        sys.stderr.write("Using freezer-scheduler as a command line client is "
-                         "deprecated. Please use the freezer command line tool"
-                         " from python-freezerclient.\n")
 
     apiclient = None
     verify = True
@@ -244,14 +226,6 @@ def main():
         if winutils.is_windows():
             print("--no-api mode is not available on windows")
             return 69  # os.EX_UNAVAILABLE
-
-    if CONF.action in doers:
-        try:
-            return doers[CONF.action](apiclient, CONF)
-        except Exception as e:
-            LOG.error(e)
-            print('ERROR {0}'.format(e))
-            return 70  # os.EX_SOFTWARE
 
     freezer_utils.create_dir(CONF.jobs_dir, do_log=False)
     freezer_scheduler = FreezerScheduler(apiclient=apiclient,
