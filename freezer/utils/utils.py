@@ -56,12 +56,12 @@ def create_dir(directory, do_log=True):
     try:
         if not os.path.isdir(expanded_dir_name):
             if do_log:
-                LOG.warning('Directory {0} does not exist, creating...'.format(
+                LOG.debug('Directory {0} does not exist, creating...'.format(
                     expanded_dir_name))
             os.makedirs(expanded_dir_name)
         else:
             if do_log:
-                LOG.warning('Directory {0} found!'.format(
+                LOG.debug('Directory {0} found!'.format(
                     expanded_dir_name))
     except Exception as error:
         err = 'Error while creating directory {0}: {1}\

@@ -253,7 +253,7 @@ def main():
             print('ERROR {0}'.format(e))
             return 70  # os.EX_SOFTWARE
 
-    freezer_utils.create_dir(CONF.jobs_dir)
+    freezer_utils.create_dir(CONF.jobs_dir, do_log=False)
     freezer_scheduler = FreezerScheduler(apiclient=apiclient,
                                          interval=int(CONF.interval),
                                          job_path=CONF.jobs_dir)
