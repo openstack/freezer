@@ -141,24 +141,32 @@ class RestoreOs(object):
         :param nova_network: id of network
         :return:
         """
+        # TODO(yangyapeng): remove nova_network check use nova api,
+        # nova api list network is not accurate.
+        # Change validation use neutron api instead of nova api in
+        # a project, find all available network in restore nova.
+        # implementation it after tenant backup add get_neutron in
+        # openstack oslient.
         nova = self.client_manager.get_nova()
-        network_list = nova.networks.findall()
-        if len(network_list) > 1 and (nova_network is None):
-            raise Exception("The parameter --nova-restore-network is required")
-        get_nova_network = nova.networks.get(nova_network)
-        if nova_network and (get_nova_network not in network_list):
-            raise Exception("The network %s is invalid" % nova_network)
         (info, image) = self._create_image(instance_id, restore_from_timestamp)
         flavor = nova.flavors.get(info['x-object-meta-flavor-id'])
         LOG.info("Creating an instance")
         instance = None
-        if nova_network is None:
-            instance = nova.servers.create(info['x-object-meta-name'], image,
-                                           flavor)
-        else:
-            instance = nova.servers.create(info['x-object-meta-name'], image,
-                                           flavor,
+        if nova_network:
+            nics_id = [nic.id for nic in nova.networks.findall()]
+            if nova_network not in nics_id:
+                raise Exception("The network %s is invalid" % nova_network)
+            instance = nova.servers.create(info['x-object-meta-name'],
+                                           image, flavor,
                                            nics=[{'net-id': nova_network}])
+        else:
+            try:
+                instance = nova.servers.create(info['x-object-meta-name'],
+                                               image, flavor)
+            except Exception as e:
+                LOG.warn(e)
+                raise Exception("The parameter --nova-restore-network "
+                                "is required")
         # loop and wait till the server is up then remove the image
         # let's wait 100 second
         LOG.info('Delete instance image from glance {0}'.format(image))
