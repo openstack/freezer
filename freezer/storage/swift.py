@@ -39,8 +39,8 @@ class SwiftStorage(physical.PhysicalStorage):
                                                prefix=split[1])[1]:
             try:
                 self.swift().delete_object(split[0], file['name'])
-            except Exception as e:
-                raise e
+            except Exception:
+                raise
 
     def put_file(self, from_path, to_path):
         self.client_manager.create_swift()
