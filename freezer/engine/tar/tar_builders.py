@@ -97,7 +97,8 @@ class TarCommandBuilder(object):
             openssl_cmd = "{openssl_path} enc -aes-256-cfb -pass file:{file}"\
                 .format(openssl_path=self.openssl_path,
                         file=self.encrypt_pass_file)
-            tar_command = '{0} | {1}'.format(tar_command, openssl_cmd)
+            tar_command = '{0} | {1} && exit ${{PIPESTATUS[0]}}'\
+                .format(tar_command, openssl_cmd)
 
         return tar_command
 
@@ -147,7 +148,8 @@ class TarCommandRestoreBuilder(object):
             openssl_cmd = self.OPENSSL_DEC.format(
                 openssl_path=self.openssl_path,
                 file=self.encrypt_pass_file)
-            tar_command = '{0} | {1}'.format(openssl_cmd, tar_command)
+            tar_command = '{0} | {1} && exit ${{PIPESTATUS[0]}}'\
+                .format(openssl_cmd, tar_command)
         return tar_command
 
 

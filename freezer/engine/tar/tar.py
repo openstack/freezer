@@ -75,8 +75,9 @@ class TarEngine(engine.BackupEngine):
 
         LOG.info("Execution command: \n{}".format(command))
 
-        tar_process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE, shell=True)
+        tar_process = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            shell=True, executable='/bin/bash')
         read_pipe = tar_process.stdout
         tar_chunk = read_pipe.read(self.max_segment_size)
         while tar_chunk:
@@ -124,7 +125,7 @@ class TarEngine(engine.BackupEngine):
 
             tar_process = subprocess.Popen(
                 command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, shell=True)
+                stderr=subprocess.PIPE, shell=True, executable='/bin/bash')
             # Start loop reading the pipe and pass the data to the tar
             # std input. If EOFError exception is raised, the loop end
             # the std err will be checked for errors.

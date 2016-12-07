@@ -50,7 +50,7 @@ class TestTarCommandBuilder(unittest.TestCase):
             "--seek --ignore-failed-read --hard-dereference "
             "--listed-incremental=listed-file.tar "
             "--exclude=\"excluded_files\" . | openssl enc -aes-256-cfb -pass "
-            "file:encrypt_pass_file")
+            "file:encrypt_pass_file && exit ${PIPESTATUS[0]}")
 
     def test_build_every_arg_windows(self):
         self.builder = tar_builders.TarCommandBuilder(".", "gzip", True,
@@ -64,7 +64,8 @@ class TestTarCommandBuilder(unittest.TestCase):
             'gnutar -c -z --incremental --unlink-first --ignore-zeros '
             '--hard-dereference --listed-incremental=listed-file.tar '
             '--exclude="excluded_files" . '
-            '| openssl enc -aes-256-cfb -pass file:encrypt_pass_file')
+            '| openssl enc -aes-256-cfb -pass file:encrypt_pass_file '
+            '&& exit ${PIPESTATUS[0]}')
 
 
 class TestTarCommandRestoreBuilder(unittest.TestCase):
@@ -90,7 +91,8 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
             self.builder.build(),
             "openssl enc -d -aes-256-cfb -pass file:encrypt_pass_file | "
             "gnutar -z --incremental --extract --unlink-first --ignore-zeros"
-            " --warning=none --directory restore_path")
+            " --warning=none --directory restore_path "
+            "&& exit ${PIPESTATUS[0]}")
 
     def test_all_args_windows(self):
         self.builder = tar_builders.TarCommandRestoreBuilder(
@@ -99,7 +101,8 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
         self.assertEqual(
             self.builder.build(),
             'openssl enc -d -aes-256-cfb -pass file:encrypt_pass_file '
-            '| gnutar -x -z --incremental --unlink-first --ignore-zeros')
+            '| gnutar -x -z --incremental --unlink-first --ignore-zeros '
+            '&& exit ${PIPESTATUS[0]}')
 
     def test_get_tar_flag_from_algo(self):
         assert tar_builders.get_tar_flag_from_algo('gzip') == '-z'
