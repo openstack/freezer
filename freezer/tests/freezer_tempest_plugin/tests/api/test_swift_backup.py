@@ -14,8 +14,8 @@
 
 import os
 import shutil
-import uuid
 
+from oslo_utils import uuidutils
 from tempest import test
 
 from freezer.tests.freezer_tempest_plugin.tests.api import base
@@ -28,7 +28,7 @@ class TestFreezerSwiftBackup(base.BaseFreezerTest):
     def setUp(self):
         super(TestFreezerSwiftBackup, self).setUp()
 
-        test_id = uuid.uuid4().hex
+        test_id = uuidutils.generate_uuid(dashed=False)
 
         self.backup_source_dir = (
             "/tmp/freezer-test-backup-source/" + test_id
