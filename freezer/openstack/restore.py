@@ -130,7 +130,7 @@ class RestoreOs(object):
         self.client_manager.get_cinder().volumes.create(size,
                                                         imageRef=image.id)
         LOG.info("Deleting temporary image")
-        self.client_manager.get_glance().images.delete(image)
+        self.client_manager.get_glance().images.delete(image.id)
 
     def restore_nova(self, instance_id, restore_from_timestamp,
                      nova_network=None):
