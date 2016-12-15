@@ -59,21 +59,6 @@ def get_common_opts():
                                       DEFAULT_FREEZER_SCHEDULER_CONF_D)
 
     _COMMON = [
-        cfg.StrOpt('job',
-                   default=None,
-                   dest='job_id',
-                   short='j',
-                   help='Name or ID of the job'),
-        cfg.StrOpt('session',
-                   default=None,
-                   dest='session_id',
-                   short='s',
-                   help='Name or ID of the session'),
-        cfg.StrOpt('file',
-                   default=None,
-                   dest='fname',
-                   help='Local file that contains the resource to be '
-                        'uploaded/downloaded'),
         cfg.StrOpt('client-id',
                    default=None,
                    dest='client_id',
@@ -87,11 +72,6 @@ def get_common_opts():
                     dest='no_api',
                     short='n',
                     help='Prevents the scheduler from using the api service'),
-        cfg.BoolOpt('active-only',
-                    default=False,
-                    dest='active_only',
-                    short='a',
-                    help='Filter only active jobs/session'),
         cfg.StrOpt('conf',
                    default=scheduler_conf_d,
                    dest='jobs_dir',
@@ -119,15 +99,6 @@ def get_common_opts():
                     dest='disable_exec',
                     help='Allow Freezer Scheduler to deny jobs that execute '
                          'commands for security reasons'),
-        cfg.BoolOpt('all',
-                    default=False,
-                    dest='all',
-                    help='Used when querying the API, to retrieve any '
-                         'document regardless of the client-id'),
-        cfg.BoolOpt('long',
-                    default=False,
-                    dest='long',
-                    help='List additional fields in output')
     ]
 
     return _COMMON
