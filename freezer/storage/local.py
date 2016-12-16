@@ -24,6 +24,8 @@ from freezer.utils import utils
 
 
 class LocalStorage(fslike.FsLikeStorage):
+    _type = 'local'
+
     def get_file(self, from_path, to_path):
         shutil.copyfile(from_path, to_path)
 

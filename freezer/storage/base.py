@@ -32,6 +32,7 @@ class Storage(object):
     Any freezer storage implementation should be inherited from this abstract
     class.
     """
+    _type = None
 
     def __init__(self, skip_prepare=False):
         if not skip_prepare:
@@ -75,6 +76,10 @@ class Storage(object):
         :return: dictionary of level zero timestamps with attached storage
         """
         pass
+
+    @property
+    def type(self):
+        return self._type
 
     def get_latest_level_zero_increments(self, engine, hostname_backup_name,
                                          recent_to_date=None):

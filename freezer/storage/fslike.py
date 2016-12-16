@@ -21,6 +21,8 @@ import json
 
 @six.add_metaclass(abc.ABCMeta)
 class FsLikeStorage(physical.PhysicalStorage):
+    _type = 'fslike'
+
     def __init__(self, storage_path,
                  max_segment_size, skip_prepare=False):
         super(FsLikeStorage, self).__init__(

@@ -24,6 +24,7 @@ LOG = log.getLogger(__name__)
 
 
 class MultipleStorage(base.Storage):
+    _type = 'multiple'
 
     def info(self):
         for s in self.storages:

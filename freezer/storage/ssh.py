@@ -25,11 +25,14 @@ from freezer.storage import fslike
 
 from freezer.utils import utils
 
+CHUNK_SIZE = 32768
+
 
 class SshStorage(fslike.FsLikeStorage):
     """
     :type ftp: paramiko.SFTPClient
     """
+    _type = 'ssh'
 
     def __init__(self, storage_path, ssh_key_path,
                  remote_username, remote_ip, port, max_segment_size):
@@ -51,8 +54,8 @@ class SshStorage(fslike.FsLikeStorage):
 
     def init(self):
         ssh = paramiko.SSHClient()
+        ssh.load_system_host_keys()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
         ssh.connect(self.remote_ip, username=self.remote_username,
                     key_filename=self.ssh_key_path, port=self.port)
 
@@ -100,7 +103,11 @@ class SshStorage(fslike.FsLikeStorage):
 
     def listdir(self, directory):
         try:
-            return self.ftp.listdir(directory)
+            # paramiko SFTPClient.listdir_attr returns
+            # directories in arbitarary order, so we should
+            # sort results of this command
+            res = self.ftp.listdir(directory)
+            return sorted(res)
         except IOError as e:
             if e.errno == errno.ENOENT:
                 return list()
@@ -108,7 +115,25 @@ class SshStorage(fslike.FsLikeStorage):
                 raise
 
     def open(self, filename, mode):
-        return self.ftp.open(filename, mode=mode)
+        return self.ftp.open(filename, mode=mode,
+                             bufsize=self.max_segment_size)
+
+    def read_metadata_file(self, path):
+        file_stats = self.ftp.stat(path)
+        file_size = file_stats.st_size
+        data = ""
+        received_size = 0
+        with self.open(path, 'r') as reader:
+            reader.prefetch(file_size)
+            chunk = reader.read(CHUNK_SIZE)
+            while chunk:
+                received_size += len(chunk)
+                data += chunk
+                chunk = reader.read(CHUNK_SIZE)
+        if file_size != received_size:
+            raise IOError('Size mismatch: expected {} received {}'.format(
+                          file_size, received_size))
+        return data
 
     def backup_blocks(self, backup):
         self.init()  # should recreate ssh for new process
