@@ -13,7 +13,7 @@ Include the URL of your launchpad blueprint:
 
 * https://blueprints.launchpad.net/freezer/+spec/freezerclient
 
-Freezer needs to align to the other Openstack projects and have a dedicated
+Freezer needs to align to the other OpenStack projects and have a dedicated
 repo/client to communicate with the API and the storage media.
 
 Problem description

@@ -128,7 +128,7 @@ Possible options:
 
 - We can add an additional option called data_input_type, setting the default to fs (file system) or stream and use tenant as backup mode
 
-- When restoring, would probably good to recreate the tenant resources with a tenant name provided by the user (i.e. provided by Openstack environment variable like the OS_TENANT_NAME var). This has the advantage to recreate the resources with a different tenant in case is needed.
+- When restoring, would probably good to recreate the tenant resources with a tenant name provided by the user (i.e. provided by OpenStack environment variable like the OS_TENANT_NAME var). This has the advantage to recreate the resources with a different tenant in case is needed.
 
 - Does the Cinder volumes needs to be attached to the VMs, in case they were when the backup was taken?
 

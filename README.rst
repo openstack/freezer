@@ -738,7 +738,7 @@ related to the storage
 Example: ssh-username, ssh-port
 
 For swift storage you should provide additional parameter called 'osrc'
-Osrc should be a path to file with Openstack Credentials like::
+Osrc should be a path to file with OpenStack Credentials like::
 
   unset OS_DOMAIN_NAME
   export OS_AUTH_URL=http://url:5000/v3
@@ -1097,7 +1097,7 @@ optional arguments:
   --noverbose           The inverse of --verbose
   --nowatch-log-file    The inverse of --watch-log-file
   --os-identity-api-version OS_IDENTITY_API_VERSION, --os_auth_ver OS_IDENTITY_API_VERSION
-                        Openstack identity api version, can be 1, 2, 2.0 or 3
+                        OpenStack identity api version, can be 1, 2, 2.0 or 3
   --overwrite           With overwrite removes files from restore path before
                         restore.
   --path-to-backup PATH_TO_BACKUP, -F PATH_TO_BACKUP
