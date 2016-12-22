@@ -76,8 +76,8 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
     def test(self):
         self.assertEqual(
             self.builder.build(),
-            "gnutar -z --incremental --extract --unlink-first --ignore-zeros "
-            "--warning=none --directory restore_path")
+            "gnutar -z --incremental --extract --ignore-zeros "
+            "--warning=none --overwrite --directory restore_path")
 
     def test_dry_run(self):
         self.builder.set_dry_run()
@@ -90,8 +90,8 @@ class TestTarCommandRestoreBuilder(unittest.TestCase):
         self.assertEqual(
             self.builder.build(),
             "openssl enc -d -aes-256-cfb -pass file:encrypt_pass_file | "
-            "gnutar -z --incremental --extract --unlink-first --ignore-zeros"
-            " --warning=none --directory restore_path "
+            "gnutar -z --incremental --extract --ignore-zeros"
+            " --warning=none --overwrite --directory restore_path "
             "&& exit ${PIPESTATUS[0]}")
 
     def test_all_args_windows(self):
