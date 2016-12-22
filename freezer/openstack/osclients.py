@@ -236,7 +236,7 @@ class OSClientManager(object):
                 time.sleep(5)
             except Exception as e:
                 LOG.exception(e)
-                LOG.warn("Exception getting volume status")
+                LOG.warning("Exception getting volume status")
         return volume
 
     def make_glance_image(self, image_volume_name, copy_volume):
@@ -264,7 +264,7 @@ class OSClientManager(object):
                 if image.status in ("killed", "deleted"):
                     raise
                 LOG.exception(e)
-                LOG.warn("Exception getting image status")
+                LOG.warning("Exception getting image status")
         return image
 
     def clean_snapshot(self, snapshot):
