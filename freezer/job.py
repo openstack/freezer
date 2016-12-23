@@ -290,7 +290,7 @@ class RestoreJob(Job):
                     " {0} ({1})".format(e.filename, e.strerror))
             return {}
         res = restore.RestoreOs(conf.client_manager, conf.container,
-                                conf.storage)
+                                self.storage)
         if conf.backup_media == 'nova':
             LOG.info("Restoring nova backup. Instance ID: {0}, timestamp: {1}"
                      .format(conf.nova_inst_id, restore_timestamp))

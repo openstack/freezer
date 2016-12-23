@@ -41,19 +41,21 @@ class RestoreOs(object):
         :type restore_from_timestamp: int
         :return:
         """
-        if self.storage == "swift":
+        if self.storage.type == "swift":
             swift = self.client_manager.get_swift()
             path = "{0}_segments/{1}/".format(self.container, path)
             info, backups = swift.get_container(self.container, prefix=path)
             backups = sorted(
                 map(lambda x: int(x["name"].rsplit("/", 1)[-1]), backups))
-        elif self.storage == "local":
+        elif self.storage.type == "local":
             path = "{0}/{1}".format(self.container, path)
             backups = os.listdir(os.path.abspath(path))
+        elif self.storage.type == "ssh":
+            path = "{0}/{1}".format(self.container, path)
+            backups = self.storage.listdir(path)
         else:
-            # TODO(dstepanenko): handle ssh storage type here
             msg = ("{} storage type is not supported at the moment."
-                   " Try (local or  swift)".format(self.storage))
+                   " Try local, swift or ssh".format(self.storage.type))
             print(msg)
             raise BaseException(msg)
         backups = list(filter(lambda x: x >= restore_from_timestamp, backups))
@@ -72,7 +74,7 @@ class RestoreOs(object):
         """
         swift = self.client_manager.get_swift()
         backup = self._get_backups(path, restore_from_timestamp)
-        if self.storage == 'swift':
+        if self.storage.type == 'swift':
             path = "{0}_segments/{1}/{2}".format(self.container, path, backup)
             stream = swift.get_object(self.container,
                                       "{}/{}".format(path, backup),
@@ -86,7 +88,7 @@ class RestoreOs(object):
                 disk_format="raw",
                 data=data)
             return info, image
-        elif self.storage == 'local':
+        elif self.storage.type == 'local':
             image_file = "{0}/{1}/{2}/{3}".format(self.container, path,
                                                   backup, path)
             metadata_file = "{0}/{1}/{2}/metadata".format(self.container,
@@ -104,9 +106,25 @@ class RestoreOs(object):
                 disk_format="raw",
                 data=data)
             return info, image
+        elif self.storage.type == 'ssh':
+            image_file = "{0}/{1}/{2}/{3}".format(self.container, path,
+                                                  backup, path)
+            metadata_file = "{0}/{1}/{2}/metadata".format(self.container,
+                                                          path, backup)
+            try:
+                data = self.storage.open(image_file, 'rb')
+            except Exception:
+                msg = "Failed to open remote image file {}".format(image_file)
+                LOG.error(msg)
+                raise BaseException(msg)
+            info = json.loads(self.storage.read_metadata_file(metadata_file))
+            image = self.client_manager.create_image(
+                name="restore_{}".format(path),
+                container_format="bare",
+                disk_format="raw",
+                data=data)
+            return info, image
         else:
-            # TODO(yangyapeng) ssh storage need to implement
-            # storage is ssh storage
             return {}
 
     def restore_cinder(self, volume_id=None,

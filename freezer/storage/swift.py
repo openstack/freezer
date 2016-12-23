@@ -33,6 +33,8 @@ class SwiftStorage(physical.PhysicalStorage):
     :type client_manager: freezer.osclients.ClientManager
     """
 
+    _type = 'swift'
+
     def rmtree(self, path):
         split = path.rsplit('/', 1)
         for file in self.swift().get_container(split[0],
