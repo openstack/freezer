@@ -24,7 +24,7 @@ from freezer.tests.integration import common
 
 class TestSimpleExecution(common.TestFS):
     def test_freezerc_executes(self):
-        result = common.execute_freezerc({})
+        result = common.execute_freezerc({'version': ''})
         self.assertIsNotNone(result)
 
     def test_freezerc_fails_with_wrong_params(self):
@@ -78,8 +78,7 @@ class TestBackupFSLocalstorage(common.TestFS):
             self.assertIsNotNone(result)
             result = common.execute_freezerc(restore_args)
             self.assertIsNotNone(result)
-            self.assertTreesMatch()
-        self.do_backup_and_restore_with_check(backup_args, restore_args)
+        self.assertTreesMatch()
 
     def test_backup_preexisting_dir(self):
         """

@@ -20,6 +20,7 @@ Key Features
 -  Low storage consumption as the backup are uploaded as a stream
 -  Flexible backup policy (incremental and differential)
 -  Data is archived in GNU Tar format for file based incremental
+-  Block based backup support (rsync)
 -  Multiple compression algorithm support (zlib, bzip2, xz)
 -  Remove old backup automatically according to the provided parameters
 -  Multiple storage media support (Swift, local file system, ssh)

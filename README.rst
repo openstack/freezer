@@ -86,7 +86,7 @@ Freezer Components
 |                   | It can be executed standalone or by the Freezer Scheduler.                                                                                     |
 |                   | The Freezer Agent provides a flexible way to execute backup, restore and other actions on a running system.                                    |
 |                   | In order to provide flexibility in terms of data integrity, speed, performance, resources usage, etc the freezer agent offers a                |
-|                   | wide range of options to execute optimized backup according to the available resources as:                                                        |
+|                   | wide range of options to execute optimized backup according to the available resources as:                                                     |
 |                   |                                                                                                                                                |
 |                   |   - Segments size (the amount of memory used)                                                                                                  |
 |                   |   - Queues size (optimize backups where I/O, bandwidth, memory or CPU is a constraint)                                                         |
@@ -124,6 +124,7 @@ Linux Requirements
 -  libffi-dev
 -  libssl-dev
 -  python-dev
+-  pycrypto
 -  At least 128 MB of memory reserved for Freezer
 
 Windows Requirements
@@ -553,9 +554,9 @@ Freezer architectural components are the following:
 -  OpenStack Swift (the storage)
 -  freezer client running on the node where the backups and restores are to be executed
 
-Freezer uses GNU Tar under the hood to execute incremental backup and
-restore. When a key is provided, it uses OpenSSL to encrypt data.
-(AES-256-CFB)
+Freezer uses GNU Tar or Rsync algorithm under the hood to execute incremental backup and
+restore. When a key is provided, it uses OpenSSL or pycrypto module (OpenSSL compatible)
+to encrypt data. (AES-256-CFB)
 
 =============
 
@@ -582,7 +583,7 @@ The Freezer architecture is composed of the following components:
 |                   | It can be executed standalone or by the Freezer Scheduler.                                                                                     |
 |                   | The freezer-agent provides a flexible way to execute backup, restore and other actions on a running system.                                    |
 |                   | In order to provide flexibility in terms of data integrity, speed, performance, resources usage, etc the freezer agent offers a                |
-|                   | wide range of options to execute optimized backup according to the available resources as:                                                        |
+|                   | wide range of options to execute optimized backup according to the available resources as:                                                     |
 |                   |                                                                                                                                                |
 |                   |   - Segments size (the amount of memory used)                                                                                                  |
 |                   |   - Queues size (optimize backups where I/O, bandwidth, memory or CPU is a constraint)                                                         |
