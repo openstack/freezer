@@ -60,7 +60,6 @@ def get_common_opts():
 
     _COMMON = [
         cfg.StrOpt('client-id',
-                   default=None,
                    dest='client_id',
                    short='c',
                    help='Specifies the client_id used when contacting the '
@@ -201,7 +200,6 @@ def parse_args(choices):
     positional = [
         cfg.StrOpt('action',
                    choices=choices,
-                   default=None,
                    help='{0}'.format(choices), positional=True),
 
     ]
