@@ -13,10 +13,11 @@
 # limitations under the License.
 
 import abc
+import json
+
 import six
 
 from freezer.storage import physical
-import json
 
 
 @six.add_metaclass(abc.ABCMeta)

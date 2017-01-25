@@ -12,18 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import os
 import re
-import six
-
-from six.moves import configparser
 
 from oslo_log import log
+import six
+from six.moves import configparser
 
 from freezer.utils import utils
 
 LOG = log.getLogger(__name__)
+
+
+EXPORT = re.compile(r"^\s*export\s+([^=^#^\s]+)\s*=\s*([^#^\n]*)\s*$",
+                    re.MULTILINE)
+
+INI = re.compile(r"^\s*([^=#\s]+)\s*=[\t]*([^#\n]*)\s*$", re.MULTILINE)
 
 
 class Config(object):
@@ -68,12 +72,6 @@ class Config(object):
         """
         self.default = default
         self.storages = storages
-
-
-EXPORT = re.compile(r"^\s*export\s+([^=^#^\s]+)\s*=\s*([^#^\n]*)\s*$",
-                    re.MULTILINE)
-
-INI = re.compile(r"^\s*([^=#\s]+)\s*=[\t]*([^#\n]*)\s*$", re.MULTILINE)
 
 
 def osrc_parse(lines):

@@ -230,7 +230,8 @@ class BackupEngine(object):
         if not overwrite and not utils.is_empty_dir(restore_path):
             raise Exception(
                 "Restore dir is not empty. "
-                "Please use --overwrite or provide different path.")
+                "Please use --overwrite or provide different path "
+                "or remove the content of {}".format(restore_path))
 
         LOG.info("Restore path creation completed")
         backups = self.storage.get_latest_level_zero_increments(
@@ -244,6 +245,7 @@ class BackupEngine(object):
         read_except_queue = queues.SimpleQueue()
         LOG.info("Restoring backup {0}".format(hostname_backup_name))
         for level in range(0, max_level + 1):
+            LOG.info("Restoring from level {0}".format(level))
             backup = backups[level]
             read_pipe, write_pipe = multiprocessing.Pipe()
             process_stream = multiprocessing.Process(
@@ -259,16 +261,17 @@ class BackupEngine(object):
             # Use SimpleQueue because Queue does not work on Mac OS X.
             write_except_queue = queues.SimpleQueue()
 
-            tar_stream = multiprocessing.Process(
+            engine_stream = multiprocessing.Process(
                 target=self.restore_level,
                 args=(restore_path, read_pipe, backup, write_except_queue))
 
-            tar_stream.daemon = True
-            tar_stream.start()
+            engine_stream.daemon = True
+            engine_stream.start()
+
             read_pipe.close()
             write_pipe.close()
             process_stream.join()
-            tar_stream.join()
+            engine_stream.join()
 
             # SimpleQueue handling is different from queue handling.
             def handle_except_SimpleQueue(except_queue):
@@ -286,7 +289,7 @@ class BackupEngine(object):
             got_exception = (handle_except_SimpleQueue(write_except_queue) or
                              got_exception)
 
-            if tar_stream.exitcode or got_exception:
+            if engine_stream.exitcode or got_exception:
                 raise engine_exceptions.EngineException(
                     "Engine error. Failed to restore.")
 

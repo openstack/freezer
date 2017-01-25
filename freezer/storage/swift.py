@@ -17,11 +17,10 @@ limitations under the License.
 
 import json
 import os
-import requests
 import time
 
 from oslo_log import log
-
+import requests
 
 from freezer.storage import physical
 

@@ -16,10 +16,10 @@
 
 import abc
 import json
-import six
 import tempfile
 
 from oslo_log import log
+import six
 
 from freezer.utils import utils
 
@@ -214,9 +214,6 @@ class Backup(object):
         :type timestamp: int
         :param level: current incremental level of backup
         :type level: int
-        :param tar_meta: Is backup has or has not an attached meta
-        tar file in storage. Default = False
-        :type tar_meta: bool
         :return:
         """
         self.hostname_backup_name = hostname_backup_name

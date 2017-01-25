@@ -15,10 +15,12 @@ limitations under the License.
 
 Freezer general utils functions
 """
+
+import threading
+
 from oslo_log import log
 from six.moves import queue
 
-import threading
 
 LOG = log.getLogger(__name__)
 

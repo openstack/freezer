@@ -16,6 +16,7 @@ limitations under the License.
 
 Freezer main execution function
 """
+
 import json
 import os
 import prettytable
@@ -78,6 +79,7 @@ def freezer_main(backup_args):
         encrypt_key=backup_args.encrypt_pass_file,
         dry_run=backup_args.dry_run
     )
+
     if hasattr(backup_args, 'trickle_command'):
         if "tricklecount" in os.environ:
             if int(os.environ.get("tricklecount")) > 1:
@@ -183,6 +185,7 @@ def get_client_manager(backup_args):
 def storage_from_dict(backup_args, max_segment_size):
     storage_name = backup_args['storage']
     container = backup_args['container']
+
     if storage_name == "swift":
         client_manager = backup_args['client_manager']
 
@@ -200,8 +203,9 @@ def storage_from_dict(backup_args, max_segment_size):
             int(backup_args.get('ssh_port', freezer_config.DEFAULT_SSH_PORT)),
             max_segment_size=max_segment_size)
     else:
-        raise Exception("Not storage found for name {0}".format(
+        raise Exception("No storage found for name {0}".format(
             backup_args['storage']))
+
     return storage
 
 

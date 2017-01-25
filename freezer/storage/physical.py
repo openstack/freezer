@@ -17,6 +17,7 @@ limitations under the License.
 
 import abc
 import os
+
 import six
 
 from freezer.storage import base

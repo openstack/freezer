@@ -22,7 +22,6 @@ import stat
 import paramiko
 
 from freezer.storage import fslike
-
 from freezer.utils import utils
 
 CHUNK_SIZE = 32768

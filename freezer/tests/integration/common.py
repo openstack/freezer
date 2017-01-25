@@ -18,6 +18,7 @@ import hashlib
 import itertools
 import json
 import os
+import random
 import shutil
 import subprocess
 import tempfile
@@ -25,6 +26,7 @@ import unittest
 
 import paramiko
 import six
+from six.moves import range
 
 FREEZERC = distutils.spawn.find_executable('freezer-agent')
 
@@ -107,26 +109,50 @@ class Temp_Tree(object):
 
     def add_random_data(self, ndir=5, nfile=5, size=1024):
         """
-        add some files containing randoma data
+        add some files containing random data
 
         :param ndir: number of dirs to create
         :param nfile: number of files to create in each dir
         :param size: size of files
         :return: None
         """
-        for x in range(ndir):
+        def create_file(path):
+            abs_pathname = self.create_file_with_random_data(
+                dir_path=path, size=size)
+            rel_path_name = abs_pathname[len(self.path) + 1:]
+            self.files.append(rel_path_name)
+
+        for _ in range(nfile):
+            create_file(self.path)
+
+        for _ in range(ndir):
             subdir_path = tempfile.mkdtemp(dir=self.path)
-            for y in range(nfile):
-                abs_pathname = self.create_file_with_random_data(
-                    dir_path=subdir_path, size=size)
-                rel_path_name = abs_pathname[len(self.path) + 1:]
-                self.files.append(rel_path_name)
+            for _ in range(nfile):
+                create_file(subdir_path)
 
     def create_file_with_random_data(self, dir_path, size=1024):
         handle, abs_pathname = tempfile.mkstemp(dir=dir_path)
         with open(abs_pathname, 'wb') as fd:
             fd.write(os.urandom(size))
         return abs_pathname
+
+    def modify_random_files(self, count=1):
+        indexes = []
+        for _ in range(count):
+            indexes.append(random.randint(0, len(self.files) - 1))
+        for file_index in indexes:
+            file_name = self.files[file_index]
+            with open(os.path.join(self.path, file_name), 'ab') as fd:
+                size_to_add = int(fd.tell() * 0.5)
+                fd.write(os.urandom(size_to_add))
+
+    def delete_random_files(self, count=1):
+        indexes = []
+        for _ in range(count):
+            indexes.append(random.randint(0, len(self.files) - 1))
+        for file_index in indexes:
+            file_name = self.files[file_index]
+            os.unlink(os.path.join(self.path, file_name))
 
     def get_file_hash(self, rel_filepath):
         filepath = os.path.join(self.path, rel_filepath)
