@@ -277,6 +277,7 @@ class Job(object):
                 kwargs_date.update({
                     'end_date': end_date
                 })
+
         if self.schedule_date:
             return {'trigger': 'date',
                     'run_date': self.schedule_date}
@@ -289,16 +290,17 @@ class Job(object):
                 val, unit = self.schedule_interval.split(' ')
                 kwargs.update({unit: int(val)})
             return kwargs
-        else:
+        elif self.schedule_cron_fields:
             kwargs = {'trigger': 'cron'}
+            kwargs.update(kwargs_date)
             cron_fields = self.schedule_cron_fields
-            if cron_fields:
-                kwargs = {'trigger': 'cron'}.update(kwargs_date)
-                return kwargs.update(cron_fields)
-        # no scheduling information, schedule to start within a few seconds
-        return {'trigger': 'date',
-                'run_date': datetime.datetime.now() +
-                datetime.timedelta(0, 2, 0)}
+            kwargs.update(cron_fields)
+            return kwargs
+        else:
+            # no scheduling information, schedule to start within a few seconds
+            return {'trigger': 'date',
+                    'run_date': datetime.datetime.now() +
+                    datetime.timedelta(0, 2, 0)}
 
     def process_event(self, job_doc):
         with self.scheduler.lock:
