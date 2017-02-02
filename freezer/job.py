@@ -260,7 +260,7 @@ class RestoreJob(Job):
 
     def execute(self):
         conf = self.conf
-        LOG.info('Executing FS restore...')
+        LOG.info('Executing Restore...')
         restore_timestamp = None
 
         restore_abs_path = conf.restore_abs_path
@@ -293,13 +293,12 @@ class RestoreJob(Job):
         res = restore.RestoreOs(conf.client_manager, conf.container,
                                 self.storage)
         if conf.backup_media == 'nova':
-            LOG.info("Restoring nova backup. Instance ID: {0}, timestamp: {1}"
-                     .format(conf.nova_inst_id, restore_timestamp))
-            nova_network = None
-            if conf.nova_restore_network:
-                nova_network = conf.nova_restore_network
+            LOG.info("Restoring nova backup. Instance ID: {0}, timestamp: {1} "
+                     "network-id {2}".format(conf.nova_inst_id,
+                                             restore_timestamp,
+                                             conf.nova_network_id))
             res.restore_nova(conf.nova_inst_id, restore_timestamp,
-                             nova_network)
+                             conf.nova_network_id)
         elif conf.backup_media == 'cinder':
             LOG.info("Restoring cinder backup from glance. Volume ID: {0}, "
                      "timestamp: {1}".format(conf.cinder_vol_id,
