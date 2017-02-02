@@ -25,6 +25,10 @@ ChangeLog
 .secret_key_store
 *.lock
 
+# Eclipse generates these
+.project
+.pydevproject
+
 # Coverage data
 .coverage.*
 releasenotes/build
