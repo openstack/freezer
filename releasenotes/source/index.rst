@@ -8,6 +8,7 @@ Contents
    :maxdepth: 2
 
    unreleased
+   ocata
    newton
 
 Indices and tables
