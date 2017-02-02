@@ -232,6 +232,7 @@ class BackupJob(Job):
                      'incremental: {1}'.format(self.conf.cindernative_vol_id,
                                                self.conf.incremental))
             backup_os.backup_cinder(self.conf.cindernative_vol_id,
+                                    name=self.conf.backup_name,
                                     incremental=self.conf.incremental)
         elif backup_media == 'cinder':
             LOG.info('Executing cinder snapshot. Volume ID: {0}'.format(
