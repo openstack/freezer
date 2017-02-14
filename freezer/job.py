@@ -296,9 +296,9 @@ class RestoreJob(Job):
             LOG.info("Restoring nova backup. Instance ID: {0}, timestamp: {1} "
                      "network-id {2}".format(conf.nova_inst_id,
                                              restore_timestamp,
-                                             conf.nova_network_id))
+                                             conf.nova_restore_network))
             res.restore_nova(conf.nova_inst_id, restore_timestamp,
-                             conf.nova_network_id)
+                             conf.nova_restore_network)
         elif conf.backup_media == 'cinder':
             LOG.info("Restoring cinder backup from glance. Volume ID: {0}, "
                      "timestamp: {1}".format(conf.cinder_vol_id,
