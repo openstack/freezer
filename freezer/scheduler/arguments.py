@@ -115,16 +115,31 @@ def build_os_options():
                    help='Password used for authentication with the OpenStack '
                         'Identity service. Defaults to env[OS_PASSWORD].',
                    dest='os_password'),
+        cfg.StrOpt('os-project-id',
+                   default=env('OS_PROJECT_ID'),
+                   help='Project id to scope to. Defaults to '
+                        'env[OS_PROJECT_ID].',
+                   dest='os_project_id'),
         cfg.StrOpt('os-project-name',
                    default=env('OS_PROJECT_NAME'),
                    help='Project name to scope to. Defaults to '
                         'env[OS_PROJECT_NAME].',
                    dest='os_project_name'),
+        cfg.StrOpt('os-project-domain-id',
+                   default=env('OS_PROJECT_DOMAIN_ID'),
+                   help='Domain ID containing project. Defaults to '
+                        'env[OS_PROJECT_DOMAIN_ID].',
+                   dest='os_project_domain_id'),
         cfg.StrOpt('os-project-domain-name',
                    default=env('OS_PROJECT_DOMAIN_NAME'),
                    help='Domain name containing project. Defaults to '
                         'env[OS_PROJECT_DOMAIN_NAME].',
                    dest='os_project_domain_name'),
+        cfg.StrOpt('os-user-domain-id',
+                   default=env('OS_USER_DOMAIN_ID'),
+                   help='User\'s domain id. Defaults to '
+                        'env[OS_USER_DOMAIN_ID].',
+                   dest='os_user_domain_id'),
         cfg.StrOpt('os-user-domain-name',
                    default=env('OS_USER_DOMAIN_NAME'),
                    help='User\'s domain name. Defaults to '
