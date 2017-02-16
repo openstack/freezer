@@ -15,7 +15,6 @@ limitations under the License.
 
 Freezer Backup modes related functions
 """
-import time
 
 from oslo_log import log
 
@@ -51,20 +50,36 @@ class BackupOs(object):
         instance = nova.servers.get(instance_id)
         glance = client_manager.get_glance()
 
-        if instance.__dict__['OS-EXT-STS:task_state']:
-            time.sleep(5)
-            instance = nova.servers.get(instance)
+        def instance_finish_task():
+            instance = nova.servers.get(instance_id)
+            return not instance.__dict__['OS-EXT-STS:task_state']
+
+        utils.wait_for(
+            instance_finish_task, 1, 10,
+            message="Waiting for instance {0} to finish {1} to start the "
+                    "snapshot process".format(
+                        instance_id,
+                        instance.__dict__['OS-EXT-STS:task_state']
+                    )
+        )
+        instance = nova.servers.get(instance)
 
         image_id = nova.servers.create_image(instance,
                                              "snapshot_of_%s" % instance_id)
 
         image = glance.images.get(image_id)
-        while image.status != 'active':
-            time.sleep(5)
-            try:
-                image = glance.images.get(image_id)
-            except Exception as e:
-                LOG.error(e)
+
+        def image_active():
+            image = glance.images.get(image_id)
+            return image.status == 'active'
+
+        utils.wait_for(image_active, 1, 10,
+                       message="Waiting for instnace {0} snapshot to become "
+                               "active".format(instance_id))
+        try:
+            image = glance.images.get(image_id)
+        except Exception as e:
+            LOG.error(e)
 
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(instance_id, utils.DateTime.now().timestamp)

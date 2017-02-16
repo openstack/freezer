@@ -17,8 +17,11 @@ import datetime
 import os
 import time
 
+import mock
+
 from mock import patch
 
+from freezer.exceptions import utils as exception_utils
 from freezer.openstack import osclients
 from freezer.tests import commons
 from freezer.utils import utils
@@ -202,3 +205,13 @@ class TestDateTime(object):
         d2 = datetime.datetime(2015, 3, 7, 18, 18, 38, 508411)
         ts2 = utils.DateTime(d2)
         assert '0:30:53.791612' == '{}'.format(ts2 - self.datetime)
+
+    def test_wait_for_positive(self):
+        condition = mock.MagicMock(side_effect=[False, False, True, True])
+        utils.wait_for(condition, 0.1, 1)
+        self.assertEqual(3, condition.called)
+
+    def test_wait_for_negative(self):
+        condition = mock.MagicMock(side_effect=[False, False, False])
+        self.assertRaises(exception_utils.TimeoutException,
+                          utils.wait_for(condition, 0.1, 0.2))
