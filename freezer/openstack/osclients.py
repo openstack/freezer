@@ -50,7 +50,7 @@ class OSClientManager(object):
         if 'verify' in kwargs.keys():
             session_kwargs['verify'] = kwargs.pop('verify')
         if 'cacert' in kwargs.keys():
-            session_kwargs['cert'] = kwargs.pop('cacert')
+            session_kwargs['verify'] = kwargs.pop('cacert')
         # client specific args
         if 'insecure' in kwargs.keys():
             self.client_kwargs['insecure'] = kwargs.pop('insecure')
