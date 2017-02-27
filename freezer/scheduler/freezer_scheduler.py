@@ -43,7 +43,7 @@ LOG = log.getLogger(__name__)
 
 
 class FreezerScheduler(object):
-    def __init__(self, apiclient, interval, job_path):
+    def __init__(self, apiclient, interval, job_path, concurrent_jobs=1):
         # config_manager
         self.client = apiclient
         self.freezerc_executable = spawn.find_executable('freezer-agent')
@@ -56,14 +56,14 @@ class FreezerScheduler(object):
         self.job_path = job_path
         self._client = None
         self.lock = threading.Lock()
-        self.execution_lock = threading.Lock()
         job_defaults = {
             'coalesce': True,
-            'max_instances': 2
+            'max_instances': 1
         }
         executors = {
             'default': {'type': 'threadpool', 'max_workers': 1},
-            'threadpool': {'type': 'threadpool', 'max_workers': 10}
+            'threadpool': {'type': 'threadpool',
+                           'max_workers': concurrent_jobs}
         }
         self.scheduler = background.BackgroundScheduler(
             job_defaults=job_defaults,
@@ -226,7 +226,8 @@ def main():
     freezer_utils.create_dir(CONF.jobs_dir, do_log=False)
     freezer_scheduler = FreezerScheduler(apiclient=apiclient,
                                          interval=int(CONF.interval),
-                                         job_path=CONF.jobs_dir)
+                                         job_path=CONF.jobs_dir,
+                                         concurrent_jobs=CONF.concurrent_jobs)
 
     if CONF.no_daemon:
         print('Freezer Scheduler running in no-daemon mode')
@@ -240,7 +241,8 @@ def main():
             daemon = win_daemon.Daemon(daemonizable=freezer_scheduler,
                                        interval=int(CONF.interval),
                                        job_path=CONF.jobs_dir,
-                                       insecure=CONF.insecure)
+                                       insecure=CONF.insecure,
+                                       concurrent_jobs=CONF.concurrent_jobs)
         else:
             daemon = linux_daemon.Daemon(daemonizable=freezer_scheduler)
 
