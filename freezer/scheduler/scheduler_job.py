@@ -382,8 +382,6 @@ class Job(object):
                                 ' retrying in {2} seconds'
                                 .format(self.id, action_name,
                                         max_retries_interval))
-                    # sleeping with the bloody lock, but we don't want other
-                    # actions to mess with our stuff like fs snapshots, do we ?
                     time.sleep(max_retries_interval)
             else:
                 # SUCCESS
@@ -419,46 +417,45 @@ class Job(object):
 
     def execute(self):
         result = Job.SUCCESS_RESULT
-        with self.scheduler.execution_lock:
-            with self.scheduler.lock:
-                LOG.info('job {0} running'.format(self.id))
-                self.state = RunningState
-                self.update_job_schedule_doc(status=Job.RUNNING_STATUS,
-                                             result="",
-                                             time_started=int(time.time()),
-                                             time_ended=Job.TIME_NULL)
-                self.scheduler.update_job_schedule(
-                    self.id,
-                    self.job_doc['job_schedule'])
+        with self.scheduler.lock:
+            LOG.info('job {0} running'.format(self.id))
+            self.state = RunningState
+            self.update_job_schedule_doc(status=Job.RUNNING_STATUS,
+                                         result="",
+                                         time_started=int(time.time()),
+                                         time_ended=Job.TIME_NULL)
+            self.scheduler.update_job_schedule(
+                self.id,
+                self.job_doc['job_schedule'])
 
-            self.start_session()
-            # if the job contains exec action and the scheduler passes the
-            # parameter --disable-exec job execution should fail
-            if self.contains_exec() and CONF.disable_exec:
-                LOG.info("Job {0} failed because it contains exec action "
-                         "and exec actions are disabled by scheduler"
-                         .format(self.id))
-                self.result = Job.FAIL_RESULT
-                self.finish()
-                return
-
-            for job_action in self.job_doc.get('job_actions', []):
-                if job_action.get('mandatory', False) or\
-                        (result == Job.SUCCESS_RESULT):
-
-                    action_result = self.execute_job_action(job_action)
-                    if action_result == Job.FAIL_RESULT:
-                        result = Job.FAIL_RESULT
-
-                    if action_result == Job.ABORTED_RESULT:
-                        result = Job.ABORTED_RESULT
-                else:
-                    freezer_action = job_action.get('freezer_action', {})
-                    action_name = freezer_action.get('action', '')
-                    LOG.warning("skipping {0} action".
-                                format(action_name))
-            self.result = result
+        self.start_session()
+        # if the job contains exec action and the scheduler passes the
+        # parameter --disable-exec job execution should fail
+        if self.contains_exec() and CONF.disable_exec:
+            LOG.info("Job {0} failed because it contains exec action "
+                     "and exec actions are disabled by scheduler"
+                     .format(self.id))
+            self.result = Job.FAIL_RESULT
             self.finish()
+            return
+
+        for job_action in self.job_doc.get('job_actions', []):
+            if job_action.get('mandatory', False) or\
+                    (result == Job.SUCCESS_RESULT):
+
+                action_result = self.execute_job_action(job_action)
+                if action_result == Job.FAIL_RESULT:
+                    result = Job.FAIL_RESULT
+
+                if action_result == Job.ABORTED_RESULT:
+                    result = Job.ABORTED_RESULT
+            else:
+                freezer_action = job_action.get('freezer_action', {})
+                action_name = freezer_action.get('action', '')
+                LOG.warning("skipping {0} action".
+                            format(action_name))
+        self.result = result
+        self.finish()
 
     def finish(self):
         self.update_job_schedule_doc(time_ended=int(time.time()))
