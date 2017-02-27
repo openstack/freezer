@@ -87,7 +87,19 @@ class InfoJob(Job):
         pass
 
     def execute(self):
-        self.storage.info()
+        info = self.storage.info()
+        if not info:
+            return
+        fields = ["Container", "Size", "Object Count"]
+        data = []
+        for container in info:
+            values = [
+                container.get('container_name'),
+                container.get('size'),
+                container.get('objects_count')
+            ]
+            data.append(values)
+        return [fields, data]
 
 
 class BackupJob(Job):

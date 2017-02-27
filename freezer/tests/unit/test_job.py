@@ -30,7 +30,7 @@ class TestJob(commons.FreezerBaseTestCase):
     def test_execute(self):
         opt = commons.BackupOpt1()
         job = jobs.InfoJob(opt, opt.storage)
-        assert job.execute() is None
+        assert job.execute() is not None
 
 
 class TestInfoJob(TestJob):

@@ -15,7 +15,6 @@ limitations under the License.
 
 """
 
-import json
 import os
 import time
 
@@ -134,19 +133,21 @@ class SwiftStorage(physical.PhysicalStorage):
             self.swift().put_container(self.storage_path)
 
     def info(self):
-        ordered_container = {}
         containers = self.swift().get_account()[1]
+        ordered_containers = []
         for container in containers:
-            print(container)
+            ordered_container = {}
             ordered_container['container_name'] = container['name']
-            size = '{0}'.format((int(container['bytes']) / 1024) / 1024)
-            if size == '0':
-                size = '1'
-            ordered_container['size'] = '{0}MB'.format(size)
+            size = (int(container['bytes']) / 1024) / 1024
+            if size == 0:
+                size = 1
+            ordered_container['size'] = '{0} MB'.format(size)
+            if size >= 1024:
+                size /= 1024
+                ordered_container['size'] = '{0} GB'.format(size)
             ordered_container['objects_count'] = container['count']
-            print(json.dumps(
-                ordered_container, indent=4,
-                separators=(',', ': '), sort_keys=True))
+            ordered_containers.append(ordered_container)
+        return ordered_containers
 
     def get_file(self, from_path, to_path):
         split = from_path.split('/', 1)
