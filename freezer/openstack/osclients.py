@@ -284,7 +284,8 @@ class OSClientManager(object):
         LOG.debug("Download image enter")
         stream = self.get_glance().images.data(image.id)
         LOG.debug("Stream with size {0}".format(image.size))
-        return utils.ReSizeStream(stream, image.size, 1000000)
+        return utils.ReSizeStream(stream, image.size,
+                                  CONF.get('max_segment_size'))
 
     def create_image(self, name, container_format, disk_format, data=None):
         LOG.info("Creating glance image")
