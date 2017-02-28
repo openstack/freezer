@@ -20,10 +20,12 @@ import json
 import os
 import time
 
+from oslo_config import cfg
 from oslo_log import log
 
 from freezer.utils import utils
 
+CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
 
@@ -183,9 +185,15 @@ class RestoreOs(object):
             size += 1
         LOG.info("Creating volume from image")
         cinder_client = self.client_manager.get_cinder()
-        volume = cinder_client.volumes.create(size,
-                                              imageRef=image.id,
-                                              name=info['volume_name'])
+        volume = cinder_client.volumes.create(
+            size,
+            imageRef=image.id,
+            name=info.get('volume_name',
+                          CONF.get('backup_name',
+                                   CONF.get('cinder_vol_id', None)
+                                   )
+                          )
+        )
         while volume.status != "available":
             try:
                 LOG.info("Volume copy status: " + volume.status)
