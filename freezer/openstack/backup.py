@@ -115,9 +115,12 @@ class BackupOs(object):
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(volume_id, utils.DateTime.now().timestamp)
         LOG.debug("Uploading image to swift")
+        if volume.name is None:
+            name = volume_id
+        else:
+            name = volume.name
         headers = {'x-object-meta-length': str(len(stream)),
-                   'volume_name': volume.name,
-                   'volume_type': volume.volume_type,
+                   'volume_name': name,
                    'availability_zone': volume.availability_zone
                    }
         attachments = volume._info['attachments']
