@@ -46,10 +46,25 @@ class SshStorage(fslike.FsLikeStorage):
         self.port = port
         self.ssh = None
         self.ftp = None
+        self._validate()
         self.init()
         super(SshStorage, self).__init__(
             storage_path=storage_path,
             max_segment_size=max_segment_size)
+
+    def _validate(self):
+        """
+        Validates if all parameters required to ssh are available.
+        :return: True or raises ValueError
+        """
+        if not self.remote_ip:
+            raise ValueError('Please provide --ssh-host value.')
+        elif not self.remote_username:
+            raise ValueError('Please provide --ssh-username value.')
+        elif not self.ssh_key_path:
+            raise ValueError('Please provide path to ssh key using '
+                             '--ssh-key argument.')
+        return True
 
     def init(self):
         ssh = paramiko.SSHClient()
@@ -95,6 +110,8 @@ class SshStorage(fslike.FsLikeStorage):
             return True
 
     def get_file(self, from_path, to_path):
+        if not self.ssh.get_transport().is_alive():
+            self.init()
         self.ftp.get(from_path, to_path)
 
     def put_file(self, from_path, to_path):
