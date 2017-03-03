@@ -99,7 +99,8 @@ class PySvc(win32serviceutil.ServiceFramework):
 
         scheduler = FreezerScheduler(
             apiclient=client, interval=int(os.environ['SERVICE_INTERVAL']),
-            job_path=os.environ['SERVICE_JOB_PATH'])
+            job_path=os.environ['SERVICE_JOB_PATH'],
+            concurrent_jobs=int(os.environ['SERVICE_CONCURRENT_JOBS']))
 
         scheduler.start()
 
