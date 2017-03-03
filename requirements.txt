@@ -2,15 +2,15 @@
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
 astroid<1.4.0 # LGPLv2.1 # breaks pylint 1.4.4
-setuptools!=24.0.0,>=16.0 # PSF/ZPL
-pbr>=1.8 # Apache-2.0
+setuptools!=24.0.0,!=34.0.0,!=34.0.1,!=34.0.2,!=34.0.3,!=34.1.0,!=34.1.1,!=34.2.0,!=34.3.0,>=16.0 # PSF/ZPL
+pbr>=2.0.0 # Apache-2.0
 python-swiftclient>=3.2.0 # Apache-2.0
 python-cinderclient!=1.7.0,!=1.7.1,>=1.6.0 # Apache-2.0
 python-glanceclient>=2.5.0 # Apache-2.0
 python-novaclient>=7.1.0 # Apache-2.0
 python-openstackclient>=3.3.0 # Apache-2.0
 python-freezerclient>=1.0.0 # Apache-2.0
-oslo.utils>=3.18.0 # Apache-2.0
+oslo.utils>=3.20.0 # Apache-2.0
 oslo.i18n>=2.1.0 # Apache-2.0
 oslo.log>=3.11.0 # Apache-2.0
 oslo.config!=3.18.0,>=3.14.0 # Apache-2.0
