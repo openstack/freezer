@@ -84,13 +84,13 @@ class SwiftStorage(physical.PhysicalStorage):
         split = path.rsplit('/', 1)
         while not success:
             try:
-                LOG.info(
+                LOG.debug(
                     'Uploading file chunk index: {0}'.format(path))
                 self.swift().put_object(
                     split[0], split[1], content,
                     content_type='application/octet-stream',
                     content_length=len(content))
-                LOG.info('Data successfully uploaded!')
+                LOG.debug('Data successfully uploaded!')
                 success = True
             except Exception as error:
                 LOG.info(
