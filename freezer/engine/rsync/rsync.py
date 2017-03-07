@@ -50,7 +50,7 @@ class RsyncEngine(engine.BackupEngine):
     def __init__(
             self, compression, symlinks, exclude, storage,
             max_segment_size, encrypt_key=None,
-            dry_run=False):
+            dry_run=False, **kwargs):
         self.compression_algo = compression
         self.encrypt_pass_file = encrypt_key
         self.dereference_symlink = symlinks
@@ -87,7 +87,6 @@ class RsyncEngine(engine.BackupEngine):
         :param manifest_path:
         :return:
         """
-
         LOG.info("Starting RSYNC engine backup data stream")
 
         file_read_limit = 0

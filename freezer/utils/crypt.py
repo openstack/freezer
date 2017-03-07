@@ -17,15 +17,15 @@ import hashlib
 from Crypto.Cipher import AES
 from Crypto import Random
 
+SALT_HEADER = 'Salted__'
+AES256_KEY_LENGTH = 32
+BS = AES.block_size
+
 
 class AESCipher(object):
     """
     Base class for encrypt/decrypt activities.
     """
-
-    SALT_HEADER = 'Salted__'
-    AES256_KEY_LENGTH = 32
-    BS = AES.block_size
 
     def __init__(self, pass_file):
         self._password = self._get_pass_from_file(pass_file)
@@ -56,18 +56,40 @@ class AESEncrypt(AESCipher):
 
     def __init__(self, pass_file):
         super(AESEncrypt, self).__init__(pass_file)
-        self._salt = Random.new().read(self.BS - len(self.SALT_HEADER))
+        self._salt = Random.new().read(BS - len(SALT_HEADER))
         key, iv = self._derive_key_and_iv(self._password,
                                           self._salt,
-                                          self.AES256_KEY_LENGTH,
-                                          self.BS)
-        self.cipher = AES.new(key, AES.MODE_CFB, iv)
+                                          AES256_KEY_LENGTH,
+                                          BS)
+        self.cipher = AES.new(key, AES.MODE_CFB, iv, segment_size=BS * 8)
+        self.remain = None
 
     def generate_header(self):
-        return self.SALT_HEADER + self._salt
+        return SALT_HEADER + self._salt
 
     def encrypt(self, data):
+        remain = self.remain
+        if remain:
+            data = remain + data
+            remain = None
+
+        extra_bytes = len(data) % BS
+        if extra_bytes:
+            remain = data[-extra_bytes:]
+            data = data[:-extra_bytes]
+
+        self.remain = remain
         return self.cipher.encrypt(data)
+
+    def flush(self):
+        def pad(s):
+            return s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+
+        buff = self.remain
+        if buff:
+            return self.cipher.encrypt(pad(buff))
+
+        return b''
 
 
 class AESDecrypt(AESCipher):
@@ -81,12 +103,19 @@ class AESDecrypt(AESCipher):
         self._salt = self._prepare_salt(salt)
         key, iv = self._derive_key_and_iv(self._password,
                                           self._salt,
-                                          self.AES256_KEY_LENGTH,
-                                          self.BS)
-        self.cipher = AES.new(key, AES.MODE_CFB, iv)
+                                          AES256_KEY_LENGTH,
+                                          BS)
+        self.cipher = AES.new(key, AES.MODE_CFB, iv, segment_size=BS * 8)
 
-    def _prepare_salt(self, salt):
-        return salt[len(self.SALT_HEADER):]
+    @staticmethod
+    def _prepare_salt(salt):
+        return salt[len(SALT_HEADER):]
 
     def decrypt(self, data):
+        # def unpad(s):
+        #     return s[0:-ord(s[-1])]
+        #
+        # if last_block:
+        #     return unpad(self.cipher.decrypt(data))
+        # else:
         return self.cipher.decrypt(data)
