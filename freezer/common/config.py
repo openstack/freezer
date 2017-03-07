@@ -79,7 +79,7 @@ DEFAULT_PARAMS = {
     'overwrite': False, 'incremental': None,
     'consistency_check': False, 'consistency_checksum': None,
     'nova_restore_network': None, 'cindernative_backup_id': None,
-    'sync': True, 'engine_name': 'tar'
+    'sync': True, 'engine_name': 'tar', 'timeout': 120
 }
 
 _COMMON = [
@@ -463,7 +463,15 @@ _COMMON = [
                help="ID of the network to attach to the restored VM. "
                     "In the case of a project containing multiple networks, "
                     "it is necessary to provide the ID of the network to "
-                    "attach to the restored VM.")
+                    "attach to the restored VM."),
+    cfg.IntOpt('timeout',
+               dest='timeout',
+               default=DEFAULT_PARAMS['timeout'],
+               help="Timeout for the running operation. This option can be "
+                    "used with any operation running with freezer and after "
+                    "this time it will raise a TimeOut Exception. Default is"
+                    " {0}".format(DEFAULT_PARAMS['timeout'])
+               )
 ]
 
 
