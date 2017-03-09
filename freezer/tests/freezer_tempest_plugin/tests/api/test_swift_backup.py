@@ -39,7 +39,7 @@ class TestFreezerSwiftBackup(base.BaseFreezerTest):
             "/tmp/freezer-test-backup-restore/" + test_id
         )
 
-        self.freezer_container_name = 'freezer-test-container-0'
+        self.freezer_container_name = 'container_{}'.format(test_id)
         self.freezer_backup_name = 'freezer-test-backup-swift-0'
 
         shutil.rmtree(self.backup_source_dir, True)

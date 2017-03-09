@@ -138,7 +138,7 @@ class BaseFreezerTest(test.BaseTestCase):
     @classmethod
     def get_auth_url(cls):
         return cls.os_primary.auth_provider.auth_client.auth_url[:-len(
-            '/tokens')]
+            '/auth/tokens')]
 
     @classmethod
     def setup_clients(cls):

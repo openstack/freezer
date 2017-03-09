@@ -21,10 +21,13 @@ import time
 
 from oslo_log import log
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 from freezer.storage import physical
 
 LOG = log.getLogger(__name__)
+
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class SwiftStorage(physical.PhysicalStorage):
