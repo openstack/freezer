@@ -238,7 +238,13 @@ class BackupJob(Job):
         if backup_media == 'nova':
             LOG.info('Executing nova backup. Instance ID: {0}'.format(
                 self.conf.nova_inst_id))
-            backup_os.backup_nova(self.conf.nova_inst_id)
+            return self.engine.backup(
+                backup_path=self.conf.nova_inst_id,
+                hostname_backup_name=self.conf.hostname_backup_name,
+                no_incremental=self.conf.no_incremental,
+                max_level=self.conf.max_level,
+                always_level=self.conf.always_level,
+                restart_always_level=self.conf.restart_always_level)
         elif backup_media == 'cindernative':
             LOG.info('Executing cinder native backup. Volume ID: {0}, '
                      'incremental: {1}'.format(self.conf.cindernative_vol_id,
@@ -309,8 +315,13 @@ class RestoreJob(Job):
                      "network-id {2}".format(conf.nova_inst_id,
                                              restore_timestamp,
                                              conf.nova_restore_network))
-            res.restore_nova(conf.nova_inst_id, restore_timestamp,
-                             conf.nova_restore_network)
+            self.engine.restore(
+                hostname_backup_name=self.conf.hostname_backup_name,
+                restore_path=conf.nova_inst_id,
+                overwrite=conf.overwrite,
+                recent_to_date=restore_timestamp)
+            # res.restore_nova(conf.nova_inst_id, restore_timestamp,
+            # conf.nova_restore_network)
         elif conf.backup_media == 'cinder':
             LOG.info("Restoring cinder backup from glance. Volume ID: {0}, "
                      "timestamp: {1}".format(conf.cinder_vol_id,

@@ -114,7 +114,7 @@ _COMMON = [
                     "(OpenStack Instance). Default set to fs"),
     cfg.StrOpt('engine',
                short='e',
-               choices=['tar', 'rsync'],
+               choices=['tar', 'rsync', 'nova'],
                dest='engine_name',
                default=DEFAULT_PARAMS['engine_name'],
                help="Engine to be used for backup/restore. "
@@ -124,7 +124,9 @@ _COMMON = [
                     "blocks changes will be verified and only the changed "
                     "blocks will be backed up. Tar is faster, but is uses "
                     "more space and bandwidth. Rsync is slower, but uses "
-                    "less space and bandwidth."
+                    "less space and bandwidth. Nova engine can be used to"
+                    " backup/restore running instances. Backing up instances"
+                    " and it's metadata."
                ),
     cfg.StrOpt('container',
                short='C',

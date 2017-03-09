@@ -514,9 +514,9 @@ def set_max_process_priority():
         LOG.warning('Priority: {0}'.format(priority_error))
 
 
-def wait_for(condition_func, wait_interval, timeout, message=None):
+def wait_for(condition_func, wait_interval, timeout, message=None, kwargs={}):
     while timeout > 0:
-        if condition_func():
+        if condition_func(**kwargs):
             return
 
         time.sleep(wait_interval)
