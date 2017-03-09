@@ -16,6 +16,9 @@
 disable_all_services
 
 enable_plugin freezer https://git.openstack.org/openstack/freezer master
+# To use a specific branch:
+# enable_plugin freezer https://git.openstack.org/openstack/freezer \
+# stable/<release-name>
 
 enable_service rabbit mysql key
 
