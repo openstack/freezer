@@ -57,8 +57,8 @@ class BaseFreezerCliTest(base.BaseFreezerTest):
 
             output = self.cli.freezer_client(
                 action='job-create',
-                params='--file {}'.format(job_file.name)
-            )
+                params='--file {} --client {}'.format(job_file.name,
+                                                      job_json['client_id']))
             job_id = output.split()[1]
             expected = 'Job {} created'.format(job_id)
             self.assertEqual(expected, output.strip())
@@ -116,12 +116,19 @@ class CLIClientWithFreezer(cli_base.CLIClient):
         """
 
         flags += ' --os-endpoint-type %s' % endpoint_type
+        flags += ' --os-cacert /etc/ssl/certs/ca-certificates.crt'
+        flags += ' --os-project-domain-name Default'
+        flags += ' --os-user-domain-name Default'
+
         return self.cmd_with_auth(
             'freezer-scheduler', action, flags, params, fail_ok, merge_stderr)
 
     def freezer_client(self, action, flags='', params='', fail_ok=False,
                        endpoint_type='publicURL', merge_stderr=True):
         flags += ' --os-endpoint-type %s' % endpoint_type
+        flags += ' --os-cacert /etc/ssl/certs/ca-certificates.crt'
+        flags += ' --os-project-domain-name Default'
+        flags += ' --os-user-domain-name Default'
         return self.cmd_with_auth(
             'freezer', action, flags, params, fail_ok, merge_stderr)
 
@@ -234,14 +241,18 @@ class TestFreezerScenario(BaseFreezerCliTest):
         self.source_tree.add_random_data()
         self.dest_tree = Temp_Tree()
 
-        self.cli.freezer_scheduler(action='start', flags='-c test_node')
+        self.cli.freezer_scheduler(action='start',
+                                   flags='-c test_node '
+                                         '-f /tmp/freezer_tempest_job_dir/')
 
     def tearDown(self):
         super(TestFreezerScenario, self).tearDown()
         self.source_tree.cleanup()
         self.dest_tree.cleanup()
 
-        self.cli.freezer_scheduler(action='stop', flags='-c test_node')
+        self.cli.freezer_scheduler(action='stop',
+                                   flags='-c test_node '
+                                         '-f /tmp/freezer_tempest_job_dir/')
 
     def test_simple_backup(self):
         backup_job = {

@@ -138,7 +138,7 @@ class BaseFreezerTest(test.BaseTestCase):
     @classmethod
     def get_auth_url(cls):
         return cls.os_primary.auth_provider.auth_client.auth_url[:-len(
-            '/tokens')]
+            '/auth/tokens')]
 
     @classmethod
     def setup_clients(cls):
@@ -151,6 +151,10 @@ class BaseFreezerTest(test.BaseTestCase):
         os.environ['OS_USERNAME'] = cls.os_primary.credentials.username
         os.environ['OS_PROJECT_NAME'] = cls.os_primary.credentials.tenant_name
         os.environ['OS_TENANT_NAME'] = cls.os_primary.credentials.tenant_name
+        os.environ['OS_PROJECT_DOMAIN_NAME'] = \
+            cls.os_primary.credentials.project_domain_name
+        os.environ['OS_USER_DOMAIN_NAME'] = \
+            cls.os_primary.credentials.user_domain_name
 
         # Allow developers to set OS_AUTH_URL when developing so that
         # Keystone may be on a host other than localhost.
