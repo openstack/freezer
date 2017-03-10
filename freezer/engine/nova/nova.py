@@ -52,7 +52,7 @@ class NovaEngine(engine.BackupEngine):
         except EOFError:
             pass
 
-    def restore_level(self, restore_path, read_pipe, backup, except_queue):
+    def restore_level(self, restore_resource, read_pipe, backup, except_queue):
         try:
             metadata = backup.metadata()
             server_info = metadata.get('server', {})
@@ -98,26 +98,26 @@ class NovaEngine(engine.BackupEngine):
             except_queue.put(e)
             raise
 
-    def backup_data(self, backup_path, manifest_path):
-        server = self.nova.servers.get(backup_path)
+    def backup_data(self, backup_resource, manifest_path):
+        server = self.nova.servers.get(backup_resource)
         if not server:
-            raise Exception("Server not found {0}".format(backup_path))
+            raise Exception("Server not found {0}".format(backup_resource))
 
         def instance_finish_task():
-            server = self.nova.servers.get(backup_path)
+            server = self.nova.servers.get(backup_resource)
             return not server.__dict__['OS-EXT-STS:task_state']
 
         utils.wait_for(
             instance_finish_task, 1, _NOVABBKK_TIMEOUT,
             message="Waiting for instance {0} to finish {1} to start the "
                     "snapshot process".format(
-                        backup_path,
+                        backup_resource,
                         server.__dict__['OS-EXT-STS:task_state']
                     )
         )
         image_id = self.nova.servers.create_image(
             server,
-            "snapshot_of_{0}".format(backup_path)
+            "snapshot_of_{0}".format(backup_resource)
         )
         image = self.glance.images.get(image_id)
         if not image:
@@ -131,7 +131,7 @@ class NovaEngine(engine.BackupEngine):
             1,
             100,
             message="Waiting for instnace {0} snapshot to become "
-                    "active".format(backup_path),
+                    "active".format(backup_resource),
             kwargs={"glance_client": self.glance, "image_id": image_id}
         )
 

@@ -60,10 +60,10 @@ class TarEngine(engine.BackupEngine):
             "encryption": bool(self.encrypt_pass_file)
         }
 
-    def backup_data(self, backup_path, manifest_path):
+    def backup_data(self, backup_resource, manifest_path):
         LOG.info("Starting Tar engine backup stream")
         tar_command = tar_builders.TarCommandBuilder(
-            backup_path, self.compression_algo, self.is_windows)
+            backup_resource, self.compression_algo, self.is_windows)
         if self.encrypt_pass_file:
             tar_command.set_encryption(self.encrypt_pass_file)
         if self.dereference_symlink:
@@ -88,7 +88,7 @@ class TarEngine(engine.BackupEngine):
 
         LOG.info("Tar engine stream completed")
 
-    def restore_level(self, restore_path, read_pipe, backup, except_queue):
+    def restore_level(self, restore_resource, read_pipe, backup, except_queue):
         """
         Restore the provided file into backup_opt_dict.restore_abs_path
         Decrypt the file if backup_opt_dict.encrypt_pass_file key is provided
@@ -107,7 +107,7 @@ class TarEngine(engine.BackupEngine):
                 raise Exception("Cannot restore encrypted backup without key")
 
             tar_command = tar_builders.TarCommandRestoreBuilder(
-                restore_path,
+                restore_resource,
                 metadata.get('compression', self.compression_algo),
                 self.is_windows)
 
@@ -121,7 +121,7 @@ class TarEngine(engine.BackupEngine):
 
             if winutils.is_windows():
                 # on windows, chdir to restore path.
-                os.chdir(restore_path)
+                os.chdir(restore_resource)
 
             tar_process = subprocess.Popen(
                 command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,

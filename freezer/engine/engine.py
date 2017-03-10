@@ -88,7 +88,7 @@ class BackupEngine(object):
         """
         pass
 
-    def backup_stream(self, backup_path, rich_queue, manifest_path):
+    def backup_stream(self, backup_resource, rich_queue, manifest_path):
         """
         :param rich_queue:
         :type rich_queue: freezer.streaming.RichQueue
@@ -96,9 +96,10 @@ class BackupEngine(object):
         :param manifest_path:
         :return:
         """
-        rich_queue.put_messages(self.backup_data(backup_path, manifest_path))
+        rich_queue.put_messages(self.backup_data(backup_resource,
+                                                 manifest_path))
 
-    def backup(self, backup_path, hostname_backup_name, no_incremental,
+    def backup(self, backup_resource, hostname_backup_name, no_incremental,
                max_level, always_level, restart_always_level, queue_size=2):
         """
         Here we now location of all interesting artifacts like metadata
@@ -145,7 +146,7 @@ class BackupEngine(object):
                 self.backup_stream,
                 input_queue,
                 read_except_queue,
-                kwargs={"backup_path": backup_path,
+                kwargs={"backup_resource": backup_resource,
                         "manifest_path": engine_meta})
 
             write_stream = streaming.QueuedThread(
@@ -214,7 +215,7 @@ class BackupEngine(object):
             except_queue.put(e)
             raise
 
-    def restore(self, hostname_backup_name, restore_path,
+    def restore(self, hostname_backup_name, restore_resource,
                 overwrite,
                 recent_to_date):
         """
@@ -224,14 +225,14 @@ class BackupEngine(object):
         :param overwrite:
         :param recent_to_date:
         """
-        LOG.info("Creating restore path: {0}".format(restore_path))
+        LOG.info("Creating restore path: {0}".format(restore_resource))
         # if restore path can't be created this function will raise exception
-        utils.create_dir_tree(restore_path)
-        if not overwrite and not utils.is_empty_dir(restore_path):
+        utils.create_dir_tree(restore_resource)
+        if not overwrite and not utils.is_empty_dir(restore_resource):
             raise Exception(
                 "Restore dir is not empty. "
                 "Please use --overwrite or provide different path "
-                "or remove the content of {}".format(restore_path))
+                "or remove the content of {}".format(restore_resource))
 
         LOG.info("Restore path creation completed")
         backups = self.storage.get_latest_level_zero_increments(
@@ -263,7 +264,7 @@ class BackupEngine(object):
 
             engine_stream = multiprocessing.Process(
                 target=self.restore_level,
-                args=(restore_path, read_pipe, backup, write_except_queue))
+                args=(restore_resource, read_pipe, backup, write_except_queue))
 
             engine_stream.daemon = True
             engine_stream.start()
