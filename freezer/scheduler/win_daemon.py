@@ -62,7 +62,7 @@ class Daemon(object):
     instance
     """
     def __init__(self, daemonizable=None, interval=None, job_path=None,
-                 insecure=False):
+                 insecure=False, concurrent_jobs=1):
         self.service_name = 'FreezerService'
         self.home = r'C:\.freezer'
         # this is only need it in order to have the same interface as in linux
@@ -70,6 +70,7 @@ class Daemon(object):
         self.interval = interval or 60
         self.job_path = job_path or r'C:\.freezer\scheduler\conf.d'
         self.insecure = insecure
+        self.concurrent_jobs = concurrent_jobs
 
     @utils.shield
     def start(self, log_file=None):
@@ -85,6 +86,7 @@ class Daemon(object):
         # send arguments info to the windows service
         os.environ['SERVICE_JOB_PATH'] = self.job_path
         os.environ['SERVICE_INTERVAL'] = str(self.interval)
+        os.environ['SERVICE_CONCURRENT_JOBS'] = str(self.concurrent_jobs)
 
         winutils.save_environment(self.home)
 

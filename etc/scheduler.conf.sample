@@ -121,3 +121,9 @@
 
 # Initialize freezer scheduler with insecure mode (boolean value)
 #insecure = false
+
+# Number of jobs that can be executed at the same time. (integer value)
+# By default only one job is allowed at a given time because there is no
+# built-in protection to prevent backup and restore to be done at the same time
+# on one resource.
+#concurrent_jobs = 1

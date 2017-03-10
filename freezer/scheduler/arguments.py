@@ -98,6 +98,11 @@ def get_common_opts():
                     dest='disable_exec',
                     help='Allow Freezer Scheduler to deny jobs that execute '
                          'commands for security reasons'),
+        cfg.IntOpt('concurrent_jobs',
+                   default=1,
+                   dest='concurrent_jobs',
+                   help='Number of jobs that can be executed at the'
+                        ' same time'),
     ]
 
     return _COMMON
