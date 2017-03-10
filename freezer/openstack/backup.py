@@ -74,8 +74,8 @@ class BackupOs(object):
             return image.status == 'active'
 
         utils.wait_for(image_active, 1, 10,
-                       message="Waiting for instnace {0} snapshot to become "
-                               "active".format(instance_id))
+                       message="Waiting for instance {0} snapshot {1} to "
+                               "become active".format(instance_id, image_id))
         try:
             image = glance.images.get(image_id)
         except Exception as e:
@@ -83,7 +83,7 @@ class BackupOs(object):
 
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(instance_id, utils.DateTime.now().timestamp)
-        LOG.info("Uploading image to swift")
+        LOG.info("Saving image to {0}".format(self.storage.type))
         headers = {"x-object-meta-name": instance.name,
                    "x-object-meta-flavor-id": str(instance.flavor.get('id')),
                    'x-object-meta-length': str(len(stream))}
@@ -114,7 +114,7 @@ class BackupOs(object):
         LOG.debug("Download temporary glance image {0}".format(image.id))
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(volume_id, utils.DateTime.now().timestamp)
-        LOG.debug("Uploading image to swift")
+        LOG.debug("Saving image to {0}".format(self.storage.type))
         if volume.name is None:
             name = volume_id
         else:
