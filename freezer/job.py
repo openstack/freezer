@@ -216,7 +216,7 @@ class BackupJob(Job):
                     self.conf.consistency_checksum = consistency_checksum
 
                 return self.engine.backup(
-                    backup_path=filepath,
+                    backup_resource=filepath,
                     hostname_backup_name=self.conf.hostname_backup_name,
                     no_incremental=self.conf.no_incremental,
                     max_level=self.conf.max_level,
@@ -239,7 +239,7 @@ class BackupJob(Job):
             LOG.info('Executing nova backup. Instance ID: {0}'.format(
                 self.conf.nova_inst_id))
             return self.engine.backup(
-                backup_path=self.conf.nova_inst_id,
+                backup_resource=self.conf.nova_inst_id,
                 hostname_backup_name=self.conf.hostname_backup_name,
                 no_incremental=self.conf.no_incremental,
                 max_level=self.conf.max_level,
@@ -287,7 +287,7 @@ class RestoreJob(Job):
         if conf.backup_media == 'fs':
             self.engine.restore(
                 hostname_backup_name=self.conf.hostname_backup_name,
-                restore_path=restore_abs_path,
+                restore_resource=restore_abs_path,
                 overwrite=conf.overwrite,
                 recent_to_date=restore_timestamp)
 
@@ -317,7 +317,7 @@ class RestoreJob(Job):
                                              conf.nova_restore_network))
             self.engine.restore(
                 hostname_backup_name=self.conf.hostname_backup_name,
-                restore_path=conf.nova_inst_id,
+                restore_resource=conf.nova_inst_id,
                 overwrite=conf.overwrite,
                 recent_to_date=restore_timestamp)
             # res.restore_nova(conf.nova_inst_id, restore_timestamp,

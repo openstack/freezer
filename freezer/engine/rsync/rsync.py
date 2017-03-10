@@ -77,13 +77,13 @@ class RsyncEngine(engine.BackupEngine):
             "encryption": bool(self.encrypt_pass_file)
         }
 
-    def backup_data(self, backup_path, manifest_path):
+    def backup_data(self, backup_resource, manifest_path):
         """Execute backup using rsync algorithm.
 
         If an existing rsync meta data is available the backup
         will be incremental, otherwise will be executed a level 0 backup
 
-        :param backup_path:
+        :param backup_resource:
         :param manifest_path:
         :return:
         """
@@ -107,7 +107,7 @@ class RsyncEngine(engine.BackupEngine):
         t_get_sign_delta = threading.Thread(
             target=self.get_sign_delta,
             args=(
-                backup_path, manifest_path, rsync_queue))
+                backup_resource, manifest_path, rsync_queue))
         t_get_sign_delta.daemon = True
 
         t_get_sign_delta.start()
@@ -134,7 +134,7 @@ class RsyncEngine(engine.BackupEngine):
         # Rejoining thread
         t_get_sign_delta.join()
 
-    def restore_level(self, restore_path, read_pipe, backup, except_queue):
+    def restore_level(self, restore_resource, read_pipe, backup, except_queue):
         """Restore the provided file into restore_abs_path.
 
         Decrypt the file if backup_opt_dict.encrypt_pass_file key is provided.
@@ -144,7 +144,7 @@ class RsyncEngine(engine.BackupEngine):
             os_stat.st_uid, os_stat.st_gid, os_stat.st_size,
             mtime, ctime, uname, gname, file_type, linkname
 
-        :param restore_path:
+        :param restore_resource:
         :param read_pipe:
         :param backup:
         :param except_queue:
@@ -159,13 +159,13 @@ class RsyncEngine(engine.BackupEngine):
             self.compression_algo = metadata.get('compression',
                                                  self.compression_algo)
 
-            if not os.path.exists(restore_path):
+            if not os.path.exists(restore_resource):
                 raise ValueError(
                     'Provided restore path does not exist: {0}'.format(
-                        restore_path))
+                        restore_resource))
 
             if self.dry_run:
-                restore_path = '/dev/null'
+                restore_resource = '/dev/null'
 
             raw_data_chunk = read_pipe.recv_bytes()
 
@@ -208,7 +208,7 @@ class RsyncEngine(engine.BackupEngine):
                     header_list = header.split('\00')
                     data_chunk = data_chunk[header_len:]
                     data_chunk = self.make_files(
-                        header_list, restore_path, read_pipe,
+                        header_list, restore_resource, read_pipe,
                         data_chunk, flushed, backup.level)
                 else:
                     LOG.info('No more data available...')
