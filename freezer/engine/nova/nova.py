@@ -27,8 +27,6 @@ import json
 LOG = log.getLogger(__name__)
 CONF = cfg.CONF
 
-_NOVABBKK_TIMEOUT = 100
-
 
 class NovaEngine(engine.BackupEngine):
 
@@ -80,7 +78,7 @@ class NovaEngine(engine.BackupEngine):
             utils.wait_for(
                 NovaEngine.image_active,
                 1,
-                _NOVABBKK_TIMEOUT,
+                CONF.timeout,
                 message="Waiting for image to finish uploading {0} and become"
                         " active".format(image.id),
                 kwargs={"glance_client": self.glance, "image_id": image.id}
@@ -108,7 +106,7 @@ class NovaEngine(engine.BackupEngine):
             return not server.__dict__['OS-EXT-STS:task_state']
 
         utils.wait_for(
-            instance_finish_task, 1, _NOVABBKK_TIMEOUT,
+            instance_finish_task, 1, CONF.timeout,
             message="Waiting for instance {0} to finish {1} to start the "
                     "snapshot process".format(
                         backup_path,
@@ -125,7 +123,7 @@ class NovaEngine(engine.BackupEngine):
                 "Image {0} is not created or can't be found.".format(image_id)
             )
         # wait a bit for the snapshot to be taken and completely uploaded
-        # to glance. @todo szaher add a timeout option.
+        # to glance.
         utils.wait_for(
             NovaEngine.image_active,
             1,

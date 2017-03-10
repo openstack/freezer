@@ -16,10 +16,12 @@ limitations under the License.
 Freezer Backup modes related functions
 """
 
+from oslo_config import cfg
 from oslo_log import log
 
 from freezer.utils import utils
 
+CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
 
@@ -55,7 +57,7 @@ class BackupOs(object):
             return not instance.__dict__['OS-EXT-STS:task_state']
 
         utils.wait_for(
-            instance_finish_task, 1, 10,
+            instance_finish_task, 1, CONF.timeout,
             message="Waiting for instance {0} to finish {1} to start the "
                     "snapshot process".format(
                         instance_id,
@@ -73,7 +75,7 @@ class BackupOs(object):
             image = glance.images.get(image_id)
             return image.status == 'active'
 
-        utils.wait_for(image_active, 1, 10,
+        utils.wait_for(image_active, 1, CONF.timeout,
                        message="Waiting for instance {0} snapshot {1} to "
                                "become active".format(instance_id, image_id))
         try:
