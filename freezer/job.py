@@ -113,6 +113,9 @@ class BackupJob(Job):
                 raise Exception(
                     'no-incremental option is not compatible '
                     'with backup level options')
+        if self.conf.mode == 'nova':
+            if not self.conf.no_incremental:
+                raise ValueError("Incremental nova backup is not supported.")
 
     def execute(self):
         LOG.info('Backup job started. '
@@ -238,9 +241,11 @@ class BackupJob(Job):
         if backup_media == 'nova':
             LOG.info('Executing nova backup. Instance ID: {0}'.format(
                 self.conf.nova_inst_id))
+            hostname_backup_name = os.path.join(self.conf.hostname_backup_name,
+                                                self.conf.nova_inst_id)
             return self.engine.backup(
                 backup_resource=self.conf.nova_inst_id,
-                hostname_backup_name=self.conf.hostname_backup_name,
+                hostname_backup_name=hostname_backup_name,
                 no_incremental=self.conf.no_incremental,
                 max_level=self.conf.max_level,
                 always_level=self.conf.always_level,
@@ -315,8 +320,10 @@ class RestoreJob(Job):
                      "network-id {2}".format(conf.nova_inst_id,
                                              restore_timestamp,
                                              conf.nova_restore_network))
+            hostname_backup_name = os.path.join(self.conf.hostname_backup_name,
+                                                self.conf.nova_inst_id)
             self.engine.restore(
-                hostname_backup_name=self.conf.hostname_backup_name,
+                hostname_backup_name=hostname_backup_name,
                 restore_resource=conf.nova_inst_id,
                 overwrite=conf.overwrite,
                 recent_to_date=restore_timestamp)
