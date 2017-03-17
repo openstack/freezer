@@ -241,9 +241,11 @@ class ReSizeStream(object):
             stop = False
             while not stop and len(self.reminder) < chunk_size:
                 try:
-                    self.reminder += next(self.stream)
-                except TypeError:
-                    self.reminder += self.stream.next()
+                    next_method = getattr(self.stream, 'next', None)
+                    if callable(next_method):
+                        self.reminder += self.stream.next()
+                    else:
+                        self.reminder += next(self.stream)
                 except StopIteration:
                     stop = True
             if stop:
