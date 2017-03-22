@@ -109,9 +109,11 @@ _COMMON = [
                dest='mode',
                default=DEFAULT_PARAMS['mode'],
                help="Set the technology to back from. Options are, fs "
-                    "(filesystem),mongo (MongoDB), mysql (MySQL), sqlserver "
-                    "(SQL Server), cinder(OpenStack Volume), nova "
-                    "(OpenStack Instance). Default set to fs"),
+                    "(filesystem),mongo (MongoDB), mysql (MySQL), "
+                    "sqlserver(SQL Server), "
+                    "cinder(OpenStack Volume backup by freezer), "
+                    "cindernative(OpenStack native cinder-volume backup)"
+                    "nova(OpenStack Instance). Default set to fs"),
     cfg.StrOpt('engine',
                short='e',
                choices=['tar', 'rsync', 'nova'],
