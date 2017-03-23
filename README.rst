@@ -526,7 +526,7 @@ from existing content run the next command:
 
 Execute a cinder restore::
 
-    $ freezer-agent --action restore --cinder-inst-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
+    $ freezer-agent --action restore --cinder-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
     $ freezer-agent --action restore --cindernative-vol-id 3ad7a62f-217a-48cd-a861-43ec0a04a78b
 
 Nova restore currently creates an instance with the content of saved one, but the
