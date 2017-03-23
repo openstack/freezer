@@ -278,11 +278,17 @@ class Backup(object):
             level=int(increment[0])
         ) for increment in increments}
 
+    def _get_file(self, filename):
+        file = tempfile.NamedTemporaryFile('wb', delete=True)
+        self.storage.get_file(filename, file.name)
+        with open(file.name) as f:
+            content = f.readlines()
+        LOG.info("Content download {0}".format(content))
+        file.close()
+        return json.loads(content[0])
+
     def metadata(self):
-        metadata_file = tempfile.NamedTemporaryFile('wb', delete=True)
-        self.storage.get_file(self.metadata_path, metadata_file.name)
-        with open(metadata_file.name) as f:
-            metadata_content = f.readlines()
-        LOG.info("metadata content download {0}".format(metadata_content))
-        metadata_file.close()
-        return json.loads(metadata_content[0])
+        return self._get_file(self.metadata_path)
+
+    def engine_metadata(self):
+        return self._get_file(self.engine_metadata_path)

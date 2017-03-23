@@ -321,6 +321,7 @@ class BackupOpt1(object):
         self.max_level = '20'
         self.encrypt_pass_file = '/dev/random'
         self.always_level = '20'
+        self.overwrite = False
         self.remove_from_date = '2014-12-03T23:23:23'
         self.restart_always_level = 100000
         self.restore_abs_path = '/tmp'

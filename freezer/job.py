@@ -239,17 +239,28 @@ class BackupJob(Job):
                                     self.storage)
 
         if backup_media == 'nova':
-            LOG.info('Executing nova backup. Instance ID: {0}'.format(
-                self.conf.nova_inst_id))
-            hostname_backup_name = os.path.join(self.conf.hostname_backup_name,
-                                                self.conf.nova_inst_id)
-            return self.engine.backup(
-                backup_resource=self.conf.nova_inst_id,
-                hostname_backup_name=hostname_backup_name,
-                no_incremental=self.conf.no_incremental,
-                max_level=self.conf.max_level,
-                always_level=self.conf.always_level,
-                restart_always_level=self.conf.restart_always_level)
+            if self.conf.project_id:
+                return self.engine.backup_nova_tenant(
+                    project_id=self.conf.project_id,
+                    hostname_backup_name=self.conf.hostname_backup_name,
+                    no_incremental=self.conf.no_incremental,
+                    max_level=self.conf.max_level,
+                    always_level=self.conf.always_level,
+                    restart_always_level=self.conf.restart_always_level)
+            else:
+                LOG.info('Executing nova backup. Instance ID: {0}'.format(
+                    self.conf.nova_inst_id))
+                hostname_backup_name = os.path.join(
+                    self.conf.hostname_backup_name,
+                    self.conf.nova_inst_id)
+                return self.engine.backup(
+                    backup_resource=self.conf.nova_inst_id,
+                    hostname_backup_name=hostname_backup_name,
+                    no_incremental=self.conf.no_incremental,
+                    max_level=self.conf.max_level,
+                    always_level=self.conf.always_level,
+                    restart_always_level=self.conf.restart_always_level)
+
         elif backup_media == 'cindernative':
             LOG.info('Executing cinder native backup. Volume ID: {0}, '
                      'incremental: {1}'.format(self.conf.cindernative_vol_id,
@@ -269,9 +280,11 @@ class BackupJob(Job):
 class RestoreJob(Job):
 
     def _validate(self):
-        if not self.conf.restore_abs_path and not self.conf.nova_inst_id \
-                and not self.conf.cinder_vol_id and not \
-                self.conf.cindernative_vol_id:
+        if not any([self.conf.restore_abs_path,
+                    self.conf.nova_inst_id,
+                    self.conf.cinder_vol_id,
+                    self.conf.cindernative_vol_id,
+                    self.conf.project_id]):
             raise ValueError("--restore-abs-path is required")
         if not self.conf.container:
             raise ValueError("--container is required")
@@ -316,19 +329,27 @@ class RestoreJob(Job):
         res = restore.RestoreOs(conf.client_manager, conf.container,
                                 self.storage)
         if conf.backup_media == 'nova':
-            LOG.info("Restoring nova backup. Instance ID: {0}, timestamp: {1} "
-                     "network-id {2}".format(conf.nova_inst_id,
-                                             restore_timestamp,
-                                             conf.nova_restore_network))
-            hostname_backup_name = os.path.join(self.conf.hostname_backup_name,
-                                                self.conf.nova_inst_id)
-            self.engine.restore(
-                hostname_backup_name=hostname_backup_name,
-                restore_resource=conf.nova_inst_id,
-                overwrite=conf.overwrite,
-                recent_to_date=restore_timestamp)
-            # res.restore_nova(conf.nova_inst_id, restore_timestamp,
-            # conf.nova_restore_network)
+            if self.conf.project_id:
+                return self.engine.restore_nova_tenant(
+                    project_id=self.conf.project_id,
+                    hostname_backup_name=self.conf.hostname_backup_name,
+                    overwrite=conf.overwrite,
+                    recent_to_date=restore_timestamp)
+            else:
+                LOG.info("Restoring nova backup. Instance ID: {0}, "
+                         "timestamp: {1} network-id {2}".format(
+                             conf.nova_inst_id,
+                             restore_timestamp,
+                             conf.nova_restore_network))
+                hostname_backup_name = os.path.join(
+                    self.conf.hostname_backup_name,
+                    self.conf.nova_inst_id)
+                self.engine.restore(
+                    hostname_backup_name=hostname_backup_name,
+                    restore_resource=conf.nova_inst_id,
+                    overwrite=conf.overwrite,
+                    recent_to_date=restore_timestamp)
+
         elif conf.backup_media == 'cinder':
             LOG.info("Restoring cinder backup from glance. Volume ID: {0}, "
                      "timestamp: {1}".format(conf.cinder_vol_id,

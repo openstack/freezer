@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
+from concurrent import futures
+import os
 
 from oslo_config import cfg
 from oslo_log import log
@@ -50,11 +52,38 @@ class NovaEngine(engine.BackupEngine):
         except EOFError:
             pass
 
+    def restore_nova_tenant(self, project_id, hostname_backup_name,
+                            overwrite, recent_to_date):
+        # Load info about tenant instances in swift
+        if self.storage._type == 'swift':
+            swift_connection = self.client.create_swift()
+            headers, data = swift_connection.get_object(
+                self.storage.storage_path,
+                "project_" + project_id)
+        elif self.storage._type in ['local', 'ssh']:
+            backup_basepath = os.path.join(self.storage.storage_path,
+                                           'project_' + project_id)
+            with self.storage.open(backup_basepath, 'rb') as backup_file:
+                data = backup_file.readline()
+
+        instance_ids = json.loads(data)
+        for instance_id in instance_ids:
+            LOG.info("Restore nova instance ID: {0} from container {1}".
+                     format(instance_id, self.storage.storage_path))
+            backup_name = os.path.join(hostname_backup_name,
+                                       instance_id)
+            self.restore(
+                hostname_backup_name=backup_name,
+                restore_resource=instance_id,
+                overwrite=overwrite,
+                recent_to_date=recent_to_date)
+
     def restore_level(self, restore_resource, read_pipe, backup, except_queue):
         try:
             metadata = backup.metadata()
+            engine_metadata = backup.engine_metadata()
             server_info = metadata.get('server', {})
-            length = int(server_info.get('length'))
+            length = int(engine_metadata.get('length'))
             available_networks = server_info.get('addresses')
             nova_networks = self.nova.networks.findall()
 
@@ -83,7 +112,6 @@ class NovaEngine(engine.BackupEngine):
                         " active".format(image.id),
                 kwargs={"glance_client": self.glance, "image_id": image.id}
             )
-
             server = self.nova.servers.create(
                 name=server_info.get('name'),
                 flavor=server_info['flavor']['id'],
@@ -95,6 +123,45 @@ class NovaEngine(engine.BackupEngine):
             LOG.exception(e)
             except_queue.put(e)
             raise
+
+    def backup_nova_tenant(self, project_id, hostname_backup_name,
+                           no_incremental, max_level, always_level,
+                           restart_always_level):
+        instance_ids = [server.id for server in
+                        self.nova.servers.list(detailed=False)]
+        data = json.dumps(instance_ids)
+        LOG.info("Saving information about instances {0}".format(data))
+
+        if self.storage._type == 'swift':
+            swift_connection = self.client.create_swift()
+            swift_connection.put_object(self.storage.storage_path,
+                                        "project_{0}".format(project_id),
+                                        data)
+        elif self.storage._type in ['local', 'ssh']:
+            backup_basepath = os.path.join(self.storage.storage_path,
+                                           "project_" + project_id)
+            with self.storage.open(backup_basepath, 'wb') as backup_file:
+                backup_file.write(data)
+
+        executor = futures.ThreadPoolExecutor(
+            max_workers=len(instance_ids))
+        futures_list = []
+        for instance_id in instance_ids:
+            LOG.info("Backup nova instance ID: {0} to container {1}".
+                     format(instance_id, self.storage.storage_path))
+            backup_name = os.path.join(hostname_backup_name,
+                                       instance_id)
+
+            futures_list.append(executor.submit(
+                self.backup,
+                backup_resource=instance_id,
+                hostname_backup_name=backup_name,
+                no_incremental=no_incremental,
+                max_level=max_level,
+                always_level=always_level,
+                restart_always_level=restart_always_level))
+
+        futures.wait(futures_list, CONF.timeout)
 
     def backup_data(self, backup_resource, manifest_path):
         server = self.nova.servers.get(backup_resource)
@@ -145,8 +212,6 @@ class NovaEngine(engine.BackupEngine):
 
         LOG.info("Deleting temporary image {0}".format(image.id))
         self.glance.images.delete(image.id)
-        self.server_info = server.to_dict()
-        self.server_info['length'] = len(stream)
 
     @staticmethod
     def image_active(glance_client, image_id):
@@ -154,14 +219,20 @@ class NovaEngine(engine.BackupEngine):
         image = glance_client.images.get(image_id)
         return image.status == 'active'
 
-    def metadata(self):
+    def metadata(self, backup_resource):
         """Construct metadata"""
+        server_info = self.nova.servers.get(backup_resource).to_dict()
+
         return {
             "engine_name": self.name,
-            "server": self.server_info
+            "server": server_info,
         }
 
     def set_tenant_meta(self, path, metadata):
         """push data to the manifest file"""
         with open(path, 'wb') as fb:
             fb.writelines(json.dumps(metadata))
+
+    def get_tenant_meta(self, path):
+        with open(path, 'rb') as fb:
+            json.loads(fb.read())

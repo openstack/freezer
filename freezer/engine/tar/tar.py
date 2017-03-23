@@ -51,7 +51,7 @@ class TarEngine(engine.BackupEngine):
     def name(self):
         return "tar"
 
-    def metadata(self):
+    def metadata(self, *args):
         return {
             "engine_name": self.name,
             "compression": self.compression_algo,

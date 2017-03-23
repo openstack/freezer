@@ -183,7 +183,7 @@ class BackupEngine(object):
                     "Engine error. Failed to backup.")
 
             with open(freezer_meta, mode='wb') as b_file:
-                b_file.write(json.dumps(self.metadata()))
+                b_file.write(json.dumps(self.metadata(backup_resource)))
             self.storage.put_metadata(engine_meta, freezer_meta, backup)
         finally:
             shutil.rmtree(tmpdir)
@@ -312,5 +312,5 @@ class BackupEngine(object):
         pass
 
     @abc.abstractmethod
-    def metadata(self):
+    def metadata(self, backup_resource):
         pass

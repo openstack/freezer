@@ -79,7 +79,7 @@ DEFAULT_PARAMS = {
     'overwrite': False, 'incremental': None,
     'consistency_check': False, 'consistency_checksum': None,
     'nova_restore_network': None, 'cindernative_backup_id': None,
-    'sync': True, 'engine_name': 'tar', 'timeout': 120
+    'sync': True, 'engine_name': 'tar', 'timeout': 120, 'project_id': None,
 }
 
 _COMMON = [
@@ -380,6 +380,11 @@ _COMMON = [
                default=DEFAULT_PARAMS['nova_inst_id'],
                help="Id of nova instance for backup"
                ),
+    cfg.StrOpt('project-id',
+               dest='project_id',
+               default=DEFAULT_PARAMS['project_id'],
+               help="Id of project for backup"
+               ),
     cfg.StrOpt('sql-server-conf',
                dest='sql_server_conf',
                default=DEFAULT_PARAMS['sql_server_conf'],
@@ -475,7 +480,7 @@ _COMMON = [
                     "used with any operation running with freezer and after "
                     "this time it will raise a TimeOut Exception. Default is"
                     " {0}".format(DEFAULT_PARAMS['timeout'])
-               )
+               ),
 ]
 
 
@@ -601,14 +606,13 @@ def get_backup_args():
             backup_args.__dict__['windows_volume'] = \
                 backup_args.path_to_backup[:3]
 
-    # TODO(enugaev): move it to new command line param backup_media
-
     backup_media = 'fs'
     if backup_args.cinder_vol_id:
         backup_media = 'cinder'
     elif backup_args.cindernative_vol_id or backup_args.cindernative_backup_id:
         backup_media = 'cindernative'
-    elif backup_args.nova_inst_id:
+    elif backup_args.engine_name == 'nova' and (backup_args.project_id or
+                                                backup_args.nova_inst_id):
         backup_media = 'nova'
 
     backup_args.__dict__['backup_media'] = backup_media
