@@ -57,7 +57,7 @@ class BaseFreezerCliTest(base.BaseFreezerTest):
 
             output = self.cli.freezer_client(
                 action='job-create',
-                params='--file {}'.format(job_file.name)
+                params='-C test_node --file {}'.format(job_file.name)
             )
             job_id = output.split()[1]
             expected = 'Job {} created'.format(job_id)
