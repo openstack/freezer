@@ -816,7 +816,7 @@ Optional Arguments
   --restart-always-level RESTART_ALWAYS_LEVEL
                         Restart the backup from level 0 after n days. Valid
                         only if --always-level option if set. If --always-
-                        level is used together with --remove-older-then, there
+                        level is used together with --remove-older-than, there
                         might be the chance where the initial level 0 will be
                         removed. Default False (Disabled)
   --restore-abs-path RESTORE_ABS_PATH

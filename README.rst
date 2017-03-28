@@ -516,7 +516,7 @@ List remote objects in container::
 
 Remove backups older then 1 day::
 
-    $ freezer-agent --action admin --container freezer_dev-test --remove-older-then 1 --backup-name dev-test-01
+    $ freezer-agent --action admin --container freezer_dev-test --remove-older-than 1 --backup-name dev-test-01
 
 
 Cinder restore currently creates a volume with the contents of the saved one,
@@ -1118,7 +1118,7 @@ optional arguments:
   --restart-always-level RESTART_ALWAYS_LEVEL
                         Restart the backup from level 0 after n days. Valid
                         only if --always-level option if set. If --always-
-                        level is used together with --remove-older-then, there
+                        level is used together with --remove-older-than, there
                         might be the chance where the initial level 0 will be
                         removed. Default False (Disabled)
   --restore-abs-path RESTORE_ABS_PATH
