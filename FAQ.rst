@@ -46,7 +46,7 @@ FAQ
     Yes. Zeroed/null data is not backed up. So less space and bandwidth will be used.
 
 11) **Does freezer remove automatically backup after some time?**
-    Yes. From command line the option --remove-older-then (days) can be used to
+    Yes. From command line the option --remove-older-than (days) can be used to
     remove objects older then (days).
 
 12) **Does freezer support MySQL Backup?**
