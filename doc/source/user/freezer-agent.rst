@@ -26,16 +26,16 @@ Basic File System Backup
 Here is the most basic use example:
 
 .. code:: bash
-    
+
     # On Linux
-    sudo freezer-agent --path-to-backup [/data/dir/to/backup] \ 
+    sudo freezer-agent --path-to-backup [/data/dir/to/backup] \
     --container freezer_[new-data-to-backup] --backup-name [my-backup-name]
-    
+
     # On Windows (need admin rights)
     freezer-agent --action backup --mode fs --backup-name [testwindows] \
     --path-to-backup "[C:\path\to\backup]" --container freezer_[new-windows-backup] \
     --log-file  [C:\path\to\log\freezer.log]
-    
+
 By default --mode fs is set. The command would generate a compressed tar gzip
 file of the directory "/data/dir/to/backup". The generated file will be segmented
 in stream and uploaded in the swift container called freezer_new-data-backup,
@@ -54,18 +54,18 @@ contains data bases.
 First let's check where your MongoDB database files are located:
 
 .. code:: bash
-    
+
     mount -l
     [...]
-    
+
 Once we know the volume on which our Mongo data is mounted, we can get the
 volume group and logical volume info:
 
 .. code:: bash
-    
+
     sudo vgdisplay
     [...]
-    
+
     sudo lvdisplay
     [...]
 
@@ -79,10 +79,10 @@ Now let's start MongoDB backup with LVM Snapshot:
     --path-to-backup /var/lib/snapshot-backup/mongod_ops2 \
     --container freezer_[container-name-for-new-backup] \
     --exclude "*.lock" --mode mongo --backup-name [name-for-new-backup]
-    
+
 Now freezer-agent creates an LVM snapshot of the volume [logical/volume/path].
 If no options are provided, the default snapshot name is
-"freezer_backup_snap". The snapshot volume will be mounted automatically on 
+"freezer_backup_snap". The snapshot volume will be mounted automatically on
 /var/lib/snapshot-backup and the backup metadata and segments will be uploaded
 in the container freezer_[container-name-for-new-backup] with the name [name-for-new-backup].
 
@@ -101,7 +101,7 @@ Freezer can take full system backup with LVM Snapshot:
     --exclude "\*.lock" \
     --mode fs \
     --backup-name jenkins-ops2
-    
+
 MySQL Backup With LVM Snapshot
 ------------------------------
 
@@ -110,16 +110,16 @@ MySQL backup require a basic configuration file. The following is an example of 
 Create following config file:
 
 .. code:: bash
-    
+
     sudo vi /root/.freezer/db.conf
     host = [your.mysql.host.ip]
     user = [mysql-user-name]
     password = [mysql-user-password]
-    
+
 Execute a MySQL backup using LVM Snapshot:
 
 .. code:: bash
-    
+
     sudo freezer-agent --lvm-srcvol /dev/mysqlvg/mysqlvol \
     --lvm-dirmount /var/snapshot-backup \
     --lvm-volgroup mysqlvg \
@@ -145,19 +145,19 @@ your data in future.
 Execute a cinder backup:
 
 .. code:: bash
-    
+
     freezer-agent --cinder-vol-id [cinder-volume-id]
-    
+
 Execute a MySQL backup with cinder:
 
 .. code:: bash
-    
+
     freezer-agent --mysql-conf /root/.freezer/freezer-mysql.conf \
     --container freezer_mysql-backup-prod \
     --mode mysql \
     --backup-name mysql-ops002 \
     --cinder-vol-id [cinder-volume-id]
-    
+
 Nova Backups
 ------------
 
@@ -179,7 +179,7 @@ this snapshot. Instance will have different id and old instance should be
 terminated manually.
 
 To make a nova backup you should provide a nova parameter in the arguments.
-Freezer doesn't do any additional checks and assumes that making a backup 
+Freezer doesn't do any additional checks and assumes that making a backup
 of that instance will be sufficient to restore your data in future.
 
 Execute a nova backup:
@@ -187,7 +187,7 @@ Execute a nova backup:
 .. code:: bash
 
     freezer-agent --nova-inst-id [nova-instance-id]
-    
+
 Execute a MySQL backup with nova:
 
 .. code:: bash
@@ -197,10 +197,10 @@ Execute a MySQL backup with nova:
     --mode mysql \
     --backup-name mysql-ops002
     --nova-inst-id [nova-instance-id]
-    
+
 **Note: All the freezer-agent activities are logged into /var/log/freezer.log.**
 
-    
+
 Storage Options
 ===============
 
@@ -220,11 +220,11 @@ Default storage option for Freezer is Swift. If you do not specify
 Backup example:
 
 .. code:: bash
-    
+
     sudo freezer-agent --path-to-backup [/data/dir/to/backup] \
     --container freezer-[container] --backup-name [my-backup-name] \
     --storage swift
-    
+
 Restore example:
 
 .. code:: bash
@@ -239,21 +239,21 @@ Local Storage Backup/Restore
 Freezer can use local directory as target backup location. This directory can
 be NFS,CIFS,SAMBA or other network file systems mounted directory.
 
-To use local storage "--storage local" must be specified. And  
+To use local storage "--storage local" must be specified. And
 "--container %path-to-folder-with-backups%" option must be present.
 
 Backup example:
 
 .. code:: bash
-    
+
     sudo freezer-agent --path-to-backup [/data/dir/to/backup]
     --container /tmp/my_backup_path/ [--backup-name my-backup-name]
     --storage local
-    
+
 Restore example:
 
 .. code:: bash
-    
+
     sudo freezer-agent --action restore \
     --restore-abs-path [/data/dir/to/backup]
     --container /tmp/my_backup_path/ \
@@ -284,7 +284,7 @@ Backup example:
     --backup-name my-backup-name
     --storage ssh --ssh-username [ssh-user-name] --ssh-key ~/.ssh/id_rsa
     --ssh-host 8.8.8.8
-    
+
 Restore example:
 
 .. code:: bash
@@ -311,13 +311,13 @@ File System Restore
 Following example shows how to restore backup named "adminui.git":
 
 .. code:: bash
-    
+
     sudo freezer-agent --action restore --container freezer_adminui_git
     --backup-name adminui.git
     --hostname [hostname-of-the-server] \
     --restore-abs-path /home/git/repositories/adminui.git/
     --restore-from-date "2014-05-23T23:23:23"
-    
+
 MySQL Restore
 -------------
 
@@ -328,7 +328,7 @@ Let's stop mysql service first:
 .. code:: bash
 
     sudo service mysql stop
-    
+
 Execute restore:
 
 .. code:: bash
@@ -338,13 +338,13 @@ Execute restore:
     --backup-name mysq-prod --hostname [server-host-name]
     --restore-abs-path /var/lib/mysql \
     --restore-from-date "2014-05-23T23:23:23"
-    
+
 Start MySQL:
 
 .. code:: bash
-    
+
     sudo service mysql start
-    
+
 
 MongoDB Restore
 ---------------
@@ -352,7 +352,7 @@ MongoDB Restore
 Execute a MongoDB restore of the backup name mongobigdata:
 
 .. code:: bash
-    
+
     sudo freezer-agent --action restore \
     --container freezer_foobar-container-2
     --backup-name mongobigdata \
@@ -372,10 +372,10 @@ content run next command:
 
 .. code:: bash
 
-    freezer-agent --action restore --cinder-inst-id [cinder-instance-id]
-    
+    freezer-agent --action restore --cinder-vol-id [cinder-volume-id]
+
     freezer-agent --action restore --cindernative-vol-id [cinder-volume-id]
-    
+
 Nova Restore
 ------------
 
@@ -387,7 +387,7 @@ Execute a nova restore:
 .. code:: bash
 
     freezer-agent --action restore --nova-inst-id [nova-instance-id]
-    
+
 Local Storage Restore
 ---------------------
 
@@ -409,7 +409,7 @@ you should create n additional sections that start with "storage:"
 Example:
 
 .. code:: bash
-    
+
     [storage:my_storage1], [storage:ssh], [storage:storage3]
 
 Each storage section should have 'container' argument and all parameters
@@ -420,7 +420,7 @@ Example:
 .. code:: bash
 
     ssh-username, ssh-port
-    
+
 For swift storage you should provide additional parameter called 'osrc' Osrc
 should be a path to file with OpenStack Credentials like:
 
@@ -437,7 +437,7 @@ should be a path to file with OpenStack Credentials like:
     export OS_AUTH_VERSION=3
     export OS_CACERT=/etc/ssl/certs/ca-certificates.crt
     export OS_ENDPOINT_TYPE=publicURL
-    
+
 Example of Config file for two local storages and one swift storage:
 
 .. code:: bash
@@ -451,20 +451,20 @@ Example of Config file for two local storages and one swift storage:
     max_segment_size = 67108864
     container = /tmp/backup/
     storage = local
-    
+
     [storage:first]
     storage=local
     container = /tmp/backup1/
-    
+
     [storage:second]
     storage=local
     container = /tmp/backup2/
-    
+
     [storage:swift]
     storage=swift
     container = test
     osrc = openrc.osrc
-    
+
 Freezer Scheduler
 =================
 
@@ -479,24 +479,24 @@ usual positional arguments:
 .. code:: bash
 
     freezer-scheduler start|stop
-    
-    
+
+
 It can be also be started as a foreground process using the --no-daemon flag:
 
 .. code:: bash
 
     freezer-scheduler --no-daemon start
-    
+
 This can be useful for testing purposes, when launched in a Docker container,
 or by a babysitting process such as systemd.
 
 The cli-tool version is used to manage the jobs in the API. A "job" is
 basically a container; a document which contains one or more "actions".
-An action contains the instructions for the freezer-agent. They are the same 
-parameters that would be passed to the agent on the command line. 
+An action contains the instructions for the freezer-agent. They are the same
+parameters that would be passed to the agent on the command line.
 For example: "backup_name", "path_to_backup", "max_level"
 
-To sum it up, a job is a sequence of parameters that the scheduler pulls from 
+To sum it up, a job is a sequence of parameters that the scheduler pulls from
 the API and passes to a newly spawned freezer-agent process at the right time.
 
 The scheduler understands the "scheduling" part of the job document, which it
@@ -545,31 +545,31 @@ The first step to use the scheduler is creating a document with the job:
       },
       "description": "schedule_backups 6"
     }
-    
+
 Then upload that job into the API:
 
 .. code:: bash
 
     freezer-scheduler -c node12 job-create --file test_job.json
-    
+
 The newly created job can be found with:
 
 .. code:: bash
 
     freezer-scheduler -c node12 job-list
-    
+
 Its content can be read with:
 
 .. code:: bash
 
     freezer-scheduler -c node12 job-get -j [job_id]
-    
+
 The scheduler can be started on the target node with:
 
 .. code:: bash
 
     freezer-scheduler -c node12 -i 15 -f ~/job_dir start
-    
+
 The scheduler could have already been started. As soon as the freezer-scheduler
 contacts the API, it fetches the job and schedules it.
 
@@ -626,7 +626,7 @@ Available Options
                  [--upload-limit UPLOAD_LIMIT] [--use-syslog]
                  [--use-syslog-rfc-format] [--verbose] [--version]
                  [--watch-log-file]
-                 
+
 Optional Arguments
 ------------------
 
@@ -876,7 +876,7 @@ Optional Arguments
                         instantaneously. It makes sense only if log_file
                         option is specified and Linux platform is used. This
                         option is ignored if log_config_append is set.
-                        
+
 MISC
 ====
 
@@ -888,7 +888,7 @@ To get an updated sample of freezer-scheduler configuration you the following co
 .. code:: bash
 
     oslo-config-generator --config-file config-generator/scheduler.conf
-    
+
 Update sample file will be generated in etc/scheduler.conf.sample
 
 Agent
@@ -899,7 +899,7 @@ To list options available in freezer-agent use the following command:
 .. code:: bash
 
     oslo-config-generator --namespace freezer --namespace oslo.log
-    
+
 this will print all options to the screen you direct the output to a file if you want:
 
 .. code:: bash
