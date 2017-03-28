@@ -17,7 +17,8 @@ from copy import copy
 import json
 import os
 import unittest
-import uuid
+
+from oslo_utils import uuidutils
 
 from freezer.tests.integration import common
 
@@ -64,7 +65,7 @@ class TestBackupFSLocalstorage(common.TestFS):
                 'storage': 'local',
                 'max_level': '6',
                 'max_segment_size': '67108864',
-                'backup_name': uuid.uuid4().hex
+                'backup_name': uuidutils.generate_uuid(dashed=False)
             }
 
             restore_args = {
@@ -102,7 +103,7 @@ class TestBackupFSLocalstorage(common.TestFS):
                 'storage': 'local',
                 'max_level': '6',
                 'max_segment_size': '67108864',
-                'backup_name': uuid.uuid4().hex
+                'backup_name': uuidutils.generate_uuid(dashed=False)
             }
 
             restore_args = {
@@ -123,7 +124,7 @@ class TestBackupFSLocalstorage(common.TestFS):
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
 
-        backup_name = uuid.uuid4().hex
+        backup_name = uuidutils.generate_uuid(dashed=False)
         path_to_backup = self.source_tree.path
         lvm_snapsize = '50M'
         lvm_snapname = 'freezer-snap_{0}'.format(backup_name)
@@ -185,7 +186,7 @@ class TestBackupSSH(common.TestFS):
             'path_to_backup': self.source_tree.path,
             'max_level': '6',
             'max_segment_size': '67108864',
-            'backup_name': uuid.uuid4().hex,
+            'backup_name': uuidutils.generate_uuid(dashed=False),
             'storage': 'ssh',
             'container': self.container,
             'ssh_key': self.ssh_key,
@@ -239,7 +240,7 @@ class TestBackupSSH(common.TestFS):
             'path_to_backup': self.source_tree.path,
             'max_level': '6',
             'max_segment_size': '67108864',
-            'backup_name': uuid.uuid4().hex,
+            'backup_name': uuidutils.generate_uuid(dashed=False),
             'storage': 'ssh',
             'container': self.container,
             'ssh_key': self.ssh_key,
@@ -292,7 +293,7 @@ class TestBackupSSH(common.TestFS):
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
 
-        backup_name = uuid.uuid4().hex
+        backup_name = uuidutils.generate_uuid(dashed=False)
         path_to_backup = self.source_tree.path
         lvm_snapsize = '1G'
         lvm_snapname = 'freezer-snap_{0}'.format(backup_name)
@@ -377,9 +378,10 @@ class TestBackupUsingSwiftStorage(common.TestFS):
             'path_to_backup': self.source_tree.path,
             'max_level': '6',
             'max_segment_size': '67108864',
-            'backup_name': uuid.uuid4().hex,
+            'backup_name': uuidutils.generate_uuid(dashed=False),
             'storage': 'swift',
-            'container': 'freezer_test_backups_{0}'.format(uuid.uuid4().hex),
+            'container': 'freezer_test_backups_{0}'.format(
+                uuidutils.generate_uuid(dashed=False)),
             'metadata_out': '-'
         }
         restore_args = {
@@ -439,9 +441,10 @@ class TestBackupUsingSwiftStorage(common.TestFS):
             'path_to_backup': self.source_tree.path,
             'max_level': '6',
             'max_segment_size': '67108864',
-            'backup_name': uuid.uuid4().hex,
+            'backup_name': uuidutils.generate_uuid(dashed=False),
             'storage': 'swift',
-            'container': 'freezer_test_backups_{0}'.format(uuid.uuid4().hex),
+            'container': 'freezer_test_backups_{0}'.format(
+                uuidutils.generate_uuid(dashed=False)),
             'metadata_out': '-'
         }
         restore_args = {
@@ -497,7 +500,7 @@ class TestBackupUsingSwiftStorage(common.TestFS):
     def test_backup_swift_mysql(self):
         self.source_tree = common.Temp_Tree(dir='/var/lib/mysql', create=False)
 
-        backup_name = uuid.uuid4().hex
+        backup_name = uuidutils.generate_uuid(dashed=False)
         lvm_snapsize = '1G'
         lvm_snapname = 'freezer-snap_{0}'.format(backup_name)
         lvm_dirmount = '/var/freezer/freezer-{0}'.format(backup_name)
@@ -551,9 +554,10 @@ class TestBackupUsingSwiftStorage(common.TestFS):
             'upload_limit': '1M',
             'download_limit': '1M',
             'max_segment_size': '67108864',
-            'backup_name': uuid.uuid4().hex,
+            'backup_name': uuidutils.generate_uuid(dashed=False),
             'storage': 'swift',
-            'container': 'freezer_test_backups_{0}'.format(uuid.uuid4().hex),
+            'container': 'freezer_test_backups_{0}'.format(
+                uuidutils.generate_uuid(dashed=False)),
             'metadata_out': '-'
         }
         restore_args = {

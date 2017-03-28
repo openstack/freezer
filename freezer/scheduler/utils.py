@@ -19,10 +19,10 @@ import json
 import os
 import signal
 import socket
-import uuid
 
 from freezerclient import exceptions
 from oslo_log import log
+from oslo_utils import uuidutils
 import psutil
 
 
@@ -83,7 +83,8 @@ def get_jobs_from_disk(path):
         load_doc_from_json_file(f) for f in find_config_files(path)]
     for job_doc in job_doc_list:
         if job_doc:
-            job_doc['job_id'] = job_doc.get('job_id', uuid.uuid4().hex)
+            job_doc['job_id'] = job_doc.get('job_id', uuidutils.generate_uuid(
+                dashed=False))
     return [x for x in job_doc_list if x]
 
 

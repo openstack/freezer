@@ -19,9 +19,9 @@ Freezer LVM related functions
 import os
 import re
 import subprocess
-import uuid
 
 from oslo_log import log
+from oslo_utils import uuidutils
 
 from freezer.common import config as freezer_config
 from freezer.utils import utils
@@ -92,7 +92,7 @@ def lvm_snap(backup_opt_dict):
     :param backup_opt_dict: the configuration dict
     :return: True if the snapshot has been taken, False otherwise
     """
-    lvm_uuid = uuid.uuid4().hex
+    lvm_uuid = uuidutils.generate_uuid(dashed=False)
 
     if not backup_opt_dict.lvm_snapname:
         backup_opt_dict.lvm_snapname = \
