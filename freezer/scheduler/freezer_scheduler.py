@@ -25,7 +25,6 @@ from apscheduler.schedulers import background
 from freezerclient.v1 import client
 from oslo_config import cfg
 from oslo_log import log
-import six
 
 from freezer.scheduler import arguments
 from freezer.scheduler import scheduler_job
@@ -181,7 +180,7 @@ class FreezerScheduler(object):
                 job.process_event(job_doc)
 
         # request removal of any job that has been removed in the api
-        for job_id, job in six.iteritems(self.jobs):
+        for job_id, job in self.jobs.items():
             if job_id not in work_job_id_list:
                 job.remove()
 

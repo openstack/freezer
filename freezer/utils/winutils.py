@@ -15,7 +15,6 @@
 import ctypes
 import json
 import os
-import six
 import sys
 
 
@@ -75,5 +74,5 @@ def set_environment(home):
     json_env = os.path.join(home, 'env.json')
     with open(json_env, 'rb') as fp:
         env = json.loads(fp.read())
-        for k, v in six.iteritems(env):
+        for k, v in env.items():
             os.environ[str(k).strip()] = str(v).strip()
