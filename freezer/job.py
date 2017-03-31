@@ -115,7 +115,20 @@ class BackupJob(Job):
                     'with backup level options')
         if self.conf.mode == 'nova':
             if not self.conf.no_incremental:
-                raise ValueError("Incremental nova backup is not supported.")
+                raise ValueError("Incremental nova backup is not supported")
+
+            if not self.conf.nova_inst_id and not self.conf.project_id:
+                raise ValueError("nova-inst-id or project-id"
+                                 " argument must be provided")
+
+        if self.conf.mode == 'cinder':
+            if not self.conf.cinder_vol_id:
+                raise ValueError("cinder-vol-id argument must be provided")
+
+        if self.conf.mode == "cindernative":
+            if not self.conf.cindernative_vol_id:
+                raise ValueError("cindernative-vol-id"
+                                 " argument must be provided")
 
     def execute(self):
         LOG.info('Backup job started. '
