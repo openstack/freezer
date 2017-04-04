@@ -20,4 +20,3 @@ tempest>=14.0.0 # Apache-2.0
 
 # Used in integration tests
 python-openstackclient>=3.3.0 # Apache-2.0
-
