@@ -1,0 +1,16 @@
+# A build time dependency
+libffi-dev [platform:dpkg test]
+libffi-devel [platform:rpm test]
+libssl-dev [platform:dpkg test]
+openssl-devel [platform:rpm test]
+# these are needed to compile Python dependencies from sources
+python-dev [platform:dpkg test]
+python3-all-dev [platform:dpkg !platform:ubuntu-precise test]
+python-devel [platform:rpm test]
+python3-devel [platform:rpm test]
+build-essential [platform:dpkg test]
+# these are needed by infra for python-* jobs
+mariadb [platform:rpm test]
+mariadb-server [platform:rpm test]
+mysql-client [platform:dpkg test]
+mysql-server [platform:dpkg test]
