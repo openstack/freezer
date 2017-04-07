@@ -67,6 +67,7 @@ DEFAULT_PARAMS = {
     'max_priority': None, 'max_level': False, 'path_to_backup': None,
     'encrypt_pass_file': None, 'volume': None, 'proxy': None,
     'cinder_vol_id': '', 'cindernative_vol_id': '',
+    'cinderbrick_vol_id': '',
     'nova_inst_id': '', '__version__': FREEZER_VERSION,
     'remove_older_than': None, 'restore_from_date': None,
     'upload_limit': -1, 'always_level': False, 'version': None,
@@ -116,7 +117,7 @@ _COMMON = [
                     "nova(OpenStack Instance). Default set to fs"),
     cfg.StrOpt('engine',
                short='e',
-               choices=['tar', 'rsync', 'nova'],
+               choices=['tar', 'rsync', 'nova', 'osbrick'],
                dest='engine_name',
                default=DEFAULT_PARAMS['engine_name'],
                help="Engine to be used for backup/restore. "
@@ -364,6 +365,11 @@ _COMMON = [
                dest='cinder_vol_id',
                default=DEFAULT_PARAMS['cinder_vol_id'],
                help="Id of cinder volume for backup"
+               ),
+    cfg.StrOpt('cinderbrick-vol-id',
+               dest='cinderbrick_vol_id',
+               default=DEFAULT_PARAMS['cinderbrick_vol_id'],
+               help="Id of cinder volume for backup using os-brick"
                ),
     cfg.StrOpt('cindernative-vol-id',
                dest='cindernative_vol_id',
@@ -614,6 +620,8 @@ def get_backup_args():
     elif backup_args.engine_name == 'nova' and (backup_args.project_id or
                                                 backup_args.nova_inst_id):
         backup_media = 'nova'
+    elif backup_args.cinderbrick_vol_id:
+        backup_media = 'cinderbrick'
 
     backup_args.__dict__['backup_media'] = backup_media
 

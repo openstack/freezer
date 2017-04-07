@@ -285,6 +285,16 @@ class BackupJob(Job):
             LOG.info('Executing cinder snapshot. Volume ID: {0}'.format(
                 self.conf.cinder_vol_id))
             backup_os.backup_cinder_by_glance(self.conf.cinder_vol_id)
+        elif backup_media == 'cinderbrick':
+            LOG.info('Executing cinder volume backup using os-brick. '
+                     'Volume ID: {0}'.format(self.conf.cinderbrick_vol_id))
+            return self.engine.backup(
+                backup_resource=self.conf.cinderbrick_vol_id,
+                hostname_backup_name=self.conf.hostname_backup_name,
+                no_incremental=self.conf.no_incremental,
+                max_level=self.conf.max_level,
+                always_level=self.conf.always_level,
+                restart_always_level=self.conf.restart_always_level)
         else:
             raise Exception('unknown parameter backup_media %s' % backup_media)
         return None
@@ -297,6 +307,7 @@ class RestoreJob(Job):
                     self.conf.nova_inst_id,
                     self.conf.cinder_vol_id,
                     self.conf.cindernative_vol_id,
+                    self.conf.cinderbrick_vol_id,
                     self.conf.project_id]):
             raise ValueError("--restore-abs-path is required")
         if not self.conf.container:
@@ -376,6 +387,15 @@ class RestoreJob(Job):
             res.restore_cinder(conf.cindernative_vol_id,
                                conf.cindernative_backup_id,
                                restore_timestamp)
+        elif conf.backup_media == 'cinderbrick':
+            LOG.info("Restoring cinder backup using os-brick. Volume ID {0}, "
+                     "timestamp: {1}".format(conf.cinderbrick_vol_id,
+                                             restore_timestamp))
+            self.engine.restore(
+                hostname_backup_name=self.conf.hostname_backup_name,
+                restore_resource=conf.cinderbrick_vol_id,
+                overwrite=conf.overwrite,
+                recent_to_date=restore_timestamp)
         else:
             raise Exception("unknown backup type: %s" % conf.backup_media)
         return {}

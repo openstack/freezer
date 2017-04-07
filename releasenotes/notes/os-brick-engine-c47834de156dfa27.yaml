@@ -1,0 +1,19 @@
+---
+prelude: >
+    Currently Freezer provides basic features to execute Cinder volumes backup.
+    The current approach present significant challenges,
+    due mainly to the difficulty of downloading Cinder Volumes without passing
+    through Glance. This can be an issue for time and scalability reasons,
+    (i.e. volumes of few hundreds GB size, potential error probability increase,
+    as more services are part of the process, unailability of cinder-backup).
+
+features:
+  - |
+    Added new backup engine called 'os-brick' which allows to backup and
+    restore the content of  cinder volumes attaching it directly to localhost
+    using functionality of os-brick library.
+
+issues:
+  - |
+    There are could be a read/write file permisson issues if freezer-agent
+    don't have appropriate right to read\write files to mounted FS.
