@@ -43,6 +43,21 @@ def get_filenos(logger):
     return filenos
 
 
+def is_process_running(pid):
+    """
+    Checks whether the process is running.
+
+    :param pid: process pid to check
+    :return: true if the process is running
+    """
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    else:
+        return True
+
+
 class NoDaemon(object):
     """
     A class which shares the same interface as the Daemon class,
@@ -149,6 +164,11 @@ class Daemon(object):
         return None
 
     def start(self, dump_stack_trace=False):
+        if os.path.exists(self.pid_fname) and \
+                is_process_running(self.pid):
+            print('freezer daemon is already running, '
+                  'pid: {0}'.format(self.pid))
+            return
         pidfile = PidFile(self.pid_fname)
         files_preserve = get_filenos(LOG.logger)
         with DaemonContext(pidfile=pidfile, signal_map=self.signal_map,
