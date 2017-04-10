@@ -2,8 +2,8 @@
 Team and repository tags
 ========================
 
-.. image:: http://governance.openstack.org/badges/freezer.svg
-    :target: http://governance.openstack.org/reference/tags/index.html
+.. image:: https://governance.openstack.org/badges/freezer.svg
+    :target: https://governance.openstack.org/reference/tags/index.html
 
 .. Change things from this point on
 
@@ -134,8 +134,8 @@ Windows Requirements
 - GNU Tar binaries (we recommend to follow [this guide] (https://github.com/openstack-freezer-utils/freezer-windows-binaries#windows-binaries-for-freezer) to install them)
 - [OpenSSL pre-compiled for windows] (https://wiki.openssl.org/index.php/Binaries) or [direct download](https://indy.fulgan.com/SSL/openssl-1.0.1-i386-win32.zip)
 - [Sync] (https://technet.microsoft.com/en-us/sysinternals/bb897438.aspx)
-- [Microsoft Visual C++ Compiler for Python 2.7] (http://aka.ms/vcpython27)
-- [PyWin32 for python 2.7] (http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/)
+- [Microsoft Visual C++ Compiler for Python 2.7] (https://aka.ms/vcpython27)
+- [PyWin32 for python 2.7] (https://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/)
 
 Add binaries to Windows Path
 ----------------------------
