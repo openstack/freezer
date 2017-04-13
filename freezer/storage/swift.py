@@ -46,7 +46,6 @@ class SwiftStorage(physical.PhysicalStorage):
                 raise
 
     def put_file(self, from_path, to_path):
-        self.client_manager.create_swift()
         split = to_path.rsplit('/', 1)
         file_size = os.path.getsize(from_path)
         with open(from_path, 'r') as meta_fd:
@@ -72,7 +71,7 @@ class SwiftStorage(physical.PhysicalStorage):
         :rtype: swiftclient.Connection
         :return:
         """
-        return self.client_manager.get_swift()
+        return self.client_manager.create_swift()
 
     def upload_chunk(self, content, path):
         """
@@ -100,7 +99,6 @@ class SwiftStorage(physical.PhysicalStorage):
                     'Retrying to upload file chunk index: {0}'.format(
                         path))
                 time.sleep(60)
-                self.client_manager.create_swift()
                 count += 1
                 if count == 10:
                     LOG.critical('Error: add_object: {0}'
@@ -115,7 +113,6 @@ class SwiftStorage(physical.PhysicalStorage):
         :type backup: freezer.storage.base.Backup
         """
         backup = backup.copy(storage=self)
-        self.client_manager.create_swift()
         headers = {'x-object-manifest': backup.segments_path}
         LOG.info('[*] Uploading Swift Manifest: {0}'.format(backup))
         split = backup.data_path.rsplit('/', 1)
@@ -191,12 +188,12 @@ class SwiftStorage(physical.PhysicalStorage):
         """
         split = backup.data_path.split('/', 1)
         try:
-            chunks = self.client_manager.create_swift().get_object(
+            chunks = self.swift().get_object(
                 split[0], split[1],
                 resp_chunk_size=self.max_segment_size)[1]
         except requests.exceptions.SSLError as e:
             LOG.warning(e)
-            chunks = self.client_manager.create_swift().get_object(
+            chunks = self.swift().get_object(
                 split[0], split[1],
                 resp_chunk_size=self.max_segment_size)[1]
 
