@@ -194,6 +194,15 @@ class Daemon(object):
         else:
             print('Not Running')
 
+    def restart(self):
+        pid = self.pid
+        if not pid:
+            self.start()
+        else:
+            self.stop()
+            sleep(5)
+            self.start()
+
     def status(self):
         pid = self.pid
         if pid:
