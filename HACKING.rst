@@ -54,3 +54,24 @@ Agent Options
 - To list options available in freezer-agent use the following command::
 
     oslo-config-generator --namespace freezer --namespace oslo.log
+
+
+Release Notes
+-------------
+
+- When a new feature is commited we should have a new release notes page that
+ highlights the changes made. These release notes will be used for deployers,
+ users, and developers. There are a few steps that need to be taken in order.
+
+  * Generate a release notes page
+     1. tox -e venv -- reno new {my-new-feature}
+     2. http://docs.openstack.org/developer/reno/usage.html#creating-new-release-notes
+
+  * Update/Edit an existing release note
+     1. http://docs.openstack.org/developer/reno/usage.html#editing-a-release-note
+
+
+- Building release notes::
+
+    tox -e releasenotes
+
