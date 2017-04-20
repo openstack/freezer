@@ -506,6 +506,15 @@ _COMMON = [
                     "this time it will raise a TimeOut Exception. Default is"
                     " {0}".format(DEFAULT_PARAMS['timeout'])
                ),
+    cfg.IntOpt('fullbackup-rotation',
+               dest='fullbackup_rotation',
+               default=1,
+               min=1,
+               help="Keep the last N fullbackups of cinder-volume, "
+                    "the parameter should be greater than 0. "
+                    "If set action to admin and set the parameter, "
+                    "it should keep the last N fullbackups, "
+                    "other backups should be deleted"),
 ]
 
 
