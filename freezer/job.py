@@ -418,9 +418,28 @@ class AdminJob(Job):
                 datetime.timedelta(days=self.conf.remove_older_than)
             timestamp = int(time.mktime(timestamp.timetuple()))
 
-        self.storage.remove_older_than(self.engine,
-                                       timestamp,
-                                       self.conf.hostname_backup_name)
+        hostname_backup_name_set = set()
+
+        if self.conf.backup_media == 'nova':
+            if self.conf.project_id:
+                instance_ids = self.engine.get_nova_tenant(
+                    self.conf.project_id)
+                for instance_id in instance_ids:
+                    hostname_backup_name = os.path.join(
+                        self.conf.hostname_backup_name, instance_id)
+                    hostname_backup_name_set.add(hostname_backup_name)
+            else:
+                hostname_backup_name = os.path.join(
+                    self.conf.hostname_backup_name,
+                    self.conf.nova_inst_id)
+                hostname_backup_name_set.add(hostname_backup_name)
+        else:
+            hostname_backup_name_set.add(self.conf.hostname_backup_name)
+
+        for backup_name in hostname_backup_name_set:
+            self.storage.remove_older_than(self.engine,
+                                           timestamp,
+                                           backup_name)
         return {}
 
 

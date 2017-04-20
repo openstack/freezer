@@ -37,7 +37,7 @@ class SwiftStorage(physical.PhysicalStorage):
     _type = 'swift'
 
     def rmtree(self, path):
-        split = path.rsplit('/', 1)
+        split = path.split('/', 1)
         for file in self.swift().get_container(split[0],
                                                prefix=split[1])[1]:
             try:
