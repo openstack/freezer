@@ -211,11 +211,13 @@ class OSClientManager(object):
                 LOG.debug("Snapshot status: " + snapshot.status)
                 snapshot = self.get_cinder().volume_snapshots.get(snapshot.id)
                 if snapshot.status == "error":
-                    raise Exception("snapshot has error state")
+                    raise RuntimeError("snapshot has error state")
                 time.sleep(5)
+            except RuntimeError:
+                LOG.info("Delete snapshot in error state " + snapshot.id)
+                self.get_cinder().volume_snapshots.delete(snapshot)
+                raise
             except Exception as e:
-                if str(e) == "snapshot has error state":
-                    raise
                 LOG.exception(e)
         return snapshot
 
@@ -233,7 +235,13 @@ class OSClientManager(object):
             try:
                 LOG.info("Volume copy status: " + volume.status)
                 volume = self.get_cinder().volumes.get(volume.id)
+                if volume.status == "error":
+                    raise RuntimeError("Volume copy has error state")
                 time.sleep(5)
+            except RuntimeError:
+                LOG.info("Delete volume in error state " + volume.id)
+                self.get_cinder().volumes.delete(volume.id)
+                raise
             except Exception as e:
                 LOG.exception(e)
                 LOG.warning("Exception getting volume status")
