@@ -33,4 +33,4 @@ Then run devstack normally::
     ./stack.sh
 
 For more information, see:
- http://docs.openstack.org/developer/devstack/plugins.html
+ https://docs.openstack.org/developer/devstack/plugins.html
