@@ -37,6 +37,7 @@ class NovaEngine(engine.BackupEngine):
         self.client = client_manager.get_client_manager(CONF)
         self.nova = self.client.create_nova()
         self.glance = self.client.create_glance()
+        self.cinder = self.client.create_cinder()
         self.server_info = None
 
     @property
@@ -201,6 +202,11 @@ class NovaEngine(engine.BackupEngine):
         )
 
         image = self.glance.images.get(image_id)
+        image_block_mapping_info = image.get("block_device_mapping")
+        image_block_mapping = json.loads(image_block_mapping_info)
+        image_temporary_snapshot_id = \
+            image_block_mapping[0]['snapshot_id'] \
+            if image_block_mapping else None
         stream = self.client.download_image(image)
         LOG.info("Uploading image to swift")
         headers = {"server_name": server.name,
@@ -212,6 +218,11 @@ class NovaEngine(engine.BackupEngine):
 
         LOG.info("Deleting temporary image {0}".format(image.id))
         self.glance.images.delete(image.id)
+
+        if image_temporary_snapshot_id is not None:
+            LOG.info("Deleting temporary snapshot {0}"
+                     .format(image_temporary_snapshot_id))
+            self.cinder.volume_snapshots.delete(image_temporary_snapshot_id)
 
     @staticmethod
     def image_active(glance_client, image_id):
