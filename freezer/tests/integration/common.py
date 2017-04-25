@@ -25,7 +25,7 @@ import tempfile
 import unittest
 
 import paramiko
-import six
+
 from six.moves import range
 
 FREEZERC = distutils.spawn.find_executable('freezer-agent')
@@ -47,7 +47,7 @@ class CommandFailed(Exception):
 
 
 def dict_to_args(d):
-    l = [['--' + k.replace('_', '-'), v] for k, v in six.iteritems(d)]
+    l = [['--' + k.replace('_', '-'), v] for k, v in d.items()]
     return list(itertools.chain.from_iterable(l))
 
 
