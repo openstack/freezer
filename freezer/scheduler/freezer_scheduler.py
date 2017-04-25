@@ -199,7 +199,7 @@ class FreezerScheduler(object):
 
 
 def main():
-    possible_actions = ['start', 'stop', 'status', 'reload']
+    possible_actions = ['start', 'stop', 'restart', 'status', 'reload']
 
     arguments.parse_args(possible_actions)
     arguments.setup_logging()
@@ -250,6 +250,8 @@ def main():
         daemon.start()
     elif CONF.action == 'stop':
         daemon.stop()
+    elif CONF.action == 'restart':
+        daemon.restart()
     elif CONF.action == 'reload':
         daemon.reload()
     elif CONF.action == 'status':
