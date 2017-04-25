@@ -118,16 +118,16 @@ class OSClientManager(object):
         if 'region_name' in self.swift_args.keys():
             os_options['region_name'] = self.swift_args.get('region_name')
         if 'endpoint_type' in self.swift_args.keys():
-            os_options['endpoint_type'] = self.swift_args.pop('endpoint_type')
+            os_options['endpoint_type'] = self.swift_args.get('endpoint_type')
         if 'tenant_id' in self.swift_args.keys():
-            os_options['tenant_id'] = self.swift_args.pop('tenant_id')
+            os_options['tenant_id'] = self.swift_args.get('tenant_id')
         if 'identity_api_version' in self.swift_args.keys():
             os_options['identity_api_version'] = \
-                self.swift_args.pop('identity_api_version')
+                self.swift_args.get('identity_api_version')
             auth_version = os_options['identity_api_version']
 
         if 'token' in self.swift_args.keys():
-            os_options['auth_token'] = self.swift_args.pop('token')
+            os_options['auth_token'] = self.swift_args.get('token')
         if 'auth_version' in self.swift_args.keys():
             auth_version = self.swift_args.get('auth_version')
         os_options['project_domain_name'] = \
