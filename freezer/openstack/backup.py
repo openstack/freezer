@@ -40,59 +40,6 @@ class BackupOs(object):
         self.container = container
         self.storage = storage
 
-    def backup_nova(self, instance_id):
-        """
-        Implement nova backup
-        :param instance_id: Id of the instance for backup
-        :return:
-        """
-        instance_id = instance_id
-        client_manager = self.client_manager
-        nova = client_manager.get_nova()
-        instance = nova.servers.get(instance_id)
-        glance = client_manager.get_glance()
-
-        def instance_finish_task():
-            instance = nova.servers.get(instance_id)
-            return not instance.__dict__['OS-EXT-STS:task_state']
-
-        utils.wait_for(
-            instance_finish_task, 1, CONF.timeout,
-            message="Waiting for instance {0} to finish {1} to start the "
-                    "snapshot process".format(
-                        instance_id,
-                        instance.__dict__['OS-EXT-STS:task_state']
-                    )
-        )
-        instance = nova.servers.get(instance)
-
-        image_id = nova.servers.create_image(instance,
-                                             "snapshot_of_%s" % instance_id)
-
-        image = glance.images.get(image_id)
-
-        def image_active():
-            image = glance.images.get(image_id)
-            return image.status == 'active'
-
-        utils.wait_for(image_active, 1, CONF.timeout,
-                       message="Waiting for instance {0} snapshot {1} to "
-                               "become active".format(instance_id, image_id))
-        try:
-            image = glance.images.get(image_id)
-        except Exception as e:
-            LOG.error(e)
-
-        stream = client_manager.download_image(image)
-        package = "{0}/{1}".format(instance_id, utils.DateTime.now().timestamp)
-        LOG.info("Saving image to {0}".format(self.storage.type))
-        headers = {"x-object-meta-name": instance.name,
-                   "x-object-meta-flavor-id": str(instance.flavor.get('id')),
-                   'x-object-meta-length': str(len(stream))}
-        self.storage.add_stream(stream, package, headers)
-        LOG.info("Deleting temporary image {0}".format(image))
-        glance.images.delete(image.id)
-
     def backup_cinder_by_glance(self, volume_id):
         """
         Implements cinder backup:
