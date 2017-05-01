@@ -34,8 +34,6 @@ class TestJob(commons.FreezerBaseTestCase):
 
 
 class TestInfoJob(TestJob):
-    def setUp(self):
-        super(TestInfoJob, self).setUp()
 
     def test_execute_nothing_to_do(self):
         backup_opt = commons.BackupOpt1()
