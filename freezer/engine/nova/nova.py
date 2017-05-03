@@ -203,7 +203,8 @@ class NovaEngine(engine.BackupEngine):
 
         image = self.glance.images.get(image_id)
         image_block_mapping_info = image.get("block_device_mapping")
-        image_block_mapping = json.loads(image_block_mapping_info)
+        image_block_mapping = json.loads(image_block_mapping_info) \
+            if image_block_mapping_info else None
         image_temporary_snapshot_id = \
             image_block_mapping[0]['snapshot_id'] \
             if image_block_mapping else None
