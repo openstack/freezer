@@ -263,7 +263,7 @@ Restore example:
 SSH Storage Backup/Restore
 --------------------------
 
-Freezer can user ssh to backup the data in fould on remote server. This option
+Freezer can use ssh to backup the data in fould on remote server. This option
 will turn any Linux server to backup storage.
 
 To use ssh storage specify "--storage ssh" And use "--container %path-to-folder-with-backups-on-remote-machine%"
@@ -271,8 +271,8 @@ Also you should specify ssh-username, ssh-key and ssh-host parameters. ssh-port 
 
 In order to use SSH to backup, "--storage ssh" and
 "--container %path-to-folder-with-backups-on-remote-machine%" options must be
-spesified. Also ssh-username, ssh-host parameters must be supplied.
-ssh-port parameter is optional and Freezer use default 
+specified. Also ssh-username, ssh-host parameters must be supplied.
+ssh-port parameter is optional and Freezer use default
 ssh port 22 if not specified.
 
 Backup example:
@@ -335,7 +335,7 @@ Execute restore:
 
     sudo freezer-agent --action restore \
     --container freezer_foobar-container-2 \
-    --backup-name mysq-prod --hostname [server-host-name]
+    --backup-name mysql-prod --hostname [server-host-name]
     --restore-abs-path /var/lib/mysql \
     --restore-from-date "2014-05-23T23:23:23"
 
@@ -511,11 +511,11 @@ which is supposed to execute that job.
 
 A single openstack user could manage different resources on different nodes
 (and actually may even have different freezer-scheduler instances running on
-the same node with different local privileges, for example), and the client-id 
+the same node with different local privileges, for example), and the client-id
 allows him to associate the specific scheduler instance with its specific jobs.
 
-When not provided with a custom client-id, the scheduler falls back to the 
-default which is composed from the tenant-id and the hostname of the machine 
+When not provided with a custom client-id, the scheduler falls back to the
+default which is composed from the tenant-id and the hostname of the machine
 on which it is running.
 
 The first step to use the scheduler is creating a document with the job:
@@ -910,7 +910,7 @@ Dependencies Notes
 ------------------
 
 In stable/kilo and stable/liberty the module peppep3134daemon is imported from
-local path rather than pip. This generated many issues as the package is not 
+local path rather than pip. This generated many issues as the package is not
 in the global-requirements.txt of kilo and liberty. Also pbr in the kilo
 release does not support env markers which further complicated the installation.
 

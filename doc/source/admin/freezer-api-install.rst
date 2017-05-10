@@ -14,7 +14,7 @@ Before Installation
 - Use corresponding release to your OpenStack version. For example;
   If your OpenStack version is Liberty, user stable/Liberty branch.
 - Do not forget to register Keystone API endpoint and service
-- Elasticsearch must be installe
+- Elasticsearch must be installed
 
 Requirements
 ------------
@@ -39,44 +39,44 @@ Install required packages first:
 .. code:: bash
 
 	sudo apt-get install -y python-dev python-pip git openssl gcc make automake
-	
+
 Clone proper branch of Freezer API with git:
 
 .. code:: bash
 
 	git clone -b [branch] https://github.com/openstack/freezer-api.git
-	
+
 Install requirements with pip:
 
 .. code:: bash
 
 	cd freezer-api/
-	
+
 	sudo pip install -r requirements.txt
-	
+
 Install Freezer API from source:
 
 .. code:: bash
 
 	sudo python setup.py install
-	
+
 Copy config file:
 
 .. code:: bash
 
 	sudo cp etc/freezer-api.conf /etc/freezer-api.conf
-	
+
 Edit config file:
 
 .. code:: bash
 
 	sudo nano /etc/freezer-api.conf
-	
+
 	# change log file location
 	log_file = /var/log/freezer-api.log
-	
+
 	# configure Keystone authentication
-	
+
 	[keystone_authtoken]
 	auth_protocol = http
 	auth_host = [keystone_host_ip_or_hostname]
@@ -86,30 +86,30 @@ Edit config file:
 	admin_tenant_name = [admin tenan] # usually admin
 	include_service_catalog = False
 	delay_auth_decision = False
-	
+
 	[storage]
 	# supported db engine. currently elasticsearch only
 	db=elasticsearch
 	hosts='http://[elasticsearch host address]:9200'
 	# freezer-db-init uses the following parameter to set the number of replicas
 	number_of_replicas=1 # replicas must be set to 1
-	
-	
+
+
 Follow this instructions to install Elasticsearch 1.7.5:
 
 .. code:: bash
 
 	https://goo.gl/bwDcNK
-	
+
 	service elasticsearch start
-	
+
 ***You must install Elasticsearch 1.7.5 for Freezer API to work correctly***
 
 Elasticsearch needs to know what type of data each document's field contains.
 This information is contained in the "mapping", or schema definition.
 
 Elasticsearch will use dynamic mapping to try to guess the field type from the
-basic datatypes available in JSON, but some field's properties have to be 
+basic datatypes available in JSON, but some field's properties have to be
 explicitly declared to tune the indexing engine.
 
 Let's initialize database:
@@ -117,58 +117,57 @@ Let's initialize database:
 .. code:: bash
 
 	freezer-db-init [db-host] # usually localhost
-	
+
 Run Freezer API:
 
 .. code:: bash
 
 	freezer-api 0.0.0.0
-	
+
 There is not any Freezer API Deamon. If you need to run Freezer API in
 backgroun, user following commend:
 
 .. code:: bash
 
 	freezer-api 0.0.0.0 >/dev/null 2>&1
-	
+
 Keystone API v2.0 endpoint registration:
 
 .. code:: bash
 
 	keystone service-create --name freezer --type backup \
 	--description "Freezer Backup Service"
-	
+
 	# use public IP address or hostname because Freezer Scheduler must be able
 	to reach API from public IP or hostname.
-	
+
 	# default port is 9090. If you have changed in freezer-api.conf you must
 	change it here too.
-	
+
 	keystone endpoint-create \
 	--service-id $(keystone service-list | awk '/ backup / {print $2}') \
 	--publicurl http://[freezer_api_publicurl]:[port] \
 	--internalurl http://[freezer_api_internalurl]:[port] \
 	--adminurl http://[freezer_api_adminurl]:[port] \
 	--region regionOne
-  
+
 Keystone API v3 endpoint registration:
 
 .. code:: bash
 
 	# With OpenStack Liberty, Keystone API v2.0 is depreciated and you will not
 	able to use "keystone-client" commend instead user "openstack" commend
-	
+
 	openstack service create --name freezer \
 	--description "Freezer Backup Service" backup
-	
+
 	# use public IP address or hostname because Freezer Scheduler must be able
 	to reach API from public IP or hostname.
-	
+
 	# default port is 9090. If you have changed in freezer-api.conf you must
 	change it here too.
-	
+
 	openstack endpoint create   --publicurl http://176.53.94.101:9090 \
 	--internalurl http://192.168.0.4:9090 \
 	--adminurl http://176.53.94.101:9090 \
 	--region RegionOne backup
-	
