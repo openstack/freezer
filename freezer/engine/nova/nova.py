@@ -53,9 +53,8 @@ class NovaEngine(engine.BackupEngine):
         except EOFError:
             pass
 
-    def restore_nova_tenant(self, project_id, hostname_backup_name,
-                            overwrite, recent_to_date):
-        # Load info about tenant instances in swift
+    def get_nova_tenant(self, project_id):
+        # Load info about tenant instances
         if self.storage._type == 'swift':
             swift_connection = self.client.create_swift()
             headers, data = swift_connection.get_object(
@@ -67,7 +66,12 @@ class NovaEngine(engine.BackupEngine):
             with self.storage.open(backup_basepath, 'rb') as backup_file:
                 data = backup_file.readline()
 
-        instance_ids = json.loads(data)
+        return json.loads(data)
+
+    def restore_nova_tenant(self, project_id, hostname_backup_name,
+                            overwrite, recent_to_date):
+
+        instance_ids = self.get_nova_tenant(project_id)
         for instance_id in instance_ids:
             LOG.info("Restore nova instance ID: {0} from container {1}".
                      format(instance_id, self.storage.storage_path))
