@@ -307,7 +307,8 @@ class Job(object):
             next_event = job_doc['job_schedule'].get('event', '')
             while next_event:
                 if next_event == Job.STOP_EVENT:
-                    LOG.info('JOB {0} event: STOP'.format(self.id))
+                    if isinstance(self.state(), StopState):
+                        LOG.info('JOB {0} event: STOP'.format(self.id))
                     next_event = self.state.stop(self, job_doc)
                 elif next_event == Job.START_EVENT:
                     LOG.info('JOB {0} event: START'.format(self.id))
