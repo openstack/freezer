@@ -286,7 +286,7 @@ class FakeSwiftClient(object):
 
 class BackupOpt1(object):
     def __init__(self):
-        self.dereference_symlink = 'none'
+        self.dereference_symlink = None
         self.mysql_conf = '/tmp/freezer-test-conf-file'
         self.backup_media = 'fs'
         self.lvm_auto_snap = '/dev/null'

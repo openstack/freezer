@@ -63,7 +63,7 @@ class TarCommandBuilder(object):
             'soft' dereference soft links,
             'hard' dereference hardlinks,
             'all' dereference both.
-            Default 'none'.
+            Default 'None'.
         """
         self.dereference = self.DEREFERENCE_MODE[mode]
 
