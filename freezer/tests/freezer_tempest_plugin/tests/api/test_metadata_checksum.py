@@ -13,7 +13,7 @@
 # under the License.
 import subprocess
 
-from tempest import test
+from tempest.lib import decorators
 
 from freezer.tests.freezer_tempest_plugin.tests.api import base
 from freezer.tests.integration import common
@@ -36,7 +36,7 @@ class TestFreezerMetadataChecksum(base.BaseFreezerTest):
 
         self.dest_tree.cleanup()
 
-    @test.attr(type="gate")
+    @decorators.attr(type="gate")
     def test_freezer_fs_backup_valid_checksum(self):
         # perform a normal backup, but enable consistency checks and save the
         # metadata to disk
@@ -61,7 +61,7 @@ class TestFreezerMetadataChecksum(base.BaseFreezerTest):
                             'Test restore from local storage with '
                             'computed checksum.')
 
-    @test.attr(type="gate")
+    @decorators.attr(type="gate")
     def test_freezer_fs_backup_bad_checksum(self):
         # as above, but we'll ignore the computed checksum
         metadata_path = self.create_local_backup(consistency_check=True)

@@ -16,7 +16,7 @@ import os
 import shutil
 
 from oslo_utils import uuidutils
-from tempest import test
+from tempest.lib import decorators
 
 from freezer.tests.freezer_tempest_plugin.tests.api import base
 
@@ -71,7 +71,7 @@ class TestFreezerFSBackup(base.BaseFreezerTest):
         shutil.rmtree(self.restore_target_dir, True)
         shutil.rmtree(self.backup_local_storage_dir)
 
-    @test.attr(type="gate")
+    @decorators.attr(type="gate")
     def test_freezer_fs_backup(self):
         backup_args = ['freezer-agent',
                        '--path-to-backup',

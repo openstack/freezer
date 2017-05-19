@@ -16,7 +16,7 @@ import json
 import os
 import subprocess
 
-from tempest import test
+from tempest.lib import decorators
 
 from freezer.tests.freezer_tempest_plugin.tests.api import base
 from freezer.tests.integration import common
@@ -123,7 +123,7 @@ class TestFreezerCompressGzip(base.BaseFreezerTest):
 
         return out.strip()
 
-    @test.attr(type="gate")
+    @decorators.attr(type="gate")
     def test_freezer_backup_compress_gzip(self):
         backup_name = 'freezer-test-backup-gzip-0'
 
@@ -146,7 +146,7 @@ class TestFreezerCompressGzip(base.BaseFreezerTest):
         self.run_subprocess(diff_args, 'Verify restored copy is identical to '
                                        'original.')
 
-    @test.attr(type="gate")
+    @decorators.attr(type="gate")
     def test_freezer_backup_compress_bzip2(self):
         backup_name = 'freezer-test-backup-bzip2-0'
 
@@ -166,7 +166,7 @@ class TestFreezerCompressGzip(base.BaseFreezerTest):
         self.run_subprocess(diff_args, 'Verify restored copy is identical to '
                                        'original.')
 
-    @test.attr(type="gate")
+    @decorators.attr(type="gate")
     def test_freezer_backup_compress_xz(self):
         backup_name = 'freezer-test-backup-xz-0'
 

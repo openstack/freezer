@@ -12,14 +12,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from tempest import test
+from tempest.lib import decorators
 
 from freezer.tests.freezer_tempest_plugin.tests.api import base
 
 
 class TestFreezerTestsRunning(base.BaseFreezerTest):
 
-    @test.attr(type="gate")
+    @decorators.attr(type="gate")
     def test_tests_running(self):
         # See if tempest plugin tests run.
         self.assertEqual(1, 1, 'Tests are running')
