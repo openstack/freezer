@@ -43,7 +43,7 @@ class TestBackupFSLocalstorage(common.TestFS):
     def test_backup_single_level(self):
         """
         - use the default source and destination trees in /tmp
-          (see common.TestFS)
+        (see common.TestFS)
         - use temporary directory for backup storage
         - add some random data
         - check that trees don't match anymore
@@ -163,11 +163,11 @@ class TestBackupFSLocalstorage(common.TestFS):
 class TestBackupSSH(common.TestFS):
     """
     Tests are executed if the following env vars are defined:
-     - FREEZER_TEST_SSH_KEY
-     - FREEZER_TEST_SSH_USERNAME
-     - FREEZER_TEST_SSH_HOST
-     - FREEZER_TEST_CONTAINER
-       (directory on the remote machine used to store backups)
+    - FREEZER_TEST_SSH_KEY
+    - FREEZER_TEST_SSH_USERNAME
+    - FREEZER_TEST_SSH_HOST
+    - FREEZER_TEST_CONTAINER
+    (directory on the remote machine used to store backups)
     """
 
     @unittest.skipIf(not common.TestFS.use_ssh,
@@ -354,11 +354,11 @@ class TestBackupUsingSwiftStorage(common.TestFS):
     """
     Tests are executed if the following env vars are defined:
 
-     - FREEZER_TEST_OS_TENANT_NAME
-     - FREEZER_TEST_OS_USERNAME
-     - FREEZER_TEST_OS_REGION_NAME
-     - FREEZER_TEST_OS_PASSWORD
-     - FREEZER_TEST_OS_AUTH_URL
+    - FREEZER_TEST_OS_TENANT_NAME
+    - FREEZER_TEST_OS_USERNAME
+    - FREEZER_TEST_OS_REGION_NAME
+    - FREEZER_TEST_OS_PASSWORD
+    - FREEZER_TEST_OS_AUTH_URL
     """
 
     @unittest.skipIf(not common.TestFS.use_os,

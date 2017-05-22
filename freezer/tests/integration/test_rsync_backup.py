@@ -24,7 +24,7 @@ class TestBackupFSLocalRsync(common.TestFS):
     def test_backup_single_level(self):
         """
         - use the default source and destination trees in /tmp
-          (see common.TestFS)
+        (see common.TestFS)
         - use temporary directory for backup storage
         - add some random data
         - check that trees don't match anymore
@@ -66,7 +66,7 @@ class TestBackupFSLocalRsync(common.TestFS):
     def test_backup_multiple_level(self):
         """
         - use the default source and destination trees in /tmp
-          (see common.TestFS)
+        (see common.TestFS)
         - use temporary directory for backup storage
         - add some random data
         - check that trees don't match anymore
@@ -119,7 +119,7 @@ class TestBackupFSLocalRsync(common.TestFS):
     def test_backup_single_file(self):
         """
         - use the default source and destination trees in /tmp
-          (see common.TestFS)
+        (see common.TestFS)
         - use temporary directory for backup storage
         - add one file with random data
         - check that trees don't match anymore
