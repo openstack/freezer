@@ -74,7 +74,7 @@ class BaseFreezerCliTest(base.BaseFreezerTest):
             if row[0].strip() == job_id.strip():
                 return row
 
-        self.fail('Could not find job: {}'.format(job_id)) 
+        self.fail('Could not find job: {}'.format(job_id))
 
     def wait_for_job_status(self, job_id, status, timeout=720):
         start = time.time()
@@ -116,8 +116,12 @@ class CLIClientWithFreezer(cli_base.CLIClient):
         """
 
         flags += ' --os-endpoint-type %s' % endpoint_type
+        flags += ' --os-cacert /etc/ssl/certs/ca-certificates.crt'
+        flags += ' --os-project-domain-name Default'
+        flags += ' --os-user-domain-name Default'
         return self.cmd_with_auth(
             'freezer-scheduler', action, flags, params, fail_ok, merge_stderr)
+
 
 # This class is just copied from the freezer repo. Depending on where the
 # scenario tests end up we may need to refactore this.
@@ -229,14 +233,20 @@ class TestFreezerScenario(BaseFreezerCliTest):
         self.source_tree.add_random_data()
         self.dest_tree = Temp_Tree()
 
-        self.cli.freezer_scheduler(action='start', flags='-c test_node')
+        self.cli.freezer_scheduler(
+            action='start',
+            flags='-c test_node -f /tmp/freezer_tempest_job_dir/'
+        )
 
     def tearDown(self):
         super(TestFreezerScenario, self).tearDown()
         self.source_tree.cleanup()
         self.dest_tree.cleanup()
 
-        self.cli.freezer_scheduler(action='stop', flags='-c test_node')
+        self.cli.freezer_scheduler(
+            action='stop',
+            flags='-c test_node -f /tmp/freezer_tempest_job_dir/'
+        )
 
     def test_simple_backup(self):
         backup_job = {

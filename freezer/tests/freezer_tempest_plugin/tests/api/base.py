@@ -136,7 +136,9 @@ class BaseFreezerTest(tempest.test.BaseTestCase):
 
     @classmethod
     def get_auth_url(cls):
-        return cls.os_primary.auth_provider.auth_client.auth_url[:-len('/tokens')]
+        return cls.os_primary.auth_provider.auth_client.auth_url[:-len(
+            '/auth/tokens'
+        )]
 
     @classmethod
     def setup_clients(cls):
@@ -159,7 +161,6 @@ class BaseFreezerTest(tempest.test.BaseTestCase):
         os.environ['PATH'] = '/usr/local/bin:' + os.environ['PATH']
 
         return os.environ
-
 
     def run_subprocess(self, sub_process_args, fail_message):
 
