@@ -53,7 +53,6 @@ def dict_to_args(d):
 
 def execute_freezerc(dict, must_fail=False, merge_stderr=False):
     """
-
     :param dict:
     :type dict: dict[str, str]
     :param must_fail:
@@ -218,22 +217,22 @@ class TestFS(unittest.TestCase):
 
     To enable the ssh storage testing, the following environment
     variables need to be defined:
-     - FREEZER_TEST_SSH_KEY
-     - FREEZER_TEST_SSH_USERNAME
-     - FREEZER_TEST_SSH_HOST
-     - FREEZER_TEST_CONTAINER
+    - FREEZER_TEST_SSH_KEY
+    - FREEZER_TEST_SSH_USERNAME
+    - FREEZER_TEST_SSH_HOST
+    - FREEZER_TEST_CONTAINER
 
     To enable the swift storage testing, the following environment
     variables need to be defined:
-     - FREEZER_TEST_OS_TENANT_NAME
-     - FREEZER_TEST_OS_USERNAME
-     - FREEZER_TEST_OS_REGION_NAME
-     - FREEZER_TEST_OS_PASSWORD
-     - FREEZER_TEST_OS_AUTH_URL
+    - FREEZER_TEST_OS_TENANT_NAME
+    - FREEZER_TEST_OS_USERNAME
+    - FREEZER_TEST_OS_REGION_NAME
+    - FREEZER_TEST_OS_PASSWORD
+    - FREEZER_TEST_OS_AUTH_URL
 
     Tests involving LVM snapshots are evoided if:
-     - user is not root
-     - FREEZER_TEST_NO_LVM is set
+    - user is not root
+    - FREEZER_TEST_NO_LVM is set
     """
 
     ssh_key = os.environ.get('FREEZER_TEST_SSH_KEY')
