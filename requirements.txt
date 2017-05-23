@@ -3,7 +3,7 @@
 # process, which may cause wedges in the gate later.
 astroid<1.4.0 # LGPLv2.1 # breaks pylint 1.4.4
 setuptools!=24.0.0,!=34.0.0,!=34.0.1,!=34.0.2,!=34.0.3,!=34.1.0,!=34.1.1,!=34.2.0,!=34.3.0,!=34.3.1,!=34.3.2,>=16.0 # PSF/ZPL
-pbr<2.0.0,>=1.8 # Apache-2.0
+pbr>=1.8 # Apache-2.0
 python-swiftclient>=3.2.0 # Apache-2.0
 python-cinderclient!=1.7.0,!=1.7.1,>=1.6.0 # Apache-2.0
 python-glanceclient>=2.5.0 # Apache-2.0
