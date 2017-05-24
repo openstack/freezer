@@ -14,8 +14,10 @@
 # limitations under the License.
 
 import datetime
+import fixtures
 import os
 import time
+
 
 import mock
 
@@ -112,8 +114,9 @@ class TestUtils(commons.FreezerBaseTestCase):
             "2014-12-03T23:23:23")
 
     def prepare_env(self):
-        os.environ["HTTP_PROXY"] = 'http://proxy.original.domain:8080'
-        os.environ.pop("HTTPS_PROXY", None)
+        self.useFixture(fixtures.EnvironmentVariable(
+            "HTTP_PROXY", 'http://proxy.original.domain:8080'))
+        self.useFixture(fixtures.EnvironmentVariable("HTTPS_PROXY"))
 
     def test_alter_proxy(self):
         """
