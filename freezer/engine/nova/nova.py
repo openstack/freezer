@@ -38,6 +38,7 @@ class NovaEngine(engine.BackupEngine):
         self.nova = self.client.create_nova()
         self.glance = self.client.create_glance()
         self.cinder = self.client.create_cinder()
+        self.neutron = self.client.create_neutron()
         self.server_info = None
 
     @property
@@ -90,13 +91,13 @@ class NovaEngine(engine.BackupEngine):
             server_info = metadata.get('server', {})
             length = int(engine_metadata.get('length'))
             available_networks = server_info.get('addresses')
-            nova_networks = self.nova.networks.findall()
+            nova_networks = self.neutron.list_networks()['networks']
 
             net_names = [network for network, _ in
                          available_networks.iteritems()]
-            match_networks = [{"net-id": network.id} for network in
+            match_networks = [{"net-id": network.get('id')} for network in
                               nova_networks
-                              if network.to_dict().get('label') in net_names]
+                              if network.get('name') in net_names]
 
             stream = self.stream_image(read_pipe)
             data = utils.ReSizeStream(stream, length, 1)

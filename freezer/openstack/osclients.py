@@ -20,6 +20,7 @@ from cinderclient import client as cinder_client
 from glanceclient import client as glance_client
 from keystoneauth1 import loading
 from keystoneauth1 import session
+from neutronclient.v2_0 import client as neutron_client
 from novaclient import client as nova_client
 from oslo_config import cfg
 from oslo_log import log
@@ -38,6 +39,7 @@ class OSClientManager(object):
         self.glance = None
         self.nova = None
         self.cinder = None
+        self.neutron = None
         self.dry_run = kwargs.pop('dry_run', None)
         loader = loading.get_plugin_loader(auth_method)
         # copy the args for swift authentication !
@@ -69,6 +71,7 @@ class OSClientManager(object):
         self.compute_version = kwargs.pop('compute_api_version', 2)
         self.image_version = kwargs.pop('image_api_version', 2)
         self.volume_version = kwargs.pop('volume_api_version', 2)
+        self.neutron_version = kwargs.pop('neutron_api_version', 2)
         self.auth = loader.load_from_options(auth_url=auth_url, **kwargs)
 
         self.sess = session.Session(auth=self.auth, **session_kwargs)
@@ -81,6 +84,15 @@ class OSClientManager(object):
         self.nova = nova_client.Client(self.compute_version, session=self.sess,
                                        **self.client_kwargs)
         return self.nova
+
+    def create_neutron(self):
+        """
+        Use pre-initialized session to create an instance of neutron client.
+        :return: neutronclient instance
+        """
+        self.neutron = neutron_client.Client(session=self.sess,
+                                             **self.client_kwargs)
+        return self.neutron
 
     def create_glance(self):
         """
@@ -164,6 +176,15 @@ class OSClientManager(object):
         if not self.nova:
             self.nova = self.create_nova()
         return self.nova
+
+    def get_neutron(self):
+        """
+        Get neutronclient instance
+        :return: neutronclient instance
+        """
+        if not self.neutron:
+            self.neutron = self.create_neutron()
+        return self.neutron
 
     def get_glance(self):
         """

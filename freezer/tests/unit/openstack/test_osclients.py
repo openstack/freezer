@@ -44,6 +44,9 @@ class TestOsClients(unittest.TestCase):
     def test_create_nova(self):
         self.client_manager.create_nova()
 
+    def test_create_neutron(self):
+        self.client_manager.create_neutron()
+
     def test_dry_run(self):
         osclients.DryRunSwiftclientConnectionWrapper(mock.Mock())
 
@@ -53,8 +56,11 @@ class TestOsClients(unittest.TestCase):
     def test_get_swift(self):
         self.client_manager.get_swift()
 
-    def get_glance(self):
+    def test_get_glance(self):
         self.client_manager.get_glance()
 
-    def get_nova(self):
+    def test_get_nova(self):
         self.client_manager.get_nova()
+
+    def test_get_neutron(self):
+        self.client_manager.get_neutron()
