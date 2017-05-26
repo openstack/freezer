@@ -223,7 +223,7 @@ class BackupJob(Job):
 
                 # Checksum for Backup Consistency
                 if self.conf.consistency_check:
-                    ignorelinks = (self.conf.dereference_symlink == 'none' or
+                    ignorelinks = (self.conf.dereference_symlink is None or
                                    self.conf.dereference_symlink == 'hard')
                     consistency_checksum = checksum.CheckSum(
                         filepath, ignorelinks=ignorelinks).compute()

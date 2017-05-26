@@ -95,8 +95,8 @@ restart_always_level = False
 dst_file = False
 
 # Follow hard and soft links and archive and dump the
-# files they refer to. Possible options are {none,soft,hard,all}
-dereference_symlink = none
+# files they refer to. Possible options are {None,soft,hard,all}
+dereference_symlink = None
 
 # Set the hostname used to identify the data you want to
 # restore from. If you want to restore data in the same
