@@ -19,6 +19,7 @@ Freezer general utils functions
 import datetime
 import errno
 import fnmatch as fn
+import logging
 import os
 import subprocess
 import sys
@@ -29,6 +30,8 @@ from freezer.exceptions import utils
 from functools import wraps
 from oslo_log import log
 from six.moves import configparser
+
+logging.getLogger('botocore').setLevel(logging.WARNING)
 
 LOG = log.getLogger(__name__)
 
@@ -208,6 +211,36 @@ class Bunch(object):
 
     def __getattr__(self, item):
         return self.__dict__.get(item)
+
+
+class S3ResponseStream(object):
+    """
+    Readable and iterable object body response wrapper.
+    """
+
+    def __init__(self, data, chunk_size):
+        """
+        Wrap the underlying response
+        :param data: the response to wrap
+        :param chunk_size: number of bytes to return each iteration/next call
+        """
+        self.data = data
+        self.chunk_size = chunk_size
+
+    def read(self, length=None):
+        return self.data.read(length)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        buf = self.read(self.chunk_size)
+        if not buf:
+            raise StopIteration()
+        return buf
+
+    def __next__(self):
+        return self.next()
 
 
 class ReSizeStream(object):

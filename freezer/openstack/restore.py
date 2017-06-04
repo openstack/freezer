@@ -49,6 +49,14 @@ class RestoreOs(object):
             info, backups = swift.get_container(self.container, prefix=path)
             backups = sorted(
                 map(lambda x: int(x["name"].rsplit("/", 1)[-1]), backups))
+        elif self.storage.type == "s3":
+            bucket_name, path = self.get_storage_info(path)
+            backups = self.storage.list_all_objects(
+                bucket_name=bucket_name,
+                prefix=path
+            )
+            backups = sorted(
+                map(lambda x: int(x['Key'].split("/", 2)[1]), backups))
         elif self.storage.type == "local":
             path = "{0}/{1}".format(self.container, path)
             backups = os.listdir(os.path.abspath(path))
@@ -67,6 +75,14 @@ class RestoreOs(object):
             raise BaseException(msg)
         return backups[-1]
 
+    def get_storage_info(self, path):
+        storage_info = self.container.split('/', 1)
+        container_name = storage_info[0]
+        object_prefix = storage_info[1] if '/' in self.container else ''
+        if object_prefix != '':
+            path = "{0}/{1}".format(object_prefix, path)
+        return container_name, path
+
     def _create_image(self, path, restore_from_timestamp):
         """
         :param path:
@@ -84,6 +100,40 @@ class RestoreOs(object):
             length = int(stream[0]["x-object-meta-length"])
             data = utils.ReSizeStream(stream[1], length, 1)
             info = stream[0]
+            image = self.client_manager.create_image(
+                name="restore_{}".format(path),
+                container_format="bare",
+                disk_format="raw",
+                data=data)
+            return info, image
+        elif self.storage.type == 's3':
+            if self.storage.get_object_prefix() != '':
+                base_path = "{0}/{1}/{2}".format(
+                    self.storage.get_object_prefix(),
+                    path,
+                    backup
+                )
+            else:
+                base_path = "{0}/{1}".format(path, backup)
+            image_file = "{0}/{1}".format(base_path, path)
+            s3_object = self.storage.get_object(
+                bucket_name=self.storage.get_bucket_name(),
+                key=image_file
+            )
+            stream = utils.S3ResponseStream(data=s3_object['Body'],
+                                            chunk_size=10000000)
+            data = utils.ReSizeStream(
+                stream,
+                s3_object['ContentLength'],
+                1
+            )
+            metadata = "{0}/metadata".format(base_path)
+            metadata_object = self.storage.get_object(
+                bucket_name=self.storage.get_bucket_name(),
+                key=metadata
+            )
+            info = json.load(metadata_object['Body'])
+
             image = self.client_manager.create_image(
                 name="restore_{}".format(path),
                 container_format="bare",

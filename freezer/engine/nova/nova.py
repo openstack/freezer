@@ -61,6 +61,12 @@ class NovaEngine(engine.BackupEngine):
             headers, data = swift_connection.get_object(
                 self.storage.storage_path,
                 "project_" + project_id)
+        elif self.storage._type == 's3':
+            bucket_name, object_name = self.get_storage_info(project_id)
+            data = self.storage.get_object(
+                bucket_name=bucket_name,
+                key=object_name
+            )['Body'].read()
         elif self.storage._type in ['local', 'ssh']:
             backup_basepath = os.path.join(self.storage.storage_path,
                                            'project_' + project_id)
@@ -143,6 +149,13 @@ class NovaEngine(engine.BackupEngine):
             swift_connection.put_object(self.storage.storage_path,
                                         "project_{0}".format(project_id),
                                         data)
+        elif self.storage._type == 's3':
+            bucket_name, object_name = self.get_storage_info(project_id)
+            self.storage.put_object(
+                bucket_name=bucket_name,
+                key=object_name,
+                data=data
+            )
         elif self.storage._type in ['local', 'ssh']:
             backup_basepath = os.path.join(self.storage.storage_path,
                                            "project_" + project_id)
@@ -168,6 +181,16 @@ class NovaEngine(engine.BackupEngine):
                 restart_always_level=restart_always_level))
 
         futures.wait(futures_list, CONF.timeout)
+
+    def get_storage_info(self, project_id):
+        if self.storage.get_object_prefix() != '':
+            object_name = "{0}/project_{1}".format(
+                self.storage.get_object_prefix(),
+                project_id
+            )
+        else:
+            object_name = "project_{0}".format(project_id)
+        return self.storage.get_bucket_name(), object_name
 
     def backup_data(self, backup_resource, manifest_path):
         server = self.nova.servers.get(backup_resource)
