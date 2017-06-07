@@ -44,7 +44,7 @@ symbols=no
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=W,C,R,E1002
+disable=W,C,R,E1002,no-member
 
 
 [REPORTS]

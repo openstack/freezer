@@ -21,7 +21,6 @@ from glanceclient.common import utils as glance_utils
 import mock
 from oslo_config import cfg
 from oslo_config import fixture as cfg_fixture
-import six
 import testtools
 
 from freezer.common import config
@@ -346,10 +345,7 @@ class BackupOpt1(object):
         self.storage = mock.MagicMock()
         self.engine = mock.MagicMock()
         opts = osclients.OpenstackOpts.create_from_env().get_opts_dicts()
-        self.client_manager = osclients.OSClientManager(opts.pop('auth_url'),
-                                                        opts.pop(
-                                                            'auth_method'),
-                                                        **opts)
+        self.client_manager = osclients.OSClientManager(**opts)
         self.client_manager.get_swift = mock.Mock(
             return_value=FakeSwiftClient().client.Connection())
         self.client_manager.create_swift = self.client_manager.get_swift
@@ -484,17 +480,11 @@ class FakeDisableFileSystemRedirection(object):
 
 class FreezerBaseTestCase(testtools.TestCase):
     def setUp(self):
-        if six.PY34:
-            super().setUp()
-        else:
-            super(FreezerBaseTestCase, self).setUp()
+        super(FreezerBaseTestCase, self).setUp()
 
         self._config_fixture = self.useFixture(cfg_fixture.Config())
         config.config(args=[])
         self.addCleanup(CONF.reset)
 
     def tearDown(self):
-        if six.PY34:
-            super().tearDown()
-        else:
-            super(FreezerBaseTestCase, self).tearDown()
+        super(FreezerBaseTestCase, self).tearDown()

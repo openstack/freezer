@@ -64,6 +64,7 @@ def freezer_main(backup_args):
             backup_args.__dict__)
 
     if backup_args.storages:
+        # pylint: disable=abstract-class-instantiated
         storage = multiple.MultipleStorage(
             [storage_from_dict(x, max_segment_size)
              for x in backup_args.storages])
