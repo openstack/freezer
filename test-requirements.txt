@@ -12,8 +12,8 @@ sphinx!=1.6.1,>=1.5.1 # BSD
 oslosphinx>=4.7.0 # Apache-2.0
 testrepository>=0.0.18 # Apache-2.0/BSD
 testtools>=1.4.0 # MIT
-reno>=1.8.0 # Apache-2.0
-astroid<1.4.0 # LGPLv2.1 # breaks pylint 1.4.4
+reno!=2.3.1,>=1.8.0 # Apache-2.0
+astroid>=1.5.0 # LGPLv2.1
 openstackdocstheme>=1.5.0 # Apache-2.0
 
 # Tempest Plugin
