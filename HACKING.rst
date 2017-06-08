@@ -65,10 +65,10 @@ Release Notes
 
   * Generate a release notes page
      1. tox -e venv -- reno new {my-new-feature}
-     2. http://docs.openstack.org/developer/reno/usage.html#creating-new-release-notes
+     2. https://docs.openstack.org/developer/reno/usage.html#creating-new-release-notes
 
   * Update/Edit an existing release note
-     1. http://docs.openstack.org/developer/reno/usage.html#editing-a-release-note
+     1. https://docs.openstack.org/developer/reno/usage.html#editing-a-release-note
 
 
 - Building release notes::
