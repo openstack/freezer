@@ -217,7 +217,8 @@ class BackupEngine(object):
 
     def restore(self, hostname_backup_name, restore_resource,
                 overwrite,
-                recent_to_date):
+                recent_to_date,
+                backup_media=None):
         """
 
         :param hostname_backup_name:
@@ -225,16 +226,19 @@ class BackupEngine(object):
         :param overwrite:
         :param recent_to_date:
         """
-        LOG.info("Creating restore path: {0}".format(restore_resource))
-        # if restore path can't be created this function will raise exception
-        utils.create_dir_tree(restore_resource)
-        if not overwrite and not utils.is_empty_dir(restore_resource):
-            raise Exception(
-                "Restore dir is not empty. "
-                "Please use --overwrite or provide different path "
-                "or remove the content of {}".format(restore_resource))
+        if backup_media == 'fs':
+            LOG.info("Creating restore path: {0}".format(restore_resource))
+            # if restore path can't be created this function will raise
+            # exception
+            utils.create_dir_tree(restore_resource)
+            if not overwrite and not utils.is_empty_dir(restore_resource):
+                raise Exception(
+                    "Restore dir is not empty. "
+                    "Please use --overwrite or provide different path "
+                    "or remove the content of {}".format(restore_resource))
 
-        LOG.info("Restore path creation completed")
+            LOG.info("Restore path creation completed")
+
         backups = self.storage.get_latest_level_zero_increments(
             engine=self,
             hostname_backup_name=hostname_backup_name,

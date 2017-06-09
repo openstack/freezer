@@ -331,7 +331,8 @@ class RestoreJob(Job):
                 hostname_backup_name=self.conf.hostname_backup_name,
                 restore_resource=restore_abs_path,
                 overwrite=conf.overwrite,
-                recent_to_date=restore_timestamp)
+                recent_to_date=restore_timestamp,
+                backup_media=conf.mode)
 
             try:
                 if conf.consistency_checksum:
@@ -372,7 +373,8 @@ class RestoreJob(Job):
                     hostname_backup_name=hostname_backup_name,
                     restore_resource=conf.nova_inst_id,
                     overwrite=conf.overwrite,
-                    recent_to_date=restore_timestamp)
+                    recent_to_date=restore_timestamp,
+                    backup_media=conf.mode)
 
         elif conf.backup_media == 'cinder':
             LOG.info("Restoring cinder backup from glance. Volume ID: {0}, "
@@ -395,7 +397,8 @@ class RestoreJob(Job):
                 hostname_backup_name=self.conf.hostname_backup_name,
                 restore_resource=conf.cinderbrick_vol_id,
                 overwrite=conf.overwrite,
-                recent_to_date=restore_timestamp)
+                recent_to_date=restore_timestamp,
+                backup_media=conf.mode)
         else:
             raise Exception("unknown backup type: %s" % conf.backup_media)
         return {}
