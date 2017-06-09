@@ -129,7 +129,8 @@ _COMMON = [
                     "more space and bandwidth. Rsync is slower, but uses "
                     "less space and bandwidth. Nova engine can be used to"
                     " backup/restore running instances. Backing up instances"
-                    " and it's metadata."
+                    " and it's metadata.",
+               required=True
                ),
     cfg.StrOpt('container',
                short='C',
