@@ -136,8 +136,9 @@ class TestFreezerCompressGzip(base.BaseFreezerTest):
         self.assertEqual('gzip', metadata['compression'])
 
         # file utility should detect the correct mimetype
+        gizp_mimetypes = ['application/gzip', 'application/x-gzip']
         mimetype = self._file_get_mimetype(metadata)
-        self.assertEqual('application/gzip', mimetype)
+        self.assertIn(mimetype, gizp_mimetypes)
 
         # actual contents should be the same
         diff_args = ['diff', '-r', '-q',
