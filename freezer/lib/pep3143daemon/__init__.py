@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # flake8: noqa
 """
 pep3143daemon is a implementation of the PEP 3143, describing a well behaving
