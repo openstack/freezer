@@ -1,0 +1,16 @@
+---
+prelude: >
+    Currently, when using 'freezer-agent --action backup --engine nova
+    --nova-inst-id xxx --mode nova --no-incremental true' to backup instance
+    that boot from volume or snapshot, it gives us the result of successful
+    backup. But when we restore the nova instance from the backup data and
+    launch the restored instance, it will fail with 'no boot device error'
+    message. This can be an issue.
+
+fixes:
+  - |
+    With the above issue, freezer can not support the backup and restore of
+    instance that boot from volume or snapshot correctly. With this fix, when
+    using backup, freezer will create an image from the volume, and then
+    store the image data to storage media. After this fix, users can backup
+    and restore the nova instance no matter what type of the instance is.
