@@ -226,12 +226,14 @@ class SwiftStorage(physical.PhysicalStorage):
             # split[0] = freezer_backups which is container name
             # split[1] = tar/server1.cloud.com_testest/
             split = path.split('/', 1)
-            files = self.swift().get_container(container=split[0],
-                                               full_listing=True,
-                                               prefix=split[1])[1]
+            files = self.swift().get_container(
+                container=split[0],
+                full_listing=True,
+                prefix="{0}/".format(split[1]),
+                delimiter='/')[1]
             # @todo normalize intro plain for loop to be easily
             # understandable (szaher)
-            return set(f['name'][len(split[1]):].split('/', 2)[1] for f in
+            return set(f['subdir'].rsplit('/', 2)[1] for f in
                        files)
         except Exception as e:
             LOG.info(e)

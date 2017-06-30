@@ -421,6 +421,14 @@ class AdminJob(Job):
                 datetime.timedelta(days=float(self.conf.remove_older_than))
             timestamp = int(time.mktime(timestamp.timetuple()))
 
+        if self.conf.backup_media == 'cinder':
+            old_backups = self.get_cinder_old_backups(
+                timestamp,
+                self.conf.cinder_vol_id
+            )
+            self.remove_backup_dirs(old_backups, self.conf.cinder_vol_id)
+            return {}
+
         hostname_backup_name_set = set()
 
         if self.conf.backup_media == 'nova':
@@ -444,6 +452,40 @@ class AdminJob(Job):
                                            timestamp,
                                            backup_name)
         return {}
+
+    def get_cinder_old_backups(self, timestamp, cinder_vol_id):
+        path_to_list = self.get_path_prefix(cinder_vol_id)
+
+        old_backups = []
+        backup_dirs = self.storage.listdir(path_to_list)
+        for backup_dir in backup_dirs:
+            if int(backup_dir) <= int(timestamp):
+                old_backups.append(backup_dir)
+
+        return old_backups
+
+    def remove_backup_dirs(self, backups_to_remove, cinder_vol_id):
+        path_prefix = self.get_path_prefix(cinder_vol_id)
+        for backup_to_remove in backups_to_remove:
+            path_to_remove = "{0}/{1}".format(path_prefix, backup_to_remove)
+            LOG.info("Remove backup: {0}".format(path_to_remove))
+            self.storage.rmtree(path_to_remove)
+
+    def get_path_prefix(self, cinder_vol_id):
+        if self.storage.type == 'swift':
+            path_prefix = "{0}/{1}/{2}".format(
+                self.storage.container,
+                self.storage.segments,
+                cinder_vol_id
+            )
+        elif self.storage.type in ['local', 'ssh', 's3']:
+            path_prefix = "{0}/{1}".format(
+                self.storage.storage_path,
+                cinder_vol_id
+            )
+        else:
+            path_prefix = ''
+        return path_prefix
 
 
 class ExecJob(Job):
