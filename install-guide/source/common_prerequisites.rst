@@ -1,41 +1,6 @@
 Prerequisites
 -------------
 
-Before you install and configure the Backup service,
-you must create a database, service credentials, and API endpoints.
-
-#. To create the database, complete these steps:
-
-   * Use the database access client to connect to the database
-     server as the ``root`` user:
-
-     .. code-block:: console
-
-        $ mysql -u root -p
-
-   * Create the ``freezer`` database:
-
-     .. code-block:: console
-
-        CREATE DATABASE freezer;
-
-   * Grant proper access to the ``freezer`` database:
-
-     .. code-block:: console
-
-        GRANT ALL PRIVILEGES ON freezer-api.* TO 'freezer'@'localhost' \
-          IDENTIFIED BY 'FREEZER_DBPASS';
-        GRANT ALL PRIVILEGES ON freezer.* TO 'freezer'@'%' \
-          IDENTIFIED BY 'FREEZER_DBPASS';
-
-     Replace ``FREEZER_DBPASS`` with a suitable password.
-
-   * Exit the database access client.
-
-     .. code-block:: console
-
-        exit;
-
 #. Source the ``admin`` credentials to gain access to
    admin-only CLI commands:
 
@@ -68,8 +33,8 @@ you must create a database, service credentials, and API endpoints.
    .. code-block:: console
 
       $ openstack endpoint create --region RegionOne \
-        backup public http://controller:9090/vY/%\(tenant_id\)s
+        backup public http://controller:9090/
       $ openstack endpoint create --region RegionOne \
-        backup internal http://controller:9090/vY/%\(tenant_id\)s
+        backup internal http://controller:9090/
       $ openstack endpoint create --region RegionOne \
-        backup admin http://controller:9090/vY/%\(tenant_id\)s
+        backup admin http://controller:9090/

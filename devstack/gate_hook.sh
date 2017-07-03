@@ -22,8 +22,8 @@ fi
 
 echo "Start Gate Hook"
 
-export DEVSTACK_LOCAL_CONFIG="enable_plugin freezer https://git.openstack.org/openstack/freezer"
-export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin freezer-api https://git.openstack.org/openstack/freezer-api"
+#export DEVSTACK_LOCAL_CONFIG="enable_plugin freezer https://git.openstack.org/openstack/freezer"
+# export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin freezer-api https://git.openstack.org/openstack/freezer-api"
 # Swift is needed for some of the integration tests
 export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service s-proxy s-object s-container s-account"
 

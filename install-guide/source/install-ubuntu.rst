@@ -4,7 +4,7 @@ Install and configure for Ubuntu
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This section describes how to install and configure the Backup
-service for Ubuntu 14.04 (LTS).
+service for Ubuntu 16.04 (LTS).
 
 .. include:: common_prerequisites.rst
 
@@ -15,9 +15,9 @@ Install and configure components
 
    .. code-block:: console
 
-      # apt-get update
+      $ sudo apt-get update
 
-      # apt-get install
+      $ sudo apt-get install python-dev python-pip
 
 .. include:: common_configure.rst
 
@@ -28,4 +28,4 @@ Restart the Backup services:
 
 .. code-block:: console
 
-   # service openstack-freezer-api restart
+   $ sudo service openstack-freezer-api restart

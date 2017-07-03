@@ -16,7 +16,7 @@ Install and configure components
 
    .. code-block:: console
 
-      # yum install
+      $ sudo yum install python-dev python-pip
 
 .. include:: common_configure.rst
 
@@ -28,6 +28,6 @@ the system boots:
 
 .. code-block:: console
 
-   # systemctl enable openstack-freezer-api.service
+   $ sudo systemctl enable openstack-freezer-api.service
 
-   # systemctl start openstack-freezer-api.service
+   $ sudo systemctl start openstack-freezer-api.service

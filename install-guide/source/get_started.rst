@@ -22,11 +22,26 @@ Installation Guide.
 Concepts and definitions
 ========================
 
-*hostname* is _probably_ going to be the host fqdn.
-
-*backup_id*
-defined as UUID of a backup
-
 
 ``freezer-api`` service
   Accepts and responds to end user API calls...
+
+
+``freezer-scheduler`` service
+  Does API calls to ``freezer-api`` to schedule, fetch, update or Delete backup
+  jobs.
+
+
+``freezer-agent`` service
+  Python application run on the same node like ``freezer-scheduler`` and it
+  gets called by ``freezer-scheduler`` to execute backups/restore operations.
+
+
+``freezer-dr`` service
+  Independent service from all other freezer services. It runs on the control
+  plane to do disaster recovery in case of any compute node failed (more to
+  follow)
+
+*hostname* is _probably_ going to be the host fqdn.
+
+*backup_id* defined as UUID of a backup.

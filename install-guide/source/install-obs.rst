@@ -16,7 +16,7 @@ Install and configure components
 
    .. code-block:: console
 
-      # zypper --quiet --non-interactive install
+      zypper --quiet --non-interactive install python-dev python-pip
 
 .. include:: common_configure.rst
 
