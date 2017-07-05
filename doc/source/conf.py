@@ -41,13 +41,21 @@ import os
 # ones.
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
-              'oslosphinx']
+              'openstackdocstheme']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix of source filenames.
 source_suffix = '.rst'
+
+# openstackdocstheme options
+repository_name = 'openstack/freezer'
+bug_project = 'freezer'
+bug_tag = ''
+
+# Must set this variable to include year, month, day, hours, and minutes.
+html_last_updated_fmt = '%Y-%m-%d %H:%M'
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
