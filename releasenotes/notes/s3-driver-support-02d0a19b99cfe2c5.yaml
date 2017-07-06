@@ -1,0 +1,12 @@
+---
+prelude: >
+    Currently, freezer can only store backup data to swift compatible object
+    storage (except local and ssh), so we should increase support for other
+    storage driver. S3 compatible object storage is a valid choice, which is
+    used by many individuals and companies in the public or private clouds.
+
+features:
+  - |
+    Added new storage type called 's3' which allows to store the backup data
+    to S3 compatible object storage and restore from it with using botocore
+    library.

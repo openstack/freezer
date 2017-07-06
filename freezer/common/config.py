@@ -76,11 +76,12 @@ DEFAULT_PARAMS = {
     'mode': 'fs', 'action': 'backup', 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': None,
     'storage': 'swift', 'ssh_key': '', 'ssh_username': '', 'ssh_host': '',
-    'ssh_port': DEFAULT_SSH_PORT, 'compression': 'gzip',
-    'overwrite': False, 'incremental': None,
-    'consistency_check': False, 'consistency_checksum': None,
-    'nova_restore_network': None, 'cindernative_backup_id': None,
-    'sync': True, 'engine_name': 'tar', 'timeout': 120, 'project_id': None,
+    'ssh_port': DEFAULT_SSH_PORT, 'access_key': '', 'secret_key': '',
+    'endpoint': '', 'compression': 'gzip', 'overwrite': False,
+    'incremental': None, 'consistency_check': False,
+    'consistency_checksum': None, 'nova_restore_network': None,
+    'cindernative_backup_id': None, 'sync': True, 'engine_name': 'tar',
+    'timeout': 120, 'project_id': None,
 }
 
 _COMMON = [
@@ -413,10 +414,27 @@ _COMMON = [
     cfg.StrOpt('storage',
                dest='storage',
                default=DEFAULT_PARAMS['storage'],
-               choices=['local', 'swift', 'ssh'],
-               help="Storage for backups. Can be Swift or Local now. Swift is "
-                    "default storage now. Local stores backups on the same "
-                    "defined path and swift will store files in container."
+               choices=['local', 'swift', 'ssh', 's3'],
+               help="Storage for backups. Can be Swift, Local, SSH and S3 "
+                    "now. Swift is default storage now. Local stores backups"
+                    "on the same defined path, swift will store files in "
+                    "container, and s3 will store files in bucket in S3 "
+                    "compatible storage."
+               ),
+    cfg.StrOpt('access-key',
+               dest='access_key',
+               default=DEFAULT_PARAMS['access_key'],
+               help="Access key for S3 compatible storage"
+               ),
+    cfg.StrOpt('secret-key',
+               dest='secret_key',
+               default=DEFAULT_PARAMS['secret_key'],
+               help="Secret key for S3 compatible storage"
+               ),
+    cfg.StrOpt('endpoint',
+               dest='endpoint',
+               default=DEFAULT_PARAMS['endpoint'],
+               help="Endpoint of S3 compatible storage"
                ),
     cfg.StrOpt('ssh-key',
                dest='ssh_key',

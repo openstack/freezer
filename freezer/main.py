@@ -32,6 +32,7 @@ from freezer.engine import manager as engine_manager
 from freezer import job
 from freezer.storage import local
 from freezer.storage import multiple
+from freezer.storage import s3
 from freezer.storage import ssh
 from freezer.storage import swift
 from freezer.utils import utils
@@ -62,6 +63,25 @@ def freezer_main(backup_args):
 
         backup_args.client_manager = client_manager.get_client_manager(
             backup_args.__dict__)
+
+    if backup_args.storage == 's3':
+        if backup_args.__dict__['access_key'] == '' \
+                and 'ACCESS_KEY' in os.environ:
+            backup_args.__dict__['access_key'] = os.environ.get('ACCESS_KEY')
+        if backup_args.__dict__['access_key'] == '':
+            raise Exception('No access key found for S3 compatible storage')
+
+        if backup_args.__dict__['secret_key'] == '' \
+                and 'SECRET_KEY' in os.environ:
+            backup_args.__dict__['secret_key'] = os.environ.get('SECRET_KEY')
+        if backup_args.__dict__['secret_key'] == '':
+            raise Exception('No secret key found for S3 compatible storage')
+
+        if backup_args.__dict__['endpoint'] == '' \
+                and 'ENDPOINT' in os.environ:
+            backup_args.__dict__['endpoint'] = os.environ.get('ENDPOINT')
+        if backup_args.__dict__['endpoint'] == '':
+            raise Exception('No endpoint found for S3 compatible storage')
 
     if backup_args.storages:
         # pylint: disable=abstract-class-instantiated
@@ -178,6 +198,14 @@ def storage_from_dict(backup_args, max_segment_size):
 
         storage = swift.SwiftStorage(
             client_manager, container, max_segment_size)
+    elif storage_name == "s3":
+        storage = s3.S3Storage(
+            backup_args['access_key'],
+            backup_args['secret_key'],
+            backup_args['endpoint'],
+            container,
+            max_segment_size
+        )
     elif storage_name == "local":
         storage = local.LocalStorage(
             storage_path=container,

@@ -176,3 +176,52 @@ class TestNovaEngineFSLikeStorage(TestNovaEngine):
             'rb')
         self.mock_file.readline.assert_called_once_with()
         self.engine.restore.assert_has_calls(self.expected_restore_calls)
+
+
+class TestNovaEngineS3Storage(TestNovaEngine):
+    def setUp(self):
+        super(TestNovaEngineS3Storage, self).setUp()
+        self.mock_s3_storage = mock.MagicMock()
+        self.mock_s3_storage.get_object()['Body'].read.return_value \
+            = self.instance_ids_str
+        self.mock_s3_storage.put_object = mock.MagicMock()
+        self.mock_s3_storage.storage_path = 'test/storage/path'
+
+        self.mock_s3_storage._type = 's3'
+
+        self.engine = nova.NovaEngine(self.mock_s3_storage)
+        self.engine.client = self.backup_opt.client_manager
+        self.engine.backup = mock.Mock()
+        self.engine.restore = mock.Mock()
+        self.engine.nova = self.mock_nova
+
+    def test_backup_nova_tenant_to_s3_storage(self):
+        self.engine.backup_nova_tenant(self.project_id,
+                                       self.backup_opt.backup_name,
+                                       self.backup_opt.no_incremental,
+                                       self.backup_opt.max_level,
+                                       self.backup_opt.always_level,
+                                       self.backup_opt.restart_always_level)
+
+        self.mock_nova.servers.list.assert_called_once_with(detailed=False)
+        self.mock_s3_storage.put_object.assert_called_with(
+            bucket_name=self.mock_s3_storage.get_bucket_name(),
+            key="{0}/project_test-project-id".format(
+                self.mock_s3_storage.get_object_prefix()),
+            data=self.instance_ids_str
+        )
+        self.engine.backup.assert_has_calls(self.expected_backup_calls)
+
+    def test_restore_nova_tenant_from_s3_storage(self):
+        self.engine.restore_nova_tenant(self.project_id,
+                                        self.backup_opt.backup_name,
+                                        self.backup_opt.overwrite,
+                                        'test_timestamp')
+
+        self.mock_s3_storage.get_object.assert_called_with(
+            bucket_name=self.mock_s3_storage.get_bucket_name(),
+            key="{0}/project_test-project-id".format(
+                self.mock_s3_storage.get_object_prefix()
+            )
+        )
+        self.engine.restore.assert_has_calls(self.expected_restore_calls)
