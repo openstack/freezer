@@ -288,9 +288,15 @@ class OSClientManager(object):
                 LOG.info("Image status: " + image.status)
                 image = self.get_glance().images.get(image.id)
                 if image.status in ("killed", "deleted"):
-                    raise Exception("Image have killed state")
+                    raise RuntimeError("Image in killed or deleted state")
+            except RuntimeError:
+                if image.status == 'killed':
+                    LOG.info("Delete image in killed state " + image_id)
+                    self.get_glance().images.delete(image_id)
+                raise
             except Exception as e:
-                if image.status in ("killed", "deleted"):
+                if hasattr(e, 'code') and e.code == 404:
+                    LOG.warning('Image is not found ' + image_id)
                     raise
                 LOG.exception(e)
                 LOG.warning("Exception getting image status")
