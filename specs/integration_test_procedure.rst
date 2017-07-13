@@ -36,7 +36,7 @@ In this example the server machine has a (main) interface with ip 192.168.20.100
 
 1.1 devstack
 ------------
-Install devstack with swift support. See https://docs.openstack.org/developer/devstack/
+Install devstack with swift support. See https://docs.openstack.org/devstack/latest/
 ::
 
   $ cat local.conf
