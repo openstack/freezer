@@ -276,6 +276,7 @@ class S3Storage(physical.PhysicalStorage):
 
             all_objects.extend(response['Contents'])
             is_truncated = response['IsTruncated']
+            marker = response['Contents'][-1]['Key']
         return all_objects
 
     def put_object(self, bucket_name, key, data):
