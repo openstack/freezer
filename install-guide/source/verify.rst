@@ -22,3 +22,9 @@ Verify operation of the Backup service.
    .. code-block:: console
 
       $ openstack endpoint list
+
+#. List available backup jobs for current node:
+
+   .. code-block:: console
+
+      $ freezer job-list

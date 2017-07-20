@@ -48,6 +48,3 @@ you must install the database.
      .. code-block:: console
 
         $ sudo yum install -y elasticsearch-2.3.0.rpm
-
-
-
