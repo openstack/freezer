@@ -90,9 +90,9 @@ class RestoreOs(object):
         :type restore_from_timestamp: int
         :return:
         """
-        swift = self.client_manager.get_swift()
         backup = self._get_backups(path, restore_from_timestamp)
         if self.storage.type == 'swift':
+            swift = self.client_manager.get_swift()
             path = "{0}_segments/{1}/{2}".format(self.container, path, backup)
             stream = swift.get_object(self.container,
                                       "{}/{}".format(path, backup),
