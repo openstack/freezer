@@ -1,5 +1,5 @@
 class TimeoutException(Exception):
-    msg = "Timeout has been occured."
+    msg = "Timeout has been occurred."
 
     def __init__(self, message=None, **kwargs):
         if not message:

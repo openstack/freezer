@@ -82,7 +82,7 @@ class FsLikeStorage(physical.PhysicalStorage):
         """
         :param stream: data
         :param package_name: path
-        :param headers: backup metadata infomation
+        :param headers: backup metadata information
         :return:
         """
         split = package_name.rsplit('/', 1)
