@@ -20,6 +20,7 @@ import sys
 import tempfile
 
 from oslo_config import cfg
+from oslo_config.cfg import NoSuchOptError
 from oslo_log import log
 from oslo_utils import encodeutils
 
@@ -550,6 +551,12 @@ def get_backup_args():
         defaults['log_config_append'] = None
 
         defaults.update(conf.default)
+        for config_key in conf.default.keys():
+            try:
+                CONF.set_override(config_key, conf.default[config_key])
+            except NoSuchOptError:
+                LOG.debug('No such opt, {0}, so set it'.format(config_key))
+                setattr(CONF, config_key, conf.default[config_key])
 
         if defaults['log_file']:
             CONF.set_override('log_file', defaults['log_file'])
