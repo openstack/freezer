@@ -129,8 +129,9 @@ class SwiftStorage(physical.PhysicalStorage):
         account.
         """
         containers_list = [c['name'] for c in self.swift().get_account()[1]]
-        if self.storage_path not in containers_list:
-            self.swift().put_container(self.storage_path)
+        container_name = self.storage_path.split('/', 1)[0]
+        if container_name not in containers_list:
+            self.swift().put_container(container_name)
 
     def info(self):
         containers = self.swift().get_account()[1]
