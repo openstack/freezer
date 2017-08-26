@@ -27,6 +27,7 @@ from oslo_log import log
 from oslo_utils import importutils
 import six
 
+from freezer.openstack import admin
 from freezer.openstack import backup
 from freezer.openstack import restore
 from freezer.snapshot import snapshot
@@ -408,12 +409,24 @@ class AdminJob(Job):
 
     def _validate(self):
         # no validation required in this job
-        if not self.conf.remove_from_date and not self.conf.remove_older_than:
+        if self.conf.backup_media == 'cindernative':
+            if not self.conf.fullbackup_rotation:
+                raise Exception("The parameter --fullbackup-rotation "
+                                "is required")
+        elif not (self.conf.remove_from_date or self.conf.remove_older_than):
             raise ValueError("You need to provide to remove backup older "
                              "than this time. You can use --remove-older-than "
                              "or --remove-from-date")
 
     def execute(self):
+        # remove backups by freezer admin action
+        backup_media = self.conf.backup_media
+        if backup_media == 'cindernative':
+            admin_os = admin.AdminOs(self.conf.client_manager)
+            admin_os.del_off_limit_fullbackup(
+                self.conf.cindernative_vol_id,
+                self.conf.fullbackup_rotation)
+            return {}
         if self.conf.remove_from_date:
             timestamp = utils.date_to_timestamp(self.conf.remove_from_date)
         else:
