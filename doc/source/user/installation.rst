@@ -95,7 +95,7 @@ Source the newly created ENV file:
 
 .. code:: bash
 
-    source ~/freezer.env
+    . ~/freezer.env
 
 Check if you have successfully authenticated by Keystone:
 
@@ -175,7 +175,7 @@ Source the newly created ENV file:
 
 .. code:: bash
 
-    source ~/freezer.env
+    . ~/freezer.env
 
 Check if you have successfully authenticated by Keystone:
 
