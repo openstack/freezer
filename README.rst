@@ -192,14 +192,14 @@ Ubuntu / Debian
 
 Swift client and Keystone client::
 
-    $ sudo apt-get install -y python-dev
+    $ sudo apt-get install python-dev
     For python3:
-    $ sudo apt-get install -y python3-dev
+    $ sudo apt-get install python3-dev
     $ sudo easy_install -U pip
 
 MongoDB backup::
 
-    $ sudo apt-get install -y python-pymongo
+    $ sudo apt-get install python-pymongo
 
 MySQL backup::
 

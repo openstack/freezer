@@ -38,13 +38,13 @@ Install required packages first:
 
 .. code:: bash
 
-	sudo apt-get install -y python-dev python-pip git openssl gcc make automake
+	sudo apt-get install python-dev python-pip git openssl gcc make automake
 
 For python3:
 
 .. code:: bash
 
-	sudo apt-get install -y python3-dev git openssl openssl-devel gcc make automake
+	sudo apt-get install python3-dev git openssl openssl-devel gcc make automake
 
 Clone proper branch of Freezer Client with git:
 
@@ -115,14 +115,14 @@ Install required packages first:
 
 .. code:: bash
 
-	sudo yum install -y python-devel python-pip git openssl \
+	sudo yum install python-devel python-pip git openssl \
 	openssl-devel gcc make automake
 
 For python3:
 
 .. code:: bash
 
-	sudo apt-get install -y python3-devel git openssl \
+	sudo apt-get install python3-devel git openssl \
 	openssl-devel gcc make automake
 
 Clone proper branch of Freezer Client with git:

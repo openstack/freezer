@@ -41,7 +41,7 @@ Install required packages first:
 
 .. code:: bash
 
-	sudo apt-get install -y python-dev python-pip git openssl gcc make automake
+	sudo apt-get install python-dev python-pip git openssl gcc make automake
 
 Clone proper branch of Freezer Client with git:
 

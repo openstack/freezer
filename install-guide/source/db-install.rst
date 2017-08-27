@@ -12,7 +12,7 @@ you must install the database.
 
      .. code-block:: console
 
-        $ sudo apt-get install -y default-jre-headless
+        $ sudo apt-get install default-jre-headless
 
    * Download ``elasticsearch`` version 2.3.0
 
@@ -35,7 +35,7 @@ you must install the database.
 
      .. code-block:: console
 
-        $ sudo yum install -y java-1.8.0-openjdk-headless
+        $ sudo yum install java-1.8.0-openjdk-headless
 
    * Download ``elasticsearch`` version 2.3.0
 
@@ -47,4 +47,4 @@ you must install the database.
 
      .. code-block:: console
 
-        $ sudo yum install -y elasticsearch-2.3.0.rpm
+        $ sudo yum install elasticsearch-2.3.0.rpm
