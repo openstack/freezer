@@ -46,7 +46,8 @@ class RestoreOs(object):
         if self.storage.type == "swift":
             swift = self.client_manager.get_swift()
             path = "{0}_segments/{1}/".format(self.container, path)
-            info, backups = swift.get_container(self.container, prefix=path)
+            container_name, path = self.get_storage_info(path)
+            info, backups = swift.get_container(container_name, prefix=path)
             backups = sorted(
                 map(lambda x: int(x["name"].rsplit("/", 1)[-1]), backups))
         elif self.storage.type == "s3":
