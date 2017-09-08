@@ -91,8 +91,8 @@ Edit config file:
 	# supported db engine. currently elasticsearch only
 	db=elasticsearch
 	hosts='http://[elasticsearch host address]:9200'
-	# freezer-db-init uses the following parameter to set the number of replicas
-	number_of_replicas=1 # replicas must be set to 1
+	# freezer-manage db sync/update uses the following parameter to set the number of replicas
+	number_of_replicas=1
 
 
 Follow this instructions to install Elasticsearch 1.7.5:
@@ -116,7 +116,7 @@ Let's initialize database:
 
 .. code:: bash
 
-	freezer-db-init [db-host] # usually localhost
+	freezer-manage db sync
 
 Run Freezer API:
 
