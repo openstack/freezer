@@ -61,7 +61,7 @@ DEFAULT_PARAMS = {
     'max_segment_size': 33554432, 'lvm_srcvol': None,
     'download_limit': -1, 'hostname': None, 'remove_from_date': None,
     'restart_always_level': False, 'lvm_dirmount': None,
-    'dereference_symlink': None,
+    'rsync_block_size': 4096, 'dereference_symlink': None,
     'config': None, 'mysql_conf': False,
     'insecure': False, 'lvm_snapname': None,
     'lvm_snapperm': 'ro', 'snapshot': None,
@@ -119,7 +119,7 @@ _COMMON = [
                     "nova(OpenStack Instance). Default set to fs"),
     cfg.StrOpt('engine',
                short='e',
-               choices=['tar', 'rsync', 'nova', 'osbrick'],
+               choices=['tar', 'rsync', 'rsyncv2', 'nova', 'osbrick'],
                dest='engine_name',
                default=DEFAULT_PARAMS['engine_name'],
                help="Engine to be used for backup/restore. "
@@ -292,8 +292,13 @@ _COMMON = [
                default=DEFAULT_PARAMS['max_segment_size'],
                dest='max_segment_size',
                help="Set the maximum file chunk size in bytes to upload to "
-                    "swift Default 33554432 bytes (32MB)"
+                    "swift. Default 33554432 bytes (32MB)"
                ),
+    cfg.IntOpt('rsync-block-size',
+               default=DEFAULT_PARAMS['rsync_block_size'],
+               dest='rsync_block_size',
+               help="Set the data block size of used by rsync to "
+                    "generate signature. Default 4096 bytes (4K)."),
     cfg.StrOpt('restore-abs-path',
                dest='restore_abs_path',
                default=DEFAULT_PARAMS['restore_abs_path'],

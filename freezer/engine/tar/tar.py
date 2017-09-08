@@ -32,7 +32,7 @@ class TarEngine(engine.BackupEngine):
     def __init__(
             self, compression, symlinks, exclude, storage,
             max_segment_size, encrypt_key=None,
-            dry_run=False):
+            dry_run=False, **kwargs):
         """
             :type storage: freezer.storage.base.Storage
         :return:
