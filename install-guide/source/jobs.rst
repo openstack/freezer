@@ -29,7 +29,7 @@ Scheduling information enables future/recurrent execution of jobs
 
 job document structure
 
-.. code-block:: json
+.. code-block:: none 
 
     "job": {
       "job_action":   { parameters for freezer to execute a specific action }
@@ -130,7 +130,7 @@ Job examples
 
 example backup freezer_action
 
-.. code-block:: json
+.. code-block:: none
 
     "freezer_action": {
       "action" : "backup"
@@ -150,7 +150,7 @@ example backup freezer_action
 
 example restore freezer_action
 
-.. code-block:: json
+.. code-block:: none
 
     "freezer_action": {
       "action": "restore"
@@ -165,7 +165,7 @@ example restore freezer_action
 example scheduled backup job.
 job will be executed once at the provided datetime
 
-.. code-block:: json
+.. code-block:: none
 
     "job": {
         "job_actions":
@@ -231,7 +231,7 @@ job will be executed once at the provided datetime
 
 multiple scheduling choices allowed
 
-.. code-block:: json
+.. code-block:: none
 
     "job": {
         "job_actions":
@@ -256,7 +256,7 @@ multiple scheduling choices allowed
 
 Finished job with result
 
-.. code-block:: json
+.. code-block:: none
 
     "job": {
         "job_actions": [ ... ],
@@ -286,7 +286,7 @@ If properties are specifically set in one action, then the specified value is th
 
 Example
 
-.. code-block:: json
+.. code-block:: none
 
     "job": {
         "action_defaults": {
@@ -322,7 +322,7 @@ Example
 
 Is Equivalent to
 
-.. code-block:: json
+.. code-block:: none
 
     "job": {
         "job_actions": [{
