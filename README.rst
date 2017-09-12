@@ -387,8 +387,8 @@ Execute a MySQL backup with Nova::
 All the freezer-agent activities are logged into /var/log/freezer.log.
 
 
-Swift, Local and SSH Storage
-----------------------------
+Local, Swift, S3 compatible and SSH Storage
+-------------------------------------------
 
 Freezer can use:
 
@@ -432,6 +432,38 @@ Restore example::
    $ sudo freezer-agent --action restore --restore-abs-path /data/dir/to/backup
    --container freezer-container --backup-name my-backup-name
    --storage swift
+
+S3 compatible storage
+=====================
+
+To use S3 compatible storage specify "--storage s3"
+And use "--container <s3-bucket-name>"
+Also you should specify endpoint, access-key and secret-key parameters.
+
+endpoint is the endpoint of S3 compatible storage
+access-key is the access key for S3 compatible storage
+secret-key is the secret key for S3 compatible storage
+
+The basic S3 compatible storage account configuration is needed to using 's3'
+storage driver.
+
+Make sure botocore is installed::
+
+    set ACCESS_KEY=<access-key>
+    set SECRET_KEY=<secret-key>
+    set ENDPOINT=<endpoint>
+
+Backup example::
+
+   $ sudo freezer-agent --path-to-backup /data/dir/to/backup
+   --container freezer-container --backup-name my-backup-name
+   --storage s3
+
+Restore example::
+
+   $ sudo freezer-agent --action restore --restore-abs-path /data/dir/to/backup
+   --container freezer-container --backup-name my-backup-name
+   --storage s3
 
 SSH storage
 ===========
@@ -1149,12 +1181,15 @@ optional arguments:
   --ssh-host SSH_HOST   Remote host for ssh storage only
   --ssh-key SSH_KEY     Path to ssh-key for ssh storage only
   --ssh-port SSH_PORT   Remote port for ssh storage only (default 22)
+  --endpoint            Endpoint of S3 compatible storage
+  --access-key          Access key for S3 compatible storage
+  --secret-key          Secret key for S3 compatible storage
   --ssh-username SSH_USERNAME
                         Remote username for ssh storage only
-  --storage STORAGE     Storage for backups. Can be Swift or Local now. Swift
-                        is default storage now. Local stores backups on the
-                        same defined path and swift will store files in
-                        container.
+  --storage STORAGE     Storage for backups. Can be Swift, Local, SSH and S3
+                        compatible now. Swift is default storage now. Local
+                        stores backups on the same defined path and swift, s3
+                        will store files in container.
   --syslog-log-facility SYSLOG_LOG_FACILITY
                         Syslog facility to receive log lines. This option is
                         ignored if log_config_append is set.
