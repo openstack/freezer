@@ -1,4 +1,4 @@
-.. _next-steps:
+:ref:`/install/source`
 
 Next steps
 ~~~~~~~~~~

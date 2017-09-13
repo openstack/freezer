@@ -1,4 +1,4 @@
-.. _install_agent:
+:ref:`/install/source`
 
 This section describes how to install and configure freezer-scheduler and
 freezer-agent, on any node in the cloud or any vm inside the cloud.

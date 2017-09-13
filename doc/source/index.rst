@@ -6,6 +6,36 @@
 Welcome to Freezer's documentation!
 ===================================
 
+Install Guides
+-----------
+.. toctree::
+   :maxdepth: 2
+
+   install/index
+
+
+User Guides
+-----------
+.. toctree::
+   :maxdepth: 2
+
+   user/index
+
+Admin Guides
+------------
+.. toctree::
+   :maxdepth: 2
+
+   admin/index
+
+Dev Guides
+----------
+.. toctree::
+   :maxdepth: 2
+
+   contributor/index
+
+
 About Freezer
 =============
 
@@ -196,26 +226,3 @@ How to Scale
 .. image:: images/admin/freezer_scheduler_api_scale.png
    :width: 640 px
 
-Documentation
-=============
-
-User Guides
------------
-.. toctree::
-   :maxdepth: 2
-
-   user/index
-
-Admin Guides
-------------
-.. toctree::
-   :maxdepth: 2
-
-   admin/index
-
-Dev Guides
-----------
-.. toctree::
-   :maxdepth: 2
-
-   dev/index

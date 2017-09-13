@@ -1,4 +1,4 @@
-.. _sessions:
+:ref:`/install/source`
 
 Sessions
 ========

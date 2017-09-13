@@ -1,4 +1,4 @@
-.. _verify:
+:ref:`/install/source`
 
 Verify operation
 ~~~~~~~~~~~~~~~~

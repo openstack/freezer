@@ -1,11 +1,11 @@
-.. _install-obs:
+:ref:`/install/source`
 
+Install and configure for Red Hat Enterprise Linux and CentOS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Install and configure for openSUSE and SUSE Linux Enterprise
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This section describes how to install and configure the Backup service
-for openSUSE Leap 42.1 and SUSE Linux Enterprise Server 12 SP1.
+for Red Hat Enterprise Linux 7 and CentOS 7.
 
 .. include:: common_prerequisites.rst
 
@@ -16,10 +16,9 @@ Install and configure components
 
    .. code-block:: console
 
-      zypper --quiet --non-interactive install python-dev python-pip
+      $ sudo yum install python-dev python-pip
 
 .. include:: common_configure.rst
-
 
 Finalize installation
 ---------------------
@@ -29,6 +28,6 @@ the system boots:
 
 .. code-block:: console
 
-   # systemctl enable openstack-freezer-api.service
+   $ sudo systemctl enable openstack-freezer-api.service
 
-   # systemctl start openstack-freezer-api.service
+   $ sudo systemctl start openstack-freezer-api.service

@@ -1,4 +1,4 @@
-.. _db-install:
+:ref:`/install/source`
 
 Install and configure database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,4 +1,4 @@
-.. _jobs:
+:ref:`/install/source`
 
 Jobs
 ====

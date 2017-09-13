@@ -18,3 +18,4 @@ import pbr.version
 
 
 __version__ = pbr.version.VersionInfo('freezer').version_string()
+version_info = pbr.version.VersionInfo('freezer')
