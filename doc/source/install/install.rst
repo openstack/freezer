@@ -1,4 +1,4 @@
-.. _install:
+:ref:`/install/source`
 
 Install and configure
 ~~~~~~~~~~~~~~~~~~~~~

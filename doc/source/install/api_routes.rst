@@ -1,4 +1,4 @@
-.. _api_routes:
+:ref:`/install/source`
 
 API routes
 ==========

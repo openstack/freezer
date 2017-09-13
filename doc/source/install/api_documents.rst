@@ -1,4 +1,4 @@
-.. _api_documents:
+:ref:`/install/source`
 
 API Documents
 =============

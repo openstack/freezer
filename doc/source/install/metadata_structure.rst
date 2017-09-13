@@ -1,4 +1,4 @@
-.. _metadata_structure:
+:ref:`/install/source`
 
 Backup metadata structure
 =========================
