@@ -1,4 +1,4 @@
-.. _known_issues:
+:ref:`/install/source`
 
 Known Issues
 ============

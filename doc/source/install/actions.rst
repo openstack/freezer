@@ -1,4 +1,4 @@
-.. _actions:
+:ref:`/install/source`
 
 Actions
 =======

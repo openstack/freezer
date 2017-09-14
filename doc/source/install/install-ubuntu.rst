@@ -1,4 +1,4 @@
-.. _install-ubuntu:
+:ref:`/install/source`
 
 Install and configure for Ubuntu
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

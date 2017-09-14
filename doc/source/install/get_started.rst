@@ -1,4 +1,3 @@
-======================================
 Backup/Restore and DR service overview
 ======================================
 The Backup/Restore and DR service provides an easy way to backup and restore

@@ -1,4 +1,4 @@
-.. _devstack_plugin:
+:ref:`/install/source`
 
 Devstack Plugin
 ===============
