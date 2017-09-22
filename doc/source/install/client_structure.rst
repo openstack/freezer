@@ -1,5 +1,3 @@
-:ref:`/install/source`
-
 Freezer Client document structure
 =================================
 

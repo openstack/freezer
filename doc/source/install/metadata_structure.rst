@@ -1,5 +1,3 @@
-:ref:`/install/source`
-
 Backup metadata structure
 =========================
 

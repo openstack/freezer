@@ -1,6 +1,3 @@
-:ref:`/install/source`
-
-
 Install and configure for openSUSE and SUSE Linux Enterprise
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

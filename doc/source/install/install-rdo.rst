@@ -1,5 +1,3 @@
-:ref:`/install/source`
-
 Install and configure for Red Hat Enterprise Linux and CentOS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
