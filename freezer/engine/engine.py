@@ -50,24 +50,28 @@ class BackupEngine(object):
     This class is an abstraction over all implementations.
 
     Workflow:
+
     1) invoke backup
-        1.1) try to download metadata for incremental
-        1.2) create a dataflow between backup_stream and storage.write_backup
-            Backup_stream is producer of data, for tar backup
-            it creates a gnutar subprocess and start to read data from stdout
-            Storage write_backup is consumer of data, it creates a thread
-            that store data in storage.
-            Both streams communicate in non-blocking mode
-        1.3) invoke post_backup - now it uploads metadata file
+
+       1) try to download metadata for incremental
+       2) create a dataflow between backup_stream and storage.write_backup
+          Backup_stream is producer of data, for tar backup
+          it creates a gnutar subprocess and start to read data from stdout
+          Storage write_backup is consumer of data, it creates a thread
+          that store data in storage.
+          Both streams communicate in non-blocking mode
+       3) invoke post_backup - now it uploads metadata file
+
     2) restore backup
-        2.1) define all incremental backups
-        2.2) for each incremental backup create a dataflow between
-            storage.read_backup and restore_stream
-            Read_backup is data producer, it reads data chunk by chunk from
-            the specified storage and pushes the chunks into a queue.
-            Restore stream is a consumer, that is actually does restore (for
-            tar it is a thread that creates gnutar subprocess and feeds chunks
-            to stdin of this thread.
+
+       1) define all incremental backups
+       2) for each incremental backup create a dataflow between
+          storage.read_backup and restore_stream
+          Read_backup is data producer, it reads data chunk by chunk from
+          the specified storage and pushes the chunks into a queue.
+          Restore stream is a consumer, that is actually does restore (for
+          tar it is a thread that creates gnutar subprocess and feeds chunks
+          to stdin of this thread.
 
     :type storage: freezer.storage.base.Storage
     """

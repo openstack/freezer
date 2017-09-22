@@ -41,6 +41,8 @@ import sys
 
 extensions = ['openstackdocstheme',
               'oslo_config.sphinxconfiggen',
+              'oslo_config.sphinxext',
+              'sphinx.ext.autodoc',
               ]
 
 config_generator_config_file = (
@@ -99,6 +101,15 @@ bug_tag = 'doc'
 # # List of directories, relative to source directory, that shouldn't be searched
 # # for source files.
 # exclude_trees = []
+
+# A list of glob-style patterns that should be excluded when looking for
+# source files. They are matched against the source file names relative to the
+# source directory, using slashes as directory separators on all platforms.
+exclude_patterns = [
+    # Missing win32serviceutil module on linux
+    #'api/freezer.scheduler.win_daemon*',
+]
+
 #
 # # The reST default role (used for this markup: `text`) to use
 # # for all documents.

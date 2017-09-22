@@ -163,11 +163,12 @@ class TestBackupFSLocalstorage(common.TestFS):
 class TestBackupSSH(common.TestFS):
     """
     Tests are executed if the following env vars are defined:
+
     - FREEZER_TEST_SSH_KEY
     - FREEZER_TEST_SSH_USERNAME
     - FREEZER_TEST_SSH_HOST
     - FREEZER_TEST_CONTAINER
-    (directory on the remote machine used to store backups)
+      (directory on the remote machine used to store backups)
     """
 
     @unittest.skipIf(not common.TestFS.use_ssh,

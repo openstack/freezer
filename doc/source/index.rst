@@ -1,13 +1,8 @@
-.. Freezer documentation master file, created by
-   sphinx-quickstart on Thu Feb  4 22:27:35 2016.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to Freezer's documentation!
 ===================================
 
 Install Guides
------------
+--------------
 .. toctree::
    :maxdepth: 2
 
@@ -20,6 +15,7 @@ User Guides
    :maxdepth: 2
 
    user/index
+   cli/index
 
 Admin Guides
 ------------
@@ -34,7 +30,7 @@ Dev Guides
    :maxdepth: 2
 
    contributor/index
-
+   reference/index
 
 About Freezer
 =============

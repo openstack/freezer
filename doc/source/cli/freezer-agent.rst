@@ -431,7 +431,7 @@ OPTIONS
   :Type: string
   :Default: ``<None>``
 
-  Exclude files,given as a PATTERN.Ex: --exclude '*.log' will exclude any file with name ending with .log. Default no exclude
+  Exclude files, given as a PATTERN.Ex: --exclude '\*.log' will exclude any file with name ending with .log. Default no exclude
 
 
 .. oslo.config:option:: dereference_symlink

@@ -223,9 +223,10 @@ class RestoreOs(object):
         2) Download and upload to glance
         3) Create volume from glance
         4) Delete
+
         :param restore_from_timestamp:
         :type restore_from_timestamp: int
-        :param volume_id - id of attached cinder volume
+        :param volume_id: - id of attached cinder volume
         """
         (info, image) = self._create_image(volume_id, restore_from_timestamp)
         length = int(info["x-object-meta-length"])

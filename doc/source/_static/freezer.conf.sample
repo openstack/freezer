@@ -1,6 +1,40 @@
 [DEFAULT]
 
 #
+# From freezer-scheduler
+#
+
+# Specifies the client_id used when contacting the service.
+#  If not specified it will be automatically created
+#  using the tenant-id and the machine hostname. (string value)
+#client_id = <None>
+
+# Prevents the scheduler from using the api service (boolean value)
+#no_api = false
+
+# Used to store/retrieve files on local storage, including those exchanged with
+# the api service. Default value is /etc/freezer/scheduler/conf.d (Env:
+# FREEZER_SCHEDULER_CONF_D) (string value)
+#jobs_dir = /etc/freezer/scheduler/conf.d
+
+# Specifies the api-polling interval in seconds. Defaults to 60 seconds
+# (integer value)
+#interval = 60
+
+# Prevents the scheduler from running in daemon mode (boolean value)
+#no_daemon = false
+
+# Initialize freezer scheduler with insecure mode (boolean value)
+#insecure = false
+
+# Allow Freezer Scheduler to deny jobs that execute commands for security
+# reasons (boolean value)
+#disable_exec = false
+
+# Number of jobs that can be executed at the same time (integer value)
+#concurrent_jobs = 1
+
+#
 # From oslo.log
 #
 
@@ -108,37 +142,3 @@
 
 # Enables or disables fatal status of deprecations. (boolean value)
 #fatal_deprecations = false
-
-#
-# From scheduler
-#
-
-# Specifies the client_id used when contacting the service.
-#  If not specified it will be automatically created
-#  using the tenant-id and the machine hostname. (string value)
-#client_id = <None>
-
-# Prevents the scheduler from using the api service (boolean value)
-#no_api = false
-
-# Used to store/retrieve files on local storage, including those exchanged with
-# the api service. Default value is /etc/freezer/scheduler/conf.d (Env:
-# FREEZER_SCHEDULER_CONF_D) (string value)
-#jobs_dir = /etc/freezer/scheduler/conf.d
-
-# Specifies the api-polling interval in seconds. Defaults to 60 seconds
-# (integer value)
-#interval = 60
-
-# Prevents the scheduler from running in daemon mode (boolean value)
-#no_daemon = false
-
-# Initialize freezer scheduler with insecure mode (boolean value)
-#insecure = false
-
-# Allow Freezer Scheduler to deny jobs that execute commands for security
-# reasons (boolean value)
-#disable_exec = false
-
-# Number of jobs that can be executed at the same time (integer value)
-#concurrent_jobs = 1

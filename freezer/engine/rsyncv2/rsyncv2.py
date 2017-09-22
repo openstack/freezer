@@ -151,7 +151,7 @@ class Rsyncv2Engine(engine.BackupEngine):
         """Restore the provided backup into restore_abs_path.
 
         Decrypt backup content if encrypted.
-        Freezer rsync header data structure:
+        Freezer rsync header data structure::
 
             [ {
                 'path': '' (path to file),
@@ -652,7 +652,7 @@ class Rsyncv2Engine(engine.BackupEngine):
         Return blocks of changed data.
 
         :param fs_path:
-        :param manifest_path
+        :param manifest_path:
         :param write_queue:
         :return:
         """

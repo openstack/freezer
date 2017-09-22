@@ -601,7 +601,7 @@ class RsyncEngine(engine.BackupEngine):
         Return the meta data as a dict structure and a binary string
 
         :param fs_path: file abs path
-        :param new_level
+        :param new_level:
         :return: file data structure
         """
 
@@ -741,7 +741,7 @@ class RsyncEngine(engine.BackupEngine):
         """Compute the file or fs tree path signatures.
 
         :param fs_path:
-        :param manifest_path
+        :param manifest_path:
         :param write_queue:
         :return:
         """

@@ -195,7 +195,7 @@ def get_lvm_info(path):
     where the path is mounted on.
 
     :param path: the original file system path where backup needs
-    to be executed
+        to be executed
     :returns: a dict containing the keys 'volgroup', 'srcvol' and 'snap_path'
     """
 

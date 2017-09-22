@@ -194,14 +194,15 @@ class Backup(object):
     """
     Internal freezer representation of backup.
     Includes:
-        name (hostname_backup_name) of backup
-        timestamp of backup (when it was executed)
-        level of backup (freezer supports incremental backup)
-            Completed full backup has level 0 and can be restored without any
-            additional information.
-            Levels 1, 2, ... means that our backup is incremental and contains
-            only smart portion of information (that was actually changed
-            since the last backup)
+
+    * name (hostname_backup_name) of backup
+    * timestamp of backup (when it was executed)
+    * level of backup (freezer supports incremental backup):
+      Completed full backup has level 0 and can be restored without any
+      additional information.
+      Levels 1, 2, ... means that our backup is incremental and contains
+      only smart portion of information (that was actually changed
+      since the last backup)
     """
 
     def __init__(self, engine, hostname_backup_name,
