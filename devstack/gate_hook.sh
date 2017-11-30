@@ -27,6 +27,8 @@ echo "Start Gate Hook"
 # Swift is needed for some of the integration tests
 export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service s-proxy s-object s-container s-account"
 
+export DEVSTACK_GATE_TEMPEST_REGEX="freezer_tempest_plugin"
+
 $BASE/new/devstack-gate/devstack-vm-gate.sh
 
 echo "End Gate Hook"
