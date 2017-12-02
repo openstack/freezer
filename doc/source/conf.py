@@ -39,10 +39,10 @@ import sys
 # They can be extensions coming with Sphinx (named 'sphinx.ext.*')
 # or your custom ones.
 
-extensions = ['openstackdocstheme',
+extensions = ['sphinx.ext.autodoc',
+              'openstackdocstheme',
               'oslo_config.sphinxconfiggen',
-              'oslo_config.sphinxext',
-              'sphinx.ext.autodoc',
+              'oslo_config.sphinxext'
               ]
 
 config_generator_config_file = (
@@ -143,6 +143,13 @@ man_pages = [
 ]
 
 # -- Options for HTML output --------------------------------------------------
+
+# If true, '()' will be appended to :func: etc. cross-reference text.
+add_function_parentheses = True
+
+# If true, the current module name will be prepended to all description
+# unit titles (such as .. function::).
+add_module_names = True
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.

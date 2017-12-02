@@ -41,9 +41,10 @@ class TestBackupFSLocalstorage(common.TestFS):
         self.assertTreesMatchNot()
 
     def test_backup_single_level(self):
-        """
+        """How it works?
+
         - use the default source and destination trees in /tmp
-        (see common.TestFS)
+          (see common.TestFS)
         - use temporary directory for backup storage
         - add some random data
         - check that trees don't match anymore

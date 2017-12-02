@@ -91,6 +91,10 @@
 # log_config_append is set. (string value)
 #syslog_log_facility = LOG_USER
 
+# Use JSON formatting for logging. This option is ignored if log_config_append
+# is set. (boolean value)
+#use_json = false
+
 # Log output to standard error. This option is ignored if log_config_append is
 # set. (boolean value)
 #use_stderr = false

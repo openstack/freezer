@@ -11,7 +11,7 @@
 # under the License.
 
 from os_brick import exception
-from os_brick.initiator import connector
+from os_brick import initiator
 
 
 class VolumeAction(object):
@@ -44,7 +44,7 @@ class InitializeConnection(VolumeAction):
 class VerifyProtocol(VolumeAction):
     # NOTE(e0ne): Only iSCSI and RBD based drivers are supported. NFS doesn't
     # work. Drivers with other protocols are not tested yet.
-    SUPPORTED_PROCOTOLS = [connector.ISCSI, connector.RBD]
+    SUPPORTED_PROCOTOLS = [initiator.ISCSI, initiator.RBD]
 
     def verify(self, protocol):
         protocol = protocol.upper()
