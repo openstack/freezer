@@ -1,0 +1,51 @@
+- project:
+    name: openstack/freezer
+    check:
+      jobs:
+        - osbackup-freezer-dsvm:
+            voting: false
+        - osbackup-freezer-dsvm-centos-7:
+            voting: false
+        - osbackup-freezer-dsvm-opensuse-423:
+            voting: false
+
+- job:
+    name: osbackup-freezer-dsvm
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/osbackup-freezer-dsvm/run.yaml
+    post-run: playbooks/legacy/osbackup-freezer-dsvm/post.yaml
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/freezer
+      - openstack/freezer-api
+      - openstack/freezer-web-ui
+      - openstack/python-freezerclient
+
+- job:
+    name: osbackup-freezer-dsvm-centos-7
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/osbackup-freezer-dsvm-centos-7/run.yaml
+    post-run: playbooks/legacy/osbackup-freezer-dsvm-centos-7/post.yaml
+    timeout: 7800
+    nodeset: legacy-centos-7
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/freezer
+      - openstack/freezer-api
+      - openstack/freezer-web-ui
+      - openstack/python-freezerclient
+
+- job:
+    name: osbackup-freezer-dsvm-opensuse-423
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/osbackup-freezer-dsvm-opensuse-423/run.yaml
+    post-run: playbooks/legacy/osbackup-freezer-dsvm-opensuse-423/post.yaml
+    timeout: 7800
+    nodeset: legacy-opensuse-423
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/freezer
+      - openstack/freezer-api
+      - openstack/freezer-web-ui
+      - openstack/python-freezerclient
