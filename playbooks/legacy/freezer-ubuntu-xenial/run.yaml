@@ -1,5 +1,5 @@
 - hosts: all
-  name: Autoconverted job legacy-osbackup-freezer-dsvm-centos7 from old job gate-osbackup-freezer-dsvm-centos7
+  name: Autoconverted job legacy-osbackup-freezer-dsvm from old job gate-osbackup-freezer-dsvm
   tasks:
 
     - name: Ensure legacy workspace directory
@@ -60,11 +60,6 @@
           export DEVSTACK_PROJECT_FROM_GIT=freezer
 
           export "OVERRIDE_FREEZER_PROJECT_BRANCH"=$ZUUL_BRANCH
-
-          function gate_hook {{
-              source $BASE/new/freezer/devstack/gate_hook.sh
-          }}
-          export -f gate_hook
 
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh

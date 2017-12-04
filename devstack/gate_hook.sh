@@ -13,7 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-set -ex
+# set -ex
 
 # Link the log file so it will be collected by the CI system
 if [ -n "$BASE" ] && [ -d "$BASE/logs" ]; then
@@ -29,6 +29,6 @@ export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service s-proxy s-object s-container 
 
 export DEVSTACK_GATE_TEMPEST_REGEX="freezer_tempest_plugin"
 
-$BASE/new/devstack-gate/devstack-vm-gate.sh
+# $BASE/new/devstack-gate/devstack-vm-gate.sh
 
 echo "End Gate Hook"
