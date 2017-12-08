@@ -35,6 +35,7 @@
           enable_plugin freezer-api https://git.openstack.org/openstack/freezer-api
           # enable freezer-web-ui and python-freezerclient
           enable_plugin freezer-web-ui https://git.openstack.org/openstack/freezer-web-ui
+          TEMPEST_PLUGINS='/opt/stack/new/freezer-tempest-plugin'
 
           EOF
         executable: /bin/bash
@@ -50,6 +51,7 @@
           export PROJECTS="openstack/freezer-web-ui $PROJECTS"
           export PROJECTS="openstack/freezer $PROJECTS"
           export PROJECTS="openstack/python-freezerclient $PROJECTS"
+          export PROJECTS="openstack/neutron-tempest-plugin $PROJECTS"
           # tempest config
           export DEVSTACK_GATE_TEMPEST=1
           export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1

@@ -21,6 +21,7 @@
       - openstack/freezer-api
       - openstack/freezer-web-ui
       - openstack/python-freezerclient
+      - openstack/freezer-tempest-plugin
 
 - job:
     name: freezer-centos-7
@@ -35,6 +36,7 @@
       - openstack/freezer-api
       - openstack/freezer-web-ui
       - openstack/python-freezerclient
+      - openstack/freezer-tempest-plugin
 
 - job:
     name: freezer-opensuse-423
@@ -49,3 +51,4 @@
       - openstack/freezer-api
       - openstack/freezer-web-ui
       - openstack/python-freezerclient
+      - openstack/freezer-tempest-plugin

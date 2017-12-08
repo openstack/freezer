@@ -17,10 +17,10 @@ import subprocess
 from tempest.lib import decorators
 
 from freezer import __version__ as freezer_version
-from freezer.tests.freezer_tempest_plugin.tests.api import base
+from freezer.tests.integration import common
 
 
-class TestFreezerVersion(base.BaseFreezerTest):
+class TestFreezerVersion(common.TestFS):
 
     @decorators.attr(type="gate")
     def test_version(self):
