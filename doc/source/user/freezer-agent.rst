@@ -95,7 +95,7 @@ Freezer can take full system backup with LVM Snapshot:
 
     sudo freezer-agent --lvm-srcvol [logical/volume/path] \
     --lvm-dirmount /var/snapshot-backup \
-    --lvm-volgroup jenkins
+    --lvm-volgroup jenkins \
     --path-to-backup /var/snapshot-backup \
     --container freezer_jenkins-backup-prod \
     --exclude "\*.lock" \
@@ -123,7 +123,7 @@ Execute a MySQL backup using LVM Snapshot:
     sudo freezer-agent --lvm-srcvol /dev/mysqlvg/mysqlvol \
     --lvm-dirmount /var/snapshot-backup \
     --lvm-volgroup mysqlvg \
-    --path-to-backup /var/snapshot-backup
+    --path-to-backup /var/snapshot-backup \
     --mysql-conf /root/.freezer/freezer-mysql.conf \
     --container freezer_mysql-backup-prod \
     --mode mysql \
@@ -195,7 +195,7 @@ Execute a MySQL backup with nova:
     freezer-agent --mysql-conf /root/.freezer/freezer-mysql.conf \
     --container freezer_mysql-backup-prod \
     --mode mysql \
-    --backup-name mysql-ops002
+    --backup-name mysql-ops002 \
     --nova-inst-id [nova-instance-id]
 
 **Note: All the freezer-agent activities are logged into /var/log/freezer.log.**
@@ -229,8 +229,8 @@ Restore example:
 
 .. code:: bash
 
-    sudo freezer-agent --action restore --restore-abs-path [/data/dir/to/backup]
-    --container freezer-[container] [--backup-name my-backup-name]
+    sudo freezer-agent --action restore --restore-abs-path [/data/dir/to/backup] \
+    --container freezer-[container] [--backup-name my-backup-name] \
     --storage swift
 
 Local Storage Backup/Restore
@@ -246,8 +246,8 @@ Backup example:
 
 .. code:: bash
 
-    sudo freezer-agent --path-to-backup [/data/dir/to/backup]
-    --container /tmp/my_backup_path/ [--backup-name my-backup-name]
+    sudo freezer-agent --path-to-backup [/data/dir/to/backup] \
+    --container /tmp/my_backup_path/ [--backup-name my-backup-name] \
     --storage local
 
 Restore example:
@@ -255,9 +255,9 @@ Restore example:
 .. code:: bash
 
     sudo freezer-agent --action restore \
-    --restore-abs-path [/data/dir/to/backup]
+    --restore-abs-path [/data/dir/to/backup] \
     --container /tmp/my_backup_path/ \
-    --backup-name [my-backup-name]
+    --backup-name [my-backup-name] \
     --storage local
 
 SSH Storage Backup/Restore
@@ -281,8 +281,8 @@ Backup example:
 
     sudo freezer-agent --path-to-backup [/data/dir/to/backup] \
     --container /remote-machine-path/ \
-    --backup-name my-backup-name
-    --storage ssh --ssh-username [ssh-user-name] --ssh-key ~/.ssh/id_rsa
+    --backup-name my-backup-name \
+    --storage ssh --ssh-username [ssh-user-name] --ssh-key ~/.ssh/id_rsa \
     --ssh-host 8.8.8.8
 
 Restore example:
@@ -292,8 +292,8 @@ Restore example:
     sudo freezer-agent  --action restore \
     --restore-abs-pat [/data/dir/to/backup] \
     --container /remote-machine-path/ \
-    --backup-name my-backup-name
-    --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa
+    --backup-name my-backup-name \
+    --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa \
     --ssh-host 8.8.8.8
 
 Restore
@@ -312,10 +312,10 @@ Following example shows how to restore backup named "adminui.git":
 
 .. code:: bash
 
-    sudo freezer-agent --action restore --container freezer_adminui_git
-    --backup-name adminui.git
+    sudo freezer-agent --action restore --container freezer_adminui_git \
+    --backup-name adminui.git \
     --hostname [hostname-of-the-server] \
-    --restore-abs-path /home/git/repositories/adminui.git/
+    --restore-abs-path /home/git/repositories/adminui.git/ \
     --restore-from-date "2014-05-23T23:23:23"
 
 MySQL Restore
@@ -335,7 +335,7 @@ Execute restore:
 
     sudo freezer-agent --action restore \
     --container freezer_foobar-container-2 \
-    --backup-name mysql-prod --hostname [server-host-name]
+    --backup-name mysql-prod --hostname [server-host-name] \
     --restore-abs-path /var/lib/mysql \
     --restore-from-date "2014-05-23T23:23:23"
 
@@ -354,7 +354,7 @@ Execute a MongoDB restore of the backup name mongobigdata:
 .. code:: bash
 
     sudo freezer-agent --action restore \
-    --container freezer_foobar-container-2
+    --container freezer_foobar-container-2 \
     --backup-name mongobigdata \
     --hostname db-HP-DL380-host-001
     --restore-abs-path /var/lib/mongo \
