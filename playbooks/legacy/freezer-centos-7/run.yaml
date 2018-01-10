@@ -36,7 +36,6 @@
           # enable freezer-web-ui and python-freezerclient
           enable_plugin freezer-web-ui https://git.openstack.org/openstack/freezer-web-ui
           TEMPEST_PLUGINS='/opt/stack/new/freezer-tempest-plugin'
-
           EOF
         executable: /bin/bash
         chdir: '{{ ansible_user_dir }}/workspace'
@@ -46,26 +45,21 @@
         cmd: |
           set -e
           set -x
+          export PYTHONUNBUFFERED=true
           # checkout freezer components
           export PROJECTS="openstack/freezer-api $PROJECTS"
           export PROJECTS="openstack/freezer-web-ui $PROJECTS"
           export PROJECTS="openstack/freezer $PROJECTS"
           export PROJECTS="openstack/python-freezerclient $PROJECTS"
-          export PROJECTS="openstack/neutron-tempest-plugin $PROJECTS"
+          export PROJECTS="openstack/freezer-tempest-plugin $PROJECTS"
           # tempest config
           export DEVSTACK_GATE_TEMPEST=1
-          export DEVSTACK_GATE_TEMPEST_ALL_PLUGINS=1
-          TEMPEST_REGEX="freezer_tempest_plugin"
-          export DEVSTACK_GATE_TEMPEST_REGEX=freezer
-
+          export DEVSTACK_GATE_TEMPEST_REGEX="freezer_tempest_plugin.tests.freezer"
           # which repo is being tested
-          export DEVSTACK_PROJECT_FROM_GIT=freezer
-
+          export DEVSTACK_PROJECT_FROM_GIT=freezer,python-freezerclient
           export "OVERRIDE_FREEZER_PROJECT_BRANCH"=$ZUUL_BRANCH
-
           cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
           ./safe-devstack-vm-gate-wrap.sh
-
         executable: /bin/bash
         chdir: '{{ ansible_user_dir }}/workspace'
       environment: '{{ zuul | zuul_legacy_vars }}'
