@@ -764,11 +764,11 @@ OPTIONS
 SEE ALSO
 ========
 
-* `OpenStack Nova <https://docs.openstack.org/freezer/latest/>`__
+* `OpenStack Freezer <https://docs.openstack.org/freezer/latest/>`__
 
 BUGS
 ====
 
-* Freezer bugs are managed at Launchpad `Bugs : Nova <https://bugs.launchpad.net/freezer>`__
+* Freezer bugs are managed at Launchpad `Bugs : Freezer <https://bugs.launchpad.net/freezer>`__
 
 
