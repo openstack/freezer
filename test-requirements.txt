@@ -7,7 +7,7 @@ coverage!=4.4,>=4.0 # Apache-2.0
 ddt>=1.0.1 # MIT
 mock>=2.0.0 # BSD
 pylint==1.4.5 # GPLv2
-sphinx>=1.6.2 # BSD
+sphinx!=1.6.6,>=1.6.2 # BSD
 openstackdocstheme>=1.17.0 # Apache-2.0
 testrepository>=0.0.18 # Apache-2.0/BSD
 testtools>=2.2.0 # MIT
