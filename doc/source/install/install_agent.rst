@@ -45,4 +45,4 @@ Configure the scheduler
 
 .. code-block:: console
 
-   $ sudo freezer-scheduler --config-file /etc/freezer/scheduler.conf
+   $ sudo freezer-scheduler --config-file /etc/freezer/scheduler.conf start
