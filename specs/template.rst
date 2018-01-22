@@ -9,8 +9,8 @@
   https://blueprints.launchpad.net/freezer/+spec/awesome-thing should be named
   awesome-thing.rst .  Please do not delete any of the sections in this
   template.  If you have nothing to say for a whole section, just write: None
-  For help with syntax, see http://sphinx-doc.org/rest.html
-  To test out your formatting, see http://www.tele3.cz/jbar/rest/rest.html
+  For help with syntax, see http://www.sphinx-doc.org/en/stable/rest.html
+  To test out your formatting, see http://rest.lurkingideas.net/
 
 =============================
  The title of your blueprint
