@@ -579,29 +579,24 @@ def get_backup_args():
 
     if not CONF.get('log_file'):
         log_file = None
-        for file_name in ['/var/log/freezer-agent/freezer-agent.log',
-                          '/var/log/freezer.log']:
-            try:
-                log_file = prepare_logging(file_name)
-            except IOError:
-                pass
+        file_name = '/var/log/freezer-agent/freezer-agent.log'
+        try:
+            log_file = prepare_logging(file_name)
+        except IOError:
+            pass
 
         if not log_file:
             # Set default working directory to ~/.freezer. If the directory
             # does not exists it is created
-            work_dir = os.path.join(home, '.freezer')
-            if not os.path.exists(work_dir):
-                try:
-                    os.makedirs(work_dir)
-                    log_file = prepare_logging(os.path.join(work_dir,
-                                                            'freezer.log'))
-                except (OSError, IOError) as err_msg:
-                    # This avoids freezer-agent to crash if it can't write to
-                    # ~/.freezer, which may happen on some env (for me,
-                    # it happens in Jenkins, as freezer-agent can't write to
-                    # /var/lib/jenkins).
-                    print(encodeutils.safe_decode('{}'.format(err_msg)),
-                          file=sys.stderr)
+            try:
+                log_file = prepare_logging()
+            except (OSError, IOError) as err_msg:
+                # This avoids freezer-agent to crash if it can't write to
+                # ~/.freezer, which may happen on some env (for me,
+                # it happens in Jenkins, as freezer-agent can't write to
+                # /var/lib/jenkins).
+                print(encodeutils.safe_decode('{}'.format(err_msg)),
+                      file=sys.stderr)
         if log_file:
             CONF.set_default('log_file', log_file)
         else:
