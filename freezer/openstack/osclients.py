@@ -433,10 +433,10 @@ class OpenstackOpts(object):
                                 'Generated from auth_url: {1}'
                                 .format(version, auth_url))
 
-                LOG.info('Authenticating with Keystone version: '
-                         '{0}, auth_url: {1}, username: {2}, project: {3}'.
-                         format(self.auth_version, self.auth_url,
-                                self.username, self.project_name))
+        LOG.info('Authenticating with Keystone version: '
+                 '{0}, auth_url: {1}, username: {2}, project: {3}'.
+                 format(self.auth_version, self.auth_url,
+                        self.username, self.project_name))
 
     def get_opts_dicts(self):
         """
