@@ -27,6 +27,3 @@ FREEZER_REPO=${FREEZER_REPO:-${GIT_BASE}/openstack/freezer.git}
 FREEZER_BRANCH=${FREEZER_BRANCH:-master}
 
 enable_service freezer
-
-# Tell Tempest this project is present
-TEMPEST_SERVICES+=,freezer
