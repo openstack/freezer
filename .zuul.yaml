@@ -3,7 +3,7 @@
     check:
       jobs:
         - freezer-ubuntu-xenial:
-            voting: false
+            voting: true
         - freezer-centos-7:
             voting: false
         - freezer-opensuse-423:
