@@ -19,7 +19,7 @@ Backup Options
 
 Freezer Agent can be used as standalone backup tool from command line.
 In it is most simple form, you can run commands to backup your data to
-OpenStack Swift, local directory or remote SSH.
+OpenStack Swift, local directory,  remote SSH or S3 compatible storage.
 
 Basic File System Backup
 ------------------------
