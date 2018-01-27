@@ -21,7 +21,7 @@ SYNOPSIS
 DESCRIPTION
 ===========
 
-freezer-agent is being used to backup and restore cloud resources, It can also be used to perform admin operations on your backup like (remove old backups, list backups, ...). More information about OpenStack Freezer is at https://docs.openstack.org/developer/freezer.
+freezer-agent is being used to backup and restore cloud resources, It can also be used to perform admin operations on your backup like (remove old backups, list backups, ...). More information about OpenStack Freezer is at https://docs.openstack.org/freezer/latest/.
 
 OPTIONS
 =======
