@@ -1,5 +1,4 @@
 - project:
-    name: openstack/freezer
     check:
       jobs:
         - freezer-ubuntu-xenial:
