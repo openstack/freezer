@@ -3,8 +3,8 @@ Freezer Agent Installation
 
 Before Installation
 -------------------
-- Freezer Agent contains two component: Freezer Agent
-  (freezerc and freezer-agent) and Freeze Scheduler (freezer-scheduler).
+- Freezer contains two component: Freezer Agent
+  (freezer-agent) and Freeze Scheduler (freezer-scheduler).
 - Install Freezer Agent from source (It is not hard).
 - Chose correct version of Freezer Agent that corresponds other Freezer
   components and your OpenStack version.
