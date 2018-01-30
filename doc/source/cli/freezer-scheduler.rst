@@ -21,7 +21,7 @@ SYNOPSIS
 DESCRIPTION
 ===========
 
-freezer-scheduler is being used to schedule backup and restore of different cloud resources, It can also be used to schedule admin operations on your backup like (remove old backups, list backups, ...). More information about OpenStack Freezer is at https://docs.openstack.org/developer/freezer.
+freezer-scheduler is being used to schedule backup and restore of different cloud resources, It can also be used to schedule admin operations on your backup like (remove old backups, list backups, ...). More information about OpenStack Freezer is at https://docs.openstack.org/freezer/latest/.
 
 OPTIONS
 =======
