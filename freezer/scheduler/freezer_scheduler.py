@@ -203,7 +203,7 @@ def main():
     arguments.parse_args(possible_actions)
     arguments.setup_logging()
 
-    if CONF.action is None or CONF.action not in possible_actions:
+    if CONF.action not in possible_actions:
         CONF.print_help()
         return 65  # os.EX_DATAERR
 
