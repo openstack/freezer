@@ -20,7 +20,7 @@ as posted on [ActiveState] [1].
 [1]: https://code.activestate.com/recipes/577518-rsync-algorithm/
 [TM96]: Andrew Tridgell and Paul Mackerras. The rsync algorithm.
 Technical Report TR-CS-96-05, Canberra 0200 ACT, Australia, 1996.
-http://samba.anu.edu.au/rsync/.
+https://samba.anu.edu.au/rsync/.
 
 """
 

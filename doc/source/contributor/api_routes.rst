@@ -7,7 +7,7 @@ General
 .. code-block:: rest
 
     GET /       List API version
-    GET /v1     JSON Home document, see http://tools.ietf.org/html/draft-nottingham-json-home-03
+    GET /v1     JSON Home document, see https://tools.ietf.org/html/draft-nottingham-json-home-03
 
 Backup metadata
 ---------------

@@ -206,7 +206,7 @@ prior to Freezer Agent installation**
 - [Sync] (https://technet.microsoft.com/en-us/sysinternals/bb897438.aspx)
 - [Microsoft Visual C++ Compiler for Python 2.7] (http://aka.ms/vcpython27)
 - [PyWin32 for python 2.7]
-  (http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/)
+  (https://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/)
 
 After you have installed required packages install pip:
 
