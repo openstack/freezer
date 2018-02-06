@@ -216,7 +216,7 @@ def storage_from_dict(backup_args, max_segment_size):
             container,
             backup_args['ssh_key'], backup_args['ssh_username'],
             backup_args['ssh_host'],
-            int(backup_args.get('ssh_port', freezer_config.DEFAULT_SSH_PORT)),
+            int(backup_args['ssh_port']),
             max_segment_size=max_segment_size)
     else:
         raise Exception("No storage found for name {0}".format(
