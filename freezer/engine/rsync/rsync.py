@@ -431,7 +431,7 @@ class RsyncEngine(engine.BackupEngine):
 
     @staticmethod
     def get_file_type(file_mode, fs_path):
-        """Extract file type from the the file mode retrieved
+        """Extract file type from the file mode retrieved
         from file abs path
 
         :param file_mode:
