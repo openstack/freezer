@@ -245,16 +245,15 @@ def main():
         else:
             daemon = linux_daemon.Daemon(daemonizable=freezer_scheduler)
 
-    if CONF.action == 'start':
-        daemon.start()
-    elif CONF.action == 'stop':
-        daemon.stop()
-    elif CONF.action == 'restart':
-        daemon.restart()
-    elif CONF.action == 'reload':
-        daemon.reload()
-    elif CONF.action == 'status':
-        daemon.status()
+    _ACTION = {
+        'start': daemon.start,
+        'stop': daemon.stop,
+        'restart': daemon.restart,
+        'reload': daemon.reload,
+        'status': daemon.status
+    }
+
+    _ACTION.get(CONF.action)()
 
     # os.RETURN_CODES are only available to posix like systems, on windows
     # we need to translate the code to an actual number which is the equivalent
