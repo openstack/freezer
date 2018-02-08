@@ -1,12 +1,15 @@
 - project:
     check:
       jobs:
-        - freezer-ubuntu-xenial:
-            voting: true
+        - freezer-ubuntu-xenial
         - freezer-centos-7:
             voting: false
-        - freezer-opensuse-423:
-            voting: false
+    gate:
+      jobs:
+        - freezer-ubuntu-xenial
+    experimental:
+      jobs:
+        - freezer-opensuse-423
 
 - job:
     name: freezer-ubuntu-xenial
