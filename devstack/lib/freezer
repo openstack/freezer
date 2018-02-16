@@ -75,6 +75,8 @@ function configure_freezer_scheduler {
     sudo chown $STACK_USER $FREEZER_JOBS_DIR
     [ ! -d $FREEZER_LOG_DIR ] &&  sudo mkdir -m 755 -p $FREEZER_LOG_DIR
     sudo chown $STACK_USER $FREEZER_LOG_DIR
+    sudo ls -lh $DEST
+    sudo ls -lh $DEST/logs
 
 
 }

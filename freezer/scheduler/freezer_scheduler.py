@@ -22,7 +22,7 @@ import threading
 import time
 
 from apscheduler.schedulers import background
-from freezerclient.v1 import client
+from freezerclient import utils as client_utils
 from oslo_config import cfg
 from oslo_log import log
 
@@ -210,7 +210,7 @@ def main():
     apiclient = None
     if CONF.no_api is False:
         try:
-            apiclient = client.Client(opts=CONF)
+            apiclient = client_utils.get_client_instance(opts=CONF)
             if CONF.client_id:
                 apiclient.client_id = CONF.client_id
         except Exception as e:
