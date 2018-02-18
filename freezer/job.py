@@ -152,8 +152,7 @@ class BackupJob(Job):
                     LOG.error('Error while sync exec: {0}'.format(err))
         except Exception as error:
             LOG.error('Error while sync exec: {0}'.format(error))
-        if not self.conf.mode:
-            raise ValueError("Empty mode")
+
         mod_name = 'freezer.mode.{0}.{1}'.format(
             self.conf.mode, self.conf.mode.capitalize() + 'Mode')
         app_mode = importutils.import_object(mod_name, self.conf)
