@@ -64,6 +64,12 @@ class SshStorage(fslike.FsLikeStorage):
         elif not self.ssh_key_path:
             raise ValueError('Please provide path to ssh key using '
                              '--ssh-key argument.')
+        elif not os.path.exists(self.ssh_key_path):
+            raise ValueError('The {0} is required, please ensure it '
+                             'exists and ensure backup node can login '
+                             'to {1} as user {2} without password '
+                             .format(self.ssh_key_path, self.remote_ip,
+                                     self.remote_username))
         return True
 
     def init(self):
