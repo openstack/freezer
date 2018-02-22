@@ -16,7 +16,7 @@ Requirements
 ------------
 
 - python
-- pthon-dev
+- python-dev
 - git
 - Development Tools (gcc)
 - libffi
