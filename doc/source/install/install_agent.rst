@@ -3,14 +3,14 @@ freezer-agent, on any node in the cloud or any vm inside the cloud.
 
 This section assumes that you already have a working OpenStack
 environment with at least the following components installed:
-.. Keystone
-.. Swift
+- Keystone
+- Swift
 
 .. code-block:: bash
 
-  git clone https://git.openstack.org/openstack/freezer.git
-  cd freezer
-  pip install ./
+   git clone https://git.openstack.org/openstack/freezer.git
+   cd freezer
+   pip install ./
 
 
 Configure the scheduler
@@ -29,8 +29,8 @@ Configure the scheduler
 
    * In the ``[DEFAULT]`` section, configure database access:
 
-   The ``client_id`` has to be set to the hostname of the machine. It will be
-   used as an identifier for this node to fetch its scheduled backups
+     The ``client_id`` has to be set to the hostname of the machine. It will be
+     used as an identifier for this node to fetch its scheduled backups
 
      .. code-block:: ini
 
@@ -39,9 +39,7 @@ Configure the scheduler
         client_id = hostname_of_machine
         jobs_dir = /etc/freezer/scheduler/conf.d
 
-
 3. Start ``freezer-scheduler``
-
 
 .. code-block:: console
 
