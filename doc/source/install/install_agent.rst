@@ -45,4 +45,5 @@ Configure the scheduler
 
 .. code-block:: console
 
+   $ . admin-openrc
    $ sudo freezer-scheduler --config-file /etc/freezer/scheduler.conf start
