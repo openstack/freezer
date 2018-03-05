@@ -30,8 +30,8 @@ class EngineManager(object):
     """
     EngineManager, this class handles engines.
         Lists all available engines
-        Load an engine
         Checks if an engine does exists or not
+        Load an engine
     """
     def __init__(self):
         """
@@ -40,7 +40,7 @@ class EngineManager(object):
         """
         self.engine_name = CONF.engine_name
         self.engine_store = os.path.abspath(os.path.dirname(__file__))
-        self.engines = []
+        self.engines = self.list_engines()
 
     def load_engine(self, **kwargs):
         """ Check if the engine exists or not. If not raise EngineNotFound
@@ -59,8 +59,7 @@ class EngineManager(object):
         )
 
     def _check_engine_exists(self):
-        engines = self.list_engines()
-        if self.engine_name not in engines:
+        if self.engine_name not in self.engines:
             return False
         return True
 
@@ -73,5 +72,4 @@ class EngineManager(object):
             name for name in os.listdir(self.engine_store) if
             os.path.isdir(os.path.join(self.engine_store, name))
         ]
-        self.engines = engines
         return engines
