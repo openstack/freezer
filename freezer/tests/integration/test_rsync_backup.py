@@ -15,9 +15,9 @@
 
 from copy import copy
 import os
-import uuid
 
 from freezer.tests.integration import common
+from oslo_utils import uuidutils
 
 
 class TestBackupFSLocalRsync(common.TestFS):
@@ -47,7 +47,7 @@ class TestBackupFSLocalRsync(common.TestFS):
                 'storage': 'local',
                 'engine': 'rsync',
                 'max_segment_size': '67108864',
-                'backup_name': uuid.uuid4().hex
+                'backup_name': uuidutils.generate_uuid(dashed=False)
             }
 
             restore_args = {
@@ -84,7 +84,7 @@ class TestBackupFSLocalRsync(common.TestFS):
         """
         self.source_tree.add_random_data()
         self.assertTreesMatchNot()
-        backup_name = uuid.uuid4().hex
+        backup_name = uuidutils.generate_uuid(dashed=False)
 
         with common.Temp_Tree() as storage_dir:
             backup_args = {
@@ -144,7 +144,7 @@ class TestBackupFSLocalRsync(common.TestFS):
                 'storage': 'local',
                 'engine': 'rsync',
                 'max_segment_size': '67108864',
-                'backup_name': uuid.uuid4().hex
+                'backup_name': uuidutils.generate_uuid(dashed=False)
             }
 
             restore_args = {
