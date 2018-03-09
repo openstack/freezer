@@ -230,7 +230,7 @@ Restore example:
 .. code:: bash
 
     sudo freezer-agent --action restore --restore-abs-path [/data/dir/to/backup] \
-    --container freezer-[container] [--backup-name my-backup-name] \
+    --container freezer-[container] --backup-name [my-backup-name] \
     --storage swift
 
 Local Storage Backup/Restore
@@ -247,7 +247,7 @@ Backup example:
 .. code:: bash
 
     sudo freezer-agent --path-to-backup [/data/dir/to/backup] \
-    --container /tmp/my_backup_path/ [--backup-name my-backup-name] \
+    --container /tmp/my_backup_path/ --backup-name [my-backup-name] \
     --storage local
 
 Restore example:
