@@ -233,7 +233,7 @@ def parse_args(choices):
 
 def setup_logging():
     _DEFAULT_LOG_LEVELS = ['amqp=WARN', 'amqplib=WARN', 'boto=WARN',
-                           'qpid=WARN', 'stevedore=WARN', 'oslo_log=INFO',
+                           'stevedore=WARN', 'oslo_log=INFO',
                            'iso8601=WARN', 'urllib3.connectionpool=WARN',
                            'requests.packages.urllib3.connectionpool=WARN',
                            'websocket=WARN', 'keystonemiddleware=WARN']
