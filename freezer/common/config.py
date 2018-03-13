@@ -40,7 +40,7 @@ DEFAULT_LVM_SNAP_BASENAME = 'freezer_backup_snap'
 DEFAULT_SSH_PORT = 22
 
 _DEFAULT_LOG_LEVELS = ['amqp=WARN', 'amqplib=WARN', 'boto=WARN',
-                       'qpid=WARN', 'stevedore=WARN', 'oslo_log=INFO',
+                       'stevedore=WARN', 'oslo_log=INFO',
                        'iso8601=WARN',
                        'requests.packages.urllib3.connectionpool=WARN',
                        'urllib3.connectionpool=WARN', 'websocket=WARN',
