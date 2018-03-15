@@ -38,70 +38,70 @@ Install required packages first:
 
 .. code:: bash
 
-	sudo apt-get install python-dev python-pip git openssl gcc make automake
+    sudo apt-get install python-dev python-pip git openssl gcc make automake
 
 Clone proper branch of Freezer API with git:
 
 .. code:: bash
 
-	git clone -b [branch] https://github.com/openstack/freezer-api.git
+    git clone -b [branch] https://github.com/openstack/freezer-api.git
 
 Install requirements with pip:
 
 .. code:: bash
 
-	cd freezer-api/
+    cd freezer-api/
 
-	sudo pip install -r requirements.txt
+    sudo pip install -r requirements.txt
 
 Install Freezer API from source:
 
 .. code:: bash
 
-	sudo python setup.py install
+    sudo python setup.py install
 
 Copy config file:
 
 .. code:: bash
 
-	sudo cp etc/freezer-api.conf /etc/freezer-api.conf
+    sudo cp etc/freezer-api.conf /etc/freezer-api.conf
 
 Edit config file:
 
 .. code:: bash
 
-	sudo nano /etc/freezer-api.conf
+    sudo nano /etc/freezer-api.conf
 
-	# change log file location
-	log_file = /var/log/freezer-api.log
+    # change log file location
+    log_file = /var/log/freezer-api.log
 
-	# configure Keystone authentication
+    # configure Keystone authentication
 
-	[keystone_authtoken]
-	auth_protocol = http
-	auth_host = [keystone_host_ip_or_hostname]
-	auth_port = 35357
-	admin_user = [freezer admin user] # admin or user with admin priviliges
-	admin_password = [admin password]
-	admin_tenant_name = [admin tenan] # usually admin
-	include_service_catalog = False
-	delay_auth_decision = False
+    [keystone_authtoken]
+    auth_protocol = http
+    auth_host = [keystone_host_ip_or_hostname]
+    auth_port = 35357
+    admin_user = [freezer admin user] # admin or user with admin priviliges
+    admin_password = [admin password]
+    admin_tenant_name = [admin tenan] # usually admin
+    include_service_catalog = False
+    delay_auth_decision = False
 
-	[storage]
-	# supported db engine. currently elasticsearch only
-	db=elasticsearch
-	hosts='http://[elasticsearch host address]:9200'
-	# freezer-manage db sync/update uses the following parameter to set the number of replicas
-	number_of_replicas=1
+    [storage]
+    # supported db engine. currently elasticsearch only
+    db=elasticsearch
+    hosts='http://[elasticsearch host address]:9200'
+    # freezer-manage db sync/update uses the following parameter to set the number of replicas
+    number_of_replicas=1
 
 
 Follow this instructions to install Elasticsearch 1.7.5:
 
 .. code:: bash
 
-	https://goo.gl/bwDcNK
+    https://goo.gl/bwDcNK
 
-	service elasticsearch start
+    service elasticsearch start
 
 ***You must install Elasticsearch 1.7.5 for Freezer API to work correctly***
 
@@ -116,58 +116,58 @@ Let's initialize database:
 
 .. code:: bash
 
-	freezer-manage db sync
+    freezer-manage db sync
 
 Run Freezer API:
 
 .. code:: bash
 
-	freezer-api 0.0.0.0
+    freezer-api 0.0.0.0
 
 There is not any Freezer API Deamon. If you need to run Freezer API in
 backgroun, user following commend:
 
 .. code:: bash
 
-	freezer-api 0.0.0.0 >/dev/null 2>&1
+    freezer-api 0.0.0.0 >/dev/null 2>&1
 
 Keystone API v2.0 endpoint registration:
 
 .. code:: bash
 
-	keystone service-create --name freezer --type backup \
-	--description "Freezer Backup Service"
+    keystone service-create --name freezer --type backup \
+    --description "Freezer Backup Service"
 
-	# use public IP address or hostname because Freezer Scheduler must be able
-	to reach API from public IP or hostname.
+    # use public IP address or hostname because Freezer Scheduler must be able
+    to reach API from public IP or hostname.
 
-	# default port is 9090. If you have changed in freezer-api.conf you must
-	change it here too.
+    # default port is 9090. If you have changed in freezer-api.conf you must
+    change it here too.
 
-	keystone endpoint-create \
-	--service-id $(keystone service-list | awk '/ backup / {print $2}') \
-	--publicurl http://[freezer_api_publicurl]:[port] \
-	--internalurl http://[freezer_api_internalurl]:[port] \
-	--adminurl http://[freezer_api_adminurl]:[port] \
-	--region regionOne
+    keystone endpoint-create \
+    --service-id $(keystone service-list | awk '/ backup / {print $2}') \
+    --publicurl http://[freezer_api_publicurl]:[port] \
+    --internalurl http://[freezer_api_internalurl]:[port] \
+    --adminurl http://[freezer_api_adminurl]:[port] \
+    --region regionOne
 
 Keystone API v3 endpoint registration:
 
 .. code:: bash
 
-	# With OpenStack Liberty, Keystone API v2.0 is depreciated and you will not
-	able to use "keystone-client" commend instead user "openstack" commend
+    # With OpenStack Liberty, Keystone API v2.0 is depreciated and you will not
+    able to use "keystone-client" commend instead user "openstack" commend
 
-	openstack service create --name freezer \
-	--description "Freezer Backup Service" backup
+    openstack service create --name freezer \
+    --description "Freezer Backup Service" backup
 
-	# use public IP address or hostname because Freezer Scheduler must be able
-	to reach API from public IP or hostname.
+    # use public IP address or hostname because Freezer Scheduler must be able
+    to reach API from public IP or hostname.
 
-	# default port is 9090. If you have changed in freezer-api.conf you must
-	change it here too.
+    # default port is 9090. If you have changed in freezer-api.conf you must
+    change it here too.
 
-	openstack endpoint create   --publicurl http://176.53.94.101:9090 \
-	--internalurl http://192.168.0.4:9090 \
-	--adminurl http://176.53.94.101:9090 \
-	--region RegionOne backup
+    openstack endpoint create   --publicurl http://176.53.94.101:9090 \
+    --internalurl http://192.168.0.4:9090 \
+    --adminurl http://176.53.94.101:9090 \
+    --region RegionOne backup
