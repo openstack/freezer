@@ -186,7 +186,10 @@ Execute a nova backup:
 
 .. code:: bash
 
-    freezer-agent --nova-inst-id [nova-instance-id]
+    freezer-agent --backup-name [my-backup-name] \
+    --mode nova --engine nova \
+    --no-incremental True \
+    --nova-inst-id [nova-instance-id]
 
 Execute a MySQL backup with nova:
 
