@@ -4,9 +4,11 @@
         - freezer-ubuntu-xenial
         - freezer-centos-7:
             voting: false
+        - openstack-tox-lower-constraints
     gate:
       jobs:
         - freezer-ubuntu-xenial
+        - openstack-tox-lower-constraints
     experimental:
       jobs:
         - freezer-opensuse-423
