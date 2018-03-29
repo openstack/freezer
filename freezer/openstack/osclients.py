@@ -440,7 +440,7 @@ class OpenstackOpts(object):
 
     def get_opts_dicts(self):
         """
-        Return opentack auth arguments as dict
+        Return openstack auth arguments as dict
         detects the auth version from url if not provided
         handles certificate issues
         """
