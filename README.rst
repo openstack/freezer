@@ -61,7 +61,7 @@ Operators
 To learn how to deploy and configure OpenStack Freezer, consult the
 documentation available online at:
 
-- `OpenStack Freezer <https://docs.openstack.org/freezer/>`__
+- `OpenStack Freezer <https://docs.openstack.org/freezer/latest/>`__
 
 In the unfortunate event that bugs are discovered, they should be reported to
 the appropriate bug tracker. If you obtained the software from a 3rd party
@@ -79,9 +79,9 @@ file and OpenStack general development guidelines, and pass all unit tests.
 
 Further developer focused documentation is available at:
 
-- `Official Freezer Documentation <https://docs.openstack.org/freezer/>`__
+- `Official Freezer Documentation <https://docs.openstack.org/freezer/latest/>`__
 - `Official Client Documentation
-  <https://docs.openstack.org/python-freezerclient/>`__
+  <https://docs.openstack.org/python-freezerclient/latest/>`__
 
 Other Information
 -----------------
