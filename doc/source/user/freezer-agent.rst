@@ -550,19 +550,19 @@ Then upload that job into the API:
 
 .. code:: bash
 
-    freezer-scheduler -c node12 job-create --file test_job.json
+    freezer job-create --client node12 --file test_job.json
 
 The newly created job can be found with:
 
 .. code:: bash
 
-    freezer-scheduler -c node12 job-list
+    freezer job-list --client node12
 
 Its content can be read with:
 
 .. code:: bash
 
-    freezer-scheduler -c node12 job-get -j [job_id]
+    freezer job-get [job_id]
 
 The scheduler can be started on the target node with:
 
