@@ -146,7 +146,7 @@ Execute a cinder backup:
 
 .. code:: bash
 
-    freezer-agent --cinder-vol-id [cinder-volume-id]
+    freezer-agent --mode cinder --cinder-vol-id [cinder-volume-id]
 
 Execute a MySQL backup with cinder:
 
