@@ -69,7 +69,9 @@ DEFAULT_PARAMS = {
     'encrypt_pass_file': None, 'volume': None, 'proxy': None,
     'cinder_vol_id': '', 'cindernative_vol_id': '',
     'cinderbrick_vol_id': '',
+    'cinder_vol_name': '',
     'nova_inst_id': '', '__version__': FREEZER_VERSION,
+    'nova_inst_name': '',
     'remove_older_than': None, 'restore_from_date': None,
     'upload_limit': -1, 'always_level': False, 'version': None,
     'dry_run': False, 'lvm_snapsize': DEFAULT_LVM_SNAPSIZE,
@@ -375,6 +377,11 @@ _COMMON = [
                default=DEFAULT_PARAMS['cinder_vol_id'],
                help="Id of cinder volume for backup"
                ),
+    cfg.StrOpt('cinder-vol-name',
+               dest='cinder_vol_name',
+               default=DEFAULT_PARAMS['cinder_vol_name'],
+               help="Name of cinder volume for backup"
+               ),
     cfg.StrOpt('cinderbrick-vol-id',
                dest='cinderbrick_vol_id',
                default=DEFAULT_PARAMS['cinderbrick_vol_id'],
@@ -395,6 +402,12 @@ _COMMON = [
                default=DEFAULT_PARAMS['nova_inst_id'],
                help="Id of nova instance for backup"
                ),
+    cfg.StrOpt('nova-inst-name',
+               dest='nova_inst_name',
+               default=DEFAULT_PARAMS['nova_inst_name'],
+               help="Name of nova instance for backup"
+               ),
+
     cfg.StrOpt('project-id',
                dest='project_id',
                default=DEFAULT_PARAMS['project_id'],
@@ -653,12 +666,13 @@ def get_backup_args():
                 backup_args.path_to_backup[:3]
 
     backup_media = 'fs'
-    if backup_args.cinder_vol_id:
+    if backup_args.cinder_vol_id or backup_args.cinder_vol_name:
         backup_media = 'cinder'
     elif backup_args.cindernative_vol_id or backup_args.cindernative_backup_id:
         backup_media = 'cindernative'
     elif backup_args.engine_name == 'nova' and (backup_args.project_id or
-                                                backup_args.nova_inst_id):
+                                                backup_args.nova_inst_id or
+                                                backup_args.nova_inst_name):
         backup_media = 'nova'
     elif backup_args.cinderbrick_vol_id:
         backup_media = 'cinderbrick'
