@@ -79,9 +79,10 @@ freezer-manage has the following options:
 
 * To update the db mappings using the following command. Update means that you
   might have some mappings and you want to update it with a more recent ones
-  .. code-block:: bash
 
-     freezer-manage db update
+.. code-block:: bash
+
+   freezer-manage db update
 
 * To remove the db mappings using the following command
 
@@ -108,21 +109,23 @@ of replicas. For more info click here `Elasticsearch_Replicas_instructions <http
 
 * To get information about optional additional parameters
 
-    .. code-block:: bash
+.. code-block:: bash
 
-       freezer-manage -h
+   freezer-manage -h
 
 * If you want to add any additional parameter like --yes or --erase, they should
   be before the db option. Check the following examples
   Wrong Example
-  .. code-block:: bash
 
-     freezer-manage db sync -y -e
+.. code-block:: bash
+
+   freezer-manage db sync -y -e
 
   Correct Example
-  .. code-block:: bash
 
-     freezer-manage -y -e db sync
+.. code-block:: bash
+
+   freezer-manage -y -e db sync
 
 
 create the mappings
