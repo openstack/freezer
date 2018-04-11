@@ -94,12 +94,20 @@ class InfoJob(Job):
         fields = ["Container", "Size", "Object Count"]
         data = []
         for container in info:
+            if self.conf.container:
+                container_name = container.get('container_name')
+                if container_name != self.conf.container:
+                    continue
+
             values = [
                 container.get('container_name'),
                 container.get('size'),
                 container.get('objects_count')
             ]
             data.append(values)
+
+            if self.conf.container:
+                break  # values for given container were found
         return [fields, data]
 
 
