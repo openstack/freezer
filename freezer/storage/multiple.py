@@ -26,6 +26,15 @@ LOG = log.getLogger(__name__)
 class MultipleStorage(base.Storage):
     _type = 'multiple'
 
+    def __init__(self, storages):
+        """
+        :param storages:
+        :type storages: list[freezer.storage.base.Storage]
+        :return:
+        """
+        super(MultipleStorage, self).__init__()
+        self.storages = storages
+
     def info(self):
         for s in self.storages:
             s.info()
@@ -93,15 +102,6 @@ class MultipleStorage(base.Storage):
         """
         for storage in self.storages:
             storage.put_engine_metadata(from_path, backup)
-
-    def __init__(self, storages):
-        """
-        :param storages:
-        :type storages: list[freezer.storage.base.Storage]
-        :return:
-        """
-        super(MultipleStorage, self).__init__()
-        self.storages = storages
 
     def download_freezer_meta_data(self, backup):
         # TODO(DEKLAN): Need to implement.
