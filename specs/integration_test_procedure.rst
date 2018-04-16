@@ -150,7 +150,7 @@ Not required, but recommended
 
   [keystone_authtoken]
   identity_uri = http://192.168.20.100:35357/
-  auth_uri = http://192.168.20.100:5000/
+  www_authenticate_uri = http://192.168.20.100:5000/
   admin_user = freezer
   admin_password = FREEZER_PWD
   admin_tenant_name = service
