@@ -11,7 +11,7 @@ Team and repository tags
 Freezer
 =======
 
-.. image:: freezer_logo.jpg
+.. image:: ../freezer_logo.jpg
 
 NOTE
 ----
