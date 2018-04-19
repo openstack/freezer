@@ -59,7 +59,7 @@ Agent Options
 Release Notes
 -------------
 
-- When a new feature is commited we should have a new release notes page that
+- When a new feature is committed we should have a new release notes page that
  highlights the changes made. These release notes will be used for deployers,
  users, and developers. There are a few steps that need to be taken in order.
 
