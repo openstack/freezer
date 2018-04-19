@@ -40,7 +40,7 @@ class FsLikeStorage(physical.PhysicalStorage):
     def write_backup(self, rich_queue, backup):
         """
         Stores backup in storage
-        :type rich_queue: freezer.streaming.RichQueue
+        :type rich_queue: freezer.utils.streaming.RichQueue
         :type backup: freezer.storage.base.Backup
         """
         backup = backup.copy(storage=self)
