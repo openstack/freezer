@@ -59,7 +59,8 @@ class OsbrickEngine(engine.BackupEngine):
         """Construct metadata"""
         return {
             "engine_name": self.name,
-            "volume_info": self.volume_info
+            "volume_info": self.volume_info,
+            "encryption": bool(self.encrypt_pass_file)
         }
 
     @staticmethod
@@ -156,6 +157,9 @@ class OsbrickEngine(engine.BackupEngine):
                 restore_path))
             new_volume = False
             metadata = backup.metadata()
+            if (not self.encrypt_pass_file and
+                    metadata.get("encryption", False)):
+                raise Exception("Cannot restore encrypted backup without key")
             volume_info = metadata.get("volume_info")
             try:
                 backup_volume = self.cinder.volumes.get(restore_path)
