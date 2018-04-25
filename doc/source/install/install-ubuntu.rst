@@ -17,6 +17,11 @@ Install and configure components
 
       $ sudo apt-get install python-dev python-pip
 
+   .. note:: To list all missing packages needed to install freezer
+      in your system use provided ``bindep.txt`` file with `bindep utility.
+      <https://docs.openstack.org/infra/bindep/>`_
+
+
 .. include:: common_configure.rst
 
 Finalize installation
