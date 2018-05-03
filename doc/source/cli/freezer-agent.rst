@@ -16,7 +16,7 @@ backup and restore your resources
 SYNOPSIS
 ========
 
-  freezer-agent [<args>]
+freezer-agent [<args>]
 
 DESCRIPTION
 ===========
