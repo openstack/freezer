@@ -637,7 +637,7 @@ OPTIONS
   :Default: ``swift``
   :Valid Values: local, swift, ssh, s3
 
-  Storage for backups. Can be Swift, Local, SSH and S3 now. Swift is default storage now. Local stores backupson the same defined path, swift will store files in container, and s3 will store files in bucket in S3 compatible storage.
+  Storage for backups. Can be Swift, Local, SSH and S3 now. Swift is default storage now. Local stores backups on the same defined path, swift will store files in container, and s3 will store files in bucket in S3 compatible storage.
 
 
 .. oslo.config:option:: access_key
