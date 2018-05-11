@@ -80,7 +80,7 @@ Edit config file:
     [keystone_authtoken]
     auth_protocol = http
     auth_host = [keystone_host_ip_or_hostname]
-    auth_port = 35357
+    auth_port = 5000
     admin_user = [freezer admin user] # admin or user with admin priviliges
     admin_password = [admin password]
     admin_tenant_name = [admin tenan] # usually admin
