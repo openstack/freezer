@@ -115,6 +115,12 @@ class NoDaemon(object):
     def status(self):
         pass
 
+    def restart(self):
+        pass
+
+    def reload(self):
+        pass
+
 
 class Daemon(object):
     """
