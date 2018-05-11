@@ -16,7 +16,7 @@ backup and restore your resources
 SYNOPSIS
 ========
 
-  freezer-scheduler <action> [<args>]
+freezer-scheduler <action> [<args>]
 
 DESCRIPTION
 ===========
