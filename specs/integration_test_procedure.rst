@@ -149,7 +149,7 @@ Not required, but recommended
   logging_file = freezer-api.log
 
   [keystone_authtoken]
-  identity_uri = http://192.168.20.100:35357/
+  identity_uri = http://192.168.20.100:5000/
   www_authenticate_uri = http://192.168.20.100:5000/
   admin_user = freezer
   admin_password = FREEZER_PWD
