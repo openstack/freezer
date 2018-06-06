@@ -32,12 +32,7 @@ import signal
 import socket
 import sys
 
-# PY2 / PY3 gap
-PY3 = sys.version_info[0] == 3
-if PY3:
-    string_types = str,
-else:
-    string_types = basestring,
+import six
 
 
 class DaemonError(Exception):
@@ -176,7 +171,7 @@ class DaemonContext(object):
         """
         if not handler:
             result = signal.SIG_IGN
-        elif isinstance(handler, string_types):
+        elif isinstance(handler, six.string_types):
             result = getattr(self, handler)
         else:
             result = handler
