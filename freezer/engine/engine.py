@@ -16,7 +16,6 @@
 import abc
 import json
 import multiprocessing
-from multiprocessing import queues
 import shutil
 import tempfile
 import time
@@ -30,6 +29,12 @@ from freezer.exceptions import engine as engine_exceptions
 from freezer.storage import base
 from freezer.utils import streaming
 from freezer.utils import utils
+
+if six.PY3:
+    from multiprocessing import SimpleQueue
+else:
+    from multiprocessing.queues import SimpleQueue
+
 
 LOG = log.getLogger(__name__)
 
@@ -249,10 +254,7 @@ class BackupEngine(object):
         max_level = max(backups.keys())
 
         # Use SimpleQueue because Queue does not work on Mac OS X.
-        if six.PY2:
-            read_except_queue = queues.SimpleQueue()
-        else:
-            read_except_queue = multiprocessing.SimpleQueue()
+        read_except_queue = SimpleQueue()
         LOG.info("Restoring backup {0}".format(hostname_backup_name))
         for level in range(0, max_level + 1):
             LOG.info("Restoring from level {0}".format(level))
@@ -269,10 +271,7 @@ class BackupEngine(object):
             # Start the tar pipe consumer process
 
             # Use SimpleQueue because Queue does not work on Mac OS X.
-            if six.PY2:
-                write_except_queue = queues.SimpleQueue()
-            else:
-                write_except_queue = multiprocessing.SimpleQueue()
+            write_except_queue = SimpleQueue()
 
             engine_stream = multiprocessing.Process(
                 target=self.restore_level,
