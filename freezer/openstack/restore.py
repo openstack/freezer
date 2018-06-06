@@ -153,7 +153,7 @@ class RestoreOs(object):
                 msg = "Failed to open image file {}".format(image_file)
                 LOG.error(msg)
                 raise BaseException(msg)
-            info = json.load(file(metadata_file))
+            info = json.load(open(metadata_file, 'r'))
             image = self.client_manager.create_image(
                 name="restore_{}".format(path),
                 container_format="bare",
