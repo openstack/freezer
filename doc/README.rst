@@ -221,7 +221,7 @@ Also the following ENV vars are needed. You can put them in ~/.bashrc::
     export OS_REGION_NAME=region-a.geo-1
     export OS_TENANT_ID=<account tenant>
     export OS_PASSWORD=<account password>
-    export OS_AUTH_URL=https://region-a.geo-1.identity.hpcloudsvc.com:35357/v2.0
+    export OS_AUTH_URL=https://region-a.geo-1.identity.hpcloudsvc.com:5000/v3
     export OS_USERNAME=automationbackup
     export OS_TENANT_NAME=automationbackup
 
@@ -253,7 +253,7 @@ The basic Swift account configuration is needed to use freezer. Make sure python
     set OS_REGION_NAME=region-a.geo-1
     set OS_TENANT_ID=<account tenant>
     set OS_PASSWORD=<account password>
-    set OS_AUTH_URL=https://region-a.geo-1.identity.hpcloudsvc.com:35357/v2.0
+    set OS_AUTH_URL=https://region-a.geo-1.identity.hpcloudsvc.com:5000/v3
     set OS_USERNAME=automationbackup
     set OS_TENANT_NAME=automationbackup
 
