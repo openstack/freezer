@@ -21,9 +21,11 @@ from oslo_log import log
 
 from freezer.common import client_manager
 from freezer.engine import engine
+from freezer.engine.tar import tar
 from freezer.utils import utils
 
 import json
+import tempfile
 
 LOG = log.getLogger(__name__)
 CONF = cfg.CONF
@@ -38,7 +40,16 @@ class NovaEngine(engine.BackupEngine):
         self.glance = self.client.create_glance()
         self.cinder = self.client.create_cinder()
         self.neutron = self.client.create_neutron()
+        self.encrypt_pass_file = kwargs.get('encrypt_key')
+        self.exclude = kwargs.get('exclude')
         self.server_info = None
+        self.openssl_path = None
+        self.compression_algo = 'gzip'
+        self.is_windows = None
+        self.dry_run = kwargs.get('dry_run', False)
+        self.max_segment_size = kwargs.get('max_segment_size')
+        self.storage = storage
+        self.dereference_symlink = kwargs.get('symlinks')
 
     @property
     def name(self):
@@ -92,6 +103,9 @@ class NovaEngine(engine.BackupEngine):
     def restore_level(self, restore_resource, read_pipe, backup, except_queue):
         try:
             metadata = backup.metadata()
+            if (not self.encrypt_pass_file and
+                    metadata.get("encryption", False)):
+                raise Exception("Cannot restore encrypted backup without key")
             engine_metadata = backup.engine_metadata()
             server_info = metadata.get('server', {})
             length = int(engine_metadata.get('length'))
@@ -114,6 +128,23 @@ class NovaEngine(engine.BackupEngine):
                 'raw',
                 data=data
             )
+
+            if self.encrypt_pass_file:
+                try:
+                    tmpdir = tempfile.mkdtemp()
+                except Exception:
+                    LOG.error("Unable to create a tmp directory")
+                    raise
+
+                tar_engine = tar.TarEngine(self.compression_algo,
+                                           self.dereference_symlink,
+                                           self.exclude, self.storage,
+                                           self.max_segment_size,
+                                           self.encrypt_pass_file,
+                                           self.dry_run)
+
+                tar_engine.restore_level(tmpdir, read_pipe, backup,
+                                         except_queue)
 
             utils.wait_for(
                 NovaEngine.image_active,
@@ -266,6 +297,16 @@ class NovaEngine(engine.BackupEngine):
         for chunk in stream:
             yield chunk
 
+        if self.encrypt_pass_file:
+            tar_engine = tar.TarEngine(self.compression_algo,
+                                       self.dereference_symlink,
+                                       self.exclude, self.storage,
+                                       self.max_segment_size,
+                                       self.encrypt_pass_file, self.dry_run)
+
+            for data_chunk in tar_engine.backup_data('.', manifest_path):
+                yield data_chunk
+
         if image_temporary_snapshot_id is not None:
             LOG.info("Deleting temporary snapshot {0}"
                      .format(image_temporary_snapshot_id))
@@ -291,6 +332,7 @@ class NovaEngine(engine.BackupEngine):
         return {
             "engine_name": self.name,
             "server": server_info,
+            "encryption": bool(self.encrypt_pass_file)
         }
 
     def set_tenant_meta(self, path, metadata):
