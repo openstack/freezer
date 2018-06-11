@@ -20,7 +20,6 @@ import getpass
 import grp
 import os
 import pwd
-import Queue
 import shutil
 import stat
 import sys
@@ -30,6 +29,7 @@ import msgpack
 from oslo_log import log
 import six
 
+from six.moves import queue
 
 from freezer.engine import engine
 from freezer.engine.rsyncv2 import pyrsync
@@ -97,7 +97,7 @@ class Rsyncv2Engine(engine.BackupEngine):
             cipher = crypt.AESEncrypt(self.encrypt_pass_file)
             yield cipher.generate_header()
 
-        write_queue = Queue.Queue(maxsize=2)
+        write_queue = queue.Queue(maxsize=2)
 
         # Create thread for compute file signatures and read data
         t_get_sign_delta = threading.Thread(target=self.get_sign_delta,

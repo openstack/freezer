@@ -20,7 +20,6 @@ import grp
 import json
 import os
 import pwd
-import Queue
 import re
 import stat
 import sys
@@ -28,6 +27,7 @@ import threading
 
 from oslo_log import log
 from six.moves import cStringIO
+from six.moves import queue
 
 from freezer.engine import engine
 from freezer.engine.rsync import pyrsync
@@ -103,7 +103,7 @@ class RsyncEngine(engine.BackupEngine):
             self.cipher = crypt.AESEncrypt(self.encrypt_pass_file)
             data_chunk += self.cipher.generate_header()
 
-        rsync_queue = Queue.Queue(maxsize=2)
+        rsync_queue = queue.Queue(maxsize=2)
 
         t_get_sign_delta = threading.Thread(
             target=self.get_sign_delta,
