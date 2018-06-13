@@ -124,7 +124,7 @@ Linux Requirements
 -  libffi-dev
 -  libssl-dev
 -  python-dev
--  pycrypto
+-  cryptography
 -  At least 128 MB of memory reserved for Freezer
 
 Windows Requirements
@@ -587,7 +587,7 @@ Freezer architectural components are the following:
 -  freezer client running on the node where the backups and restores are to be executed
 
 Freezer uses GNU Tar or Rsync algorithm under the hood to execute incremental backup and
-restore. When a key is provided, it uses OpenSSL or pycrypto module (OpenSSL compatible)
+restore. When a key is provided, it uses OpenSSL or cryptography module (OpenSSL compatible)
 to encrypt data. (AES-256-CFB)
 
 =============

@@ -145,7 +145,6 @@ class Rsyncv2Engine(engine.BackupEngine):
         flushed_data += compressor.flush()
         if flushed_data and cipher:
             flushed_data = cipher.encrypt(flushed_data)
-            flushed_data += cipher.flush()
 
         return flushed_data
 

@@ -12,7 +12,7 @@ chardet==3.0.4
 cliff==2.11.0
 cmd2==0.8.1
 coverage==4.0
-cryptography==2.1.4
+cryptography==2.1
 ddt==1.0.1
 debtcollector==1.19.0
 decorator==4.2.1
@@ -74,7 +74,6 @@ prettytable==0.7.2
 psutil==3.2.2
 pyasn1==0.4.2
 pycparser==2.18
-pycrypto==2.6
 pyflakes==1.0.0
 Pygments==2.2.0
 pyinotify==0.9.6

@@ -14,12 +14,15 @@
 
 import hashlib
 
-from Crypto.Cipher import AES
-from Crypto import Random
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers import algorithms
+from cryptography.hazmat.primitives.ciphers import Cipher
+from cryptography.hazmat.primitives.ciphers import modes
+from os import urandom
 
 SALT_HEADER = 'Salted__'
 AES256_KEY_LENGTH = 32
-BS = AES.block_size
+BS = 16  # static 16 bytes, 128 bits for AES
 
 
 class AESCipher(object):
@@ -56,40 +59,21 @@ class AESEncrypt(AESCipher):
 
     def __init__(self, pass_file):
         super(AESEncrypt, self).__init__(pass_file)
-        self._salt = Random.new().read(BS - len(SALT_HEADER))
+        self._salt = urandom(BS - len(SALT_HEADER))
         key, iv = self._derive_key_and_iv(self._password,
                                           self._salt,
                                           AES256_KEY_LENGTH,
                                           BS)
-        self.cipher = AES.new(key, AES.MODE_CFB, iv, segment_size=BS * 8)
-        self.remain = None
+        self.cipher = Cipher(algorithms.AES(key),
+                             modes.CFB(iv),
+                             backend=default_backend())
 
     def generate_header(self):
         return SALT_HEADER + self._salt
 
     def encrypt(self, data):
-        remain = self.remain
-        if remain:
-            data = remain + data
-            remain = None
-
-        extra_bytes = len(data) % BS
-        if extra_bytes:
-            remain = data[-extra_bytes:]
-            data = data[:-extra_bytes]
-
-        self.remain = remain
-        return self.cipher.encrypt(data)
-
-    def flush(self):
-        def pad(s):
-            return s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
-
-        buff = self.remain
-        if buff:
-            return self.cipher.encrypt(pad(buff))
-
-        return b''
+        encryptor = self.cipher.encryptor()
+        return encryptor.update(data) + encryptor.finalize()
 
 
 class AESDecrypt(AESCipher):
@@ -105,17 +89,14 @@ class AESDecrypt(AESCipher):
                                           self._salt,
                                           AES256_KEY_LENGTH,
                                           BS)
-        self.cipher = AES.new(key, AES.MODE_CFB, iv, segment_size=BS * 8)
+        self.cipher = Cipher(algorithms.AES(key),
+                             modes.CFB(iv),
+                             backend=default_backend())
 
     @staticmethod
     def _prepare_salt(salt):
         return salt[len(SALT_HEADER):]
 
     def decrypt(self, data):
-        # def unpad(s):
-        #     return s[0:-ord(s[-1])]
-        #
-        # if last_block:
-        #     return unpad(self.cipher.decrypt(data))
-        # else:
-        return self.cipher.decrypt(data)
+        decryptor = self.cipher.decryptor()
+        return decryptor.update(data) + decryptor.finalize()
