@@ -570,6 +570,11 @@ def get_backup_args():
             except NoSuchOptError:
                 LOG.debug('No such opt, {0}, so set it'.format(config_key))
                 setattr(CONF, config_key, conf.default[config_key])
+            except KeyError:
+                real_opt, real_group = CONF._find_deprecated_opts(config_key)
+                if '-' in real_opt:
+                    real_opt = real_opt.replace('-', '_')
+                CONF.set_override(real_opt, conf.default[real_opt])
 
         if defaults['log_file']:
             CONF.set_override('log_file', defaults['log_file'])
