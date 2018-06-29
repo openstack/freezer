@@ -248,7 +248,7 @@ class RsyncEngine(engine.BackupEngine):
         """
 
         if not old_file_meta:
-            raise StopIteration
+            return
 
         # If the ctime or mtime has changed, the delta is computed
         # data block is returned
