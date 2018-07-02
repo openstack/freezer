@@ -86,6 +86,11 @@ Further developer focused documentation is available at:
 Other Information
 -----------------
 
+Release notes for the project can be found at:
+
+- `Release notes
+  <https://docs.openstack.org/releasenotes/freezer/>`__
+
 During each `Summit`_ and `Project Team Gathering`_, we agree on what the whole
 community wants to focus on for the upcoming release. The plans for freezer can
 be found at:
