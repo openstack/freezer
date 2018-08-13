@@ -113,7 +113,7 @@ sphinxcontrib-websupport==1.0.1
 stestr==2.0.0
 stevedore==1.28.0
 tempest==17.1.0
-testrepository==0.0.18
+stestr==2.0.0
 testtools==2.2.0
 traceback2==1.4.0
 tzlocal==1.5.1

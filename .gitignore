@@ -15,7 +15,7 @@ coverage.xml
 *.py[co]
 .DS_Store
 *.log
-.testrepository
+.stestr/
 subunit.log
 .eggs
 AUTHORS
