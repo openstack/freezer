@@ -41,24 +41,24 @@ Install required packages first:
 
 .. code:: bash
 
-	sudo apt-get install python-dev python-pip git openssl gcc make automake
+    sudo apt-get install python-dev python-pip git openssl gcc make automake
 
 Clone proper branch of Freezer Client with git:
 
 .. code:: bash
 
-	git clone -b [branch] https://github.com/openstack/freezer.git
-	
+    git clone -b [branch] https://github.com/openstack/freezer.git
+
 Install requirements with pip:
 
 .. code:: bash
 
-	cd freezer/
-	
-	sudo pip install -r requirements.txt
-	
+    cd freezer/
+
+    sudo pip install -r requirements.txt
+
 Install freezer from source:
 
 .. code:: bash
 
-	sudo python setup.py install
+    sudo python setup.py install

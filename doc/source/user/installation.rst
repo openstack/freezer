@@ -38,33 +38,33 @@ Install required packages first:
 
 .. code:: bash
 
-	sudo apt-get install python-dev python-pip git openssl gcc make automake
+    sudo apt-get install python-dev python-pip git openssl gcc make automake
 
 For python3:
 
 .. code:: bash
 
-	sudo apt-get install python3-dev git openssl openssl-devel gcc make automake
+    sudo apt-get install python3-dev git openssl openssl-devel gcc make automake
 
 Clone proper branch of Freezer Client with git:
 
 .. code:: bash
 
-	git clone -b [branch] https://github.com/openstack/freezer.git
+    git clone -b [branch] https://github.com/openstack/freezer.git
 
 Install requirements with pip:
 
 .. code:: bash
 
-	cd freezer/
+    cd freezer/
 
-	sudo pip install -r requirements.txt
+    sudo pip install -r requirements.txt
 
 Install freezer from source:
 
 .. code:: bash
 
-	sudo python setup.py install
+    sudo python setup.py install
 
 Create ENV file:
 
@@ -115,35 +115,35 @@ Install required packages first:
 
 .. code:: bash
 
-	sudo yum install python-devel python-pip git openssl \
-	openssl-devel gcc make automake
+    sudo yum install python-devel python-pip git openssl \
+    openssl-devel gcc make automake
 
 For python3:
 
 .. code:: bash
 
-	sudo apt-get install python3-devel git openssl \
-	openssl-devel gcc make automake
+    sudo apt-get install python3-devel git openssl \
+    openssl-devel gcc make automake
 
 Clone proper branch of Freezer Client with git:
 
 .. code:: bash
 
-	git clone -b [branch] https://github.com/openstack/freezer.git
+    git clone -b [branch] https://github.com/openstack/freezer.git
 
 Install requirements with pip:
 
 .. code:: bash
 
-	cd freezer/
+    cd freezer/
 
-	sudo pip install -r requirements.txt
+    sudo pip install -r requirements.txt
 
 Install freezer from source:
 
 .. code:: bash
 
-	sudo python setup.py install
+    sudo python setup.py install
 
 
 Create ENV file:
@@ -214,8 +214,8 @@ After you have installed required packages install pip:
 
 .. code:: bash
 
-	easy_install -U pip
-	pip install freezer
+    easy_install -U pip
+    pip install freezer
 
 Freezer scheduler on windows run as a windows service and it needs to be installed as a user service:
 
@@ -223,11 +223,11 @@ Freezer scheduler on windows run as a windows service and it needs to be install
 
 .. code:: bash
 
-	whoami
+    whoami
 
-	cd C:\Python27\Lib\site-packages\freezer\scheduler
+    cd C:\Python27\Lib\site-packages\freezer\scheduler
 
-	python win_service.py --username {whoami} --password {pc-password} install
+    python win_service.py --username {whoami} --password {pc-password} install
 
 Unofficial Installer for Windows
 --------------------------------

@@ -8,7 +8,7 @@ Blueprint URL:
 Problem description
 ===================
 As a tenant, I need to use Freezer to backup all my data and metadata from an OS Cloud and restore it
-at my convenience. With this approach all the data can be restored on the same Cloud platform (in case anything went lost) or on an independent cloud (i.e. a new one freshly deployed on a different geographic location). 
+at my convenience. With this approach all the data can be restored on the same Cloud platform (in case anything went lost) or on an independent cloud (i.e. a new one freshly deployed on a different geographic location).
 
 Tenants needs to backup selectively all their resources from a the OS services.
 These resources/services are:

@@ -27,7 +27,7 @@ Scheduling information enables future/recurrent execution of jobs
 
 job document structure
 
-.. code-block:: none 
+.. code-block:: none
 
     "job": {
       "job_action":   { parameters for freezer to execute a specific action }
