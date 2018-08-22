@@ -1,0 +1,14 @@
+- project:
+    templates:
+      - openstack-python-jobs
+      - openstack-python35-jobs
+      - publish-openstack-sphinx-docs
+      - check-requirements
+      - release-notes-jobs
+    check:
+      jobs:
+        - openstack-tox-pylint
+    gate:
+      queue: freezer
+      jobs:
+        - openstack-tox-pylint
