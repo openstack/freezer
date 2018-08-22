@@ -1,12 +1,20 @@
 - project:
+    templates:
+      - openstack-python-jobs
+      - openstack-python35-jobs
+      - publish-openstack-sphinx-docs
+      - check-requirements
+      - release-notes-jobs
     check:
       jobs:
-        - freezer-ubuntu-xenial
+        - freezer-ubuntu-xenial:
+            voting: false
         - freezer-centos-7:
             voting: false
+        - openstack-tox-pylint
     gate:
       jobs:
-        - freezer-ubuntu-xenial
+        - openstack-tox-pylint
     experimental:
       jobs:
         - freezer-opensuse-423
