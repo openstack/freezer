@@ -14,10 +14,10 @@
         - freezer-opensuse-423
 
 - job:
-    name: freezer-ubuntu-xenial
+    name: freezer-legacy-dsvm-base
     parent: legacy-dsvm-base
-    run: playbooks/legacy/freezer-ubuntu-xenial/run.yaml
-    post-run: playbooks/legacy/freezer-ubuntu-xenial/post.yaml
+    run: playbooks/legacy/freezer/run.yaml
+    post-run: playbooks/legacy/freezer/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -26,33 +26,17 @@
       - openstack/freezer-web-ui
       - openstack/python-freezerclient
       - openstack/freezer-tempest-plugin
+
+- job:
+    name: freezer-ubuntu-xenial
+    parent: freezer-legacy-dsvm-base
 
 - job:
     name: freezer-centos-7
-    parent: legacy-dsvm-base
-    run: playbooks/legacy/freezer-centos-7/run.yaml
-    post-run: playbooks/legacy/freezer-centos-7/post.yaml
-    timeout: 7800
-    nodeset: legacy-centos-7
-    required-projects:
-      - openstack-infra/devstack-gate
-      - openstack/freezer
-      - openstack/freezer-api
-      - openstack/freezer-web-ui
-      - openstack/python-freezerclient
-      - openstack/freezer-tempest-plugin
+    parent: freezer-legacy-dsvm-base
+    nodeset: centos-7
 
 - job:
     name: freezer-opensuse-423
-    parent: legacy-dsvm-base
-    run: playbooks/legacy/freezer-opensuse-423/run.yaml
-    post-run: playbooks/legacy/freezer-opensuse-423/post.yaml
-    timeout: 7800
-    nodeset: legacy-opensuse-423
-    required-projects:
-      - openstack-infra/devstack-gate
-      - openstack/freezer
-      - openstack/freezer-api
-      - openstack/freezer-web-ui
-      - openstack/python-freezerclient
-      - openstack/freezer-tempest-plugin
+    parent: freezer-legacy-dsvm-base
+    nodeset: opensuse-423
