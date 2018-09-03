@@ -69,7 +69,7 @@ operating system vendor, it is often wise to use their own bug tracker for
 reporting problems. In all other cases use the master OpenStack bug tracker,
 available at:
 
-- `Bug Tracker <https://bugs.launchpad.net/freezer>`__
+- `Bug Tracker <https://storyboard.openstack.org/#!/project/openstack/freezer>`__
 
 Developers
 ----------
