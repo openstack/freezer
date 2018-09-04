@@ -249,7 +249,10 @@ class BackupEngine(object):
         max_level = max(backups.keys())
 
         # Use SimpleQueue because Queue does not work on Mac OS X.
-        read_except_queue = queues.SimpleQueue()
+        if six.PY2:
+            read_except_queue = queues.SimpleQueue()
+        else:
+            read_except_queue = multiprocessing.SimpleQueue()
         LOG.info("Restoring backup {0}".format(hostname_backup_name))
         for level in range(0, max_level + 1):
             LOG.info("Restoring from level {0}".format(level))
@@ -266,7 +269,10 @@ class BackupEngine(object):
             # Start the tar pipe consumer process
 
             # Use SimpleQueue because Queue does not work on Mac OS X.
-            write_except_queue = queues.SimpleQueue()
+            if six.PY2:
+                write_except_queue = queues.SimpleQueue()
+            else:
+                write_except_queue = multiprocessing.SimpleQueue()
 
             engine_stream = multiprocessing.Process(
                 target=self.restore_level,

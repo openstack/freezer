@@ -69,7 +69,10 @@ class AdminOs(object):
                                                          start_time > timeout):
                 LOG.error("Delete backup %s failed, In a state of"
                           "deleting over 120s")
-                raise
+                raise Exception(
+                    "Delete backup %s failed due to timeout over 120s, "
+                    "the status of backup is %s."
+                    % (backup_id, del_backup[0].status))
         timer = loopingcall.FixedIntervalLoopingCall(wait_del_backup)
         timer.start(interval=0.5).wait()
 
