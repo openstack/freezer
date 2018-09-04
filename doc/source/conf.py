@@ -39,7 +39,7 @@ import sys
 # They can be extensions coming with Sphinx (named 'sphinx.ext.*')
 # or your custom ones.
 
-extensions = ['sphinx.ext.autodoc',
+extensions = ['sphinxcontrib.apidoc',
               'openstackdocstheme',
               'oslo_config.sphinxconfiggen',
               'oslo_config.sphinxext'
@@ -56,6 +56,13 @@ sample_config_basename = '_static/freezer'
 #    extensions += ['ext.freezer_autodoc']
 
 todo_include_todos = True
+
+# sphinxcontrib.apidoc options
+apidoc_module_dir = '../../freezer'
+apidoc_output_dir = 'reference/api'
+apidoc_excluded_paths = [
+    'scheduler/win*']
+apidoc_separate_modules = True
 
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = []

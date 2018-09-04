@@ -32,9 +32,9 @@ from freezer.utils import utils as freezer_utils
 from freezer.utils import winutils
 
 if winutils.is_windows():
-    import win_daemon
+    from freezer.scheduler import win_daemon
 else:
-    import daemon as linux_daemon
+    from freezer.scheduler import daemon as linux_daemon
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
