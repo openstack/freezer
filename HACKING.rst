@@ -30,12 +30,12 @@ oslo.config
 
 - After adding new options to freezer-scheduler please use the following command to update the sample configuration file::
 
-    oslo-config-generator --config-file config-generator/scheduler.conf
+    oslo-config-generator --config-file etc/config-generator.conf
 
 - If you added support for a new oslo library, you have to edit the following file adding a new namespace for the new oslo library:
 for example adding oslo.db::
 
-    # edit config-generator/scheduler.conf
+    # edit etc/config-generator.conf
     [DEFAULT]
     output_file = etc/scheduler.conf.sample
     wrap_width = 79

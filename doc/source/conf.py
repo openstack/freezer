@@ -46,7 +46,7 @@ extensions = ['sphinxcontrib.apidoc',
               ]
 
 config_generator_config_file = (
-    '../../config-generator/scheduler.conf')
+    '../../etc/config-generator.conf')
 sample_config_basename = '_static/freezer'
 
 # autodoc generation is a bit aggressive and a nuisance

@@ -586,7 +586,7 @@ To get an updated sample of freezer-scheduler configuration you the following co
 
 .. code:: bash
 
-    oslo-config-generator --config-file config-generator/scheduler.conf
+    oslo-config-generator --config-file etc/config-generator.conf
 
 Update sample file will be generated in etc/scheduler.conf.sample
 
