@@ -566,6 +566,7 @@ def get_backup_args():
         defaults.update(conf.default)
         for config_key in conf.default.keys():
             try:
+                CONF.get(config_key)
                 CONF.set_override(config_key, conf.default[config_key])
             except NoSuchOptError:
                 LOG.debug('No such opt, {0}, so set it'.format(config_key))
