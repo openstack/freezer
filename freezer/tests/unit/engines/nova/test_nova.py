@@ -107,7 +107,8 @@ class TestNovaEngineSwiftStorage(TestNovaEngine):
             self.mock_swift_storage.storage_path,
             "project_test-project-id",
             self.instance_ids_str)
-        self.engine.backup.assert_has_calls(self.expected_backup_calls)
+        self.engine.backup.assert_has_calls(self.expected_backup_calls,
+                                            any_order=True)
 
     def test_restore_nova_tenant_from_swift_storage(self):
         self.engine.restore_nova_tenant(self.project_id,
@@ -119,7 +120,8 @@ class TestNovaEngineSwiftStorage(TestNovaEngine):
         self.mock_swift_connection.get_object.assert_called_with(
             self.mock_swift_storage.storage_path,
             "project_test-project-id")
-        self.engine.restore.assert_has_calls(self.expected_restore_calls)
+        self.engine.restore.assert_has_calls(self.expected_restore_calls,
+                                             any_order=True)
 
 
 @ddt.ddt
@@ -160,7 +162,8 @@ class TestNovaEngineFSLikeStorage(TestNovaEngine):
             self.local_backup_file,
             'wb')
         self.mock_file.write.assert_called_once_with(self.instance_ids_str)
-        self.engine.backup.assert_has_calls(self.expected_backup_calls)
+        self.engine.backup.assert_has_calls(self.expected_backup_calls,
+                                            any_order=True)
 
     @ddt.data('local', 'ssh')
     def test_restore_nova_tenant_from_fslike_storage(self,
@@ -175,7 +178,8 @@ class TestNovaEngineFSLikeStorage(TestNovaEngine):
             self.local_backup_file,
             'rb')
         self.mock_file.readline.assert_called_once_with()
-        self.engine.restore.assert_has_calls(self.expected_restore_calls)
+        self.engine.restore.assert_has_calls(self.expected_restore_calls,
+                                             any_order=True)
 
 
 class TestNovaEngineS3Storage(TestNovaEngine):
@@ -210,7 +214,8 @@ class TestNovaEngineS3Storage(TestNovaEngine):
                 self.mock_s3_storage.get_object_prefix()),
             data=self.instance_ids_str
         )
-        self.engine.backup.assert_has_calls(self.expected_backup_calls)
+        self.engine.backup.assert_has_calls(self.expected_backup_calls,
+                                            any_order=True)
 
     def test_restore_nova_tenant_from_s3_storage(self):
         self.engine.restore_nova_tenant(self.project_id,
@@ -224,4 +229,5 @@ class TestNovaEngineS3Storage(TestNovaEngine):
                 self.mock_s3_storage.get_object_prefix()
             )
         )
-        self.engine.restore.assert_has_calls(self.expected_restore_calls)
+        self.engine.restore.assert_has_calls(self.expected_restore_calls,
+                                             any_order=True)
