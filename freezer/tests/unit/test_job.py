@@ -60,13 +60,6 @@ class TestBackupJob(TestJob):
         job = jobs.BackupJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)  # noqa
 
-    def test_execute_raise(self):
-        backup_opt = commons.BackupOpt1()
-        backup_opt.no_incremental = False
-        backup_opt.mode = None
-        job = jobs.BackupJob(backup_opt, backup_opt.storage)
-        self.assertRaises(ValueError, job.execute)  # noqa
-
 
 class TestAdminJob(TestJob):
     def setUp(self):
