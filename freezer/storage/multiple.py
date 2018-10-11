@@ -119,6 +119,19 @@ class MultipleStorage(base.Storage):
         # TODO(DEKLAN): Need to implement.
         pass
 
+    def create_dirs(self, path):
+        for storage in self.storages:
+            storage.create_dirs(path)
+
+    def put_metadata(self,
+                     engine_metadata_path,
+                     freezer_metadata_path,
+                     backup):
+        for storage in self.storages:
+            storage.put_metadata(engine_metadata_path,
+                                 freezer_metadata_path,
+                                 backup)
+
 
 class StorageManager(object):
 
