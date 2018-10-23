@@ -303,7 +303,8 @@ def validate_lvm_params(backup_opt_dict):
 
 
 def _umount(path):
-    if os.getcwd().startswith(path):
+    # Change dir if we are within the mount point to be removed.
+    if os.getcwd().startswith(os.path.normpath(path)):
         os.chdir('/')
     umount_proc = subprocess.Popen('{0} -l -f {1}'.format(
         utils.find_executable('umount'), path),
