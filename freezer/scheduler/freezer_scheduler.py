@@ -151,9 +151,8 @@ class FreezerScheduler(object):
 
     def create_job(self, job_doc):
         job = scheduler_job.Job.create(self, self.freezerc_executable, job_doc)
-        if job:
-            self.jobs[job.id] = job
-            LOG.info("Created job {0}".format(job.id))
+        self.jobs[job.id] = job
+        LOG.info("Created job {0}".format(job.id))
         return job
 
     def poll(self):
@@ -170,13 +169,13 @@ class FreezerScheduler(object):
             job_id = job_doc['job_id']
             work_job_id_list.append(job_id)
             job = self.jobs.get(job_id, None) or self.create_job(job_doc)
-            if job:
-                # check for abort status
-                if job_doc['job_schedule']['event'] == 'abort':
-                    pid = int(job_doc['job_schedule']['current_pid'])
-                    utils.terminate_subprocess(pid, 'freezer-agent')
 
-                job.process_event(job_doc)
+            # check for abort status
+            if job_doc['job_schedule']['event'] == 'abort':
+                pid = int(job_doc['job_schedule']['current_pid'])
+                utils.terminate_subprocess(pid, 'freezer-agent')
+
+            job.process_event(job_doc)
 
         # request removal of any job that has been removed in the api
         for job_id, job in self.jobs.items():
