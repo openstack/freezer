@@ -115,9 +115,6 @@ def lvm_snap(backup_opt_dict):
             "{0}/mount_{1}".format(freezer_config.DEFAULT_LVM_MOUNT_BASEDIR,
                                    lvm_uuid)
 
-    backup_opt_dict.path_to_backup = os.path.join(backup_opt_dict.lvm_dirmount,
-                                                  lvm_info['snap_path'])
-
     if not validate_lvm_params(backup_opt_dict):
         LOG.info('No LVM requested/configured')
         return False
@@ -185,6 +182,12 @@ def lvm_snap(backup_opt_dict):
         LOG.warning(
             'Volume {0} successfully mounted on {1}'.format(
                 abs_snap_name, backup_opt_dict.lvm_dirmount))
+
+    # After snapshot is mounted, adjust path_to_backup according the mount
+    # point and relative path of the snapshot volume.
+    lvm_info = get_lvm_info(backup_opt_dict.path_to_backup)
+    backup_opt_dict.path_to_backup = os.path.join(backup_opt_dict.lvm_dirmount,
+                                                  lvm_info['snap_path'])
 
     return True
 
