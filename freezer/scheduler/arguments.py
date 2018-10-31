@@ -180,11 +180,6 @@ def build_os_options():
                         '(e.g. with username & password). Defaults '
                         'to env[OS_TOKEN].',
                    dest='os_token'),
-        cfg.StrOpt('os-identity-api-version',
-                   default=env('OS_IDENTITY_API_VERSION'),
-                   help='Identity API version: 2.0 or 3. '
-                        'Defaults to env[OS_IDENTITY_API_VERSION]',
-                   dest='os_identity_api_version'),
         cfg.StrOpt('os-endpoint-type',
                    choices=['public', 'publicURL', 'internal', 'internalURL',
                             'admin', 'adminURL'],
