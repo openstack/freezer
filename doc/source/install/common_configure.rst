@@ -156,6 +156,17 @@
         connection = mysql+pymysql://root:stack@127.0.0.1/freezer?charset=utf8
 
 
+   * Currently, `Freezer API v2 <https://developer.openstack.org/api-ref/backup/v2/>`_
+     is enabled and used by default. If you want to use
+     `Freezer API v1 <https://developer.openstack.org/api-ref/backup/v1/>`_
+     instead, manually activate it in the [DEFAULT] section:
+
+    .. code-block:: ini
+
+       [DEFAULT]
+       ...
+       enable_v1_api=True
+
 Start elasticsearch
 -------------------
 
