@@ -208,7 +208,13 @@ def main():
     apiclient = None
     if CONF.no_api is False:
         try:
-            apiclient = client_utils.get_client_instance(opts=CONF)
+            if CONF.enable_v1_api:
+                apiclient = client_utils.get_client_instance(opts=CONF,
+                                                             api_version='1')
+            else:
+                apiclient = client_utils.get_client_instance(opts=CONF,
+                                                             api_version='2')
+
             if CONF.client_id:
                 apiclient.client_id = CONF.client_id
         except Exception as e:

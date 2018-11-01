@@ -101,6 +101,12 @@ def get_common_opts():
                    dest='concurrent_jobs',
                    help='Number of jobs that can be executed at the'
                         ' same time'),
+        cfg.BoolOpt('enable-v1-api',
+                    default=False,
+                    dest='enable_v1_api',
+                    help='Use freezer-api v1 interface if enable_v1_api'
+                         ' is set as True, otherwise use freezer-api'
+                         ' v2 interface'),
     ]
 
     return _COMMON
