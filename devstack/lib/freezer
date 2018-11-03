@@ -69,7 +69,7 @@ function configure_freezer_scheduler {
     sudo chown $STACK_USER $FREEZER_CONF_DIR
 
     # enable debug
-    iniset $FREEZER_CONF_FILE 'DEFAULT' debug True
+    #iniset $FREEZER_CONF_FILE 'DEFAULT' debug True
 
     [ ! -d $FREEZER_JOBS_DIR ] && sudo mkdir -m 755 -p $FREEZER_JOBS_DIR
     sudo chown $STACK_USER $FREEZER_JOBS_DIR
