@@ -27,6 +27,16 @@ Configure the scheduler
 2. Edit the ``/etc/freezer/scheduler.conf`` file and complete the following
    actions:
 
+   There are two kinds of api interface, v1 and v2.
+
+   There are two kinds of configurations:
+
+      ``notes:``
+
+      Default configuration is freezer api v2.
+
+   ``Configuration1``: freezer-api is started by v1 interface:
+
    * In the ``[DEFAULT]`` section, configure database access:
 
      The ``client_id`` has to be set to the hostname of the machine. It will be
@@ -38,6 +48,23 @@ Configure the scheduler
         ...
         client_id = hostname_of_machine
         jobs_dir = /etc/freezer/scheduler/conf.d
+        enable_v1_api = True
+
+   ``Configuration2``: freezer-api is started by v2 interface:
+
+   * In the ``[DEFAULT]`` section, configure database access:
+
+     The ``client_id`` has to be set to the hostname of the machine. It will be
+     used as an identifier for this node to fetch its scheduled backups
+
+     .. code-block:: ini
+
+        [DEFAULT]
+        ...
+        client_id = hostname_of_machine
+        jobs_dir = /etc/freezer/scheduler/conf.d
+        #enable_v1_api = False
+
 
 3. Start ``freezer-scheduler``
 
@@ -45,3 +72,4 @@ Configure the scheduler
 
    $ . admin-openrc
    $ sudo freezer-scheduler --config-file /etc/freezer/scheduler.conf start
+
