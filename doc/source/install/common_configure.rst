@@ -8,21 +8,51 @@
 3. Edit the ``/etc/freezer/freezer-api.conf`` file and complete the following
    actions:
 
+   There are two kinds of api interface, v1 and v2.
+
+   There are two kinds of database drivers, elasticsearch and Sqlalchemy.
+
+   There are four kinds of combinations between api interface and database
+   drivers:
+
+           ==============  ===========  ===============
+           configuration   freezer api  database driver
+           ==============  ===========  ===============
+           configuration1  v1           elasticsearch
+           configuration2  v2           elasticsearch
+           configuration3  v1           sqlalchemy
+           configuration4  v2           sqlalchemy
+           ==============  ===========  ===============
+
+          ``notes:``
+
+          Default configuration is freezer api v2 and elasticsearch.
+
+   ``Configuration1``: api v1 interface and elasticsearch:
+
+   * In the ``[DEFAULT]`` section, configure api interface type:
+
+     .. code-block:: ini
+
+        [DEFAULT]
+        ...
+        enable_v1_api = True
+
    * In the ``[storage]`` section, configure database access:
 
      .. code-block:: ini
 
         [storage]
         ...
-        backend = elasticv2
-        driver = freezer_api.storage.elasticv2.ElasticSearchEngineV2
+        backend = elasticsearch
+        driver = elasticsearch
 
-   * In the ``[elasticv2]`` section, configure elasticsearch access:
-     You might need to create the elasticv2 section first.
+   * In the ``[elasticsearch]`` section, configure elasticsearch access:
+     You might need to create the elasticsearch section first.
 
      .. code-block:: ini
 
-        [elasticv2]
+        [elasticsearch]
         ...
         hosts=http://localhost:9200
         index=freezer
@@ -32,6 +62,99 @@
         timeout=60
         retries=20
         number_of_replicas = 1
+
+   ``Configuration2``: api v2 interface and elasticsearch:
+
+   * In the ``[DEFAULT]`` section, configure api interface type:
+
+     .. code-block:: ini
+
+        [DEFAULT]
+        ...
+        #enable_v1_api = True
+
+   * In the ``[storage]`` section, configure database access:
+
+     .. code-block:: ini
+
+        [storage]
+        ...
+        backend = elasticsearch
+        driver = elasticsearch
+
+   * In the ``[elasticsearch]`` section, configure elasticsearch access:
+     You might need to create the elasticsearch section first.
+
+     .. code-block:: ini
+
+        [elasticsearch]
+        ...
+        hosts=http://localhost:9200
+        index=freezer
+        use_ssl=False
+        ca_certs=''
+        use_ssl=False
+        timeout=60
+        retries=20
+        number_of_replicas = 1
+
+   ``Configuration3``: api v1 interface and sqlalchemy:
+
+   * In the ``[DEFAULT]`` section, configure api interface type:
+
+     .. code-block:: ini
+
+        [DEFAULT]
+        ...
+        enable_v1_api = True
+
+   * In the ``[storage]`` section, configure database access:
+
+     .. code-block:: ini
+
+        [storage]
+        ...
+        backend = sqlalchemy
+        driver = sqlalchemy
+
+   * In the ``[database]`` section, configure sqlalchemy access:
+
+     You might need to create the database section first.
+
+     .. code-block:: ini
+
+        [database]
+        ...
+        connection = mysql+pymysql://root:stack@127.0.0.1/freezer?charset=utf8
+
+   ``Configuration4``: api v2 interface and sqlalchemy:
+
+   * In the ``[DEFAULT]`` section, configure api interface type:
+
+     .. code-block:: ini
+
+        [DEFAULT]
+        ...
+        #enable_v1_api = True
+
+   * In the ``[storage]`` section, configure database access:
+
+     .. code-block:: ini
+
+        [storage]
+        ...
+        backend = sqlalchemy
+        driver = sqlalchemy
+
+   * In the ``[database]`` section, configure sqlalchemy access:
+     You might need to create the database section first.
+
+     .. code-block:: ini
+
+        [database]
+        ...
+        connection = mysql+pymysql://root:stack@127.0.0.1/freezer?charset=utf8
+
 
 Start elasticsearch
 -------------------
@@ -181,3 +304,4 @@ Install and configure freezer-scheduler/agent
 ---------------------------------------------
 
 .. include:: install_agent.rst
+
