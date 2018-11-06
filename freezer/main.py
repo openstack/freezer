@@ -153,7 +153,7 @@ def run_job(conf, storage):
     LOG.info('Job time Elapsed: {0}'.format(end_time - start_time))
     LOG.info('Backup metadata received: {0}'.format(json.dumps(response)))
     if not conf.quiet:
-        LOG.info("End freezer agent process successfully")
+        LOG.info("Run freezer agent process successfully")
 
     if conf.metadata_out and response:
         if conf.metadata_out == '-':
@@ -250,7 +250,7 @@ def main():
     except Exception as err:
         quiet = backup_args.quiet if backup_args else False
         LOG.exception(err)
-        LOG.critical("End freezer agent process unsuccessfully")
+        LOG.critical("Run freezer agent process unsuccessfully")
         return fail(1, err, quiet)
 
 if __name__ == '__main__':
