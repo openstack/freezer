@@ -13,12 +13,14 @@
             voting: false
         - openstack-tox-lower-constraints
         - openstack-tox-pylint
+        - freezer-tempest-scheduler
     gate:
       queue: freezer
       jobs:
         - freezer-ubuntu-xenial
         - openstack-tox-lower-constraints
         - openstack-tox-pylint
+        - freezer-tempest-scheduler
     experimental:
       jobs:
         - freezer-opensuse-423
