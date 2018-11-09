@@ -13,6 +13,7 @@
             voting: false
         - openstack-tox-lower-constraints
         - openstack-tox-pylint
+        - freezer-tempest-agent
         - freezer-tempest-scheduler
     gate:
       queue: freezer
@@ -20,6 +21,7 @@
         - freezer-ubuntu-xenial
         - openstack-tox-lower-constraints
         - openstack-tox-pylint
+        - freezer-tempest-agent
         - freezer-tempest-scheduler
     experimental:
       jobs:
