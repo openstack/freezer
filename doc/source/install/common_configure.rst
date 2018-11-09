@@ -93,7 +93,6 @@
         index=freezer
         use_ssl=False
         ca_certs=''
-        use_ssl=False
         timeout=60
         retries=20
         number_of_replicas = 1
