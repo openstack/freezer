@@ -32,3 +32,4 @@ ChangeLog
 # Coverage data
 .coverage.*
 releasenotes/build
+doc/source/_static/*.sample
