@@ -25,7 +25,7 @@
         - freezer-tempest-scheduler
     experimental:
       jobs:
-        - freezer-opensuse-423
+        - freezer-opensuse-150
 
 - job:
     name: freezer-legacy-dsvm-base
@@ -51,6 +51,6 @@
     nodeset: centos-7
 
 - job:
-    name: freezer-opensuse-423
+    name: freezer-opensuse-150
     parent: freezer-legacy-dsvm-base
-    nodeset: opensuse-423
+    nodeset: opensuse-150
