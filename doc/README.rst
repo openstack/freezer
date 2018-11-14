@@ -930,6 +930,7 @@ Available options::
     usage: freezer-agent [-h] [--action ACTION] [--always-level ALWAYS_LEVEL]
                      [--backup-name BACKUP_NAME]
                      [--cinder-vol-id CINDER_VOL_ID]
+                     [--cinder-vol-name CINDER_VOL_NAME]
                      [--cindernative-vol-id CINDERNATIVE_VOL_ID]
                      [--command COMMAND] [--compression COMPRESSION]
                      [--config CONFIG] [--config-dir DIR] [--config-file PATH]
@@ -955,6 +956,7 @@ Available options::
                      [--nodry-run] [--noinsecure] [--nooverwrite] [--noquiet]
                      [--nouse-syslog] [--nouse-syslog-rfc-format]
                      [--nova-inst-id NOVA_INST_ID] [--noverbose]
+                     [--nova-inst-name NOVA_INST_NAME]
                      [--nowatch-log-file]
                      [--os-identity-api-version OS_IDENTITY_API_VERSION]
                      [--overwrite] [--path-to-backup PATH_TO_BACKUP]
@@ -993,6 +995,8 @@ optional arguments:
                         backup on Swift
   --cinder-vol-id CINDER_VOL_ID
                         Id of cinder volume for backup
+  --cinder-vol-name CINDER_VOL_NAME
+                        Name of cinder volume for backup
   --cindernative-vol-id CINDERNATIVE_VOL_ID
                         Id of cinder volume for native backup
   --command COMMAND     Command executed by exec action
@@ -1126,6 +1130,8 @@ optional arguments:
                         The inverse of --use-syslog-rfc-format
   --nova-inst-id NOVA_INST_ID
                         Id of nova instance for backup
+  --nova-inst-name NOVA_INST_NAME
+                        Name of nova instance for backup
   --noverbose           The inverse of --verbose
   --nowatch-log-file    The inverse of --watch-log-file
   --os-identity-api-version OS_IDENTITY_API_VERSION, --os_auth_ver OS_IDENTITY_API_VERSION

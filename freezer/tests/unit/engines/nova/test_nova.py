@@ -45,7 +45,13 @@ class TestNovaEngine(commons.FreezerBaseTestCase):
         super(TestNovaEngine, self).setUp()
         self.backup_opt = commons.BackupOpt1()
         self.project_id = "test-project-id"
+        self.instance_names = ["instance-1", "instance-2", "instance-3"]
+        if self.instance_names:
+            self.instance_ids = [server for server in
+                                 self.instance_names
+                                 if server == self.backup_opt.nova_inst_name]
         self.instance_ids = ["instance-id-1", "instance-id-2", "instance-id-3"]
+
         self.instance_ids_str = json.dumps(self.instance_ids)
         servers_list = [FakeServer(instance_id) for instance_id in
                         self.instance_ids]

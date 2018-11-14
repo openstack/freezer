@@ -566,6 +566,14 @@ OPTIONS
   Id of cinder volume for backup
 
 
+.. oslo.config:option:: cinder_vol_name
+
+  :Type: string
+  :Default:
+
+  Name of cinder volume for backup
+
+
 .. oslo.config:option:: cinderbrick_vol_id
 
   :Type: string
@@ -596,6 +604,14 @@ OPTIONS
   :Default:
 
   Id of nova instance for backup
+
+
+.. oslo.config:option:: nova_inst_name
+
+  :Type: string
+  :Default:
+
+  Name of nova instance for backup
 
 
 .. oslo.config:option:: project_id

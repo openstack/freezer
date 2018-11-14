@@ -336,9 +336,11 @@ class BackupOpt1(object):
         self.download_limit = -1
         self.sql_server_instance = 'Sql Server'
         self.cinder_vol_id = ''
+        self.cinder_vol_name = ''
         self.cindernative_vol_id = ''
         self.cindernative_backup_id = ''
         self.nova_inst_id = ''
+        self.nova_inst_name = ''
         self.lvm_snapperm = 'ro'
 
         self.compression = 'gzip'

@@ -15,6 +15,7 @@
 
 
 import abc
+from concurrent import futures
 import datetime
 import os
 import sys
@@ -25,6 +26,7 @@ from oslo_log import log
 from oslo_utils import importutils
 import six
 
+from freezer.common import client_manager
 from freezer.openstack import admin
 from freezer.openstack import backup
 from freezer.openstack import restore
@@ -48,8 +50,21 @@ class Job(object):
         self.conf = conf_dict
         self.storage = storage
         self.engine = conf_dict.engine
+        self.client = client_manager.get_client_manager(CONF)
+        self.nova = self.client.get_nova()
+        self.cinder = self.client.get_cinder()
         self._general_validation()
         self._validate()
+        if self.conf.nova_inst_name:
+            self.nova_instance_ids = [server.id for server in
+                                      self.nova.servers.list(detailed=False)
+                                      if server.name ==
+                                      self.conf.nova_inst_name]
+        if self.conf.cinder_vol_name:
+            self.cinder_vol_ids = [volume.id for volume in
+                                   self.cinder.volumes.list()
+                                   if volume.name ==
+                                   self.conf.cinder_inst_name]
 
     @abc.abstractmethod
     def _validate(self):
@@ -124,13 +139,15 @@ class BackupJob(Job):
             if not self.conf.no_incremental:
                 raise ValueError("Incremental nova backup is not supported")
 
-            if not self.conf.nova_inst_id and not self.conf.project_id:
-                raise ValueError("nova-inst-id or project-id"
+            if not self.conf.nova_inst_id and not self.conf.project_id \
+                    and not self.conf.nova_inst_name:
+                raise ValueError("nova-inst-id or project-id or nova-inst-name"
                                  " argument must be provided")
 
         if self.conf.mode == 'cinder':
-            if not self.conf.cinder_vol_id:
-                raise ValueError("cinder-vol-id argument must be provided")
+            if not self.conf.cinder_vol_id and not self.conf.cinder_vol_name:
+                raise ValueError("cinder-vol-id or cinder-vol-name argument "
+                                 "must be provided")
 
         if self.conf.mode == "cindernative":
             if not self.conf.cindernative_vol_id:
@@ -266,9 +283,11 @@ class BackupJob(Job):
                     max_level=self.conf.max_level,
                     always_level=self.conf.always_level,
                     restart_always_level=self.conf.restart_always_level)
-            else:
+
+            elif self.conf.nova_inst_id:
                 LOG.info('Executing nova backup. Instance ID: {0}'.format(
                     self.conf.nova_inst_id))
+
                 hostname_backup_name = os.path.join(
                     self.conf.hostname_backup_name,
                     self.conf.nova_inst_id)
@@ -280,6 +299,25 @@ class BackupJob(Job):
                     always_level=self.conf.always_level,
                     restart_always_level=self.conf.restart_always_level)
 
+            else:
+                executor = futures.ThreadPoolExecutor(
+                    max_workers=len(self.nova_instance_ids))
+                futures_list = []
+                for instance_id in self.nova_instance_ids:
+                    hostname_backup_name = os.path.join(
+                        self.conf.hostname_backup_name, instance_id)
+                    futures_list.append(executor.submit(
+                        self.engine.backup(
+                            backup_resource=instance_id,
+                            hostname_backup_name=hostname_backup_name,
+                            no_incremental=self.conf.no_incremental,
+                            max_level=self.conf.max_level,
+                            always_level=self.conf.always_level,
+                            restart_always_level=self.conf.restart_always_level
+                        )))
+
+                futures.wait(futures_list, CONF.timeout)
+
         elif backup_media == 'cindernative':
             LOG.info('Executing cinder native backup. Volume ID: {0}, '
                      'incremental: {1}'.format(self.conf.cindernative_vol_id,
@@ -288,9 +326,22 @@ class BackupJob(Job):
                                     name=self.conf.backup_name,
                                     incremental=self.conf.incremental)
         elif backup_media == 'cinder':
-            LOG.info('Executing cinder snapshot. Volume ID: {0}'.format(
-                self.conf.cinder_vol_id))
-            backup_os.backup_cinder_by_glance(self.conf.cinder_vol_id)
+            if self.conf.cinder_vol_id:
+                LOG.info('Executing cinder snapshot. Volume ID: {0}'.format(
+                    self.conf.cinder_vol_id))
+                backup_os.backup_cinder_by_glance(self.conf.cinder_vol_id)
+            else:
+                executor = futures.ThreadPoolExecutor(
+                    max_workers=len(self.cinder_vol_ids))
+                futures_list = []
+                for instance_id in self.cinder_vol_ids:
+                    LOG.info('Executing cinder snapshot. Volume ID:'
+                             ' {0}'.format(instance_id))
+                    futures_list.append(executor.submit(
+                        backup_os.backup_cinder_by_glance(instance_id)))
+
+                futures.wait(futures_list, CONF.timeout)
+
         elif backup_media == 'cinderbrick':
             LOG.info('Executing cinder volume backup using os-brick. '
                      'Volume ID: {0}'.format(self.conf.cinderbrick_vol_id))
@@ -311,7 +362,9 @@ class RestoreJob(Job):
     def _validate(self):
         if not any([self.conf.restore_abs_path,
                     self.conf.nova_inst_id,
+                    self.conf.nova_inst_name,
                     self.conf.cinder_vol_id,
+                    self.conf.cinder_vol_name,
                     self.conf.cindernative_vol_id,
                     self.conf.cinderbrick_vol_id,
                     self.conf.project_id]):
@@ -366,7 +419,8 @@ class RestoreJob(Job):
                     hostname_backup_name=self.conf.hostname_backup_name,
                     overwrite=conf.overwrite,
                     recent_to_date=restore_timestamp)
-            else:
+
+            elif conf.nova_inst_id:
                 LOG.info("Restoring nova backup. Instance ID: {0}, "
                          "timestamp: {1} network-id {2}".format(
                              conf.nova_inst_id,
@@ -382,11 +436,36 @@ class RestoreJob(Job):
                     recent_to_date=restore_timestamp,
                     backup_media=conf.mode)
 
+            else:
+                for instance_id in self.nova_instance_ids:
+                    LOG.info("Restoring nova backup. Instance ID: {0}, "
+                             "timestamp: {1} network-id {2}".format(
+                                 instance_id, restore_timestamp,
+                                 conf.nova_restore_network))
+                    hostname_backup_name = os.path.join(
+                        self.conf.hostname_backup_name, instance_id)
+                    self.engine.restore(
+                        hostname_backup_name=hostname_backup_name,
+                        restore_resource=instance_id,
+                        overwrite=conf.overwrite,
+                        recent_to_date=restore_timestamp,
+                        backup_media=conf.mode)
+
         elif conf.backup_media == 'cinder':
-            LOG.info("Restoring cinder backup from glance. Volume ID: {0}, "
-                     "timestamp: {1}".format(conf.cinder_vol_id,
-                                             restore_timestamp))
-            res.restore_cinder_by_glance(conf.cinder_vol_id, restore_timestamp)
+            if conf.cinder_vol_id:
+                LOG.info("Restoring cinder backup from glance. "
+                         "Volume ID: {0}, timestamp: {1}".format(
+                             conf.cinder_vol_id,
+                             restore_timestamp))
+                res.restore_cinder_by_glance(conf.cinder_vol_id,
+                                             restore_timestamp)
+            else:
+                for instance_id in self.cinder_vol_ids:
+                    LOG.info("Restoring cinder backup from glance. "
+                             "Volume ID: {0}, timestamp: {1}".format(
+                                 instance_id, restore_timestamp))
+                    res.restore_cinder_by_glance(instance_id,
+                                                 restore_timestamp)
         elif conf.backup_media == 'cindernative':
             LOG.info("Restoring cinder native backup. Volume ID {0}, Backup ID"
                      " {1}, timestamp: {2}".format(conf.cindernative_vol_id,
@@ -440,13 +519,24 @@ class AdminJob(Job):
             timestamp = int(time.mktime(timestamp.timetuple()))
 
         if self.conf.backup_media == 'cinder':
-            old_backups = self.get_cinder_old_backups(
-                timestamp,
-                self.conf.cinder_vol_id
-            )
-            self.remove_backup_dirs(old_backups, self.conf.cinder_vol_id)
-            return {}
+            if self.conf.cinder_vol_id:
+                old_backups = self.get_cinder_old_backups(
+                    timestamp,
+                    self.conf.cinder_vol_id
+                )
+                self.remove_backup_dirs(old_backups,
+                                        self.conf.cinder_vol_id)
+                return {}
 
+            else:
+                for instance_id in self.cinder_vol_ids:
+                    old_backups = self.get_cinder_old_backups(
+                        timestamp,
+                        instance_id
+                    )
+                    self.remove_backup_dirs(old_backups,
+                                            instance_id)
+                    return {}
         hostname_backup_name_set = set()
 
         if self.conf.backup_media == 'nova':
@@ -457,11 +547,19 @@ class AdminJob(Job):
                     hostname_backup_name = os.path.join(
                         self.conf.hostname_backup_name, instance_id)
                     hostname_backup_name_set.add(hostname_backup_name)
-            else:
+
+            elif self.conf.nova_inst_id:
                 hostname_backup_name = os.path.join(
                     self.conf.hostname_backup_name,
                     self.conf.nova_inst_id)
                 hostname_backup_name_set.add(hostname_backup_name)
+
+            else:
+                for instance_id in self.nova_instance_ids:
+                    hostname_backup_name = os.path.join(
+                        self.conf.hostname_backup_name,
+                        instance_id)
+                    hostname_backup_name_set.add(hostname_backup_name)
         else:
             hostname_backup_name_set.add(self.conf.hostname_backup_name)
 
