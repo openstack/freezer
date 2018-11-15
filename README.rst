@@ -83,6 +83,10 @@ Further developer focused documentation is available at:
 - `Official Client Documentation
   <https://docs.openstack.org/python-freezerclient/latest/>`__
 
+Contributors are encouraged to join IRC (``#openstack-freezer`` on freenode):
+
+- `IRC <https://wiki.openstack.org/wiki/IRC>`__
+
 Other Information
 -----------------
 
