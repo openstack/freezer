@@ -213,12 +213,22 @@ def storage_from_dict(backup_args, max_segment_size):
             storage_path=container,
             max_segment_size=max_segment_size)
     elif storage_name == "ssh":
-        storage = ssh.SshStorage(
-            container,
-            backup_args['ssh_key'], backup_args['ssh_username'],
-            backup_args['ssh_host'],
-            int(backup_args['ssh_port']),
-            max_segment_size=max_segment_size)
+        if backup_args['ssh_password']:
+            storage = ssh.SshStorage(
+                container,
+                backup_args['ssh_username'],
+                backup_args['ssh_host'],
+                int(backup_args['ssh_port']),
+                max_segment_size=max_segment_size,
+                remote_pwd=backup_args['ssh_password'])
+        else:
+            storage = ssh.SshStorage(
+                container,
+                backup_args['ssh_username'],
+                backup_args['ssh_host'],
+                int(backup_args['ssh_port']),
+                max_segment_size=max_segment_size,
+                ssh_key_path=backup_args['ssh_key'])
     else:
         raise Exception("No storage found for name {0}".format(
             backup_args['storage']))

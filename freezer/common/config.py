@@ -79,7 +79,8 @@ DEFAULT_PARAMS = {
     'mode': 'fs', 'action': 'backup', 'shadow': '', 'shadow_path': '',
     'windows_volume': '', 'command': None, 'metadata_out': None,
     'storage': 'swift', 'ssh_key': os.path.join(home, '.ssh/id_rsa'),
-    'ssh_username': '', 'ssh_host': '', 'ssh_port': DEFAULT_SSH_PORT,
+    'ssh_username': '', 'ssh_password': '', 'ssh_host': '',
+    'ssh_port': DEFAULT_SSH_PORT,
     'access_key': '', 'secret_key': '', 'endpoint': '',
     'compression': 'gzip', 'overwrite': False,
     'incremental': None, 'consistency_check': False,
@@ -459,22 +460,28 @@ _COMMON = [
     cfg.StrOpt('ssh-key',
                dest='ssh_key',
                default=DEFAULT_PARAMS['ssh_key'],
-               help="Path to ssh-key for ssh storage only"
+               help="Path to ssh-key for ssh(sftp) storage only"
+               ),
+    cfg.StrOpt('ssh-password',
+               dest='ssh_password',
+               default=DEFAULT_PARAMS['ssh_password'],
+               help="Remote password for ssh(sftp) storage"
                ),
     cfg.StrOpt('ssh-username',
                dest='ssh_username',
                default=DEFAULT_PARAMS['ssh_username'],
-               help="Remote username for ssh storage only"
+               help="Remote username for ssh(sftp) storage only"
                ),
     cfg.StrOpt('ssh-host',
                dest='ssh_host',
                default=DEFAULT_PARAMS['ssh_host'],
-               help="Remote host for ssh storage only"
+               help="Remote host for ssh(sftp) storage only"
                ),
     cfg.IntOpt('ssh-port',
                dest='ssh_port',
                default=DEFAULT_PARAMS['ssh_port'],
-               help="Remote port for ssh storage only (default 22)"
+               help="Remote port for ssh(sftp) storage"
+                    " only (default 22)"
                ),
     cfg.StrOpt('config',
                dest='config',
