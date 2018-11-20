@@ -200,7 +200,6 @@ class BackupJob(Job):
                   'log_file',
                   'storage',
                   'mode',
-                  'os_auth_version',
                   'proxy',
                   'compression',
                   'ssh_key',
