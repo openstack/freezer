@@ -593,7 +593,8 @@ class AdminJob(Job):
                 self.storage.segments,
                 cinder_vol_id
             )
-        elif self.storage.type in ['local', 'ssh', 's3']:
+        elif self.storage.type in \
+                ['local', 'ssh', 's3', 'ftp', 'ftps']:
             path_prefix = "{0}/{1}".format(
                 self.storage.storage_path,
                 cinder_vol_id

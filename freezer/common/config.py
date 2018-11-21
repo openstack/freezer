@@ -37,6 +37,7 @@ home = os.path.expanduser("~")
 DEFAULT_LVM_SNAPSIZE = '1G'
 DEFAULT_LVM_MOUNT_BASEDIR = '/var/lib/freezer'
 DEFAULT_LVM_SNAP_BASENAME = 'freezer_backup_snap'
+DEFAULT_FTP_PORT = 21
 DEFAULT_SSH_PORT = 22
 
 _DEFAULT_LOG_LEVELS = ['amqp=WARN', 'amqplib=WARN', 'boto=WARN',
@@ -86,7 +87,8 @@ DEFAULT_PARAMS = {
     'incremental': None, 'consistency_check': False,
     'consistency_checksum': None, 'nova_restore_network': None,
     'cindernative_backup_id': None, 'sync': True, 'engine_name': 'tar',
-    'timeout': 120, 'project_id': None,
+    'timeout': 120, 'project_id': None, 'ftp_username': '',
+    'ftp_password': '', 'ftp_host': '', 'ftp_port': DEFAULT_FTP_PORT,
 }
 
 _COMMON = [
@@ -435,12 +437,12 @@ _COMMON = [
     cfg.StrOpt('storage',
                dest='storage',
                default=DEFAULT_PARAMS['storage'],
-               choices=['local', 'swift', 'ssh', 's3'],
-               help="Storage for backups. Can be Swift, Local, SSH and S3 "
-                    "now. Swift is default storage now. Local stores backups"
-                    "on the same defined path, swift will store files in "
-                    "container, and s3 will store files in bucket in S3 "
-                    "compatible storage."
+               choices=['local', 'swift', 'ssh', 's3', 'ftp', 'ftps'],
+               help="Storage for backups. Can be Swift, Local, SSH(SFTP), "
+                    "FTP, FTPS and S3 now. Swift is default storage now. "
+                    "Local stores backups on the same defined path, "
+                    "swift will store files in container, and S3 will "
+                    "store files in bucket in S3 compatible storage."
                ),
     cfg.StrOpt('access-key',
                dest='access_key',
@@ -465,22 +467,22 @@ _COMMON = [
     cfg.StrOpt('ssh-password',
                dest='ssh_password',
                default=DEFAULT_PARAMS['ssh_password'],
-               help="Remote password for ssh(sftp) storage"
+               help="Remote password for SSH(SFTP) storage"
                ),
     cfg.StrOpt('ssh-username',
                dest='ssh_username',
                default=DEFAULT_PARAMS['ssh_username'],
-               help="Remote username for ssh(sftp) storage only"
+               help="Remote username for SSH(SFTP)) storage only"
                ),
     cfg.StrOpt('ssh-host',
                dest='ssh_host',
                default=DEFAULT_PARAMS['ssh_host'],
-               help="Remote host for ssh(sftp) storage only"
+               help="Remote host for SSH(SFTP) storage only"
                ),
     cfg.IntOpt('ssh-port',
                dest='ssh_port',
                default=DEFAULT_PARAMS['ssh_port'],
-               help="Remote port for ssh(sftp) storage"
+               help="Remote port for SSH(SFTP) storage"
                     " only (default 22)"
                ),
     cfg.StrOpt('config',
@@ -542,6 +544,26 @@ _COMMON = [
                     "If set action to admin and set the parameter, "
                     "it should keep the last N fullbackups, "
                     "other backups should be deleted"),
+    cfg.StrOpt('ftp-password',
+               dest='ftp_password',
+               default=DEFAULT_PARAMS['ftp_password'],
+               help="Remote password for FTP, FTPS storage"
+               ),
+    cfg.StrOpt('ftp-username',
+               dest='ftp_username',
+               default=DEFAULT_PARAMS['ftp_username'],
+               help="Remote username for FTP, FTPS storage"
+               ),
+    cfg.StrOpt('ftp-host',
+               dest='ftp_host',
+               default=DEFAULT_PARAMS['ftp_host'],
+               help="Remote host for FTP, FTPS storage"
+               ),
+    cfg.IntOpt('ftp-port',
+               dest='ftp_port',
+               default=DEFAULT_PARAMS['ftp_port'],
+               help="Remote port for FTP, FTPS storage (default 21)"
+               ),
 ]
 
 
