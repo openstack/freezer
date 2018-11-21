@@ -31,14 +31,15 @@ class SshStorage(fslike.FsLikeStorage):
     """
     _type = 'ssh'
 
-    def __init__(self, storage_path, ssh_key_path,
-                 remote_username, remote_ip, port, max_segment_size):
+    def __init__(self, storage_path, remote_username, remote_ip, port,
+                 max_segment_size, ssh_key_path=None, remote_pwd=None):
         """
             :param storage_path: directory of storage
             :type storage_path: str
             :return:
             """
         self.ssh_key_path = ssh_key_path
+        self.remote_pwd = remote_pwd
         self.remote_username = remote_username
         self.remote_ip = remote_ip
         self.port = port
@@ -59,13 +60,19 @@ class SshStorage(fslike.FsLikeStorage):
             raise ValueError('Please provide --ssh-host value.')
         elif not self.remote_username:
             raise ValueError('Please provide --ssh-username value.')
+        elif self.remote_pwd:
+            return True
         elif not self.ssh_key_path:
             raise ValueError('Please provide path to ssh key using '
-                             '--ssh-key argument.')
+                             '--ssh-key argument')
         elif not os.path.exists(self.ssh_key_path):
-            raise ValueError('The {0} is required, please ensure it '
-                             'exists and ensure backup node can login '
-                             'to {1} as user {2} without password '
+            raise ValueError('1.The {0} is required, please ensure '
+                             'it exists and ensure backup node can '
+                             'login to {1} as user {2} '
+                             'without password.\n'
+                             '2. --ssh-password argument is required and'
+                             'ensure backup node can login to {1} '
+                             'as user {2} with password.'
                              .format(self.ssh_key_path, self.remote_ip,
                                      self.remote_username))
         return True
@@ -74,8 +81,12 @@ class SshStorage(fslike.FsLikeStorage):
         ssh = paramiko.SSHClient()
         ssh.load_system_host_keys()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(self.remote_ip, username=self.remote_username,
-                    key_filename=self.ssh_key_path, port=self.port)
+        if self.remote_pwd:
+            ssh.connect(self.remote_ip, username=self.remote_username,
+                        password=self.remote_pwd, port=self.port)
+        else:
+            ssh.connect(self.remote_ip, username=self.remote_username,
+                        key_filename=self.ssh_key_path, port=self.port)
 
         # we should keep link to ssh to prevent garbage collection
         self.ssh = ssh
