@@ -26,6 +26,7 @@ import sys
 
 from oslo_config import cfg
 from oslo_log import log
+from oslo_utils import importutils
 
 from freezer.common import client_manager
 from freezer.common import config as freezer_config
@@ -229,6 +230,14 @@ def storage_from_dict(backup_args, max_segment_size):
                 int(backup_args['ssh_port']),
                 max_segment_size=max_segment_size,
                 ssh_key_path=backup_args['ssh_key'])
+    elif storage_name in ["ftp", "ftps"]:
+        args = [container, backup_args['ftp_password'],
+                backup_args['ftp_username'],
+                backup_args['ftp_host'], int(backup_args['ftp_port']),
+                max_segment_size]
+        storage = importutils.import_object(
+            "freezer.storage.{0}.{1}Storage".format(
+                storage_name, storage_name.capitalize()), *args)
     else:
         raise Exception("No storage found for name {0}".format(
             backup_args['storage']))

@@ -77,7 +77,7 @@ class NovaEngine(engine.BackupEngine):
                 bucket_name=bucket_name,
                 key=object_name
             )['Body'].read()
-        elif self.storage._type in ['local', 'ssh']:
+        elif self.storage._type in ['local', 'ssh', 'ftp', 'ftps']:
             backup_basepath = os.path.join(self.storage.storage_path,
                                            'project_' + project_id)
             with self.storage.open(backup_basepath, 'rb') as backup_file:
@@ -186,7 +186,7 @@ class NovaEngine(engine.BackupEngine):
                 key=object_name,
                 data=data
             )
-        elif self.storage._type in ['local', 'ssh']:
+        elif self.storage._type in ['local', 'ssh', 'ftp', 'ftps']:
             backup_basepath = os.path.join(self.storage.storage_path,
                                            "project_" + project_id)
             with self.storage.open(backup_basepath, 'wb') as backup_file:

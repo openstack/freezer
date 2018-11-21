@@ -62,12 +62,13 @@ class RestoreOs(object):
         elif self.storage.type == "local":
             path = "{0}/{1}".format(self.container, path)
             backups = os.listdir(os.path.abspath(path))
-        elif self.storage.type == "ssh":
+        elif self.storage.type in ["ssh", 'ftp', 'ftps']:
             path = "{0}/{1}".format(self.container, path)
             backups = self.storage.listdir(path)
         else:
             msg = ("{} storage type is not supported at the moment."
-                   " Try local, swift or ssh".format(self.storage.type))
+                   " Try local, SWIFT, SSH(SFTP), FTP or FTPS ".
+                   format(self.storage.type))
             print(msg)
             raise BaseException(msg)
         backups = list(filter(lambda x: x >= restore_from_timestamp, backups))
@@ -160,7 +161,7 @@ class RestoreOs(object):
                 disk_format="raw",
                 data=data)
             return info, image
-        elif self.storage.type == 'ssh':
+        elif self.storage.type in ['ssh', 'ftp', 'ftps']:
             image_file = "{0}/{1}/{2}/{3}".format(self.container, path,
                                                   backup, path)
             metadata_file = "{0}/{1}/{2}/metadata".format(self.container,
