@@ -19,7 +19,8 @@ Backup Options
 
 Freezer Agent can be used as standalone backup tool from command line.
 In it is most simple form, you can run commands to backup your data to
-OpenStack Swift, local directory,  remote SSH or S3 compatible storage.
+OpenStack Swift, local directory,  remote SSH or S3 compatible storage
+or remote FTP or FTPS storage.
 
 Basic File System Backup
 ------------------------
@@ -266,7 +267,7 @@ Restore example:
 SSH Storage Backup/Restore
 --------------------------
 
-Freezer can use ssh to backup the data in fould on remote server. This option
+Freezer can use ssh to backup the data to remote server. This option
 will turn any Linux server to backup storage.
 
 To use ssh storage specify "--storage ssh" And use "--container %path-to-folder-with-backups-on-remote-machine%"
@@ -298,6 +299,89 @@ Restore example:
     --backup-name my-backup-name \
     --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa \
     --ssh-host 8.8.8.8
+
+FTP Storage Backup/Restore
+--------------------------
+
+Freezer can use FTP to backup the data to remote server. This option
+will turn any FTP server to backup storage.
+
+To use FTP storage specify "--storage ftp" And use "--container %path-to-folder-with-backups-on-remote-machine%"
+Also you should specify ftp-username, ftp-password and ftp-host parameters. ftp-port is optional parameter, default is 21.
+
+In order to use FTP to backup, "--storage ftp" and
+"--container %path-to-folder-with-backups-on-remote-machine%" options must be
+specified. Also ftp-username, ftp-password, ftp-host parameters must be supplied.
+ftp-port parameter is optional and Freezer use default
+ssh port 21 if not specified.
+
+Backup example:
+
+.. code:: bash
+
+    sudo freezer-agent --path-to-backup [/data/dir/to/backup] \
+    --container /remote-machine-path/ \
+    --backup-name my-backup-name \
+    --storage ftp --ftp-username [ftp-user-name] \
+    --ftp-password [ftp-user-password] \
+    --ftp-host 8.8.8.8 \
+    --ftp-port 21
+
+Restore example:
+
+.. code:: bash
+
+    sudo freezer-agent  --action restore \
+    --restore-abs-pat [/data/dir/to/backup] \
+    --container /remote-machine-path/ \
+    --backup-name my-backup-name \
+    --storage ftp \
+    --ftp-username [ftp-user-name] \
+    --ftp-password [ftp-user-password] \
+    --ftp-host 8.8.8.8
+    --ftp-port 21
+
+FTPS Storage Backup/Restore
+---------------------------
+
+Freezer can use FTPS to backup the data to remote server. This option
+will turn any FTPS server to backup storage.
+
+To use FTPS storage specify "--storage ftps" And use "--container %path-to-folder-with-backups-on-remote-machine%"
+Also you should specify ftp-username, ftp-password and ftp-host parameters. ftp-port is optional parameter, default is 21.
+
+In order to use FTPS to backup, "--storage ftps" and
+"--container %path-to-folder-with-backups-on-remote-machine%" options must be
+specified. Also ftp-username, ftp-password, ftp-host parameters must be supplied.
+ftp-port parameter is optional and Freezer use default
+ssh port 21 if not specified.
+
+Backup example:
+
+.. code:: bash
+
+    sudo freezer-agent --path-to-backup [/data/dir/to/backup] \
+    --container /remote-machine-path/ \
+    --backup-name my-backup-name \
+    --storage ftps \
+    --ftp-username [ftp-user-name] \
+    --ftp-password [ftp-user-password] \
+    --ftp-host 8.8.8.8 \
+    --ftp-port 21
+
+Restore example:
+
+.. code:: bash
+
+    sudo freezer-agent  --action restore \
+    --restore-abs-pat [/data/dir/to/backup] \
+    --container /remote-machine-path/ \
+    --backup-name my-backup-name \
+    --storage ftps \
+    --ftp-username [ftp-user-name] \
+    --ftp-password [ftp-user-password] \
+    --ftp-host 8.8.8.8
+    --ftp-port 21
 
 Restore
 =======
