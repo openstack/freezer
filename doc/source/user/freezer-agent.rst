@@ -18,8 +18,8 @@ Backup Options
 ==============
 
 Freezer Agent can be used as standalone backup tool from command line.
-In it is most simple form, you can run commands to backup your data to
-OpenStack Swift, local directory,  remote SSH or S3 compatible storage
+In its most simple form, you can run commands to backup your data to
+OpenStack Swift, local directory, remote SSH(SFTP) or S3 compatible storage
 or remote FTP or FTPS storage.
 
 Basic File System Backup
@@ -212,7 +212,7 @@ Freezer can use following storage technologies to backup the data:
 
 - OpenStack Swift Object Storage
 - Local Directory (Can be NFS mounted directory)
-- SSH
+- SSH(SFTP)(Can be mounted without password(ssh-key) or with password)
 
 Swift Object Storage Backup/Restore
 -----------------------------------
@@ -264,14 +264,17 @@ Restore example:
     --backup-name [my-backup-name] \
     --storage local
 
-SSH Storage Backup/Restore
---------------------------
+SSH(SFTP) Storage Backup/Restore
+--------------------------------
 
-Freezer can use ssh to backup the data to remote server. This option
-will turn any Linux server to backup storage.
+Freezer can use SSH(SFTP) to backup the data to remote server. This
+option will turn any Linux server to backup storage.
 
-To use ssh storage specify "--storage ssh" And use "--container %path-to-folder-with-backups-on-remote-machine%"
-Also you should specify ssh-username, ssh-key and ssh-host parameters. ssh-port is optional parameter, default is 22.
+To use SSH(SFTP) storage specify "--storage ssh" And
+use "--container %path-to-folder-with-backups-on-remote-machine%"
+Also you should specify ssh-username, ssh-key(or ssh-password) and ssh-host
+parameters.
+ssh-port is an optional parameter, default is 22.
 
 In order to use SSH to backup, "--storage ssh" and
 "--container %path-to-folder-with-backups-on-remote-machine%" options must be
@@ -279,7 +282,7 @@ specified. Also ssh-username, ssh-host parameters must be supplied.
 ssh-port parameter is optional and Freezer use default
 ssh port 22 if not specified.
 
-Backup example:
+Backup example1 (without password(ssh-key)):
 
 .. code:: bash
 
@@ -289,15 +292,36 @@ Backup example:
     --storage ssh --ssh-username [ssh-user-name] --ssh-key ~/.ssh/id_rsa \
     --ssh-host 8.8.8.8
 
-Restore example:
+Restore example1 (without password(ssh-key)):
 
 .. code:: bash
 
     sudo freezer-agent  --action restore \
-    --restore-abs-pat [/data/dir/to/backup] \
+    --restore-abs-path [/data/dir/to/backup] \
     --container /remote-machine-path/ \
     --backup-name my-backup-name \
     --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa \
+    --ssh-host 8.8.8.8
+
+Backup example2 (with password):
+
+.. code:: bash
+
+    sudo freezer-agent --path-to-backup [/data/dir/to/backup] \
+    --container /remote-machine-path/ \
+    --backup-name my-backup-name \
+    --storage ssh --ssh-username [ssh-user-name] --ssh-password passwd_test \
+    --ssh-host 8.8.8.8
+
+Restore example2 (with password):
+
+.. code:: bash
+
+    sudo freezer-agent  --action restore \
+    --restore-abs-path [/data/dir/to/backup] \
+    --container /remote-machine-path/ \
+    --backup-name my-backup-name \
+    --storage ssh --ssh-username ubuntu --ssh-password passwd_test \
     --ssh-host 8.8.8.8
 
 FTP Storage Backup/Restore
