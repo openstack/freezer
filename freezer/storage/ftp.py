@@ -109,8 +109,8 @@ class BaseFtpStorage(fslike.FsLikeStorage):
             return
         try:
             self.ftp.cwd(path)  # sub-directory exists
-        except ftplib.all_errors:
-            # LOG.info("ftp create dirs failed %s" % e)
+        except ftplib.all_errors as e:
+            LOG.info("ftp create dirs failed %s" % e)
             dirname, basename = os.path.split(path.rstrip('/'))
             LOG.info("ftp create_dirs dirname=%s basename=%s"
                      % (dirname, basename))
@@ -298,7 +298,31 @@ class FtpStorage(BaseFtpStorage):
             :type storage_path: str
             :return:
             """
-        pass
+        super(FtpStorage, self).__init__(storage_path,
+                                         remote_pwd,
+                                         remote_username,
+                                         remote_ip,
+                                         port,
+                                         max_segment_size)
+
+    def init(self):
+        try:
+            ftp = ftplib.FTP()
+            ftp.set_pasv(True)
+            # socket.setdefaulttimeout(60)
+            ftp.connect(self.remote_ip, self.port, 60)
+            ftp.login(self.remote_username, self.remote_pwd)
+            nfiles = ftp.nlst()
+            LOG.info("ftp nlst result=%s" % nfiles)
+        except socket.error as e:
+            LOG.info("ftp socket error=%s" % e)
+            self.ftpclient.set_pasv(False)
+        except ftplib.all_errors as e:  # socket.error
+            msg = "create ftp failed error=%s" % e
+            LOG.info(msg)
+            raise Exception(msg)
+        # we should keep link to ssh to prevent garbage collection
+        self.ftp = ftp
 
 
 class FtpsStorage(BaseFtpStorage):
