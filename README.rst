@@ -71,6 +71,16 @@ available at:
 
 - `Bug Tracker <https://storyboard.openstack.org/#!/project/openstack/freezer>`__
 
+Troubleshooting
+---------------
+
+When errors occure, these are good places to check:
+
+* freezer-api log: `$HOME/log/freezer-api.log`
+                   `/var/log/apache2/freezer-api.log`
+* freezer-agent log: `$HOME/.freezer/freezer.log`
+* freezer-scheduler log:`/var/log/freezer/scheduler.log`
+
 Developers
 ----------
 
@@ -105,3 +115,4 @@ be found at:
 
 .. _Summit: https://www.openstack.org/summit/
 .. _Project Team Gathering: https://www.openstack.org/ptg/
+
