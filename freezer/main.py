@@ -235,9 +235,13 @@ def storage_from_dict(backup_args, max_segment_size):
                 backup_args['ftp_username'],
                 backup_args['ftp_host'], int(backup_args['ftp_port']),
                 max_segment_size]
+        if storage_name == 'ftps':
+            args.append(backup_args['ftp_keyfile'])
+            args.append(backup_args['ftp_certfile'])
+        LOG.info('args=%s' % args)
         storage = importutils.import_object(
-            "freezer.storage.{0}.{1}Storage".format(
-                storage_name, storage_name.capitalize()), *args)
+            "freezer.storage.ftp.{0}Storage".format(
+                storage_name.capitalize()), *args)
     else:
         raise Exception("No storage found for name {0}".format(
             backup_args['storage']))

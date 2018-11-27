@@ -82,6 +82,15 @@ class NovaEngine(engine.BackupEngine):
                                            'project_' + project_id)
             with self.storage.open(backup_basepath, 'rb') as backup_file:
                 data = backup_file.readline()
+        elif self.storage._type in ['ftp', 'ftps']:
+            backup_basepath = os.path.join(self.storage.storage_path,
+                                           'project_' + project_id)
+            file = tempfile.NamedTemporaryFile('wb', delete=True)
+            self.storage.get_file(backup_basepath, file.name)
+            with open(file.name) as f:
+                data = f.readline()
+            LOG.info("get_nova_tenant download {0}".format(data))
+            file.close()
 
         return json.loads(data)
 
@@ -186,11 +195,20 @@ class NovaEngine(engine.BackupEngine):
                 key=object_name,
                 data=data
             )
-        elif self.storage._type in ['local', 'ssh', 'ftp', 'ftps']:
+        elif self.storage._type in ['local', 'ssh']:
             backup_basepath = os.path.join(self.storage.storage_path,
                                            "project_" + project_id)
             with self.storage.open(backup_basepath, 'wb') as backup_file:
                 backup_file.write(data)
+        elif self.storage._type in ['ftp', 'ftps']:
+            backup_basepath = os.path.join(self.storage.storage_path,
+                                           'project_' + project_id)
+            file = tempfile.NamedTemporaryFile('wb', delete=True)
+            with open(file.name, 'wb') as f:
+                f.write(data)
+            LOG.info("backup_nova_tenant data={0}".format(data))
+            self.storage.put_file(file.name, backup_basepath)
+            file.close()
 
         executor = futures.ThreadPoolExecutor(
             max_workers=len(instance_ids))
