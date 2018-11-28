@@ -11,4 +11,4 @@ Backup/Restore and DR service
 
 This chapter assumes a working setup of OpenStack following the
 `OpenStack Installation Tutorial
-<https://docs.openstack.org/project-install-guide/ocata/>`_.
+<https://docs.openstack.org/install-guide/>`_.
