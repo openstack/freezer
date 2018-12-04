@@ -15,7 +15,6 @@ limitations under the License.
 
 """
 
-import errno
 import ftplib
 import json
 import os
@@ -198,40 +197,15 @@ class BaseFtpStorage(fslike.FsLikeStorage):
             res = self.ftp.nlst()
             LOG.info('ftp listdir res=%s' % res)
             return sorted(res)
-        except IOError as e:
+        except ftplib.error_perm as e:
             LOG.info("ftp listdir error %s" % e)
-            if e.errno == errno.ENOENT:
+            if '550' in e[0]:
                 return list()
             else:
                 raise
 
     def open(self, path, mode):
         pass
-
-    def read_metadata_file(self, path):
-        # files = self.ftp.mlsd(path) # 3.3 support
-        LOG.info("ftp read_metadta_file path=%s" % path)
-        tmpdir = self._create_tempdir()
-        try:
-            data_down = utils.path_join(tmpdir, "data_down")
-            LOG.info("read metada datadown=%s" % data_down)
-            self.get_file(path, data_down)
-            file_size = self.ftp.size(path)
-            data = ""
-            received_size = 0
-            with open(data_down, 'r') as reader:
-                reader.prefetch(file_size)
-                chunk = reader.read(CHUNK_SIZE)
-                while chunk:
-                    received_size += len(chunk)
-                    data += chunk
-                    chunk = reader.read(CHUNK_SIZE)
-            if file_size != received_size:
-                raise IOError('Size mismatch: expected {} received {}'
-                              .format(file_size, received_size))
-            return data
-        finally:
-            shutil.rmtree(tmpdir)
 
     def backup_blocks(self, backup):
         LOG.info("ftp backup_blocks ")
@@ -260,6 +234,7 @@ class BaseFtpStorage(fslike.FsLikeStorage):
         :return:
         """
         tmpdir = self._create_tempdir()
+        LOG.info('add stream')
         try:
             split = package_name.rsplit('/', 1)
             # create backup_basedir
@@ -316,7 +291,7 @@ class FtpStorage(BaseFtpStorage):
             LOG.info("ftp nlst result=%s" % nfiles)
         except socket.error as e:
             LOG.info("ftp socket error=%s" % e)
-            self.ftpclient.set_pasv(False)
+            self.ftp.set_pasv(False)
         except ftplib.all_errors as e:  # socket.error
             msg = "create ftp failed error=%s" % e
             LOG.info(msg)
@@ -332,10 +307,36 @@ class FtpsStorage(BaseFtpStorage):
     _type = 'ftps'
 
     def __init__(self, storage_path, remote_pwd,
-                 remote_username, remote_ip, port, max_segment_size):
+                 remote_username, remote_ip, port, max_segment_size,
+                 keyfile, certfile):
         """
             :param storage_path: directory of storage
             :type storage_path: str
             :return:
             """
-        pass
+        self.keyfile = keyfile
+        self.certfile = certfile
+        LOG.info("key=%s cer=%s" % (self.keyfile, self.certfile))
+        super(FtpsStorage, self).__init__(storage_path, remote_pwd,
+                                          remote_username, remote_ip,
+                                          port, max_segment_size)
+
+    def init(self):
+        try:
+            ftps = ftplib.FTP_TLS(keyfile=self.keyfile,
+                                  certfile=self.certfile)
+            ftps.set_pasv(True)
+            ftps.connect(self.remote_ip, self.port, 60)
+            ftps.login(self.remote_username, self.remote_pwd)
+            msg = ftps.prot_p()
+            LOG.info("ftps encrypt %s, ret=%s" % (self.remote_ip, msg))
+            nfiles = ftps.nlst()
+            LOG.info("ftps nlst result=%s" % nfiles)
+        except socket.error as e:
+            LOG.info("ftps socket error=%s" % e)
+            self.ftp.set_pasv(False)
+        except ftplib.all_errors as e:
+            msg = "create ftps failed error=%s" % e
+            LOG.info(msg)
+            raise Exception(msg)
+        self.ftp = ftps

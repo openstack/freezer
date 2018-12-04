@@ -89,6 +89,7 @@ DEFAULT_PARAMS = {
     'cindernative_backup_id': None, 'sync': True, 'engine_name': 'tar',
     'timeout': 120, 'project_id': None, 'ftp_username': '',
     'ftp_password': '', 'ftp_host': '', 'ftp_port': DEFAULT_FTP_PORT,
+    'ftp_keyfile': '', 'ftp_certfile': '',
 }
 
 _COMMON = [
@@ -563,6 +564,16 @@ _COMMON = [
                dest='ftp_port',
                default=DEFAULT_PARAMS['ftp_port'],
                help="Remote port for FTP, FTPS storage (default 21)"
+               ),
+    cfg.StrOpt('ftp-keyfile',
+               dest='ftp_keyfile',
+               default=DEFAULT_PARAMS['ftp_keyfile'],
+               help="Required if ftps server requires client certificate"
+               ),
+    cfg.StrOpt('ftp-certfile',
+               dest='ftp_certfile',
+               default=DEFAULT_PARAMS['ftp_certfile'],
+               help="Required if ftps server requires client certificate"
                ),
 ]
 
