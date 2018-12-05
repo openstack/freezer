@@ -19,6 +19,8 @@ Freezer restore modes related functions
 
 import json
 import os
+import shutil
+import tempfile
 import time
 
 from oslo_config import cfg
@@ -62,7 +64,7 @@ class RestoreOs(object):
         elif self.storage.type == "local":
             path = "{0}/{1}".format(self.container, path)
             backups = os.listdir(os.path.abspath(path))
-        elif self.storage.type in ["ssh", 'ftp', 'ftps']:
+        elif self.storage.type in ['ssh', 'ftp', 'ftps']:
             path = "{0}/{1}".format(self.container, path)
             backups = self.storage.listdir(path)
         else:
@@ -161,7 +163,7 @@ class RestoreOs(object):
                 disk_format="raw",
                 data=data)
             return info, image
-        elif self.storage.type in ['ssh', 'ftp', 'ftps']:
+        elif self.storage.type == 'ssh':
             image_file = "{0}/{1}/{2}/{3}".format(self.container, path,
                                                   backup, path)
             metadata_file = "{0}/{1}/{2}/metadata".format(self.container,
@@ -179,6 +181,32 @@ class RestoreOs(object):
                 disk_format="raw",
                 data=data)
             return info, image
+        elif self.storage.type in ['ftp', 'ftps']:
+            image_file = "{0}/{1}/{2}/{3}".format(self.container, path,
+                                                  backup, path)
+            metadata_file = "{0}/{1}/{2}/metadata".format(self.container,
+                                                          path, backup)
+            try:
+                tmpdir = tempfile.mkdtemp()
+            except Exception:
+                LOG.error("Unable to create a tmp directory")
+                raise
+            try:
+                data_image = utils.path_join(tmpdir, "data_image")
+                LOG.info('create image restore ftp storage')
+                self.storage.get_file(image_file, data_image)
+                data_meta = utils.path_join(tmpdir, "data_meta")
+                self.storage.get_file(metadata_file, data_meta)
+                data = open(data_image, 'rb')
+                info = json.load(open(data_meta, 'r'))
+                image = self.client_manager.create_image(
+                    name="restore_{}".format(path),
+                    container_format="bare",
+                    disk_format="raw",
+                    data=data)
+                return info, image
+            finally:
+                shutil.rmtree(tmpdir)
         else:
             return {}
 

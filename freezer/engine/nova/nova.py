@@ -90,7 +90,6 @@ class NovaEngine(engine.BackupEngine):
             with open(file.name) as f:
                 data = f.readline()
             LOG.info("get_nova_tenant download {0}".format(data))
-            file.close()
 
         return json.loads(data)
 
@@ -208,7 +207,6 @@ class NovaEngine(engine.BackupEngine):
                 f.write(data)
             LOG.info("backup_nova_tenant data={0}".format(data))
             self.storage.put_file(file.name, backup_basepath)
-            file.close()
 
         executor = futures.ThreadPoolExecutor(
             max_workers=len(instance_ids))

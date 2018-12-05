@@ -74,7 +74,6 @@ class BaseFtpStorage(fslike.FsLikeStorage):
     def _create_tempdir(self):
         try:
             tmpdir = tempfile.mkdtemp()
-            LOG.info("****mkdir****")
         except Exception:
             LOG.error("Unable to create a tmp directory")
             raise
