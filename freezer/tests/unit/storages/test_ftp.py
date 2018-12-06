@@ -82,7 +82,11 @@ class FtpStorageTestCase(unittest.TestCase):
         self.ftp_opt.ftp_remote_ip = '0.0.0.0'
         self.ftp_opt.ftp_port = 2121
 
-    def test_init_fail_FtpStorage(self):
+    @patch('ftplib.FTP')
+    def test_init_fail_raise_FtpStorage(self, mock_ftp_constructor):
+        mock_ftp = mock_ftp_constructor.return_value
+        seffect = mock.Mock(side_effect=Exception('create ftp failed error'))
+        mock_ftp.raiseError.side_effect = seffect
         with self.assertRaises(Exception) as cm:  # noqa
             ftp.FtpStorage(
                 storage_path=self.ftp_opt.ftp_storage_path,
@@ -114,6 +118,21 @@ class FtpStorageTestCase(unittest.TestCase):
                                             self.ftp_opt.ftp_port, 60)
         mock_ftp.login.assert_called_with(self.ftp_opt.ftp_remote_username,
                                           self.ftp_opt.ftp_remote_pwd)
+
+    @patch('tempfile.mkdtemp')
+    @patch('ftplib.FTP')
+    def test_create_tempdir_FtpStorage(self, mock_ftp_constructor,
+                                       mock_tempfile_constructor):
+        mock_tempfile = mock_tempfile_constructor.return_value
+        ftp_obj = ftp.FtpStorage(
+            storage_path=self.ftp_opt.ftp_storage_path,
+            remote_pwd=self.ftp_opt.ftp_remote_pwd,
+            remote_username=self.ftp_opt.ftp_remote_username,
+            remote_ip=self.ftp_opt.ftp_remote_ip,
+            port=self.ftp_opt.ftp_port,
+            max_segment_size=self.ftp_opt.ftp_max_segment_size)
+        tmp = ftp_obj._create_tempdir()
+        self.assertEqual(tmp, mock_tempfile)
 
 
 class FtpsStorageTestCase(unittest.TestCase):
