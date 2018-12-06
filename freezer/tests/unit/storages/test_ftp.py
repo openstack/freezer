@@ -1,4 +1,4 @@
-# (c) Copyright 2014,2015 Hewlett-Packard Development Company, L.P.
+# (c) Copyright 2018 ZTE Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 import unittest
 
 import mock
-# from mock import patch
 
 from freezer.storage import ftp
+from mock import patch
 
 
 class BaseFtpStorageTestCase(unittest.TestCase):
@@ -30,12 +30,12 @@ class BaseFtpStorageTestCase(unittest.TestCase):
         self.ftp_opt.ftp_remote_pwd = 'passawd'
         self.ftp_opt.ftp_remote_username = 'usrname'
         self.ftp_opt.ftp_remote_ip = '0.0.0.0'
-        self.ftp_opt.self.ftp_port = 80
+        self.ftp_opt.self.ftp_port = 2121
         self.ftp_opt.ftp_max_segment_size = 1024
 
     def test_validate_BaseFtpStorage(self):
         with self.assertRaises(Exception) as cm:  # noqa
-            ftp.FtpStorage(
+            ftp.BaseFtpStorage(
                 storage_path=self.ftp_opt.ftp_storage_path,
                 remote_pwd=self.ftp_opt.ftp_remote_pwd,
                 remote_ip=None,
@@ -47,7 +47,7 @@ class BaseFtpStorageTestCase(unittest.TestCase):
                           str(the_exception))
 
         with self.assertRaises(Exception) as cm:  # noqa
-            ftp.FtpStorage(
+            ftp.BaseFtpStorage(
                 storage_path=self.ftp_opt.ftp_storage_path,
                 remote_pwd=self.ftp_opt.ftp_remote_pwd,
                 remote_ip=self.ftp_opt.ftp_remote_ip,
@@ -59,7 +59,7 @@ class BaseFtpStorageTestCase(unittest.TestCase):
                           str(the_exception))
 
         with self.assertRaises(Exception) as cm:  # noqa
-            ftp.FtpStorage(
+            ftp.BaseFtpStorage(
                 storage_path=self.ftp_opt.ftp_storage_path,
                 remote_pwd=None,
                 remote_username=self.ftp_opt.ftp_remote_username,
@@ -69,3 +69,48 @@ class BaseFtpStorageTestCase(unittest.TestCase):
             the_exception = cm.exception
             self.assertIn('Please provide remote password',
                           str(the_exception))
+
+
+class FtpStorageTestCase(unittest.TestCase):
+
+    def setUp(self):
+        super(FtpStorageTestCase, self).setUp()
+        self.ftp_opt = mock.Mock()
+        self.ftp_opt.ftp_storage_path = '/just/a/path'
+        self.ftp_opt.ftp_remote_pwd = 'passawd'
+        self.ftp_opt.ftp_remote_username = 'usrname'
+        self.ftp_opt.ftp_remote_ip = '0.0.0.0'
+        self.ftp_opt.self.ftp_port = 2121
+
+    def test_init_fail_FtpStorage(self):
+        with self.assertRaises(Exception) as cm:  # noqa
+            ftp.FtpStorage(
+                storage_path=self.ftp_opt.ftp_storage_path,
+                remote_pwd=self.ftp_opt.ftp_remote_pwd,
+                remote_username=self.ftp_opt.ftp_remote_username,
+                remote_ip=self.ftp_opt.ftp_remote_ip,
+                port=self.ftp_opt.ftp_port,
+                max_segment_size=self.ftp_opt.ftp_max_segment_size)
+            the_exception = cm.exception
+            self.assertIn('create ftp failed error',
+                          str(the_exception))
+
+    @patch('ftplib.FTP')
+    def test_init_ok_FtpStorage(self, mock_ftp_constructor):
+        mock_ftp = mock_ftp_constructor.return_value
+        ftp.FtpStorage(
+            storage_path=self.ftp_opt.ftp_storage_path,
+            remote_pwd=self.ftp_opt.ftp_remote_pwd,
+            remote_username=self.ftp_opt.ftp_remote_username,
+            remote_ip=self.ftp_opt.ftp_remote_ip,
+            port=self.ftp_opt.ftp_port,
+            max_segment_size=self.ftp_opt.ftp_max_segment_size)
+        self.assertTrue(mock_ftp.set_pasv.called)
+        self.assertTrue(mock_ftp.connect.called)
+        self.assertTrue(mock_ftp.login.called)
+        self.assertTrue(mock_ftp.nlst.called)
+        mock_ftp.set_pasv.assert_called_with(True)
+        mock_ftp.connect.assert_called_with(self.ftp_opt.ftp_remote_ip,
+                                            self.ftp_opt.ftp_port, 60)
+        mock_ftp.login.assert_called_with(self.ftp_opt.ftp_remote_username,
+                                          self.ftp_opt.ftp_remote_pwd)
