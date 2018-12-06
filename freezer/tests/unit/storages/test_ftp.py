@@ -30,7 +30,7 @@ class BaseFtpStorageTestCase(unittest.TestCase):
         self.ftp_opt.ftp_remote_pwd = 'passawd'
         self.ftp_opt.ftp_remote_username = 'usrname'
         self.ftp_opt.ftp_remote_ip = '0.0.0.0'
-        self.ftp_opt.self.ftp_port = 2121
+        self.ftp_opt.ftp_port = 2121
         self.ftp_opt.ftp_max_segment_size = 1024
 
     def test_validate_BaseFtpStorage(self):
@@ -80,7 +80,7 @@ class FtpStorageTestCase(unittest.TestCase):
         self.ftp_opt.ftp_remote_pwd = 'passawd'
         self.ftp_opt.ftp_remote_username = 'usrname'
         self.ftp_opt.ftp_remote_ip = '0.0.0.0'
-        self.ftp_opt.self.ftp_port = 2121
+        self.ftp_opt.ftp_port = 2121
 
     def test_init_fail_FtpStorage(self):
         with self.assertRaises(Exception) as cm:  # noqa
@@ -108,6 +108,58 @@ class FtpStorageTestCase(unittest.TestCase):
         self.assertTrue(mock_ftp.set_pasv.called)
         self.assertTrue(mock_ftp.connect.called)
         self.assertTrue(mock_ftp.login.called)
+        self.assertTrue(mock_ftp.nlst.called)
+        mock_ftp.set_pasv.assert_called_with(True)
+        mock_ftp.connect.assert_called_with(self.ftp_opt.ftp_remote_ip,
+                                            self.ftp_opt.ftp_port, 60)
+        mock_ftp.login.assert_called_with(self.ftp_opt.ftp_remote_username,
+                                          self.ftp_opt.ftp_remote_pwd)
+
+
+class FtpsStorageTestCase(unittest.TestCase):
+
+    def setUp(self):
+        super(FtpsStorageTestCase, self).setUp()
+        self.ftp_opt = mock.Mock()
+        self.ftp_opt.ftp_storage_path = '/just/a/path'
+        self.ftp_opt.ftp_remote_pwd = 'passawd'
+        self.ftp_opt.ftp_remote_username = 'usrname'
+        self.ftp_opt.ftp_remote_ip = '0.0.0.0'
+        self.ftp_opt.ftp_port = 2121
+        self.ftp_opt.ftp_keyfile = '/just/key.pem'
+        self.ftp_opt.ftp_certfile = '/just/cert.pem'
+
+    def test_init_fail_FtpsStorage(self):
+        with self.assertRaises(Exception) as cm:  # noqa
+            ftp.FtpsStorage(
+                storage_path=self.ftp_opt.ftp_storage_path,
+                remote_pwd=self.ftp_opt.ftp_remote_pwd,
+                remote_username=self.ftp_opt.ftp_remote_username,
+                remote_ip=self.ftp_opt.ftp_remote_ip,
+                port=self.ftp_opt.ftp_port,
+                max_segment_size=self.ftp_opt.ftp_max_segment_size,
+                keyfile=self.ftp_opt.ftp_keyfile,
+                certfile=self.ftp_opt.ftp_certfile)
+            the_exception = cm.exception
+            self.assertIn('create ftp failed error',
+                          str(the_exception))
+
+    @patch('ftplib.FTP_TLS')
+    def test_init_ok_FtpsStorage(self, mock_ftp_constructor):
+        mock_ftp = mock_ftp_constructor.return_value
+        ftp.FtpsStorage(
+            storage_path=self.ftp_opt.ftp_storage_path,
+            remote_pwd=self.ftp_opt.ftp_remote_pwd,
+            remote_username=self.ftp_opt.ftp_remote_username,
+            remote_ip=self.ftp_opt.ftp_remote_ip,
+            port=self.ftp_opt.ftp_port,
+            max_segment_size=self.ftp_opt.ftp_max_segment_size,
+            keyfile=self.ftp_opt.ftp_keyfile,
+            certfile=self.ftp_opt.ftp_certfile)
+        self.assertTrue(mock_ftp.set_pasv.called)
+        self.assertTrue(mock_ftp.connect.called)
+        self.assertTrue(mock_ftp.login.called)
+        self.assertTrue(mock_ftp.prot_p.called)
         self.assertTrue(mock_ftp.nlst.called)
         mock_ftp.set_pasv.assert_called_with(True)
         mock_ftp.connect.assert_called_with(self.ftp_opt.ftp_remote_ip,
