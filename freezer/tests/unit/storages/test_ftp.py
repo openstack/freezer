@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import shutil
+import tempfile
 import unittest
 
 import mock
@@ -81,6 +82,30 @@ class FtpStorageTestCase(unittest.TestCase):
         self.ftp_opt.ftp_remote_username = 'usrname'
         self.ftp_opt.ftp_remote_ip = '0.0.0.0'
         self.ftp_opt.ftp_port = 2121
+        self.ftp_test_file_dir = None
+        self.ftp_test_file_name = None
+
+    def create_ftp_test_file(self):
+        if self.ftp_test_file_name:
+            return
+        tmpdir = tempfile.mkdtemp()
+        FILES_DIR_PREFIX = "freezer_ftptest_files_dir"
+        files_dir = tempfile.mkdtemp(dir=tmpdir, prefix=FILES_DIR_PREFIX)
+        file_name = "file_ftp_test"
+        self.ftp_test_file_dir = files_dir
+        text = "FTPTESTTXT"
+        filehandle = open(files_dir + "/" + file_name, 'w')
+        if filehandle:
+            filehandle.write(text)
+            filehandle.close()
+            self.ftp_test_file_name = file_name
+
+    def delete_ftp_test_file(self):
+        if self.ftp_test_file_name:
+            files_dir = self.ftp_test_file_dir
+            shutil.rmtree(files_dir)
+            self.ftp_test_file_name = None
+            self.ftp_test_file_dir = None
 
     @patch('ftplib.FTP')
     def test_init_fail_raise_FtpStorage(self, mock_ftp_constructor):
@@ -167,6 +192,24 @@ class FtpStorageTestCase(unittest.TestCase):
         mock_ftp.raiseError.side_effect = seffect
         ret = ftpobj.listdir(test_dir)
         self.assertEqual(list(), ret)
+
+    @patch('ftplib.FTP')
+    def test_putfile_ok_FtpStorage(self, mock_ftp_constructor):
+        mock_ftp = mock_ftp_constructor.return_value
+        ftpobj = ftp.FtpStorage(
+            storage_path=self.ftp_opt.ftp_storage_path,
+            remote_pwd=self.ftp_opt.ftp_remote_pwd,
+            remote_username=self.ftp_opt.ftp_remote_username,
+            remote_ip=self.ftp_opt.ftp_remote_ip,
+            port=self.ftp_opt.ftp_port,
+            max_segment_size=self.ftp_opt.ftp_max_segment_size)
+        self.create_ftp_test_file()
+        frompath = self.ftp_test_file_dir + "/" + self.ftp_test_file_name
+        topath = '/home/to'
+        ftpobj.put_file(frompath, topath)
+        self.assertTrue(mock_ftp.pwd.called)
+        self.assertTrue(mock_ftp.storbinary.called)
+        self.delete_ftp_test_file()
 
 
 class FtpsStorageTestCase(unittest.TestCase):
