@@ -152,6 +152,22 @@ class FtpStorageTestCase(unittest.TestCase):
         mock_ftp.cwd.assert_called_with(test_dir)
         self.assertEqual(sorted(filelist), ret)
 
+    @patch('ftplib.FTP')
+    def test_listdir_fail_raise_FtpStorage(self, mock_ftp_constructor):
+        mock_ftp = mock_ftp_constructor.return_value
+        ftpobj = ftp.FtpStorage(
+            storage_path=self.ftp_opt.ftp_storage_path,
+            remote_pwd=self.ftp_opt.ftp_remote_pwd,
+            remote_username=self.ftp_opt.ftp_remote_username,
+            remote_ip=self.ftp_opt.ftp_remote_ip,
+            port=self.ftp_opt.ftp_port,
+            max_segment_size=self.ftp_opt.ftp_max_segment_size)
+        test_dir = '/home/test'
+        seffect = mock.Mock(side_effect=Exception())
+        mock_ftp.raiseError.side_effect = seffect
+        ret = ftpobj.listdir(test_dir)
+        self.assertEqual(list(), ret)
+
 
 class FtpsStorageTestCase(unittest.TestCase):
 
