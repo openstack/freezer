@@ -134,6 +134,24 @@ class FtpStorageTestCase(unittest.TestCase):
         tmp = ftp_obj._create_tempdir()
         self.assertEqual(tmp, mock_tempfile)
 
+    @patch('ftplib.FTP')
+    def test_listdir_ok_FtpStorage(self, mock_ftp_constructor):
+        mock_ftp = mock_ftp_constructor.return_value
+        ftpobj = ftp.FtpStorage(
+            storage_path=self.ftp_opt.ftp_storage_path,
+            remote_pwd=self.ftp_opt.ftp_remote_pwd,
+            remote_username=self.ftp_opt.ftp_remote_username,
+            remote_ip=self.ftp_opt.ftp_remote_ip,
+            port=self.ftp_opt.ftp_port,
+            max_segment_size=self.ftp_opt.ftp_max_segment_size)
+        test_dir = '/home/test'
+        filelist = ['test1.py', 'test2.py', 'readme.txt', 'ftp.sh']
+        mock_ftp.nlst.return_value = filelist
+        ret = ftpobj.listdir(test_dir)
+        self.assertTrue(mock_ftp.nlst.called)
+        mock_ftp.cwd.assert_called_with(test_dir)
+        self.assertEqual(sorted(filelist), ret)
+
 
 class FtpsStorageTestCase(unittest.TestCase):
 
