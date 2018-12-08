@@ -229,6 +229,23 @@ class FtpStorageTestCase(unittest.TestCase):
         self.assertTrue(mock_ftp.retrbinary.called)
         self.delete_ftp_test_file()
 
+    @patch('ftplib.FTP')
+    def test_create_dirs_ok_FtpStorage(self, mock_ftp_constructor):
+        mock_ftp = mock_ftp_constructor.return_value
+        ftpobj = ftp.FtpStorage(
+            storage_path=self.ftp_opt.ftp_storage_path,
+            remote_pwd=self.ftp_opt.ftp_remote_pwd,
+            remote_username=self.ftp_opt.ftp_remote_username,
+            remote_ip=self.ftp_opt.ftp_remote_ip,
+            port=self.ftp_opt.ftp_port,
+            max_segment_size=self.ftp_opt.ftp_max_segment_size)
+        path = '/'
+        ftpobj.create_dirs(path)
+        mock_ftp.cwd.assert_called_with(path)
+        path = '/home'
+        ftpobj.create_dirs(path)
+        mock_ftp.cwd.assert_called_with(path)
+
 
 class FtpsStorageTestCase(unittest.TestCase):
 
