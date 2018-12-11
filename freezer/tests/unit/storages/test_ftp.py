@@ -246,6 +246,21 @@ class FtpStorageTestCase(unittest.TestCase):
         ftpobj.create_dirs(path)
         mock_ftp.cwd.assert_called_with(path)
 
+    @patch('ftplib.FTP')
+    def test_rmtree_ok_FtpStorage(self, mock_ftp_constructor):
+        mock_ftp = mock_ftp_constructor.return_value
+        ftpobj = ftp.FtpStorage(
+            storage_path=self.ftp_opt.ftp_storage_path,
+            remote_pwd=self.ftp_opt.ftp_remote_pwd,
+            remote_username=self.ftp_opt.ftp_remote_username,
+            remote_ip=self.ftp_opt.ftp_remote_ip,
+            port=self.ftp_opt.ftp_port,
+            max_segment_size=self.ftp_opt.ftp_max_segment_size)
+        path = '/home/tecs'
+        ftpobj.rmtree(path)
+        self.assertTrue(mock_ftp.dir.called)
+        self.assertTrue(mock_ftp.rmd.called)
+
 
 class FtpsStorageTestCase(unittest.TestCase):
 
