@@ -290,7 +290,7 @@ class FtpStorage(BaseFtpStorage):
             LOG.info("ftp nlst result=%s" % nfiles)
         except socket.error as e:
             LOG.info("ftp socket error=%s" % e)
-            self.ftp.set_pasv(False)
+            ftp.set_pasv(False)
         except ftplib.all_errors as e:  # socket.error
             msg = "create ftp failed error=%s" % e
             LOG.info(msg)
@@ -333,7 +333,7 @@ class FtpsStorage(BaseFtpStorage):
             LOG.info("ftps nlst result=%s" % nfiles)
         except socket.error as e:
             LOG.info("ftps socket error=%s" % e)
-            self.ftp.set_pasv(False)
+            ftps.set_pasv(False)
         except ftplib.all_errors as e:
             msg = "create ftps failed error=%s" % e
             LOG.info(msg)
