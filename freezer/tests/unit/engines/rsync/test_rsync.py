@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import mock
+import sys
 import unittest
 
 from freezer.engine.rsync import rsync
@@ -182,3 +183,202 @@ class TestRsyncEngine(unittest.TestCase):
                                                      fs_path=fspath)
         self.assertEqual(ret1, 'u')
         self.assertEqual(ret2, '')
+
+    @patch('grp.getgrnam')
+    @patch('pwd.getpwnam')
+    @patch('os.utime')
+    @patch('os.chown')
+    def test_set_inode_ok(self, mock_oschown,
+                          mock_osutime,
+                          mock_pwd_getpwnam,
+                          mock_grp_getgrnam):
+        uname = 'adminu'
+        gname = 'adming'
+        mtime = 20181230
+        name = 'tecs'
+        current_uid = 1
+        current_gid = 2
+        fake_rsync = self.mock_rsync
+        mock_pwd_getpwnam.return_value = mock.MagicMock()
+        mock_pwd_getpwnam.return_value.pw_uid = current_uid
+        mock_grp_getgrnam.return_value = mock.MagicMock()
+        mock_grp_getgrnam.return_value.gr_gid = current_gid
+
+        fake_rsync.set_inode(uname=uname,
+                             gname=gname,
+                             mtime=mtime,
+                             name=name)
+        mock_pwd_getpwnam.assert_called_with(uname)
+        mock_grp_getgrnam.assert_called_with(gname)
+        mock_oschown.assert_called_with(name, current_uid, current_gid)
+        mock_osutime.assert_called_with(name, (mtime, mtime))
+
+    @patch('getpass.getuser')
+    @patch('grp.getgrnam')
+    @patch('pwd.getpwnam')
+    @patch('os.utime')
+    @patch('os.chown')
+    def test_set_inode_raise_exception(self, mock_oschown,
+                                       mock_osutime,
+                                       mock_pwd_getpwnam,
+                                       mock_grp_getgrnam,
+                                       mock_getpass_getuser):
+        uname = 'adminu'
+        gname = 'adming'
+        mtime = 20181230
+        name = 'tecs'
+        current_uid = 1
+        current_gid = 2
+        fake_rsync = self.mock_rsync
+        mock_pwd_getpwnam.return_value = mock.MagicMock()
+        mock_pwd_getpwnam.return_value.pw_uid = current_uid
+        mock_grp_getgrnam.return_value = mock.MagicMock()
+        mock_grp_getgrnam.return_value.gr_gid = current_gid
+
+        mock_osutime.side_effect = OSError
+        self.assertRaises(Exception,   # noqa
+                          fake_rsync.set_inode,
+                          uname=uname,
+                          gname=gname,
+                          mtime=mtime,
+                          name=name)
+        self.assertTrue(mock_getpass_getuser.called)
+
+    @patch('os.lstat')
+    def test_get_file_struct_raise_exception(self, mock_oslstat):
+        fs_path = '/home/tecs'
+        new_level = True
+        fake_rsync = self.mock_rsync
+        mock_oslstat.side_effect = OSError
+        self.assertRaises(Exception,    # noqa
+                          fake_rsync.get_file_struct,
+                          fs_path=fs_path,
+                          new_level=new_level)
+
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.get_file_type')
+    @patch('os.minor')
+    @patch('os.major')
+    @patch('grp.getgrgid')
+    @patch('pwd.getpwuid')
+    @patch('os.lstat')
+    def test_get_file_struct_s_ok(self, mock_oslstat,
+                                  mock_pwd_getpwuid,
+                                  mock_grp_getgrgid,
+                                  mock_osmajor,
+                                  mock_osminor,
+                                  mock_getfiletype):
+        fs_path = '/home/tecs'
+        new_level = True
+        fake_rsync = self.mock_rsync
+        file_mode = 'w'
+        file_type = 's'
+        lname = ''
+        mock_oslstat.return_value = mock.MagicMock()
+        mock_oslstat.return_value.st_mode = file_mode
+
+        mock_getfiletype.return_value = mock.MagicMock()
+        mock_getfiletype.return_value = file_type, lname
+        ret1, ret2 = fake_rsync.get_file_struct(fs_path=fs_path,
+                                                new_level=new_level)
+        self.assertEqual(ret1, False)
+        self.assertEqual(ret2, False)
+
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.get_file_type')
+    @patch('os.minor')
+    @patch('os.major')
+    @patch('grp.getgrgid')
+    @patch('pwd.getpwuid')
+    @patch('os.lstat')
+    def test_get_file_struct_u_ok(self, mock_oslstat,
+                                  mock_pwd_getpwuid,
+                                  mock_grp_getgrgid,
+                                  mock_osmajor,
+                                  mock_osminor,
+                                  mock_getfiletype):
+        fs_path = '/home/tecs'
+        new_level = True
+        fake_rsync = self.mock_rsync
+        file_mode = 'w'
+        file_type = 'u'
+        lname = ''
+        ctime = 1
+        mtime = 2
+        uname = 'tecs'
+        gname = 'admin'
+        dev = 'fakedev'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 'fakezise'
+
+        mock_oslstat.return_value = mock.MagicMock()
+        mock_oslstat.return_value.st_mode = file_mode
+        mock_oslstat.return_value.st_ctime = int(ctime)
+        mock_oslstat.return_value.st_mtime = int(mtime)
+        mock_oslstat.return_value.st_dev = dev
+        mock_oslstat.return_value.st_ino = inumber
+        mock_oslstat.return_value.st_nlink = nlink
+        mock_oslstat.return_value.st_uid = uid
+        mock_oslstat.return_value.st_gid = gid
+        mock_oslstat.return_value.st_size = size
+
+        devmajor = 'fakedevmajor'
+        mock_osmajor.return_value = mock.MagicMock()
+        mock_osmajor.return_value = devmajor
+
+        devminor = 'fakedevminor'
+        mock_osminor.return_value = mock.MagicMock()
+        mock_osminor.return_value = devminor
+
+        level_id = '1111'
+
+        mock_getfiletype.return_value = mock.MagicMock()
+        mock_getfiletype.return_value = file_type, lname
+
+        inode_dict = {
+            'inode': {
+                'inumber': inumber,
+                'nlink': nlink,
+                'mode': file_mode,
+                'uid': uid,
+                'gid': gid,
+                'size': size,
+                'devmajor': devmajor,
+                'devminor': devminor,
+                'mtime': mtime,
+                'ctime': ctime,
+                'uname': uname,
+                'gname': gname,
+                'ftype': file_type,
+                'lname': lname,
+                'rsync_block_size': 4096,
+                'level_id': level_id,
+                'deleted': '0000'
+            }
+        }
+
+        inode_bin_str = (
+            b'{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            1, file_mode,
+            uid, gid, size, mtime, ctime, uname, gname,
+            file_type, lname, inumber, nlink, devminor, devmajor,
+            4096, level_id, '0000')
+
+        mock_pwd_getpwuid.return_value = mock.MagicMock()
+        mock_pwd_getpwuid.return_value = [uname, 0, 0]
+
+        mock_grp_getgrgid.return_value = mock.MagicMock()
+        mock_grp_getgrgid.return_value = [gname, 0, 0]
+
+        mock_getfiletype.return_value = mock.MagicMock()
+        mock_getfiletype.return_value = file_type, lname
+        self.maxDiff = None
+        ret1, ret2 = fake_rsync.get_file_struct(fs_path=fs_path,
+                                                new_level=new_level)
+        self.assertEqual(ret1, inode_dict)
+        self.assertEqual(ret2, inode_bin_str)
