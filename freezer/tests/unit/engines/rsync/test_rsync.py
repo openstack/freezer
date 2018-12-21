@@ -14,6 +14,7 @@
 
 import mock
 import shutil
+import stat
 import sys
 import tempfile
 import unittest
@@ -510,8 +511,6 @@ class TestRsyncEngine(unittest.TestCase):
         self.assertEqual(ret, res)
 
     @patch('os.unlink')
-    @patch('stat.S_IFCHR')
-    @patch('stat.S_IFBLK')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
     @patch('os.symlink')
@@ -532,8 +531,6 @@ class TestRsyncEngine(unittest.TestCase):
                         mock_os_mkfifo,
                         mock_os_symlink,
                         mock_set_inode,
-                        mock_stat_s_ifblk,
-                        mock_stat_s_ifchr,
                         mock_os_unlink):
 
         header_len = 128
@@ -587,8 +584,6 @@ class TestRsyncEngine(unittest.TestCase):
         self.assertEqual(ret, data_chunk)
 
     @patch('os.unlink')
-    @patch('stat.S_IFCHR')
-    @patch('stat.S_IFBLK')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
     @patch('os.symlink')
@@ -609,8 +604,6 @@ class TestRsyncEngine(unittest.TestCase):
                                 mock_os_mkfifo,
                                 mock_os_symlink,
                                 mock_set_inode,
-                                mock_stat_s_ifblk,
-                                mock_stat_s_ifchr,
                                 mock_os_unlink):
         header_len = 128
         file_path = 'fakefilepath'
@@ -663,8 +656,6 @@ class TestRsyncEngine(unittest.TestCase):
         self.assertEqual(ret, data_chunk)
 
     @patch('os.unlink')
-    @patch('stat.S_IFCHR')
-    @patch('stat.S_IFBLK')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
     @patch('os.symlink')
@@ -685,8 +676,6 @@ class TestRsyncEngine(unittest.TestCase):
                                       mock_os_mkfifo,
                                       mock_os_symlink,
                                       mock_set_inode,
-                                      mock_stat_s_ifblk,
-                                      mock_stat_s_ifchr,
                                       mock_os_unlink):
         header_len = 128
         file_path = 'fakefilepath'
@@ -741,8 +730,6 @@ class TestRsyncEngine(unittest.TestCase):
         self.assertEqual(ret, data_chunk)
 
     @patch('os.unlink')
-    @patch('stat.S_IFCHR')
-    @patch('stat.S_IFBLK')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
     @patch('os.symlink')
@@ -763,8 +750,6 @@ class TestRsyncEngine(unittest.TestCase):
                                       mock_os_mkfifo,
                                       mock_os_symlink,
                                       mock_set_inode,
-                                      mock_stat_s_ifblk,
-                                      mock_stat_s_ifchr,
                                       mock_os_unlink):
         header_len = 128
         file_path = 'fakefilepath'
@@ -823,6 +808,247 @@ class TestRsyncEngine(unittest.TestCase):
                                                    data_chunk,
                                                    flushed,
                                                    level_id)
+        mock_set_inode.assert_called_once_with(uname, gname,
+                                               mtime, fileabspath)
+        self.assertEqual(ret, data_chunk)
+
+    @patch('os.unlink')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.set_inode')
+    @patch('os.symlink')
+    @patch('os.mkfifo')
+    @patch('os.mknod')
+    @patch('os.makedev')
+    @patch('os.makedirs')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.make_reg_file')
+    @patch('os.path.exists')
+    @patch('os.path.isdir')
+    def test_make_files_filetype_b_ok(self, mock_os_path_isdir,
+                                      mock_os_path_exists,
+                                      mock_make_reg_file,
+                                      mock_os_makedirs,
+                                      mock_os_makedev,
+                                      mock_os_mknod,
+                                      mock_os_mkfifo,
+                                      mock_os_symlink,
+                                      mock_set_inode,
+                                      mock_os_unlink):
+        header_len = 128
+        file_path = 'fakefilepath'
+        data_ver = 1
+        file_mode = 2
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 1024
+        mtime = 20181230
+        ctime = 20180302
+        uname = 'fakeuname'
+        gname = 'fakegname'
+        file_type = 'b'
+        link_name = 'fakelink_name'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        devminor = 5
+        devmajor = 10
+        rsync_block_size = 'fakersyncblocksize'
+        level_id = '0000'
+        rm = '1112'
+
+        header_list = [header_len, file_path, data_ver, file_mode, uid,
+                       gid, size, mtime, ctime, uname, gname, file_type,
+                       link_name, inumber, nlink, devminor, devmajor,
+                       rsync_block_size, level_id, rm]
+        read_pipe = 'fakeread_pipe'
+        data_chunk = 'fakedatachunk'
+        restore_abs_path = '/home/tecs'
+        flushed = 'True'
+        current_backup_level = 1
+
+        fake_rsync = self.mock_rsync
+
+        mock_os_path_isdir.return_value = mock.MagicMock()
+        mock_os_path_isdir.return_value = True
+
+        mock_os_path_exists.return_value = mock.MagicMock()
+        mock_os_path_exists.return_value = True
+
+        fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
+
+        file_mode |= stat.S_IFBLK
+
+        mock_os_makedev.return_value = mock.MagicMock()
+        new_dev = 'fakenewdev'
+        mock_os_makedev.return_value = new_dev
+
+        ret = fake_rsync.make_files(header_list=header_list,
+                                    restore_abs_path=restore_abs_path,
+                                    read_pipe=read_pipe,
+                                    data_chunk=data_chunk,
+                                    flushed=flushed,
+                                    current_backup_level=current_backup_level)
+
+        mock_os_makedev.assert_called_once_with(devmajor, devminor)
+        mock_os_mknod.assert_called_once_with(fileabspath, file_mode,
+                                              new_dev)
+        mock_set_inode.assert_called_once_with(uname, gname,
+                                               mtime, fileabspath)
+        self.assertEqual(ret, data_chunk)
+
+    @patch('os.unlink')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.set_inode')
+    @patch('os.symlink')
+    @patch('os.mkfifo')
+    @patch('os.mknod')
+    @patch('os.makedev')
+    @patch('os.makedirs')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.make_reg_file')
+    @patch('os.path.exists')
+    @patch('os.path.isdir')
+    def test_make_files_filetype_c_ok(self, mock_os_path_isdir,
+                                      mock_os_path_exists,
+                                      mock_make_reg_file,
+                                      mock_os_makedirs,
+                                      mock_os_makedev,
+                                      mock_os_mknod,
+                                      mock_os_mkfifo,
+                                      mock_os_symlink,
+                                      mock_set_inode,
+                                      mock_os_unlink):
+        header_len = 128
+        file_path = 'fakefilepath'
+        data_ver = 1
+        file_mode = 2
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 1024
+        mtime = 20181230
+        ctime = 20180302
+        uname = 'fakeuname'
+        gname = 'fakegname'
+        file_type = 'c'
+        link_name = 'fakelink_name'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        devminor = 5
+        devmajor = 10
+        rsync_block_size = 'fakersyncblocksize'
+        level_id = '0000'
+        rm = '1112'
+
+        header_list = [header_len, file_path, data_ver, file_mode, uid,
+                       gid, size, mtime, ctime, uname, gname, file_type,
+                       link_name, inumber, nlink, devminor, devmajor,
+                       rsync_block_size, level_id, rm]
+        read_pipe = 'fakeread_pipe'
+        data_chunk = 'fakedatachunk'
+        restore_abs_path = '/home/tecs'
+        flushed = 'True'
+        current_backup_level = 1
+
+        fake_rsync = self.mock_rsync
+
+        mock_os_path_isdir.return_value = mock.MagicMock()
+        mock_os_path_isdir.return_value = True
+
+        mock_os_path_exists.return_value = mock.MagicMock()
+        mock_os_path_exists.return_value = True
+
+        fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
+
+        file_mode |= stat.S_IFCHR
+
+        mock_os_makedev.return_value = mock.MagicMock()
+        new_dev = 'fakenewdev'
+        mock_os_makedev.return_value = new_dev
+
+        ret = fake_rsync.make_files(header_list=header_list,
+                                    restore_abs_path=restore_abs_path,
+                                    read_pipe=read_pipe,
+                                    data_chunk=data_chunk,
+                                    flushed=flushed,
+                                    current_backup_level=current_backup_level)
+
+        mock_os_makedev.assert_called_once_with(devmajor, devminor)
+        mock_os_mknod.assert_called_once_with(fileabspath, file_mode,
+                                              new_dev)
+        mock_set_inode.assert_called_once_with(uname, gname,
+                                               mtime, fileabspath)
+        self.assertEqual(ret, data_chunk)
+
+    @patch('os.unlink')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.set_inode')
+    @patch('os.symlink')
+    @patch('os.mkfifo')
+    @patch('os.mknod')
+    @patch('os.makedev')
+    @patch('os.makedirs')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.make_reg_file')
+    @patch('os.path.exists')
+    @patch('os.path.isdir')
+    def test_make_files_filetype_p_ok(self, mock_os_path_isdir,
+                                      mock_os_path_exists,
+                                      mock_make_reg_file,
+                                      mock_os_makedirs,
+                                      mock_os_makedev,
+                                      mock_os_mknod,
+                                      mock_os_mkfifo,
+                                      mock_os_symlink,
+                                      mock_set_inode,
+                                      mock_os_unlink):
+        header_len = 128
+        file_path = 'fakefilepath'
+        data_ver = 1
+        file_mode = 2
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 1024
+        mtime = 20181230
+        ctime = 20180302
+        uname = 'fakeuname'
+        gname = 'fakegname'
+        file_type = 'p'
+        link_name = 'fakelink_name'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        devminor = 5
+        devmajor = 10
+        rsync_block_size = 'fakersyncblocksize'
+        level_id = '0000'
+        rm = '1112'
+
+        header_list = [header_len, file_path, data_ver, file_mode, uid,
+                       gid, size, mtime, ctime, uname, gname, file_type,
+                       link_name, inumber, nlink, devminor, devmajor,
+                       rsync_block_size, level_id, rm]
+        read_pipe = 'fakeread_pipe'
+        data_chunk = 'fakedatachunk'
+        restore_abs_path = '/home/tecs'
+        flushed = 'True'
+        current_backup_level = 1
+
+        fake_rsync = self.mock_rsync
+
+        mock_os_path_isdir.return_value = mock.MagicMock()
+        mock_os_path_isdir.return_value = True
+
+        mock_os_path_exists.return_value = mock.MagicMock()
+        mock_os_path_exists.return_value = True
+
+        fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
+
+        ret = fake_rsync.make_files(header_list=header_list,
+                                    restore_abs_path=restore_abs_path,
+                                    read_pipe=read_pipe,
+                                    data_chunk=data_chunk,
+                                    flushed=flushed,
+                                    current_backup_level=current_backup_level)
+
+        mock_os_mkfifo.assert_called_once_with(fileabspath)
         mock_set_inode.assert_called_once_with(uname, gname,
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
