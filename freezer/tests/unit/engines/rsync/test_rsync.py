@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import mock
+import shutil
 import sys
+import tempfile
 import unittest
 
 from freezer.engine.rsync import rsync
@@ -35,12 +37,36 @@ class TestRsyncEngine(unittest.TestCase):
         self.compressor = mock.MagicMock()
         self.cipher = mock.MagicMock()
         self.name = "rsync"
+        self.rsync_test_file_name = None
+        self.rsync_test_file_dir = None
         self.mock_rsync = rsync.RsyncEngine(compression=self.compression_algo,
                                             symlinks=self.symlinks,
                                             exclude=self.exclude,
                                             storage=self.storage,
                                             max_segment_size=1024,
                                             encrypt_key=self.encrypt_file)
+
+    def create_rsync_test_file(self):
+        if self.rsync_test_file_name:
+            return
+        tmpdir = tempfile.mkdtemp()
+        FILES_DIR_PREFIX = "freezer_rsynctest_files_dir"
+        files_dir = tempfile.mkdtemp(dir=tmpdir, prefix=FILES_DIR_PREFIX)
+        file_name = "file_rsync_test"
+        self.rsync_test_file_dir = files_dir
+        text = "rsyncTESTTXT"
+        filehandle = open(files_dir + "/" + file_name, 'w')
+        if filehandle:
+            filehandle.write(text)
+            filehandle.close()
+            self.rsync_test_file_name = file_name
+
+    def delete_rsync_test_file(self):
+        if self.rsync_test_file_name:
+            files_dir = self.rsync_test_file_dir
+            shutil.rmtree(files_dir)
+            self.rsync_test_file_name = None
+            self.rsync_test_file_dir = None
 
     def test_metadata(self):
         ret = self.mock_rsync.metadata()
@@ -382,3 +408,103 @@ class TestRsyncEngine(unittest.TestCase):
                                                 new_level=new_level)
         self.assertEqual(ret1, inode_dict)
         self.assertEqual(ret2, inode_bin_str)
+
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.write_file')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.write_changes_in_file')
+    def test_make_reg_file_0000_level(self, mock_write_changes_in_file,
+                                      mock_write_file):
+        size = 1024
+        read_pipe = 'fakeread_pipe'
+        data_chunk = 'fakedatachunk'
+        flushed = 'True'
+        level_id = '0000'
+
+        fake_rsync = self.mock_rsync
+        self.create_rsync_test_file()
+        file_dir = self.rsync_test_file_dir
+        file_name = self.rsync_test_file_name
+        file_path = file_dir + "/" + file_name
+        mock_write_file.return_value = mock.MagicMock()
+        mock_write_file.return_value = data_chunk
+
+        ret = fake_rsync.make_reg_file(size=size,
+                                       file_path=file_path,
+                                       read_pipe=read_pipe,
+                                       data_chunk=data_chunk,
+                                       flushed=flushed,
+                                       level_id=level_id)
+        self.delete_rsync_test_file()
+        self.assertEqual(ret, data_chunk)
+
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.write_file')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.write_changes_in_file')
+    def test_make_reg_file_1111_level(self, mock_write_changes_in_file,
+                                      mock_write_file):
+        size = 1024
+        read_pipe = 'fakeread_pipe'
+        data_chunk = 'fakedatachunk'
+        flushed = 'False'
+        level_id = '1111'
+        self.create_rsync_test_file()
+        file_dir = self.rsync_test_file_dir
+        file_name = self.rsync_test_file_name
+        file_path = file_dir + "/" + file_name
+        fake_rsync = self.mock_rsync
+
+        mock_write_changes_in_file.return_value = mock.MagicMock()
+        mock_write_changes_in_file.return_value = data_chunk
+
+        ret = fake_rsync.make_reg_file(size=size,
+                                       file_path=file_path,
+                                       read_pipe=read_pipe,
+                                       data_chunk=data_chunk,
+                                       flushed=flushed,
+                                       level_id=level_id)
+
+        self.delete_rsync_test_file()
+        self.assertEqual(ret, data_chunk)
+
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    def test_gen_file_header(self):
+        file_path = '/home/tecs'
+
+        file_mode = 'w'
+        file_type = 'u'
+        lname = ''
+        ctime = 1
+        mtime = 2
+        uname = 'tecs'
+        gname = 'admin'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 'fakezise'
+        devmajor = 'fakedevmajor'
+
+        devminor = 'fakedevminor'
+        level_id = '1111'
+
+        inode_bin_str = (
+            b'{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            1, file_mode,
+            uid, gid, size, mtime, ctime, uname, gname,
+            file_type, lname, inumber, nlink, devminor, devmajor,
+            4096, level_id, '0000')
+
+        fake_rsync = self.mock_rsync
+
+        res = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
+              '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
+              '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
+              '\x00fakedevminor\x00fakedevmajor\x004096' \
+              '\x001111\x000000'
+
+        ret = fake_rsync.gen_file_header(file_path=file_path,
+                                         inode_str_struct=inode_bin_str)
+        self.assertEqual(ret, res)
