@@ -1495,3 +1495,90 @@ class TestRsyncEngine(unittest.TestCase):
                                     flushed=flushed,
                                     current_backup_level=current_backup_level)
         self.assertEqual(ret, data_chunk)
+
+    def test_process_backup_data(self):
+        data = 'fakedata'
+        do_compress = True
+
+        fake_rsync = self.mock_rsync
+        fake_rsync.compressor = self.compressor
+        fake_rsync.cipher = self.cipher
+
+        fake_rsync.encrypt_pass_file = True
+
+        fake_rsync.compressor.compress = mock.MagicMock()
+        fake_rsync.compressor.compress.return_value = data
+
+        fake_rsync.cipher.encrypt = mock.MagicMock()
+        fake_rsync.cipher.encrypt.return_value = data
+
+        ret = fake_rsync.process_backup_data(data=data,
+                                             do_compress=do_compress)
+        self.assertEqual(ret, data)
+
+    def test_process_backup_data_compress(self):
+        data = 'fakedata'
+        do_compress = True
+
+        fake_rsync = self.mock_rsync
+        fake_rsync.compressor = self.compressor
+        fake_rsync.cipher = self.cipher
+
+        fake_rsync.encrypt_pass_file = False
+
+        fake_rsync.compressor.compress = mock.MagicMock()
+        fake_rsync.compressor.compress.return_value = data
+
+        ret = fake_rsync.process_backup_data(data=data,
+                                             do_compress=do_compress)
+        self.assertEqual(ret, data)
+
+    def test_process_backup_data_encrypt(self):
+        data = 'fakedata'
+        do_compress = False
+
+        fake_rsync = self.mock_rsync
+        fake_rsync.compressor = self.compressor
+        fake_rsync.cipher = self.cipher
+
+        fake_rsync.encrypt_pass_file = True
+
+        fake_rsync.cipher.encrypt = mock.MagicMock()
+        fake_rsync.cipher.encrypt.return_value = data
+
+        ret = fake_rsync.process_backup_data(data=data,
+                                             do_compress=do_compress)
+        self.assertEqual(ret, data)
+
+    def test_process_restore_data(self):
+        data = 'fakedata'
+
+        fake_rsync = self.mock_rsync
+        fake_rsync.compressor = self.compressor
+        fake_rsync.cipher = self.cipher
+
+        fake_rsync.encrypt_pass_file = False
+
+        fake_rsync.compressor.decompress = mock.MagicMock()
+        fake_rsync.compressor.decompress.return_value = data
+
+        ret = fake_rsync.process_restore_data(data=data)
+        self.assertEqual(ret, data)
+
+    def test_process_restore_data_encrypt(self):
+        data = 'fakedata'
+
+        fake_rsync = self.mock_rsync
+        fake_rsync.compressor = self.compressor
+        fake_rsync.cipher = self.cipher
+
+        fake_rsync.encrypt_pass_file = True
+
+        fake_rsync.compressor.decompress = mock.MagicMock()
+        fake_rsync.compressor.decompress.return_value = data
+
+        fake_rsync.cipher.decrypt = mock.MagicMock()
+        fake_rsync.cipher.decrypt.return_value = data
+
+        ret = fake_rsync.process_restore_data(data=data)
+        self.assertEqual(ret, data)
