@@ -1596,20 +1596,60 @@ class TestRsyncEngine(unittest.TestCase):
         rel_path = 'rel_path'
         fake_rsync = self.mock_rsync
 
-        files_meta = {'files': {'rel_path': {'signature': (1, 2)}}}
-        files_meta1 = {'files': {'rel_path': {'signature': (3, 4)}}}
+        files_meta = {'files': {'rel_path': {'signature': [1, 2]}}}
+        files_meta1 = {'files': {'rel_path': {'signature': [3, 4]}}}
 
         file_path_fd = mock.MagicMock()
         file_path_fd.return_value = 'fakehandle'
 
-        # mock_open = mock.MagicMock()
         mock_open.return_value = file_path_fd
 
         mock_blockchecksums.return_value = mock.MagicMock()
-        mock_blockchecksums.return_value = (3, 4)
+        mock_blockchecksums.return_value = [3, 4]
 
         ret = fake_rsync.compute_checksums(rel_path=rel_path,
                                            files_meta=files_meta,
                                            reg_file=True)
 
         self.assertEqual(ret, files_meta1)
+
+    @patch('os.path.lexists')
+    @patch('os.path.exists')
+    def test_compute_checksums_regfile_False(self, mock_os_path_exists,
+                                             mock_os_path_lexists):
+        rel_path = 'rel_path'
+        fake_rsync = self.mock_rsync
+
+        files_meta = {'files': {'rel_path': {'signature': [1, 2]}}}
+        files_meta1 = {'files': {'rel_path': {'signature': [[], []]}}}
+
+        mock_os_path_lexists.return_value = mock.MagicMock()
+        mock_os_path_lexists.return_value = True
+
+        mock_os_path_exists.return_value = mock.MagicMock()
+        mock_os_path_exists.return_value = True
+
+        ret = fake_rsync.compute_checksums(rel_path=rel_path,
+                                           files_meta=files_meta,
+                                           reg_file=False)
+
+        self.assertEqual(ret, files_meta1)
+
+    @patch('os.path.lexists')
+    @patch('os.path.exists')
+    def test_compute_checksums_regfile_raise(self, mock_os_path_exists,
+                                             mock_os_path_lexists):
+        rel_path = 'rel_path'
+        fake_rsync = self.mock_rsync
+        reg_file = False
+
+        mock_os_path_lexists.return_value = mock.MagicMock()
+        mock_os_path_lexists.return_value = True
+
+        mock_os_path_exists.return_value = mock.MagicMock()
+        mock_os_path_exists.return_value = False
+
+        self.assertRaises(IOError,
+                          fake_rsync.compute_checksums,
+                          rel_path,
+                          reg_file)
