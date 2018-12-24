@@ -253,6 +253,41 @@ class FtpStorageTestCase(unittest.TestCase):
         self.assertTrue(mock_create_dirs.called)
         self.assertTrue(mock_put_file.called)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    @patch("freezer.storage.ftp.BaseFtpStorage.create_dirs")
+    @patch("freezer.storage.ftp.BaseFtpStorage.put_file")
+    @patch("__builtin__.open")
+    @patch('ftplib.FTP')
+    def test_add_stream_FtpStorage(self, mock_ftp_constructor,
+                                   mock_open,
+                                   mock_put_file,
+                                   mock_create_dirs):
+        ftpobj = self.create_ftpstorage_obj()
+
+        rich_queue = mock.MagicMock()
+        rich_queue.get_messages = mock.MagicMock()
+        rich_queue.get_messages.return_value = ['1']
+
+        package_name = 'fakedir/fakename'
+        stream = ['fakestream']
+
+        backup = mock.MagicMock()
+        backup.copy = mock.MagicMock()
+        backup.copy.return_value = backup
+
+        b_file = mock.MagicMock()
+        b_file.write = mock.MagicMock()
+
+        mock_open = mock.MagicMock()
+        mock_open.return_value = b_file
+
+        ftpobj.add_stream(stream=stream,
+                          package_name=package_name)
+
+        self.assertTrue(mock_create_dirs.called)
+        self.assertTrue(mock_put_file.called)
+
 
 class FtpsStorageTestCase(unittest.TestCase):
 
