@@ -1582,3 +1582,34 @@ class TestRsyncEngine(unittest.TestCase):
 
         ret = fake_rsync.process_restore_data(data=data)
         self.assertEqual(ret, data)
+
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    @patch("__builtin__.open")
+    @patch('os.path.lexists')
+    @patch('os.path.exists')
+    @patch('freezer.engine.rsync.pyrsync.blockchecksums')
+    def test_compute_checksums_regfile_true(self, mock_blockchecksums,
+                                            mock_os_path_exists,
+                                            mock_os_path_lexists,
+                                            mock_open):
+        rel_path = 'rel_path'
+        fake_rsync = self.mock_rsync
+
+        files_meta = {'files': {'rel_path': {'signature': (1, 2)}}}
+        files_meta1 = {'files': {'rel_path': {'signature': (3, 4)}}}
+
+        file_path_fd = mock.MagicMock()
+        file_path_fd.return_value = 'fakehandle'
+
+        # mock_open = mock.MagicMock()
+        mock_open.return_value = file_path_fd
+
+        mock_blockchecksums.return_value = mock.MagicMock()
+        mock_blockchecksums.return_value = (3, 4)
+
+        ret = fake_rsync.compute_checksums(rel_path=rel_path,
+                                           files_meta=files_meta,
+                                           reg_file=True)
+
+        self.assertEqual(ret, files_meta1)
