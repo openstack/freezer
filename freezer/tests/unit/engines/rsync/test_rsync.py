@@ -1604,7 +1604,6 @@ class TestRsyncEngine(unittest.TestCase):
 
         mock_open.return_value = file_path_fd
 
-        mock_blockchecksums.return_value = mock.MagicMock()
         mock_blockchecksums.return_value = [3, 4]
 
         ret = fake_rsync.compute_checksums(rel_path=rel_path,
@@ -1623,10 +1622,8 @@ class TestRsyncEngine(unittest.TestCase):
         files_meta = {'files': {'rel_path': {'signature': [1, 2]}}}
         files_meta1 = {'files': {'rel_path': {'signature': [[], []]}}}
 
-        mock_os_path_lexists.return_value = mock.MagicMock()
         mock_os_path_lexists.return_value = True
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         ret = fake_rsync.compute_checksums(rel_path=rel_path,
@@ -1653,3 +1650,341 @@ class TestRsyncEngine(unittest.TestCase):
                           fake_rsync.compute_checksums,
                           rel_path,
                           reg_file)
+
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    @patch("__builtin__.open")
+    @patch('os.path.lexists')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.rsync_gen_delta')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.process_backup_data')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.compute_checksums')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.is_file_modified')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.get_old_file_meta')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.is_reg_file')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.gen_file_header')
+    def test_compute_incrementals_ok(self, mock_gen_file_header,
+                                     mock_is_reg_file,
+                                     mock_get_old_file_meta,
+                                     mock_is_file_modified,
+                                     mock_compute_checksums,
+                                     mock_process_backup_data,
+                                     mock_rsync_gen_delta,
+                                     mock_os_path_lexists,
+                                     mock_open):
+        rel_path = '/home/tecs'
+        frsync = self.mock_rsync
+        deleted = False
+
+        file_mode = 'w'
+        file_type = 'u'
+        lname = ''
+        ctime = 1
+        mtime = 2
+        uname = 'tecs'
+        gname = 'admin'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 'fakezise'
+        devmajor = 'fakedevmajor'
+
+        devminor = 'fakedevminor'
+        level_id = '1111'
+
+        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
+                      '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
+                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
+                      '\x00fakedevminor\x00fakedevmajor\x004096' \
+                      '\x001111\x000000'
+
+        write_queue = mock.MagicMock()
+        write_queue.put = mock.MagicMock()
+
+        mock_gen_file_header.return_value = file_header
+
+        mock_is_reg_file.return_value = True
+
+        files_meta = {'files': {'rel_path': {'signature': [1, 2]}}}
+        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
+        old_fsmetastruct = old_file_meta
+
+        mock_get_old_file_meta.return_value = old_file_meta
+
+        mock_is_file_modified.return_value = True
+
+        mock_compute_checksums.return_value = files_meta
+
+        file_path_fd = mock.MagicMock()
+        file_path_fd.return_value = 'fakehandle'
+        file_path_fd.close = mock.MagicMock()
+        file_path_fd.read = mock.MagicMock()
+
+        mock_open.return_value = file_path_fd
+
+        inode_dict_struct = {
+            'inode': {
+                'inumber': inumber,
+                'nlink': nlink,
+                'mode': file_mode,
+                'uid': uid,
+                'gid': gid,
+                'size': size,
+                'devmajor': devmajor,
+                'devminor': devminor,
+                'mtime': mtime,
+                'ctime': ctime,
+                'uname': uname,
+                'gname': gname,
+                'ftype': file_type,
+                'lname': lname,
+                'rsync_block_size': 4096,
+                'level_id': level_id,
+                'deleted': '0000'
+            }
+        }
+
+        inode_str_struct = (
+            b'{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            1, file_mode,
+            uid, gid, size, mtime, ctime, uname, gname,
+            file_type, lname, inumber, nlink, devminor, devmajor,
+            4096, level_id, '0000')
+
+        ret = frsync.compute_incrementals(rel_path=rel_path,
+                                          inode_str_struct=inode_str_struct,
+                                          inode_dict_struct=inode_dict_struct,
+                                          files_meta=files_meta,
+                                          old_fs_meta_struct=old_fsmetastruct,
+                                          write_queue=write_queue,
+                                          deleted=deleted)
+        self.assertEqual(ret, files_meta)
+        mock_open.assert_called_with(rel_path)
+        self.assertTrue(mock_process_backup_data.called)
+        self.assertTrue(write_queue.put.called)
+        self.assertTrue(file_path_fd.close.called)
+        self.assertTrue(mock_rsync_gen_delta.called)
+
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    @patch("__builtin__.open")
+    @patch('os.path.lexists')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.rsync_gen_delta')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.process_backup_data')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.compute_checksums')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.is_file_modified')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.get_old_file_meta')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.is_reg_file')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.gen_file_header')
+    def test_compute_incrementals_no_oldmeta(self, mock_gen_file_header,
+                                             mock_is_reg_file,
+                                             mock_get_old_file_meta,
+                                             mock_is_file_modified,
+                                             mock_compute_checksums,
+                                             mock_process_backup_data,
+                                             mock_rsync_gen_delta,
+                                             mock_os_path_lexists,
+                                             mock_open):
+        rel_path = '/home/tecs'
+        frsync = self.mock_rsync
+        deleted = False
+
+        file_mode = 'w'
+        file_type = 'u'
+        lname = ''
+        ctime = 1
+        mtime = 2
+        uname = 'tecs'
+        gname = 'admin'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 'fakezise'
+        devmajor = 'fakedevmajor'
+
+        devminor = 'fakedevminor'
+        level_id = '1111'
+
+        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
+                      '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
+                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
+                      '\x00fakedevminor\x00fakedevmajor\x004096' \
+                      '\x001111\x000000'
+
+        write_queue = mock.MagicMock()
+        write_queue.put = mock.MagicMock()
+
+        mock_gen_file_header.return_value = file_header
+
+        mock_is_reg_file.return_value = True
+
+        files_meta = {'files': {'rel_path': {'signature': [1, 2]}}}
+        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
+        old_fsmetastruct = old_file_meta
+
+        mock_get_old_file_meta.return_value = None
+
+        mock_is_file_modified.return_value = True
+
+        mock_compute_checksums.return_value = files_meta
+
+        file_path_fd = mock.MagicMock()
+        file_path_fd.return_value = 'fakehandle'
+        file_path_fd.close = mock.MagicMock()
+        file_path_fd.read = mock.MagicMock()
+        data_block = ['1', '2', None]
+        file_path_fd.read.side_effect = data_block
+        mock_open.return_value = file_path_fd
+
+        inode_dict_struct = {
+            'inode': {
+                'inumber': inumber,
+                'nlink': nlink,
+                'mode': file_mode,
+                'uid': uid,
+                'gid': gid,
+                'size': size,
+                'devmajor': devmajor,
+                'devminor': devminor,
+                'mtime': mtime,
+                'ctime': ctime,
+                'uname': uname,
+                'gname': gname,
+                'ftype': file_type,
+                'lname': lname,
+                'rsync_block_size': 4096,
+                'level_id': level_id,
+                'deleted': '0000'
+            }
+        }
+
+        inode_str_struct = (
+            b'{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            1, file_mode,
+            uid, gid, size, mtime, ctime, uname, gname,
+            file_type, lname, inumber, nlink, devminor, devmajor,
+            4096, level_id, '0000')
+
+        ret = frsync.compute_incrementals(rel_path=rel_path,
+                                          inode_str_struct=inode_str_struct,
+                                          inode_dict_struct=inode_dict_struct,
+                                          files_meta=files_meta,
+                                          old_fs_meta_struct=old_fsmetastruct,
+                                          write_queue=write_queue,
+                                          deleted=deleted)
+        self.assertEqual(ret, files_meta)
+        mock_open.assert_called_with(rel_path)
+        self.assertTrue(mock_process_backup_data.called)
+        self.assertTrue(write_queue.put.called)
+        self.assertTrue(file_path_fd.close.called)
+
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    @patch("__builtin__.open")
+    @patch('os.path.lexists')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.rsync_gen_delta')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.process_backup_data')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.compute_checksums')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.is_file_modified')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.get_old_file_meta')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.is_reg_file')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.gen_file_header')
+    def test_compute_incrementals_exception(self, mock_gen_file_header,
+                                            mock_is_reg_file,
+                                            mock_get_old_file_meta,
+                                            mock_is_file_modified,
+                                            mock_compute_checksums,
+                                            mock_process_backup_data,
+                                            mock_rsync_gen_delta,
+                                            mock_os_path_lexists,
+                                            mock_open):
+        rel_path = '/home/tecs'
+        frsync = self.mock_rsync
+        deleted = False
+
+        file_mode = 'w'
+        file_type = 'u'
+        lname = ''
+        ctime = 1
+        mtime = 2
+        uname = 'tecs'
+        gname = 'admin'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 'fakezise'
+        devmajor = 'fakedevmajor'
+
+        devminor = 'fakedevminor'
+        level_id = '1111'
+
+        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
+                      '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
+                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
+                      '\x00fakedevminor\x00fakedevmajor\x004096' \
+                      '\x001111\x000000'
+
+        write_queue = mock.MagicMock()
+        write_queue.put = mock.MagicMock()
+
+        mock_gen_file_header.return_value = file_header
+
+        mock_is_reg_file.return_value = True
+
+        files_meta = {'files': {'rel_path': {'signature': [1, 2]}}}
+        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
+        old_fsmetastruct = old_file_meta
+
+        mock_get_old_file_meta.side_effect = OSError
+
+        mock_is_file_modified.return_value = True
+        mock_os_path_lexists.return_value = False
+
+        inode_dict_struct = {
+            'inode': {
+                'inumber': inumber,
+                'nlink': nlink,
+                'mode': file_mode,
+                'uid': uid,
+                'gid': gid,
+                'size': size,
+                'devmajor': devmajor,
+                'devminor': devminor,
+                'mtime': mtime,
+                'ctime': ctime,
+                'uname': uname,
+                'gname': gname,
+                'ftype': file_type,
+                'lname': lname,
+                'rsync_block_size': 4096,
+                'level_id': level_id,
+                'deleted': '0000'
+            }
+        }
+
+        inode_str_struct = (
+            b'{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            1, file_mode,
+            uid, gid, size, mtime, ctime, uname, gname,
+            file_type, lname, inumber, nlink, devminor, devmajor,
+            4096, level_id, '0000')
+
+        ret = frsync.compute_incrementals(rel_path=rel_path,
+                                          inode_str_struct=inode_str_struct,
+                                          inode_dict_struct=inode_dict_struct,
+                                          files_meta=files_meta,
+                                          old_fs_meta_struct=old_fsmetastruct,
+                                          write_queue=write_queue,
+                                          deleted=deleted)
+        self.assertEqual(ret, files_meta)
