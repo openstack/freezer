@@ -1988,3 +1988,241 @@ class TestRsyncEngine(unittest.TestCase):
                                           write_queue=write_queue,
                                           deleted=deleted)
         self.assertEqual(ret, files_meta)
+
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    @patch('os.path.isdir')
+    @patch('os.path.relpath')
+    @patch('os.path.getsize')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.process_backup_data')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.compute_incrementals')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.get_file_struct')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.get_old_file_meta')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.gen_file_header')
+    def test_process_file_is_dir_true(self, mock_gen_file_header,
+                                      mock_get_old_file_meta,
+                                      mock_get_file_struct,
+                                      mock_compute_incrementals,
+                                      mock_process_backup_data,
+                                      mock_os_path_getsize,
+                                      mock_os_path_relpath,
+                                      mock_os_path_isdir):
+        file_path = 'fakefilepath'
+        rel_path = 'fakerelpath'
+        fs_path = 'fakefspath'
+        frsync = self.mock_rsync
+
+        file_mode = 'w'
+        file_type = 'u'
+        lname = ''
+        ctime = 1
+        mtime = 2
+        uname = 'tecs'
+        gname = 'admin'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 'fakezise'
+        devmajor = 'fakedevmajor'
+
+        devminor = 'fakedevminor'
+        level_id = '1111'
+
+        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
+                      '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
+                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
+                      '\x00fakedevminor\x00fakedevmajor\x004096' \
+                      '\x001111\x000000'
+
+        write_queue = mock.MagicMock()
+        write_queue.put = mock.MagicMock()
+
+        mock_gen_file_header.return_value = file_header
+        files_meta = {
+            'directories':
+                {'fakefilepath':
+                    {'signature': 1}},
+            'meta':
+                {
+                    'backup_size_on_disk': 2,
+                    'backup_size_compressed': 3
+                }
+        }
+        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
+        old_fsmetastruct = old_file_meta
+
+        mock_get_old_file_meta.return_value = True
+        mock_os_path_relpath.return_value = rel_path
+
+        inode_dict_struct = {
+            'inode': {
+                'inumber': inumber,
+                'nlink': nlink,
+                'mode': file_mode,
+                'uid': uid,
+                'gid': gid,
+                'size': size,
+                'devmajor': devmajor,
+                'devminor': devminor,
+                'mtime': mtime,
+                'ctime': ctime,
+                'uname': uname,
+                'gname': gname,
+                'ftype': file_type,
+                'lname': lname,
+                'rsync_block_size': 4096,
+                'level_id': level_id,
+                'deleted': '0000'
+            }
+        }
+
+        inode_str_struct = (
+            b'{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            1, file_mode,
+            uid, gid, size, mtime, ctime, uname, gname,
+            file_type, lname, inumber, nlink, devminor, devmajor,
+            4096, level_id, '0000')
+
+        mock_get_file_struct.return_value = inode_dict_struct, inode_str_struct
+        mock_os_path_isdir.return_value = True
+
+        frsync.process_file(file_path=file_path,
+                            fs_path=fs_path,
+                            files_meta=files_meta,
+                            old_fs_meta_struct=old_fsmetastruct,
+                            write_queue=write_queue)
+
+        mock_os_path_relpath.assert_called_with(file_path, fs_path)
+        mock_get_old_file_meta.assert_called_with(old_fsmetastruct, rel_path)
+        mock_get_file_struct.assert_called_with(rel_path, True)
+        mock_os_path_isdir.assert_called_with(file_path)
+        mock_os_path_getsize.assert_called_with(rel_path)
+        mock_gen_file_header.assert_called_with(rel_path, inode_str_struct)
+        mock_process_backup_data.assert_called_with(file_header)
+        self.assertTrue(write_queue.put.called)
+
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    @patch('os.path.isdir')
+    @patch('os.path.relpath')
+    @patch('os.path.getsize')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.process_backup_data')
+    @patch('freezer.engine.rsync.rsync.'
+           'RsyncEngine.compute_incrementals')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.get_file_struct')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.get_old_file_meta')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.gen_file_header')
+    def test_process_file_is_dir_False(self, mock_gen_file_header,
+                                       mock_get_old_file_meta,
+                                       mock_get_file_struct,
+                                       mock_compute_incrementals,
+                                       mock_process_backup_data,
+                                       mock_os_path_getsize,
+                                       mock_os_path_relpath,
+                                       mock_os_path_isdir):
+        file_path = 'fakefilepath'
+        rel_path = 'fakerelpath'
+        fs_path = 'fakefspath'
+        frsync = self.mock_rsync
+
+        file_mode = 'w'
+        file_type = 'u'
+        lname = ''
+        ctime = 1
+        mtime = 2
+        uname = 'tecs'
+        gname = 'admin'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 'fakezise'
+        devmajor = 'fakedevmajor'
+
+        devminor = 'fakedevminor'
+        level_id = '1111'
+
+        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
+                      '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
+                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
+                      '\x00fakedevminor\x00fakedevmajor\x004096' \
+                      '\x001111\x000000'
+
+        write_queue = mock.MagicMock()
+        write_queue.put = mock.MagicMock()
+
+        mock_gen_file_header.return_value = file_header
+
+        files_meta = {
+            'directories':
+                {'fakefilepath':
+                     {'signature': 1}},
+            'meta':
+                {
+                    'backup_size_on_disk': 2,
+                    'backup_size_compressed': 3
+                }
+        }
+        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
+        old_fsmetastruct = old_file_meta
+
+        mock_get_old_file_meta.return_value = True
+        mock_os_path_relpath.return_value = rel_path
+
+        inode_dict_struct = {
+            'inode': {
+                'inumber': inumber,
+                'nlink': nlink,
+                'mode': file_mode,
+                'uid': uid,
+                'gid': gid,
+                'size': size,
+                'devmajor': devmajor,
+                'devminor': devminor,
+                'mtime': mtime,
+                'ctime': ctime,
+                'uname': uname,
+                'gname': gname,
+                'ftype': file_type,
+                'lname': lname,
+                'rsync_block_size': 4096,
+                'level_id': level_id,
+                'deleted': '0000'
+            }
+        }
+
+        inode_str_struct = (
+            b'{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            1, file_mode,
+            uid, gid, size, mtime, ctime, uname, gname,
+            file_type, lname, inumber, nlink, devminor, devmajor,
+            4096, level_id, '0000')
+
+        mock_get_file_struct.return_value = inode_dict_struct, inode_str_struct
+        mock_os_path_isdir.return_value = False
+        mock_compute_incrementals.return_value = files_meta
+
+        frsync.process_file(file_path=file_path,
+                            fs_path=fs_path,
+                            files_meta=files_meta,
+                            old_fs_meta_struct=old_fsmetastruct,
+                            write_queue=write_queue)
+
+        mock_os_path_relpath.assert_called_with(file_path, fs_path)
+        mock_get_old_file_meta.assert_called_with(old_fsmetastruct, rel_path)
+        mock_get_file_struct.assert_called_with(rel_path, True)
+        mock_os_path_isdir.assert_called_with(file_path)
+        mock_compute_incrementals.assert_called_with(rel_path,
+                                                     inode_str_struct,
+                                                     inode_dict_struct,
+                                                     files_meta,
+                                                     old_fsmetastruct,
+                                                     write_queue)
