@@ -69,6 +69,99 @@ class TestRsyncEngine(unittest.TestCase):
             self.rsync_test_file_name = None
             self.rsync_test_file_dir = None
 
+    def get_rsync_data_struct(self):
+
+        file_mode = 2
+        file_type = 'u'
+        lname = ''
+        ctime = 1
+        mtime = 2
+        uname = 'tecs'
+        gname = 'admin'
+        inumber = 'fakeinumber'
+        nlink = 'fakenlink'
+        uid = 'fakeuid'
+        gid = 'fakegid'
+        size = 1024
+        devmajor = 15
+        devminor = 5
+        level_id = '1111'
+
+        header_len = 128
+        file_path = 'fakefilepath'
+        data_ver = 1
+        rsync_block_size = 'fakersyncblocksize'
+        rm = '1112'
+        link_name = 'fakelink_name'
+
+        header_list = [header_len, file_path, data_ver, file_mode, uid,
+                       gid, size, mtime, ctime, uname, gname, file_type,
+                       link_name, inumber, nlink, devminor, devmajor,
+                       rsync_block_size, level_id, rm]
+
+        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
+                      '\x00fakegid\x001024\x002\x001\x00tecs' \
+                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
+                      '\x005\x0015\x004096' \
+                      '\x001111\x000000'
+
+        files_meta = {
+            'files': {},
+            'directories': {},
+            'meta': {
+                'broken_links_tot': '',
+                'total_files': '',
+                'total_directories': '',
+                'backup_size_on_disk': 0,
+                'backup_size_uncompressed': 0,
+                'backup_size_compressed': 0,
+                'platform': sys.platform
+            },
+            'abs_backup_path': 'fakepath',
+            'broken_links': [],
+            'rsync_struct_ver': 1,
+            'rsync_block_size': 4096}
+
+        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
+
+        inode_dict_struct = {
+            'inode': {
+                'inumber': inumber,
+                'nlink': nlink,
+                'mode': file_mode,
+                'uid': uid,
+                'gid': gid,
+                'size': size,
+                'devmajor': devmajor,
+                'devminor': devminor,
+                'mtime': mtime,
+                'ctime': ctime,
+                'uname': uname,
+                'gname': gname,
+                'ftype': file_type,
+                'lname': lname,
+                'rsync_block_size': 4096,
+                'level_id': level_id,
+                'deleted': '0000'
+            }
+        }
+
+        inode_str_struct = (
+            b'{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}'
+            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            1, file_mode,
+            uid, gid, size, mtime, ctime, uname, gname,
+            file_type, lname, inumber, nlink, devminor, devmajor,
+            4096, level_id, '0000')
+
+        self.inode_str_struct = inode_str_struct
+        self.inode_dict_struct = inode_dict_struct
+        self.files_meta = files_meta
+        self.file_header = file_header
+        self.old_file_meta = old_file_meta
+        self.header_list = header_list
+
     def test_metadata(self):
         ret = self.mock_rsync.metadata()
         expect = {
@@ -510,6 +603,8 @@ class TestRsyncEngine(unittest.TestCase):
                                          inode_str_struct=inode_bin_str)
         self.assertEqual(ret, res)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -533,37 +628,18 @@ class TestRsyncEngine(unittest.TestCase):
                         mock_set_inode,
                         mock_os_unlink):
 
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'fakefile_type'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 'fakedevminor'
-        devmajor = 'fakedevmajor'
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = 'fakerm'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'k'
+        header_list[19] = 'fakerm'
+        header_list[18] = '0000'
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
         flushed = 'True'
         current_backup_level = 0
-
         fake_rsync = self.mock_rsync
 
         mock_os_path_isdir.return_value = mock.MagicMock()
@@ -583,6 +659,8 @@ class TestRsyncEngine(unittest.TestCase):
         mock_os_unlink.assert_called_with(fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -605,31 +683,13 @@ class TestRsyncEngine(unittest.TestCase):
                                 mock_os_symlink,
                                 mock_set_inode,
                                 mock_os_unlink):
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'fakefile_type'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 'fakedevminor'
-        devmajor = 'fakedevmajor'
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1111'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'k'
+        header_list[19] = '1111'
+        header_list[18] = '0000'
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -655,6 +715,8 @@ class TestRsyncEngine(unittest.TestCase):
         mock_os_unlink.assert_called_once_with(fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -677,31 +739,17 @@ class TestRsyncEngine(unittest.TestCase):
                                       mock_os_symlink,
                                       mock_set_inode,
                                       mock_os_unlink):
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'd'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 'fakedevminor'
-        devmajor = 'fakedevmajor'
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1112'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'd'
+        header_list[19] = '1112'
+        header_list[18] = '0000'
+        mtime = header_list[7]
+        uname = header_list[9]
+        gname = header_list[10]
+        file_mode = header_list[3]
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -729,6 +777,8 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -751,31 +801,18 @@ class TestRsyncEngine(unittest.TestCase):
                                       mock_os_symlink,
                                       mock_set_inode,
                                       mock_os_unlink):
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'r'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 'fakedevminor'
-        devmajor = 'fakedevmajor'
-        rsync_block_size = 'fakersyncblocksize'
         level_id = '0000'
-        rm = '1112'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'r'
+        header_list[19] = '1112'
+        header_list[18] = '0000'
+        mtime = header_list[7]
+        uname = header_list[9]
+        gname = header_list[10]
+        size = header_list[6]
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -812,6 +849,8 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -834,31 +873,19 @@ class TestRsyncEngine(unittest.TestCase):
                                       mock_os_symlink,
                                       mock_set_inode,
                                       mock_os_unlink):
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'b'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 5
-        devmajor = 10
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1112'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'b'
+        header_list[19] = '1112'
+        header_list[18] = '0000'
+        mtime = header_list[7]
+        uname = header_list[9]
+        gname = header_list[10]
+        devminor = header_list[15]
+        devmajor = header_list[16]
+        file_mode = header_list[3]
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -895,6 +922,8 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -917,31 +946,19 @@ class TestRsyncEngine(unittest.TestCase):
                                       mock_os_symlink,
                                       mock_set_inode,
                                       mock_os_unlink):
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'c'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 5
-        devmajor = 10
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1112'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'c'
+        header_list[19] = '1112'
+        header_list[18] = '0000'
+        mtime = header_list[7]
+        uname = header_list[9]
+        gname = header_list[10]
+        devminor = header_list[15]
+        devmajor = header_list[16]
+        file_mode = header_list[3]
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -978,6 +995,8 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1000,31 +1019,16 @@ class TestRsyncEngine(unittest.TestCase):
                                       mock_os_symlink,
                                       mock_set_inode,
                                       mock_os_unlink):
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'p'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 5
-        devmajor = 10
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1112'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'p'
+        header_list[19] = '1112'
+        header_list[18] = '0000'
+        uname = header_list[9]
+        gname = header_list[10]
+        mtime = header_list[7]
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -1053,6 +1057,8 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1075,31 +1081,14 @@ class TestRsyncEngine(unittest.TestCase):
                                       mock_os_symlink,
                                       mock_set_inode,
                                       mock_os_unlink):
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'l'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 5
-        devmajor = 10
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1112'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'l'
+        header_list[19] = '1112'
+        header_list[18] = '0000'
+        link_name = header_list[12]
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -1126,6 +1115,8 @@ class TestRsyncEngine(unittest.TestCase):
         mock_os_symlink.assert_called_once_with(link_name, fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1148,31 +1139,16 @@ class TestRsyncEngine(unittest.TestCase):
                                              mock_os_symlink,
                                              mock_set_inode,
                                              mock_os_unlink):
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'd'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 'fakedevminor'
-        devmajor = 'fakedevmajor'
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1112'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'd'
+        header_list[19] = '1112'
+        header_list[18] = '0000'
+        mtime = header_list[7]
+        uname = header_list[9]
+        gname = header_list[10]
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -1201,6 +1177,8 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1223,31 +1201,16 @@ class TestRsyncEngine(unittest.TestCase):
                                              mock_os_symlink,
                                              mock_set_inode,
                                              mock_os_unlink):
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'b'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 5
-        devmajor = 10
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1112'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'b'
+        header_list[19] = '1112'
+        header_list[18] = '0000'
+        mtime = header_list[7]
+        uname = header_list[9]
+        gname = header_list[10]
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -1275,6 +1238,8 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1297,31 +1262,16 @@ class TestRsyncEngine(unittest.TestCase):
                                              mock_os_symlink,
                                              mock_set_inode,
                                              mock_os_unlink):
-        header_len = 128
         file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'c'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 5
-        devmajor = 10
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1112'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'c'
+        header_list[19] = '1112'
+        header_list[18] = '0000'
+        mtime = header_list[7]
+        uname = header_list[9]
+        gname = header_list[10]
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -1350,6 +1300,8 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1372,31 +1324,14 @@ class TestRsyncEngine(unittest.TestCase):
                                              mock_os_symlink,
                                              mock_set_inode,
                                              mock_os_unlink):
-        header_len = 128
-        file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'p'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 5
-        devmajor = 10
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1112'
-
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'p'
+        header_list[19] = '1112'
+        file_path = header_list[1]
+        mtime = header_list[7]
+        uname = header_list[9]
+        gname = header_list[10]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -1425,6 +1360,8 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1447,31 +1384,11 @@ class TestRsyncEngine(unittest.TestCase):
                                              mock_os_symlink,
                                              mock_set_inode,
                                              mock_os_unlink):
-        header_len = 128
-        file_path = 'fakefilepath'
-        data_ver = 1
-        file_mode = 2
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 1024
-        mtime = 20181230
-        ctime = 20180302
-        uname = 'fakeuname'
-        gname = 'fakegname'
-        file_type = 'l'
-        link_name = 'fakelink_name'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        devminor = 5
-        devmajor = 10
-        rsync_block_size = 'fakersyncblocksize'
-        level_id = '0000'
-        rm = '1112'
+        self.get_rsync_data_struct()
+        header_list = self.header_list
+        header_list[11] = 'l'
+        header_list[19] = '1112'
 
-        header_list = [header_len, file_path, data_ver, file_mode, uid,
-                       gid, size, mtime, ctime, uname, gname, file_type,
-                       link_name, inumber, nlink, devminor, devmajor,
-                       rsync_block_size, level_id, rm]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
         restore_abs_path = '/home/tecs'
@@ -1674,39 +1591,16 @@ class TestRsyncEngine(unittest.TestCase):
                                      mock_open):
         rel_path = '/home/tecs'
         frsync = self.mock_rsync
+        self.get_rsync_data_struct()
         deleted = False
-
-        file_mode = 'w'
-        file_type = 'u'
-        lname = ''
-        ctime = 1
-        mtime = 2
-        uname = 'tecs'
-        gname = 'admin'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 'fakezise'
-        devmajor = 'fakedevmajor'
-
-        devminor = 'fakedevminor'
-        level_id = '1111'
-
-        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
-                      '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
-                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
-                      '\x00fakedevminor\x00fakedevmajor\x004096' \
-                      '\x001111\x000000'
-
+        file_header = self.file_header
         write_queue = mock.MagicMock()
         write_queue.put = mock.MagicMock()
 
         mock_gen_file_header.return_value = file_header
 
         mock_is_reg_file.return_value = True
-
-        files_meta = {'files': {'rel_path': {'signature': [1, 2]}}}
+        files_meta = self.files_meta
         old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
         old_fsmetastruct = old_file_meta
 
@@ -1722,37 +1616,8 @@ class TestRsyncEngine(unittest.TestCase):
         file_path_fd.read = mock.MagicMock()
 
         mock_open.return_value = file_path_fd
-
-        inode_dict_struct = {
-            'inode': {
-                'inumber': inumber,
-                'nlink': nlink,
-                'mode': file_mode,
-                'uid': uid,
-                'gid': gid,
-                'size': size,
-                'devmajor': devmajor,
-                'devminor': devminor,
-                'mtime': mtime,
-                'ctime': ctime,
-                'uname': uname,
-                'gname': gname,
-                'ftype': file_type,
-                'lname': lname,
-                'rsync_block_size': 4096,
-                'level_id': level_id,
-                'deleted': '0000'
-            }
-        }
-
-        inode_str_struct = (
-            b'{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
-            1, file_mode,
-            uid, gid, size, mtime, ctime, uname, gname,
-            file_type, lname, inumber, nlink, devminor, devmajor,
-            4096, level_id, '0000')
+        inode_dict_struct = self.inode_dict_struct
+        inode_str_struct = self.inode_str_struct
 
         ret = frsync.compute_incrementals(rel_path=rel_path,
                                           inode_str_struct=inode_str_struct,
@@ -1791,39 +1656,16 @@ class TestRsyncEngine(unittest.TestCase):
                                              mock_open):
         rel_path = '/home/tecs'
         frsync = self.mock_rsync
+        self.get_rsync_data_struct()
         deleted = False
-
-        file_mode = 'w'
-        file_type = 'u'
-        lname = ''
-        ctime = 1
-        mtime = 2
-        uname = 'tecs'
-        gname = 'admin'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 'fakezise'
-        devmajor = 'fakedevmajor'
-
-        devminor = 'fakedevminor'
-        level_id = '1111'
-
-        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
-                      '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
-                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
-                      '\x00fakedevminor\x00fakedevmajor\x004096' \
-                      '\x001111\x000000'
-
+        file_header = self.file_header
         write_queue = mock.MagicMock()
         write_queue.put = mock.MagicMock()
 
         mock_gen_file_header.return_value = file_header
 
         mock_is_reg_file.return_value = True
-
-        files_meta = {'files': {'rel_path': {'signature': [1, 2]}}}
+        files_meta = self.files_meta
         old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
         old_fsmetastruct = old_file_meta
 
@@ -1840,37 +1682,8 @@ class TestRsyncEngine(unittest.TestCase):
         data_block = ['1', '2', None]
         file_path_fd.read.side_effect = data_block
         mock_open.return_value = file_path_fd
-
-        inode_dict_struct = {
-            'inode': {
-                'inumber': inumber,
-                'nlink': nlink,
-                'mode': file_mode,
-                'uid': uid,
-                'gid': gid,
-                'size': size,
-                'devmajor': devmajor,
-                'devminor': devminor,
-                'mtime': mtime,
-                'ctime': ctime,
-                'uname': uname,
-                'gname': gname,
-                'ftype': file_type,
-                'lname': lname,
-                'rsync_block_size': 4096,
-                'level_id': level_id,
-                'deleted': '0000'
-            }
-        }
-
-        inode_str_struct = (
-            b'{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
-            1, file_mode,
-            uid, gid, size, mtime, ctime, uname, gname,
-            file_type, lname, inumber, nlink, devminor, devmajor,
-            4096, level_id, '0000')
+        inode_dict_struct = self.inode_dict_struct
+        inode_str_struct = self.inode_str_struct
 
         ret = frsync.compute_incrementals(rel_path=rel_path,
                                           inode_str_struct=inode_str_struct,
@@ -1908,39 +1721,17 @@ class TestRsyncEngine(unittest.TestCase):
                                             mock_open):
         rel_path = '/home/tecs'
         frsync = self.mock_rsync
+        self.get_rsync_data_struct()
         deleted = False
 
-        file_mode = 'w'
-        file_type = 'u'
-        lname = ''
-        ctime = 1
-        mtime = 2
-        uname = 'tecs'
-        gname = 'admin'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 'fakezise'
-        devmajor = 'fakedevmajor'
-
-        devminor = 'fakedevminor'
-        level_id = '1111'
-
-        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
-                      '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
-                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
-                      '\x00fakedevminor\x00fakedevmajor\x004096' \
-                      '\x001111\x000000'
-
+        file_header = self.file_header
         write_queue = mock.MagicMock()
         write_queue.put = mock.MagicMock()
 
         mock_gen_file_header.return_value = file_header
 
         mock_is_reg_file.return_value = True
-
-        files_meta = {'files': {'rel_path': {'signature': [1, 2]}}}
+        files_meta = self.files_meta
         old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
         old_fsmetastruct = old_file_meta
 
@@ -1948,37 +1739,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         mock_is_file_modified.return_value = True
         mock_os_path_lexists.return_value = False
-
-        inode_dict_struct = {
-            'inode': {
-                'inumber': inumber,
-                'nlink': nlink,
-                'mode': file_mode,
-                'uid': uid,
-                'gid': gid,
-                'size': size,
-                'devmajor': devmajor,
-                'devminor': devminor,
-                'mtime': mtime,
-                'ctime': ctime,
-                'uname': uname,
-                'gname': gname,
-                'ftype': file_type,
-                'lname': lname,
-                'rsync_block_size': 4096,
-                'level_id': level_id,
-                'deleted': '0000'
-            }
-        }
-
-        inode_str_struct = (
-            b'{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
-            1, file_mode,
-            uid, gid, size, mtime, ctime, uname, gname,
-            file_type, lname, inumber, nlink, devminor, devmajor,
-            4096, level_id, '0000')
+        inode_dict_struct = self.inode_dict_struct
+        inode_str_struct = self.inode_str_struct
 
         ret = frsync.compute_incrementals(rel_path=rel_path,
                                           inode_str_struct=inode_str_struct,
@@ -2013,80 +1775,21 @@ class TestRsyncEngine(unittest.TestCase):
         rel_path = 'fakerelpath'
         fs_path = 'fakefspath'
         frsync = self.mock_rsync
-
-        file_mode = 'w'
-        file_type = 'u'
-        lname = ''
-        ctime = 1
-        mtime = 2
-        uname = 'tecs'
-        gname = 'admin'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 'fakezise'
-        devmajor = 'fakedevmajor'
-
-        devminor = 'fakedevminor'
-        level_id = '1111'
-
-        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
-                      '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
-                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
-                      '\x00fakedevminor\x00fakedevmajor\x004096' \
-                      '\x001111\x000000'
+        self.get_rsync_data_struct()
+        file_header = self.file_header
 
         write_queue = mock.MagicMock()
         write_queue.put = mock.MagicMock()
 
         mock_gen_file_header.return_value = file_header
-        files_meta = {
-            'directories':
-                {'fakefilepath':
-                    {'signature': 1}},
-            'meta':
-                {
-                    'backup_size_on_disk': 2,
-                    'backup_size_compressed': 3
-                }
-        }
+        files_meta = self.files_meta
         old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
         old_fsmetastruct = old_file_meta
 
         mock_get_old_file_meta.return_value = True
         mock_os_path_relpath.return_value = rel_path
-
-        inode_dict_struct = {
-            'inode': {
-                'inumber': inumber,
-                'nlink': nlink,
-                'mode': file_mode,
-                'uid': uid,
-                'gid': gid,
-                'size': size,
-                'devmajor': devmajor,
-                'devminor': devminor,
-                'mtime': mtime,
-                'ctime': ctime,
-                'uname': uname,
-                'gname': gname,
-                'ftype': file_type,
-                'lname': lname,
-                'rsync_block_size': 4096,
-                'level_id': level_id,
-                'deleted': '0000'
-            }
-        }
-
-        inode_str_struct = (
-            b'{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
-            1, file_mode,
-            uid, gid, size, mtime, ctime, uname, gname,
-            file_type, lname, inumber, nlink, devminor, devmajor,
-            4096, level_id, '0000')
+        inode_dict_struct = self.inode_dict_struct
+        inode_str_struct = self.inode_str_struct
 
         mock_get_file_struct.return_value = inode_dict_struct, inode_str_struct
         mock_os_path_isdir.return_value = True
@@ -2129,82 +1832,23 @@ class TestRsyncEngine(unittest.TestCase):
         file_path = 'fakefilepath'
         rel_path = 'fakerelpath'
         fs_path = 'fakefspath'
+        self.get_rsync_data_struct()
         frsync = self.mock_rsync
-
-        file_mode = 'w'
-        file_type = 'u'
-        lname = ''
-        ctime = 1
-        mtime = 2
-        uname = 'tecs'
-        gname = 'admin'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 'fakezise'
-        devmajor = 'fakedevmajor'
-
-        devminor = 'fakedevminor'
-        level_id = '1111'
-
-        file_header = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
-                      '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
-                      '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
-                      '\x00fakedevminor\x00fakedevmajor\x004096' \
-                      '\x001111\x000000'
+        file_header = self.file_header
 
         write_queue = mock.MagicMock()
         write_queue.put = mock.MagicMock()
 
         mock_gen_file_header.return_value = file_header
+        files_meta = self.files_meta
 
-        files_meta = {
-            'directories':
-                {'fakefilepath':
-                     {'signature': 1}},
-            'meta':
-                {
-                    'backup_size_on_disk': 2,
-                    'backup_size_compressed': 3
-                }
-        }
         old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
         old_fsmetastruct = old_file_meta
 
         mock_get_old_file_meta.return_value = True
         mock_os_path_relpath.return_value = rel_path
-
-        inode_dict_struct = {
-            'inode': {
-                'inumber': inumber,
-                'nlink': nlink,
-                'mode': file_mode,
-                'uid': uid,
-                'gid': gid,
-                'size': size,
-                'devmajor': devmajor,
-                'devminor': devminor,
-                'mtime': mtime,
-                'ctime': ctime,
-                'uname': uname,
-                'gname': gname,
-                'ftype': file_type,
-                'lname': lname,
-                'rsync_block_size': 4096,
-                'level_id': level_id,
-                'deleted': '0000'
-            }
-        }
-
-        inode_str_struct = (
-            b'{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
-            1, file_mode,
-            uid, gid, size, mtime, ctime, uname, gname,
-            file_type, lname, inumber, nlink, devminor, devmajor,
-            4096, level_id, '0000')
+        inode_dict_struct = self.inode_dict_struct
+        inode_str_struct = self.inode_str_struct
 
         mock_get_file_struct.return_value = inode_dict_struct, inode_str_struct
         mock_os_path_isdir.return_value = False
