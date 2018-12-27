@@ -285,7 +285,6 @@ class Backup(object):
         with open(file.name) as f:
             content = f.readlines()
         LOG.info("Content download {0}".format(content))
-        file.close()
         return json.loads(content[0])
 
     def metadata(self):
