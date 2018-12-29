@@ -122,7 +122,22 @@ class TestRsyncEngine(unittest.TestCase):
             'rsync_struct_ver': 1,
             'rsync_block_size': 4096}
 
-        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
+        old_file_meta = {
+            'files': {},
+            'directories': {},
+            'meta': {
+                'broken_links_tot': '',
+                'total_files': '',
+                'total_directories': '',
+                'backup_size_on_disk': 0,
+                'backup_size_uncompressed': 2,
+                'backup_size_compressed': 1,
+                'platform': sys.platform
+            },
+            'abs_backup_path': 'fakepath',
+            'broken_links': [],
+            'rsync_struct_ver': 1,
+            'rsync_block_size': 4096}
 
         inode_dict_struct = {
             'inode': {
@@ -396,7 +411,6 @@ class TestRsyncEngine(unittest.TestCase):
         mock_oslstat.return_value = mock.MagicMock()
         mock_oslstat.return_value.st_mode = file_mode
 
-        mock_getfiletype.return_value = mock.MagicMock()
         mock_getfiletype.return_value = file_type, lname
         ret1, ret2 = fake_rsync.get_file_struct(fs_path=fs_path,
                                                 new_level=new_level)
@@ -446,18 +460,14 @@ class TestRsyncEngine(unittest.TestCase):
         mock_oslstat.return_value.st_size = size
 
         devmajor = 'fakedevmajor'
-        mock_osmajor.return_value = mock.MagicMock()
         mock_osmajor.return_value = devmajor
 
         devminor = 'fakedevminor'
-        mock_osminor.return_value = mock.MagicMock()
         mock_osminor.return_value = devminor
 
         level_id = '1111'
 
-        mock_getfiletype.return_value = mock.MagicMock()
         mock_getfiletype.return_value = file_type, lname
-
         inode_dict = {
             'inode': {
                 'inumber': inumber,
@@ -479,7 +489,6 @@ class TestRsyncEngine(unittest.TestCase):
                 'deleted': '0000'
             }
         }
-
         inode_bin_str = (
             b'{}\00{}\00{}\00{}\00{}'
             b'\00{}\00{}\00{}\00{}\00{}'
@@ -488,14 +497,10 @@ class TestRsyncEngine(unittest.TestCase):
             uid, gid, size, mtime, ctime, uname, gname,
             file_type, lname, inumber, nlink, devminor, devmajor,
             4096, level_id, '0000')
-
-        mock_pwd_getpwuid.return_value = mock.MagicMock()
         mock_pwd_getpwuid.return_value = [uname, 0, 0]
 
-        mock_grp_getgrgid.return_value = mock.MagicMock()
         mock_grp_getgrgid.return_value = [gname, 0, 0]
 
-        mock_getfiletype.return_value = mock.MagicMock()
         mock_getfiletype.return_value = file_type, lname
         self.maxDiff = None
         ret1, ret2 = fake_rsync.get_file_struct(fs_path=fs_path,
@@ -564,39 +569,14 @@ class TestRsyncEngine(unittest.TestCase):
                      'Not supported on python v 3.x')
     def test_gen_file_header(self):
         file_path = '/home/tecs'
-
-        file_mode = 'w'
-        file_type = 'u'
-        lname = ''
-        ctime = 1
-        mtime = 2
-        uname = 'tecs'
-        gname = 'admin'
-        inumber = 'fakeinumber'
-        nlink = 'fakenlink'
-        uid = 'fakeuid'
-        gid = 'fakegid'
-        size = 'fakezise'
-        devmajor = 'fakedevmajor'
-
-        devminor = 'fakedevminor'
-        level_id = '1111'
-
-        inode_bin_str = (
-            b'{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
-            1, file_mode,
-            uid, gid, size, mtime, ctime, uname, gname,
-            file_type, lname, inumber, nlink, devminor, devmajor,
-            4096, level_id, '0000')
-
+        self.get_rsync_data_struct()
+        inode_bin_str = self.inode_str_struct
         fake_rsync = self.mock_rsync
 
-        res = '124\x00/home/tecs\x001\x00w\x00fakeuid' \
-              '\x00fakegid\x00fakezise\x002\x001\x00tecs' \
+        res = '98\x00/home/tecs\x001\x002\x00fakeuid' \
+              '\x00fakegid\x001024\x002\x001\x00tecs' \
               '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
-              '\x00fakedevminor\x00fakedevmajor\x004096' \
+              '\x005\x0015\x004096' \
               '\x001111\x000000'
 
         ret = fake_rsync.gen_file_header(file_path=file_path,
@@ -642,10 +622,8 @@ class TestRsyncEngine(unittest.TestCase):
         current_backup_level = 0
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = False
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -698,10 +676,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = False
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -758,10 +734,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = False
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -821,15 +795,12 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = True
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
 
-        mock_make_reg_file.return_value = mock.MagicMock()
         mock_make_reg_file.return_value = data_chunk
 
         ret = fake_rsync.make_files(header_list=header_list,
@@ -894,10 +865,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = True
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -967,10 +936,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = True
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -1037,10 +1004,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = True
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -1097,10 +1062,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = True
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -1157,10 +1120,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = False
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -1219,10 +1180,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = False
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -1280,10 +1239,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = False
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -1340,10 +1297,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = False
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         fileabspath = '{0}/{1}'.format(restore_abs_path, file_path)
@@ -1397,10 +1352,8 @@ class TestRsyncEngine(unittest.TestCase):
 
         fake_rsync = self.mock_rsync
 
-        mock_os_path_isdir.return_value = mock.MagicMock()
         mock_os_path_isdir.return_value = False
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = True
 
         mock_os_symlink.side_effect = OSError
@@ -1557,10 +1510,8 @@ class TestRsyncEngine(unittest.TestCase):
         fake_rsync = self.mock_rsync
         reg_file = False
 
-        mock_os_path_lexists.return_value = mock.MagicMock()
         mock_os_path_lexists.return_value = True
 
-        mock_os_path_exists.return_value = mock.MagicMock()
         mock_os_path_exists.return_value = False
 
         self.assertRaises(IOError,
@@ -1601,10 +1552,9 @@ class TestRsyncEngine(unittest.TestCase):
 
         mock_is_reg_file.return_value = True
         files_meta = self.files_meta
-        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
-        old_fsmetastruct = old_file_meta
+        old_fsmetastruct = self.old_file_meta
 
-        mock_get_old_file_meta.return_value = old_file_meta
+        mock_get_old_file_meta.return_value = self.old_file_meta
 
         mock_is_file_modified.return_value = True
 
@@ -1666,8 +1616,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         mock_is_reg_file.return_value = True
         files_meta = self.files_meta
-        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
-        old_fsmetastruct = old_file_meta
+        old_fsmetastruct = self.old_file_meta
 
         mock_get_old_file_meta.return_value = None
 
@@ -1732,8 +1681,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         mock_is_reg_file.return_value = True
         files_meta = self.files_meta
-        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
-        old_fsmetastruct = old_file_meta
+        old_fsmetastruct = self.old_file_meta
 
         mock_get_old_file_meta.side_effect = OSError
 
@@ -1783,8 +1731,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         mock_gen_file_header.return_value = file_header
         files_meta = self.files_meta
-        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
-        old_fsmetastruct = old_file_meta
+        old_fsmetastruct = self.old_file_meta
 
         mock_get_old_file_meta.return_value = True
         mock_os_path_relpath.return_value = rel_path
@@ -1842,8 +1789,7 @@ class TestRsyncEngine(unittest.TestCase):
         mock_gen_file_header.return_value = file_header
         files_meta = self.files_meta
 
-        old_file_meta = {'files': {'rel_path': {'signature': [3, 4]}}}
-        old_fsmetastruct = old_file_meta
+        old_fsmetastruct = self.old_file_meta
 
         mock_get_old_file_meta.return_value = True
         mock_os_path_relpath.return_value = rel_path
