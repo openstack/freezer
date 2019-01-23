@@ -1816,3 +1816,12 @@ class TestRsyncEngine(unittest.TestCase):
                                                      files_meta,
                                                      old_fsmetastruct,
                                                      write_queue)
+
+    @patch('os.path.isfile')
+    def test_get_fs_meta_struct_isnot_file(self, mock_os_path_isfile):
+        fs_meta_path = '/home/tecs'
+        fs_meta_struct = {}
+        fake_rsync = self.mock_rsync
+        mock_os_path_isfile.return_value = False
+        ret = fake_rsync.get_fs_meta_struct(fs_meta_path=fs_meta_path)
+        self.assertEqual(ret, fs_meta_struct)
