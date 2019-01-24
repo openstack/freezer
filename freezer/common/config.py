@@ -50,7 +50,7 @@ _DEFAULT_LOG_LEVELS = ['amqp=WARN', 'amqplib=WARN', 'boto=WARN',
 _DEFAULT_LOGGING_CONTEXT_FORMAT = (
     '%(asctime)s.%(msecs)03d %(process)d '
     '%(levelname)s %(name)s [%(request_id)s '
-    '%(user_identity)s] %(instance)s'
+    '%(user_identity)s] %(instance)s '
     '%(message)s')
 
 DEFAULT_PARAMS = {
@@ -122,7 +122,7 @@ _COMMON = [
                     "(filesystem),mongo (MongoDB), mysql (MySQL), "
                     "sqlserver(SQL Server), "
                     "cinder(OpenStack Volume backup by freezer), "
-                    "cindernative(OpenStack native cinder-volume backup)"
+                    "cindernative(OpenStack native cinder-volume backup), "
                     "nova(OpenStack Instance). Default set to fs"),
     cfg.StrOpt('engine',
                short='e',
@@ -519,7 +519,7 @@ _COMMON = [
                 default=DEFAULT_PARAMS['incremental'],
                 help="When the option is set, freezer will perform a "
                      "cindernative incremental backup instead of the default "
-                     "full backup. And if True, but volume do not have a base"
+                     "full backup. And if True, but volume do not have a base "
                      "full backup, freezer will do a full backup first"),
     cfg.StrOpt('nova-restore-network',
                dest='nova_restore_network',

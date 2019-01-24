@@ -70,7 +70,7 @@ class SshStorage(fslike.FsLikeStorage):
                              'it exists and ensure backup node can '
                              'login to {1} as user {2} '
                              'without password.\n'
-                             '2. --ssh-password argument is required and'
+                             '2. --ssh-password argument is required and '
                              'ensure backup node can login to {1} '
                              'as user {2} with password.'
                              .format(self.ssh_key_path, self.remote_ip,

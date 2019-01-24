@@ -67,7 +67,7 @@ class AdminOs(object):
                                 % (backup_id, del_backup[0].status))
             if (del_backup[0].status == 'deleting') and (int(time.time()) -
                                                          start_time > timeout):
-                LOG.error("Delete backup %s failed, In a state of"
+                LOG.error("Delete backup %s failed, In a state of "
                           "deleting over 120s")
                 raise Exception(
                     "Delete backup %s failed due to timeout over 120s, "
