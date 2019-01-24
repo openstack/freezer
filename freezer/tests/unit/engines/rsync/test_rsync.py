@@ -28,6 +28,7 @@ class TestRsyncEngine(unittest.TestCase):
         super(TestRsyncEngine, self).setUp()
         self.compression_algo = 'gzip'
         self.encrypt_file = '/home/tecs'
+        self.relpath = '/home/tecs'
         self.symlinks = None
         self.exclude = False
         self.storage = 'local'
@@ -236,7 +237,7 @@ class TestRsyncEngine(unittest.TestCase):
                            mock_stat_sock,
                            mock_os_readlink):
         filemode = 'w'
-        fspath = '/home/tecs'
+        fspath = self.relpath
         mock_os_readlink.return_value = 'tecs'
         mock_stat_reg.return_value = True
         ret1, ret2 = rsync.RsyncEngine.get_file_type(file_mode=filemode,
@@ -381,7 +382,7 @@ class TestRsyncEngine(unittest.TestCase):
 
     @patch('os.lstat')
     def test_get_file_struct_raise_exception(self, mock_oslstat):
-        fs_path = '/home/tecs'
+        fs_path = self.relpath
         new_level = True
         fake_rsync = self.mock_rsync
         mock_oslstat.side_effect = OSError
@@ -402,7 +403,7 @@ class TestRsyncEngine(unittest.TestCase):
                                   mock_osmajor,
                                   mock_osminor,
                                   mock_getfiletype):
-        fs_path = '/home/tecs'
+        fs_path = self.relpath
         new_level = True
         fake_rsync = self.mock_rsync
         file_mode = 'w'
@@ -431,7 +432,7 @@ class TestRsyncEngine(unittest.TestCase):
                                   mock_osmajor,
                                   mock_osminor,
                                   mock_getfiletype):
-        fs_path = '/home/tecs'
+        fs_path = self.relpath
         new_level = True
         fake_rsync = self.mock_rsync
         file_mode = 'w'
@@ -568,7 +569,7 @@ class TestRsyncEngine(unittest.TestCase):
     @unittest.skipIf(sys.version_info.major == 3,
                      'Not supported on python v 3.x')
     def test_gen_file_header(self):
-        file_path = '/home/tecs'
+        file_path = self.relpath
         self.get_rsync_data_struct()
         inode_bin_str = self.inode_str_struct
         fake_rsync = self.mock_rsync
@@ -617,7 +618,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 0
         fake_rsync = self.mock_rsync
@@ -670,7 +671,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -728,7 +729,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -789,7 +790,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -859,7 +860,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -930,7 +931,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -998,7 +999,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -1056,7 +1057,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -1114,7 +1115,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -1174,7 +1175,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -1233,7 +1234,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -1291,7 +1292,7 @@ class TestRsyncEngine(unittest.TestCase):
         gname = header_list[10]
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -1346,7 +1347,7 @@ class TestRsyncEngine(unittest.TestCase):
 
         read_pipe = 'fakeread_pipe'
         data_chunk = 'fakedatachunk'
-        restore_abs_path = '/home/tecs'
+        restore_abs_path = self.relpath
         flushed = 'True'
         current_backup_level = 1
 
@@ -1540,7 +1541,7 @@ class TestRsyncEngine(unittest.TestCase):
                                      mock_rsync_gen_delta,
                                      mock_os_path_lexists,
                                      mock_open):
-        rel_path = '/home/tecs'
+        rel_path = self.relpath
         frsync = self.mock_rsync
         self.get_rsync_data_struct()
         deleted = False
@@ -1604,7 +1605,7 @@ class TestRsyncEngine(unittest.TestCase):
                                              mock_rsync_gen_delta,
                                              mock_os_path_lexists,
                                              mock_open):
-        rel_path = '/home/tecs'
+        rel_path = self.relpath
         frsync = self.mock_rsync
         self.get_rsync_data_struct()
         deleted = False
@@ -1668,7 +1669,7 @@ class TestRsyncEngine(unittest.TestCase):
                                             mock_rsync_gen_delta,
                                             mock_os_path_lexists,
                                             mock_open):
-        rel_path = '/home/tecs'
+        rel_path = self.relpath
         frsync = self.mock_rsync
         self.get_rsync_data_struct()
         deleted = False
@@ -1819,7 +1820,7 @@ class TestRsyncEngine(unittest.TestCase):
 
     @patch('os.path.isfile')
     def test_get_fs_meta_struct_isnot_file(self, mock_os_path_isfile):
-        fs_meta_path = '/home/tecs'
+        fs_meta_path = self.relpath
         fs_meta_struct = {}
         fake_rsync = self.mock_rsync
         mock_os_path_isfile.return_value = False
