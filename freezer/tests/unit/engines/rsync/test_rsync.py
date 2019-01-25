@@ -1897,3 +1897,57 @@ class TestRsyncEngine(unittest.TestCase):
         mock_get_fs_meta_struct.assert_called_with(manifest_path)
         self.assertTrue(mock_process_file.called)
         self.assertTrue(mock_process_backup_data.called)
+
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    @patch('os.chdir')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.'
+           'gen_struct_for_deleted_files')
+    @patch('freezer.utils.compress.one_shot_compress')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.'
+           'process_backup_data')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.process_file')
+    @patch('os.walk')
+    @patch('os.getcwd')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.'
+           'get_fs_meta_struct')
+    @patch('freezer.utils.compress.Compressor.flush')
+    @patch('os.path.isdir')
+    @patch("__builtin__.open")
+    def test_get_sign_delta_is_dir(self, mock_open,
+                                   mock_os_path_isdir,
+                                   mock_flush,
+                                   mock_get_fs_meta_struct,
+                                   mock_os_getcwd,
+                                   mock_os_walk,
+                                   mock_process_file,
+                                   mock_process_backup_data,
+                                   mock_one_shot_compress,
+                                   mock_gen_struct_for_deleted_files,
+                                   mock_os_chdir):
+
+        fs_path = self.relpath
+        manifest_path = self.relpath
+        flushed_data = 'fakedata'
+        fake_rsync = self.mock_rsync
+        fake_rsync.compressor = self.compressor
+        mock_flush.return_value = flushed_data
+        old_files_meta = None
+
+        mock_get_fs_meta_struct.return_value = old_files_meta
+        mock_os_path_isdir.return_value = True
+        mock_os_getcwd.return_value = self.relpath
+
+        write_queue = mock.MagicMock()
+        write_queue.put = mock.MagicMock()
+        mock_process_backup_data.return_value = flushed_data
+
+        manifest_file = mock.MagicMock()
+        manifest_file.write = mock.MagicMock()
+        mock_open.return_value = manifest_file
+        fake_rsync.get_sign_delta(fs_path=fs_path,
+                                  manifest_path=manifest_path,
+                                  write_queue=write_queue)
+
+        mock_get_fs_meta_struct.assert_called_with(manifest_path)
+        self.assertTrue(mock_process_backup_data.called)
