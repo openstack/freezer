@@ -1826,3 +1826,74 @@ class TestRsyncEngine(unittest.TestCase):
         mock_os_path_isfile.return_value = False
         ret = fake_rsync.get_fs_meta_struct(fs_meta_path=fs_meta_path)
         self.assertEqual(ret, fs_meta_struct)
+
+    @unittest.skipIf(sys.version_info.major == 3,
+                     'Not supported on python v 3.x')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.'
+           'gen_struct_for_deleted_files')
+    @patch('freezer.utils.compress.one_shot_compress')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.'
+           'process_backup_data')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.process_file')
+    @patch('os.walk')
+    @patch('os.getcwd')
+    @patch('freezer.engine.rsync.rsync.RsyncEngine.'
+           'get_fs_meta_struct')
+    @patch('freezer.utils.compress.Compressor.flush')
+    @patch('os.path.isdir')
+    @patch("__builtin__.open")
+    def test_get_sign_delta_isnot_dir(self, mock_open,
+                                      mock_os_path_isdir,
+                                      mock_flush,
+                                      mock_get_fs_meta_struct,
+                                      mock_os_getcwd,
+                                      mock_os_walk,
+                                      mock_process_file,
+                                      mock_process_backup_data,
+                                      mock_one_shot_compress,
+                                      mock_gen_struct_for_deleted_files):
+
+        files_meta = {
+            'files': {},
+            'directories': {},
+            'meta': {
+                'broken_links_tot': '',
+                'total_files': '',
+                'total_directories': '',
+                'backup_size_on_disk': 0,
+                'backup_size_uncompressed': 0,
+                'backup_size_compressed': 0,
+                'platform': sys.platform
+            },
+            'abs_backup_path': self.relpath,
+            'broken_links': [],
+            'rsync_struct_ver': 1,
+            'rsync_block_size': 4096}
+
+        fs_path = self.relpath
+        manifest_path = self.relpath
+        flushed_data = 'fakedata'
+        fake_rsync = self.mock_rsync
+        fake_rsync.compressor = self.compressor
+        mock_flush.return_value = flushed_data
+        old_files_meta = files_meta
+
+        mock_get_fs_meta_struct.return_value = old_files_meta
+        mock_os_path_isdir.return_value = False
+        mock_os_getcwd.return_value = self.relpath
+
+        write_queue = mock.MagicMock()
+        write_queue.put = mock.MagicMock()
+        mock_process_backup_data.return_value = flushed_data
+
+        manifest_file = mock.MagicMock()
+        manifest_file.write = mock.MagicMock()
+        mock_open.return_value = manifest_file
+
+        fake_rsync.get_sign_delta(fs_path=fs_path,
+                                  manifest_path=manifest_path,
+                                  write_queue=write_queue)
+
+        mock_get_fs_meta_struct.assert_called_with(manifest_path)
+        self.assertTrue(mock_process_file.called)
+        self.assertTrue(mock_process_backup_data.called)
