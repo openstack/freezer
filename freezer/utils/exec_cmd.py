@@ -49,5 +49,5 @@ def popen_call(sub_cmd, input, is_last_process):
         if rc != 0:
             raise Exception('Error: while executing script '
                             '%s return code was %d instead of 0'
-                            % (' '.join(sub_cmd), rc))
+                            % (''.join(sub_cmd), rc))
     return process
