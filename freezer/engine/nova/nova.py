@@ -18,13 +18,13 @@ import os
 
 from oslo_config import cfg
 from oslo_log import log
+from oslo_serialization import jsonutils as json
 
 from freezer.common import client_manager
 from freezer.engine import engine
 from freezer.engine.tar import tar
 from freezer.utils import utils
 
-import json
 import tempfile
 
 LOG = log.getLogger(__name__)

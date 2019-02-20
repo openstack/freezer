@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import ctypes
-import json
 import os
 import sys
+
+from oslo_serialization import jsonutils as json
 
 
 def is_windows():

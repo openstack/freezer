@@ -14,10 +14,10 @@
 # ========================================================================
 
 from copy import copy
-import json
 import os
 import unittest
 
+from oslo_serialization import jsonutils as json
 from oslo_utils import uuidutils
 
 from freezer.tests.integration import common

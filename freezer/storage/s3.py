@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import json
-
 import botocore
 import botocore.session
 import logging
 import requests
 
 from oslo_log import log
+from oslo_serialization import jsonutils as json
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 from freezer.storage import physical

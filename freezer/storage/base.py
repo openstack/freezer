@@ -15,10 +15,10 @@
 
 
 import abc
-import json
 import tempfile
 
 from oslo_log import log
+from oslo_serialization import jsonutils as json
 import six
 
 from freezer.utils import utils

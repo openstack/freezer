@@ -18,7 +18,6 @@
 Freezer main execution function
 """
 
-import json
 import os
 import prettytable
 import subprocess
@@ -26,6 +25,7 @@ import sys
 
 from oslo_config import cfg
 from oslo_log import log
+from oslo_serialization import jsonutils as json
 from oslo_utils import importutils
 
 from freezer.common import client_manager
