@@ -16,13 +16,14 @@
 import distutils.spawn
 import hashlib
 import itertools
-import json
 import os
 import random
 import shutil
 import subprocess
 import tempfile
 import unittest
+
+from oslo_serialization import jsonutils as json
 
 import paramiko
 
@@ -295,7 +296,7 @@ class TestFS(unittest.TestCase):
     def get_file_list_openstack(self, container):
         if self.openstack_executable:
             json_result = execute([self.openstack_executable, 'object', 'list',
-                                   container, '-f', json])
+                                   container, '-f', 'json'])
             result = json.loads(json_result)
             return [x['Name'] for x in result]
         if self.swift_executable:

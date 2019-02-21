@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import abc
-import json
-
 import six
+
+from oslo_serialization import jsonutils as json
 
 from freezer.storage import physical
 

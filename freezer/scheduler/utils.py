@@ -13,13 +13,13 @@
 # limitations under the License.
 
 
-import json
 import os
 import signal
 import socket
 
 from freezerclient import exceptions
 from oslo_log import log
+from oslo_serialization import jsonutils as json
 from oslo_utils import uuidutils
 import psutil
 

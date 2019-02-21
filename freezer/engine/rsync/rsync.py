@@ -17,7 +17,6 @@ Freezer rsync incremental engine
 
 import getpass
 import grp
-import json
 import os
 import pwd
 import re
@@ -26,6 +25,7 @@ import sys
 import threading
 
 from oslo_log import log
+from oslo_serialization import jsonutils as json
 from six.moves import cStringIO
 from six.moves import queue
 

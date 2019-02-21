@@ -14,13 +14,13 @@
 
 
 import abc
-import json
 import multiprocessing
 import shutil
 import tempfile
 import time
 
 from oslo_log import log
+from oslo_serialization import jsonutils as json
 import six
 # PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
 from six.moves import queue

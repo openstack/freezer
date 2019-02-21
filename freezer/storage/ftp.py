@@ -16,7 +16,6 @@ limitations under the License.
 """
 
 import ftplib
-import json
 import os
 import shutil
 import socket
@@ -25,6 +24,7 @@ import tempfile
 from freezer.storage import fslike
 from freezer.utils import utils
 from oslo_log import log
+from oslo_serialization import jsonutils as json
 
 CHUNK_SIZE = 32768
 LOG = log.getLogger(__name__)

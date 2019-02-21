@@ -14,7 +14,6 @@
 
 
 import datetime
-import json
 import os
 import subprocess
 import tempfile
@@ -23,6 +22,7 @@ import time
 from freezer.utils import utils
 from oslo_config import cfg
 from oslo_log import log
+from oslo_serialization import jsonutils as json
 from six.moves import configparser
 
 

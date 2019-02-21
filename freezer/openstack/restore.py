@@ -17,7 +17,6 @@
 Freezer restore modes related functions
 """
 
-import json
 import os
 import shutil
 import tempfile
@@ -25,6 +24,7 @@ import time
 
 from oslo_config import cfg
 from oslo_log import log
+from oslo_serialization import jsonutils as json
 
 from freezer.utils import utils
 
