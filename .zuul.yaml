@@ -10,7 +10,9 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        - freezer-ubuntu-xenial
+        - freezer-ubuntu:
+            # n-v till story#2005227
+            voting: false
         - freezer-centos-7:
             voting: false
         - openstack-tox-pylint
@@ -19,7 +21,8 @@
     gate:
       queue: freezer
       jobs:
-        - freezer-ubuntu-xenial
+        # Commenting as this is n-v job till story#2005227
+        #- freezer-ubuntu
         - openstack-tox-pylint
         - freezer-tempest-agent
         - freezer-tempest-scheduler
@@ -42,7 +45,7 @@
       - openstack/freezer-tempest-plugin
 
 - job:
-    name: freezer-ubuntu-xenial
+    name: freezer-ubuntu
     parent: freezer-legacy-dsvm-base
 
 - job:
