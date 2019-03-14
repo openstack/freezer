@@ -10,9 +10,7 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        - freezer-ubuntu:
-            # n-v till story#2005227
-            voting: false
+        - freezer-ubuntu
         - freezer-centos-7:
             voting: false
         - openstack-tox-pylint
@@ -21,8 +19,7 @@
     gate:
       queue: freezer
       jobs:
-        # Commenting as this is n-v job till story#2005227
-        #- freezer-ubuntu
+        - freezer-ubuntu
         - openstack-tox-pylint
         - freezer-tempest-agent
         - freezer-tempest-scheduler
