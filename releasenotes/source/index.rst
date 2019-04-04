@@ -22,6 +22,7 @@ Contents
    :maxdepth: 2
 
    unreleased
+   stein
    queens
    pike
    ocata
