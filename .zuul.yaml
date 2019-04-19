@@ -34,7 +34,7 @@
     post-run: playbooks/legacy/freezer/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/freezer
       - openstack/freezer-api
       - openstack/freezer-web-ui
