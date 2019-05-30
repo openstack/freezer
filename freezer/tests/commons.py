@@ -113,6 +113,8 @@ class FakeIdObject(object):
         self.size = 10
         self.min_disk = 10
         self.created_at = '2016-05-12T02:00:22.000000'
+        self.is_incremental = False
+        self.name = None
 
 
 class FakeCinderClient(object):
@@ -124,13 +126,27 @@ class FakeCinderClient(object):
 
     class Backups(object):
         def __init__(self):
+            self.del_flag = False
+
+        def _set_del_flag(self, value):
+            self.del_flag = value
+
+        def create(self, id, container, name, desription,
+                   incremental=None, force=True,
+                   snapshot_id=None):
             pass
 
-        def create(self, id, container, name, desription):
-            pass
+        def list(self, search_opts=None, **kwargs):
+            if 'parent_id' in search_opts:
+                return []
+            if self.del_flag:
+                self._set_del_flag(False)
+                return []
+            return [FakeIdObject(4), FakeIdObject(5)]
 
-        def list(self, **kwargs):
-            return [FakeIdObject(4)]
+        def delete(self, id):
+            self._set_del_flag(True)
+            return
 
     class Volumes(object):
         def __init__(self):
@@ -138,7 +154,11 @@ class FakeCinderClient(object):
 
         @staticmethod
         def get(id):
-            return FakeIdObject("5")
+            volume = FakeIdObject("5")
+            setattr(volume, 'availability_zone', 'nova')
+            volume._info = {'id': volume.id, 'name': None, 'size': 10,
+                            'attachments': []}
+            return volume
 
         @staticmethod
         def create(size, snapshot_id=None, imageRef=None):
@@ -147,7 +167,10 @@ class FakeCinderClient(object):
         @staticmethod
         def upload_to_image(volume, force, image_name,
                             container_format, disk_format):
-            pass
+            return ({}, {
+                "os-volume_upload_image": {
+                    "status": "uploading",
+                    "image_id": "image_1"}})
 
         @staticmethod
         def delete(volume):
@@ -164,6 +187,10 @@ class FakeCinderClient(object):
         @staticmethod
         def delete(snapshot):
             pass
+
+        @staticmethod
+        def get(snapshot_id):
+            return FakeIdObject("2")
 
     class Restores(object):
         def __init__(self):
@@ -189,6 +216,12 @@ class FakeGlanceClient(object):
         @staticmethod
         def delete(image):
             pass
+
+        @staticmethod
+        def get(image_id):
+            image = FakeIdObject("5")
+            setattr(image, 'status', 'active')
+            return image
 
         @staticmethod
         def create(data, container_format, disk_format):
