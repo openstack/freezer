@@ -199,11 +199,11 @@ class TestRsyncEngine(unittest.TestCase):
         self.assertEqual(ret, False)
 
     def test_is_file_modified(self):
-        oldfilemeta = mock.MagicMock()
+        oldfilemeta = dict(inode={})
         oldfilemeta['inode']['mtime'] = 1
         oldfilemeta['inode']['ctime'] = 2
 
-        filemeta = mock.MagicMock()
+        filemeta = dict(inode={})
         filemeta['inode']['mtime'] = 3
         filemeta['inode']['ctime'] = 4
 
@@ -211,14 +211,18 @@ class TestRsyncEngine(unittest.TestCase):
                                                  file_meta=filemeta)
         self.assertEqual(ret, True)
 
-        oldfilemeta['inode']['mtime'] = 1
-        oldfilemeta['inode']['ctime'] = 2
-
         filemeta['inode']['mtime'] = 1
         filemeta['inode']['ctime'] = 4
 
         ret = rsync.RsyncEngine.is_file_modified(old_file_meta=oldfilemeta,
                                                  file_meta=filemeta)
+        self.assertEqual(ret, True)
+
+        filemeta['inode']['mtime'] = 1
+        filemeta['inode']['ctime'] = 2
+        ret = rsync.RsyncEngine.is_file_modified(old_file_meta=oldfilemeta,
+                                                 file_meta=filemeta)
+        self.assertIsNone(ret)
 
     @patch('os.readlink')
     @patch('stat.S_ISSOCK')
