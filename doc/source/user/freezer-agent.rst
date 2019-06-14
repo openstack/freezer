@@ -204,6 +204,118 @@ Execute a MySQL backup with nova:
 
 **Note: All the freezer-agent activities are logged into /var/log/freezer.log.**
 
+Glance Backups
+---------------
+
+If you provide glance backup argument in parameters, freezer will backup
+image using glance download_image API to storage.
+
+Restore will create a image from stored data using glance create_image API
+. Image will have different id from original one.
+
+
+Backup example:
+
+Execute a glance backup with image-id:
+
+.. code:: bash
+
+    freezer-agent --backup-name [my-backup-name] \
+    --mode glance --engine_name glance \
+    --action backup \
+    --no-incremental True \
+    --container /home/freezer_data \
+    --storage local \
+    --glance_image_id [glance-image-id]
+
+Execute a glance backup with image-name:
+
+.. code:: bash
+
+    freezer-agent --backup-name [my-backup-name] \
+    --mode glance --engine_name glance \
+    --action backup \
+    --no-incremental True \
+    --container /home/freezer_data \
+    --storage local \
+    --glance_image_name [glance-image-name]
+
+Execute a glance backup with image-name-filter:
+
+.. code:: bash
+
+    freezer-agent --backup-name [my-backup-name] \
+    --mode glance --engine_name glance \
+    --action backup \
+    --no-incremental True \
+    --container /home/freezer_data \
+    --storage local \
+    --glance_image_name_filter [glance-image-name-filter]
+
+Execute a glance backup with project_id:
+
+.. code:: bash
+
+    freezer-agent --backup-name [my-backup-name] \
+    --mode glance --engine_name glance \
+    --action backup \
+    --no-incremental True \
+    --container /home/freezer_data \
+    --storage local \
+    --project_id [project-id]
+
+
+
+Restore example:
+
+Execute a glance restore with image-id:
+
+.. code:: bash
+
+    freezer-agent --backup-name [my-backup-name] \
+    --mode glance --engine_name glance \
+    --action restore \
+    --no-incremental True \
+    --container /home/freezer_data \
+    --storage local \
+    --glance_image_id [glance-image-id]
+
+Execute a glance restore with image-name:
+
+.. code:: bash
+
+    freezer-agent --backup-name [my-backup-name] \
+    --mode glance --engine_name glance \
+    --action restore \
+    --no-incremental True \
+    --container /home/freezer_data \
+    --storage local \
+    --glance_image_name [glance-image-name]
+
+Execute a glance restore with image-name-filter:
+
+.. code:: bash
+
+    freezer-agent --backup-name [my-backup-name] \
+    --mode glance --engine_name glance \
+    --action restore \
+    --no-incremental True \
+    --container /home/freezer_data \
+    --storage local \
+    --glance_image_name_filter [glance-image-name-filter]
+
+Execute a glance restore with project_id:
+
+.. code:: bash
+
+    freezer-agent --backup-name [my-backup-name] \
+    --mode glance --engine_name glance \
+    --action restore \
+    --no-incremental True \
+    --container /home/freezer_data \
+    --storage local \
+    --project_id [project-id]
+
 
 Storage Options
 ===============
