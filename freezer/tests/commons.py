@@ -375,7 +375,9 @@ class BackupOpt1(object):
         self.nova_inst_id = ''
         self.nova_inst_name = ''
         self.lvm_snapperm = 'ro'
-
+        self.glance_image_name = ''
+        self.glance_image_name_filter = ''
+        self.glance_image_id = ''
         self.compression = 'gzip'
         self.storage = mock.MagicMock()
         self.engine = mock.MagicMock()

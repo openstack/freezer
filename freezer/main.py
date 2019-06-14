@@ -46,7 +46,6 @@ LOG = log.getLogger(__name__)
 def freezer_main(backup_args):
     """Freezer main loop for job execution.
     """
-
     if not backup_args.quiet:
         LOG.info("Begin freezer agent process with args: {0}".format(sys.argv))
         LOG.info('log file at {0}'.format(CONF.get('log_file')))
@@ -61,7 +60,7 @@ def freezer_main(backup_args):
     if (backup_args.storage ==
             'swift' or
             backup_args.backup_media in ['nova', 'cinder', 'cindernative',
-                                         'cinderbrick']):
+                                         'cinderbrick', 'glance']):
 
         backup_args.client_manager = client_manager.get_client_manager(
             backup_args.__dict__)

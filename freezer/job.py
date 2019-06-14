@@ -53,6 +53,7 @@ class Job(object):
         self.client = client_manager.get_client_manager(CONF)
         self.nova = self.client.get_nova()
         self.cinder = self.client.get_cinder()
+        self.glance = self.client.get_glance()
         self._general_validation()
         self._validate()
         if self.conf.nova_inst_name:
@@ -65,6 +66,18 @@ class Job(object):
                                    self.cinder.volumes.list()
                                    if volume.name ==
                                    self.conf.cinder_inst_name]
+
+        if self.conf.glance_image_name:
+            self.glance_image_ids = [image.id for image in
+                                     self.glance.images.list()
+                                     if image.name ==
+                                     self.conf.glance_image_name]
+
+        if self.conf.glance_image_name_filter:
+            self.glance_image_ids = [image.id for image in
+                                     self.glance.images.list()
+                                     if self.conf.glance_image_name_filter
+                                     not in image.name]
 
     @abc.abstractmethod
     def _validate(self):
@@ -143,6 +156,17 @@ class BackupJob(Job):
                     and not self.conf.nova_inst_name:
                 raise ValueError("nova-inst-id or project-id or nova-inst-name"
                                  " argument must be provided")
+        if self.conf.mode == 'glance':
+            if not self.conf.no_incremental:
+                raise ValueError("Incremental glance backup is not supported")
+
+            if not self.conf.glance_image_id and not self.conf.project_id \
+                    and not self.conf.glance_image_name \
+                    and not self.conf.glance_image_name_filter:
+                raise ValueError("glance-image-id or project-id or"
+                                 " glance-image-name or "
+                                 " glance-image-name_filter "
+                                 "argument must be provided")
 
         if self.conf.mode == 'cinder':
             if not self.conf.cinder_vol_id and not self.conf.cinder_vol_name:
@@ -317,6 +341,50 @@ class BackupJob(Job):
 
                 futures.wait(futures_list, CONF.timeout)
 
+        elif backup_media == 'glance':
+            if self.conf.project_id:
+                return self.engine.backup_glance_tenant(
+                    project_id=self.conf.project_id,
+                    hostname_backup_name=self.conf.hostname_backup_name,
+                    no_incremental=self.conf.no_incremental,
+                    max_level=self.conf.max_level,
+                    always_level=self.conf.always_level,
+                    restart_always_level=self.conf.restart_always_level)
+
+            elif self.conf.glance_image_id:
+                LOG.info('Executing glance backup. Image ID: {0}'.format(
+                    self.conf.glance_image_id))
+
+                hostname_backup_name = os.path.join(
+                    self.conf.hostname_backup_name,
+                    self.conf.glance_image_id)
+                return self.engine.backup(
+                    backup_resource=self.conf.glance_image_id,
+                    hostname_backup_name=hostname_backup_name,
+                    no_incremental=self.conf.no_incremental,
+                    max_level=self.conf.max_level,
+                    always_level=self.conf.always_level,
+                    restart_always_level=self.conf.restart_always_level)
+
+            else:
+                executor = futures.ThreadPoolExecutor(
+                    max_workers=len(self.glance_image_ids))
+                futures_list = []
+                for image_id in self.glance_image_ids:
+                    hostname_backup_name = os.path.join(
+                        self.conf.hostname_backup_name, image_id)
+                    futures_list.append(executor.submit(
+                        self.engine.backup(
+                            backup_resource=image_id,
+                            hostname_backup_name=hostname_backup_name,
+                            no_incremental=self.conf.no_incremental,
+                            max_level=self.conf.max_level,
+                            always_level=self.conf.always_level,
+                            restart_always_level=self.conf.restart_always_level
+                        )))
+
+                futures.wait(futures_list, CONF.timeout)
+
         elif backup_media == 'cindernative':
             LOG.info('Executing cinder native backup. Volume ID: {0}, '
                      'incremental: {1}'.format(self.conf.cindernative_vol_id,
@@ -362,10 +430,13 @@ class RestoreJob(Job):
         if not any([self.conf.restore_abs_path,
                     self.conf.nova_inst_id,
                     self.conf.nova_inst_name,
+                    self.conf.glance_image_id,
                     self.conf.cinder_vol_id,
                     self.conf.cinder_vol_name,
                     self.conf.cindernative_vol_id,
                     self.conf.cinderbrick_vol_id,
+                    self.conf.glance_image_name,
+                    self.conf.glance_image_name_filter,
                     self.conf.project_id]):
             raise ValueError("--restore-abs-path is required")
         if not self.conf.container:
@@ -446,6 +517,42 @@ class RestoreJob(Job):
                     self.engine.restore(
                         hostname_backup_name=hostname_backup_name,
                         restore_resource=instance_id,
+                        overwrite=conf.overwrite,
+                        recent_to_date=restore_timestamp,
+                        backup_media=conf.mode)
+
+        elif conf.backup_media == 'glance':
+            if self.conf.project_id:
+                return self.engine.restore_glance_tenant(
+                    project_id=self.conf.project_id,
+                    hostname_backup_name=self.conf.hostname_backup_name,
+                    overwrite=conf.overwrite,
+                    recent_to_date=restore_timestamp)
+
+            elif conf.glance_image_id:
+                LOG.info("Restoring glance backup. Image ID: {0}, "
+                         "timestamp: {1} ".format(conf.glance_image_id,
+                                                  restore_timestamp))
+                hostname_backup_name = os.path.join(
+                    self.conf.hostname_backup_name,
+                    self.conf.glance_image_id)
+                self.engine.restore(
+                    hostname_backup_name=hostname_backup_name,
+                    restore_resource=conf.glance_image_id,
+                    overwrite=conf.overwrite,
+                    recent_to_date=restore_timestamp,
+                    backup_media=conf.mode)
+
+            else:
+                for image_id in self.glance_image_ids:
+                    LOG.info("Restoring glance backup. Image ID: {0}, "
+                             "timestamp: {1}".format(image_id,
+                                                     restore_timestamp))
+                    hostname_backup_name = os.path.join(
+                        self.conf.hostname_backup_name, image_id)
+                    self.engine.restore(
+                        hostname_backup_name=hostname_backup_name,
+                        restore_resource=image_id,
                         overwrite=conf.overwrite,
                         recent_to_date=restore_timestamp,
                         backup_media=conf.mode)

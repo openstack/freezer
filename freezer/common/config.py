@@ -73,6 +73,9 @@ DEFAULT_PARAMS = {
     'cinder_vol_name': '',
     'nova_inst_id': '', '__version__': FREEZER_VERSION,
     'nova_inst_name': '',
+    'glance_image_id': '',
+    'glance_image_name': '',
+    'glance_image_name_filter': '',
     'remove_older_than': None, 'restore_from_date': None,
     'upload_limit': -1, 'always_level': False, 'version': None,
     'dry_run': False, 'lvm_snapsize': DEFAULT_LVM_SNAPSIZE,
@@ -122,11 +125,13 @@ _COMMON = [
                     "(filesystem),mongo (MongoDB), mysql (MySQL), "
                     "sqlserver(SQL Server), "
                     "cinder(OpenStack Volume backup by freezer), "
+                    "glance(OpenStack Image backup by freezer), "
                     "cindernative(OpenStack native cinder-volume backup), "
                     "nova(OpenStack Instance). Default set to fs"),
     cfg.StrOpt('engine',
                short='e',
-               choices=['tar', 'rsync', 'rsyncv2', 'nova', 'osbrick'],
+               choices=['tar', 'rsync', 'rsyncv2',
+                        'nova', 'osbrick', 'glance'],
                dest='engine_name',
                default=DEFAULT_PARAMS['engine_name'],
                help="Engine to be used for backup/restore. "
@@ -400,6 +405,21 @@ _COMMON = [
                default=DEFAULT_PARAMS['cindernative_backup_id'],
                dest='cindernative_backup_id',
                help="Id of the cindernative backup to be restored"
+               ),
+    cfg.StrOpt('glance-image-id',
+               dest='glance_image_id',
+               default=DEFAULT_PARAMS['glance_image_id'],
+               help="Id of glance image for backup"
+               ),
+    cfg.StrOpt('glance-image-name',
+               dest='glance_image_name',
+               default=DEFAULT_PARAMS['glance_image_name'],
+               help="Name of glance image for backup"
+               ),
+    cfg.StrOpt('glance-image-name-filter',
+               dest='glance_image_name_filter',
+               default=DEFAULT_PARAMS['glance_image_name_filter'],
+               help="Name filter of glance image for backup"
                ),
     cfg.StrOpt('nova-inst-id',
                dest='nova_inst_id',
@@ -714,6 +734,11 @@ def get_backup_args():
                                                 backup_args.nova_inst_id or
                                                 backup_args.nova_inst_name):
         backup_media = 'nova'
+    elif backup_args.engine_name == 'glance':
+        if (backup_args.project_id or backup_args.glance_image_id or
+                backup_args.glance_image_name or
+                backup_args.glance_image_name_filter):
+            backup_media = 'glance'
     elif backup_args.cinderbrick_vol_id:
         backup_media = 'cinderbrick'
 
