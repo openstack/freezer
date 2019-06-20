@@ -11,7 +11,7 @@ cffi==1.11.5
 chardet==3.0.4
 cliff==2.11.0
 cmd2==0.8.1
-coverage==4.0
+coverage==4.5.1
 cryptography==2.1
 ddt==1.0.1
 debtcollector==1.19.0
