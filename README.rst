@@ -40,7 +40,7 @@ The following features are available:
 To learn how to use Freezer's API, consult the documentation available online
 at:
 
-- `Backup API Reference <https://developer.openstack.org/api-ref/backup/>`__
+- `Backup API Reference <https://docs.openstack.org/api-ref/backup/>`__
 - `Freezer API <https://github.com/openstack/freezer-api>`__
 
 Freezer Disaster Recovery:
