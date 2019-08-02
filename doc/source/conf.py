@@ -162,8 +162,3 @@ add_module_names = True
 # Sphinx are currently 'default' and 'sphinxdoc'.
 # html_theme_path = ["."]
 html_theme = 'openstackdocs'
-
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-html_last_updated_fmt = '%Y-%m-%d %H:%M'
-
