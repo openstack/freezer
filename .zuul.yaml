@@ -15,9 +15,6 @@
     gate:
       jobs:
         - openstack-tox-pylint
-    experimental:
-      jobs:
-        - freezer-opensuse-423
 
 - job:
     name: freezer-ubuntu-xenial
@@ -40,21 +37,6 @@
     post-run: playbooks/legacy/freezer-centos-7/post.yaml
     timeout: 7800
     nodeset: legacy-centos-7
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/freezer
-      - openstack/freezer-api
-      - openstack/freezer-web-ui
-      - openstack/python-freezerclient
-      - openstack/freezer-tempest-plugin
-
-- job:
-    name: freezer-opensuse-423
-    parent: legacy-dsvm-base
-    run: playbooks/legacy/freezer-opensuse-423/run.yaml
-    post-run: playbooks/legacy/freezer-opensuse-423/post.yaml
-    timeout: 7800
-    nodeset: legacy-opensuse-423
     required-projects:
       - openstack/devstack-gate
       - openstack/freezer
