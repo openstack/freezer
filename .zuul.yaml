@@ -10,6 +10,7 @@
         - openstack-tox-pylint
         - freezer-tempest-agent
         - freezer-tempest-scheduler
+        - freezer-tempest-ipv6-only
         - freezer-ubuntu
         - freezer-centos-9-stream
     gate:
@@ -17,6 +18,7 @@
         - openstack-tox-pylint
         - freezer-tempest-agent
         - freezer-tempest-scheduler
+        - freezer-tempest-ipv6-only
         - freezer-ubuntu
         - freezer-centos-9-stream
 
