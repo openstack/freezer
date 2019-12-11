@@ -55,7 +55,7 @@ class Config(object):
                 option_value = config.get(section, option)
                 if option_value in ('False', 'false', 'None'):
                     option_value = False
-                if option_value in ('True', 'true', 'None'):
+                elif option_value in ('True', 'true'):
                     option_value = True
                 dict[option] = option_value
             if section.startswith("storage:"):
