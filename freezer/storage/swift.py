@@ -46,7 +46,7 @@ class SwiftStorage(physical.PhysicalStorage):
     def put_file(self, from_path, to_path):
         split = to_path.rsplit('/', 1)
         file_size = os.path.getsize(from_path)
-        with open(from_path, 'r') as meta_fd:
+        with open(from_path, 'rb') as meta_fd:
             self.swift().put_object(split[0], split[1], meta_fd,
                                     content_length=file_size)
 

@@ -35,7 +35,6 @@ if six.PY3:
 else:
     from multiprocessing.queues import SimpleQueue
 
-
 LOG = log.getLogger(__name__)
 
 
@@ -190,7 +189,8 @@ class BackupEngine(object):
                     "Engine error. Failed to backup.")
 
             with open(freezer_meta, mode='wb') as b_file:
-                b_file.write(json.dumps(self.metadata(backup_resource)))
+                b_file.write(
+                    json.dumps(self.metadata(backup_resource)).encode())
             self.storage.put_metadata(engine_meta, freezer_meta, backup)
         finally:
             shutil.rmtree(tmpdir)

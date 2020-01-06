@@ -121,7 +121,7 @@ class NovaEngine(engine.BackupEngine):
             nova_networks = self.neutron.list_networks()['networks']
 
             net_names = [network for network, _ in
-                         available_networks.iteritems()]
+                         available_networks.items()]
             match_networks = [{"net-id": network.get('id')} for network in
                               nova_networks
                               if network.get('name') in net_names]
