@@ -2,24 +2,27 @@
     templates:
       - check-requirements
       - openstack-lower-constraints-jobs
-      - openstack-python-jobs
       - openstack-python3-ussuri-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
     check:
       jobs:
-        - freezer-ubuntu
+        - freezer-ubuntu:
+            voting: false
         - freezer-centos-7:
             voting: false
         - openstack-tox-pylint
-        - freezer-tempest-agent
+        - freezer-tempest-agent:
+            voting: false
         - freezer-tempest-scheduler
     gate:
       queue: freezer
       jobs:
-        - freezer-ubuntu
+        - freezer-ubuntu:
+            voting: false
         - openstack-tox-pylint
-        - freezer-tempest-agent
+        - freezer-tempest-agent:
+            voting: false
         - freezer-tempest-scheduler
     experimental:
       jobs:
