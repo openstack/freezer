@@ -121,7 +121,9 @@ class CheckSum(object):
             # unicode-escape. The effect of them is the same.
             if six.PY2 and isinstance(buf, str):
                 buf = buf.encode('string-escape')
-            else:
+            elif six.PY2 and not isinstance(buf, str):
+                buf = buf.encode('unicode-escape')
+            elif six.PY3 and isinstance(buf, six.string_types):
                 buf = buf.encode('unicode-escape')
 
             self.hasher.update(buf)

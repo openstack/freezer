@@ -75,7 +75,9 @@ def execute(args, must_fail=False, merge_stderr=False):
     """
     stdout = subprocess.PIPE
     stderr = subprocess.STDOUT if merge_stderr else subprocess.PIPE
-    proc = subprocess.Popen(args, stdout=stdout, stderr=stderr)
+    proc = subprocess.Popen(args,
+                            stdout=stdout,
+                            stderr=stderr, universal_newlines=True)
     result, result_err = proc.communicate()
 
     if not must_fail and proc.returncode != 0:

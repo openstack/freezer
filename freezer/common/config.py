@@ -624,7 +624,7 @@ def get_backup_args():
         def __init__(self, args):
             self.__dict__.update(args)
 
-    cli_options = dict([(x, y) for x, y in CONF.iteritems() if y is not None])
+    cli_options = dict([(x, y) for x, y in CONF.items() if y is not None])
 
     defaults.update(cli_options)
 

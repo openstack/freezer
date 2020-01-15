@@ -62,10 +62,10 @@ class FsLikeStorage(physical.PhysicalStorage):
         with self.open(backup.data_path, 'rb') as backup_file:
             while True:
                 chunk = backup_file.read(self.max_segment_size)
-                if chunk == '':
-                    break
                 if len(chunk):
                     yield chunk
+                else:
+                    break
 
     @abc.abstractmethod
     def open(self, filename, mode):

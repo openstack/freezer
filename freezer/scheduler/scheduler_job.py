@@ -336,7 +336,8 @@ class Job(object):
         max_retries_interval = job_action.get('max_retries_interval', 60)
         action_name = freezer_action.get('action', '')
         while tries:
-            with tempfile.NamedTemporaryFile(delete=False) as config_file:
+            with tempfile.NamedTemporaryFile(mode='w',
+                                             delete=False) as config_file:
                 self.save_action_to_file(freezer_action, config_file)
                 config_file_name = config_file.name
                 freezer_command = '{0} --metadata-out - --config {1}'.\
