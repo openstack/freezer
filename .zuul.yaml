@@ -7,22 +7,18 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        - freezer-ubuntu:
-            voting: false
+        - freezer-ubuntu
         - freezer-centos-7:
             voting: false
         - openstack-tox-pylint
-        - freezer-tempest-agent:
-            voting: false
+        - freezer-tempest-agent
         - freezer-tempest-scheduler
     gate:
       queue: freezer
       jobs:
-        - freezer-ubuntu:
-            voting: false
+        - freezer-ubuntu
         - openstack-tox-pylint
-        - freezer-tempest-agent:
-            voting: false
+        - freezer-tempest-agent
         - freezer-tempest-scheduler
     experimental:
       jobs:
