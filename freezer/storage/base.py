@@ -19,15 +19,13 @@ import tempfile
 
 from oslo_log import log
 from oslo_serialization import jsonutils as json
-import six
 
 from freezer.utils import utils
 
 LOG = log.getLogger(__name__)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Storage(object):
+class Storage(metaclass=abc.ABCMeta):
     """
     Any freezer storage implementation should be inherited from this abstract
     class.

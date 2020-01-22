@@ -20,7 +20,7 @@ Freezer general utils functions
 import threading
 
 from oslo_log import log
-from six.moves import queue
+import queue
 
 
 LOG = log.getLogger(__name__)

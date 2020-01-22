@@ -18,8 +18,10 @@ Freezer rsync incremental engine
 import fnmatch
 import getpass
 import grp
+import io
 import os
 import pwd
+import queue
 import shutil
 import stat
 import sys
@@ -27,9 +29,7 @@ import threading
 
 import msgpack
 from oslo_log import log
-import six
 
-from six.moves import queue
 
 from freezer.engine import engine
 from freezer.engine.rsyncv2 import pyrsync
@@ -222,7 +222,7 @@ class Rsyncv2Engine(engine.BackupEngine):
                 files_meta = msgpack.load(data_stream)
             except msgpack.ExtraData as e:
                 files_meta = e.unpacked
-                data_stream = six.BytesIO(e.extra)
+                data_stream = io.BytesIO(e.extra)
                 break
             except msgpack.OutOfData:
                 data_stream.write(data_gen.next().read())
@@ -349,14 +349,14 @@ class Rsyncv2Engine(engine.BackupEngine):
                     data_chunk += read_pipe.recv_bytes()
                     continue
                 if data_chunk:
-                    yield six.BytesIO(data_chunk)
+                    yield io.BytesIO(data_chunk)
                 data_chunk = read_pipe.recv_bytes()
 
         except EOFError:
             LOG.info("[*] EOF from pipe. Flushing buffer.")
             data_chunk = decompressor.flush()
             if data_chunk:
-                yield six.BytesIO(data_chunk)
+                yield io.BytesIO(data_chunk)
 
     @staticmethod
     def _process_backup_data(data, compressor, encryptor, do_compress=True):
@@ -574,7 +574,7 @@ class Rsyncv2Engine(engine.BackupEngine):
         """
 
         file_name = os.path.basename(file_path)
-        for fn in six.iterkeys(old_files):
+        for fn in iter(old_files.keys()):
             base_name = os.path.basename(fn)
             if fnmatch.fnmatch(base_name, '*' + file_name + '*'):
                 return base_name
@@ -704,7 +704,7 @@ class Rsyncv2Engine(engine.BackupEngine):
             counts['total_files'] += 1
 
         # Check for deleted files
-        for del_file in (f for f in six.iterkeys(old_fs_meta_struct) if
+        for del_file in (f for f in iter(old_fs_meta_struct.keys()) if
                          f not in files_meta['files']):
             backup_header.append({'path': del_file, 'deleted': True})
 

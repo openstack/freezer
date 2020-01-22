@@ -14,7 +14,7 @@
 
 from oslo_log import log
 # PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
-from six.moves import queue
+import queue
 
 from freezer.storage import base
 from freezer.storage import exceptions

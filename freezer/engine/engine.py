@@ -21,25 +21,20 @@ import time
 
 from oslo_log import log
 from oslo_serialization import jsonutils as json
-import six
 # PyCharm will not recognize queue. Puts red squiggle line under it. That's OK.
-from six.moves import queue
+import queue
 
 from freezer.exceptions import engine as engine_exceptions
 from freezer.storage import base
 from freezer.utils import streaming
 from freezer.utils import utils
 
-if six.PY3:
-    from multiprocessing import SimpleQueue
-else:
-    from multiprocessing.queues import SimpleQueue
+from multiprocessing import SimpleQueue
 
 LOG = log.getLogger(__name__)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BackupEngine(object):
+class BackupEngine(metaclass=abc.ABCMeta):
     """
     The main part of making a backup and making a restore is the mechanism of
     implementing it. For a long time Freezer had only one mechanism of

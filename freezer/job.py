@@ -24,7 +24,6 @@ import time
 from oslo_config import cfg
 from oslo_log import log
 from oslo_utils import importutils
-import six
 
 from freezer.common import client_manager
 from freezer.openstack import admin
@@ -39,8 +38,7 @@ CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Job(object):
+class Job(metaclass=abc.ABCMeta):
     """
     :type storage: freezer.storage.base.Storage
     :type engine: freezer.engine.engine.BackupEngine

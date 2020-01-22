@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+import configparser
 import datetime
 import os
 import subprocess
@@ -23,7 +24,6 @@ from freezer.utils import utils
 from oslo_config import cfg
 from oslo_log import log
 from oslo_serialization import jsonutils as json
-from six.moves import configparser
 
 
 CONF = cfg.CONF

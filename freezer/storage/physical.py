@@ -16,14 +16,12 @@
 import abc
 import os
 
-import six
 
 from freezer.storage import base
 from freezer.utils import utils
 
 
-@six.add_metaclass(abc.ABCMeta)
-class PhysicalStorage(base.Storage):
+class PhysicalStorage(base.Storage, metaclass=abc.ABCMeta):
     """
     Backup like Swift, SSH or Local. Something that represents real storage.
     For example MultipleStorage is not physical.

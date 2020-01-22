@@ -19,15 +19,15 @@ import getpass
 import grp
 import os
 import pwd
+import queue
 import re
 import stat
 import sys
 import threading
 
+from io import StringIO
 from oslo_log import log
 from oslo_serialization import jsonutils as json
-from six.moves import cStringIO
-from six.moves import queue
 
 from freezer.engine import engine
 from freezer.engine.rsync import pyrsync
@@ -256,7 +256,7 @@ class RsyncEngine(engine.BackupEngine):
         len_deltas = 0
         old_signature = old_file_meta['signature']
         # Get changed blocks index only
-        all_changed_indexes = cStringIO()
+        all_changed_indexes = StringIO()
         file_path_fd.seek(0)
         previous_index = -1
         modified_blocks = []

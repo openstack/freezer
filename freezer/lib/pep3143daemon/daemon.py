@@ -32,7 +32,6 @@ import signal
 import socket
 import sys
 
-import six
 
 
 class DaemonError(Exception):
@@ -171,7 +170,7 @@ class DaemonContext(object):
         """
         if not handler:
             result = signal.SIG_IGN
-        elif isinstance(handler, six.string_types):
+        elif isinstance(handler, str):
             result = getattr(self, handler)
         else:
             result = handler

@@ -13,15 +13,13 @@
 # limitations under the License.
 
 import abc
-import six
 
 from oslo_serialization import jsonutils as json
 
 from freezer.storage import physical
 
 
-@six.add_metaclass(abc.ABCMeta)
-class FsLikeStorage(physical.PhysicalStorage):
+class FsLikeStorage(physical.PhysicalStorage, metaclass=abc.ABCMeta):
     _type = 'fslike'
 
     def __init__(self, storage_path,

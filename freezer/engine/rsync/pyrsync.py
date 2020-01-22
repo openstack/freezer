@@ -27,17 +27,6 @@ https://samba.anu.edu.au/rsync/.
 import collections
 import hashlib
 
-import six
-from six.moves import range
-
-
-if six.PY2:
-    # Python 2.x compatibility
-    def bytes(var, *args):
-        try:
-            return ''.join(map(chr, var))
-        except TypeError:
-            return map(ord, var)
 
 __all__ = ["rollingchecksum", "weakchecksum", "rsyncdelta",
            "blockchecksums"]
