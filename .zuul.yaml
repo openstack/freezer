@@ -7,22 +7,15 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        - freezer-ubuntu
-        - freezer-centos-7:
-            voting: false
         - openstack-tox-pylint
-        - freezer-tempest-agent
-        - freezer-tempest-scheduler
+        - freezer-agent-tempest
+        - freezer-scheduler-tempest
     gate:
       queue: freezer
       jobs:
-        - freezer-ubuntu
         - openstack-tox-pylint
-        - freezer-tempest-agent
-        - freezer-tempest-scheduler
-    experimental:
-      jobs:
-        - freezer-opensuse-15
+        - freezer-agent-tempest
+        - freezer-scheduler-tempest
 
 - job:
     name: freezer-legacy-dsvm-base
@@ -51,3 +44,11 @@
     name: freezer-opensuse-15
     parent: freezer-legacy-dsvm-base
     nodeset: opensuse-15
+
+- job:
+    name: freezer-scheduler-tempest
+    parent: freezer-tempest-scheduler
+
+- job:
+    name: freezer-agent-tempest
+    parent: freezer-tempest-agent
