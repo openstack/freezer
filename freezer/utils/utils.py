@@ -18,6 +18,7 @@
 Freezer general utils functions
 """
 
+import configparser
 import datetime
 import errno
 import fnmatch as fn
@@ -31,7 +32,6 @@ from distutils import spawn as distspawn
 from freezer.exceptions import utils
 from functools import wraps
 from oslo_log import log
-from six.moves import configparser
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
 

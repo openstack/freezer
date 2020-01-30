@@ -12,12 +12,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import io
 import sys
 import unittest
 
 import mock
 from mock import patch
-from six import moves
 
 from freezer.utils.checksum import CheckSum
 
@@ -31,7 +31,7 @@ class TestChecksum(unittest.TestCase):
         self.hello_world_sha256sum = ('17b949eb67acf16bbf2605d57a01f7af4ff4b5'
                                       '7e200259de63fcebf20e75bbf5')
 
-        self.fake_file = moves.StringIO(u"hello world\n")
+        self.fake_file = io.StringIO(u"hello world\n")
         self.increment_hash_one = self.hello_world_sha256sum
         self.increment_hash_multi = ('1b4bc4ff41172a5f29eaeffb7e9fc24c683c693'
                                      '9ab30132ad5d93a1e4a6b16e8')

@@ -13,11 +13,9 @@
 # limitations under the License.
 
 import abc
-import six
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Mode(object):
+class Mode(metaclass=abc.ABCMeta):
     @abc.abstractproperty
     def name(self):
         pass

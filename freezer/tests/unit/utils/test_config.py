@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import io
 import unittest
-
-from six import moves
 
 from freezer.utils import config
 
@@ -47,7 +46,7 @@ password = 'aNiceQuotedPassword'
 password2 = "aNiceQuotedPassword"
 spaced =   value"""
 
-        fd = moves.cStringIO(string)
+        fd = io.StringIO(string)
         res = config.ini_parse(fd)
         self.assertEqual('127.0.0.1', res['host'])
         self.assertEqual('openstack', res['user'])

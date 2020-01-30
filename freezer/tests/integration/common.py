@@ -27,7 +27,6 @@ from oslo_serialization import jsonutils as json
 
 import paramiko
 
-from six.moves import range
 
 FREEZERC = distutils.spawn.find_executable('freezer-agent')
 

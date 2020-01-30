@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import configparser
 import os
 import re
 
 from oslo_log import log
-import six
-from six.moves import configparser
 
 from freezer.utils import utils
 
@@ -41,10 +40,7 @@ class Config(object):
                 raise Exception("Configuration file {0} not found !".format(
                     config_path))
         # SafeConfigParser was deprecated in Python 3.2
-        if six.PY3:
-            config = configparser.ConfigParser()
-        else:
-            config = configparser.SafeConfigParser()
+        config = configparser.ConfigParser()
         config.read([config_path])
         sections = config.sections()
         storages = []

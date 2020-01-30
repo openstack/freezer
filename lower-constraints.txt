@@ -107,7 +107,6 @@ rfc3986==1.1.0
 Routes==2.4.1
 setuptools==21.0.0
 simplejson==3.13.2
-six==1.10.0
 snowballstemmer==1.2.1
 Sphinx==1.6.2
 sphinxcontrib-websupport==1.0.1

@@ -14,17 +14,17 @@
 
 import unittest
 
-import six
+import io
 
 from freezer.engine.rsync import pyrsync
 
 
 class TestPyrsync(unittest.TestCase):
     def test_blockcheksum(self):
-        instream = six.BytesIO(b'aae9dd83aa45f906'
-                               b'a4629f42e97eac99'
-                               b'b9882284dc7030ca'
-                               b'427ad365fedd2a55')
+        instream = io.BytesIO(b'aae9dd83aa45f906'
+                              b'a4629f42e97eac99'
+                              b'b9882284dc7030ca'
+                              b'427ad365fedd2a55')
         weak, strong = pyrsync.blockchecksums(instream, 16)
         exp_weak = [736756931, 616825970, 577963056, 633341072]
         exp_strong = ['0f923c37c14f648de4065d4666c2429231a923bc',
@@ -34,10 +34,10 @@ class TestPyrsync(unittest.TestCase):
         self.assertEqual((weak, strong), (exp_weak, exp_strong))
 
     def test_rsyncdelta(self):
-        datastream = six.BytesIO(b'addc830058f917ae'
-                                 b'a1be5ab4d899b570'
-                                 b'85c9534c64d8d71c'
-                                 b'1f32cde9c71e5b6d')
+        datastream = io.BytesIO(b'addc830058f917ae'
+                                b'a1be5ab4d899b570'
+                                b'85c9534c64d8d71c'
+                                b'1f32cde9c71e5b6d')
 
         old_weak = [675087508, 698025105, 579470394, 667092162]
         old_strong = ['e72251cb70a1b918ee43876896ebb4c8a7225f78',
