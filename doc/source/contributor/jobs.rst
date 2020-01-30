@@ -45,7 +45,7 @@ job document structure
                     {
                         "action" :      string
                         "mode" :        string
-                        "src_file" :    string
+                        "path_to_backup" :    string
                         "backup_name" : string
                         "container" :   string
                         ...
@@ -133,7 +133,7 @@ example backup freezer_action
     "freezer_action": {
       "action" : "backup"
       "mode" : "fs"
-      "src_file" : "/home/tylerdurden/project_mayhem"
+      "path_to_backup" : "/home/tylerdurden/project_mayhem"
       "backup_name" : "project_mayhem_backup"
       "container" : "my_backup_container"
       "max_backup_level" : int
@@ -173,7 +173,7 @@ job will be executed once at the provided datetime
                         {
                             "action" : "backup",
                             "mode" : "fs",
-                            "src_file" : "/home/tylerdurden/project_mayhem",
+                            "path_to_backup" : "/home/tylerdurden/project_mayhem",
                             "backup_name" : "project_mayhem_backup",
                             "container" : "my_backup_container",
                         }
@@ -295,21 +295,21 @@ Example
             "freezer_action": {
                 "action": "backup",
                 "mode": "fs",
-                "src_file": "/home/user1/file",
+                "path_to_backup": "/home/user1/file",
                 "backup_name": "user1_backup"
             }
         }, {
             "freezer_action": {
                 "action": "backup",
                 "mode": "fs",
-                "src_file": "/home/user2/file",
+                "path_to_backup": "/home/user2/file",
                 "backup_name": "user2_backup"
             }
         }, {
             "freezer_action": {
                 "action": "backup",
                 "mode": "fs",
-                "src_file": "/home/user3/file",
+                "path_to_backup": "/home/user3/file",
                 "backup_name": "user2_backup",
                 "log_file": "/home/user3/specific_log_file"
             }
@@ -327,7 +327,7 @@ Is Equivalent to
             "freezer_action": {
                 "action": "backup",
                 "mode": "fs",
-                "src_file": "/home/user1/file",
+                "path_to_backup": "/home/user1/file",
                 "backup_name": "user1_backup",
                 "log_file": "/tmp/freezer_tmp_log",
                 "container": "my_backup_container"
@@ -336,7 +336,7 @@ Is Equivalent to
             "freezer_action": {
                 "action": "backup",
                 "mode": "fs",
-                "src_file": "/home/user2/file",
+                "path_to_backup": "/home/user2/file",
                 "backup_name": "user2_backup",
                 "log_file": "/tmp/freezer_tmp_log",
                 "container": "my_backup_container"
@@ -345,7 +345,7 @@ Is Equivalent to
             "freezer_action": {
                 "action": "backup",
                 "mode": "fs",
-                "src_file": "/home/user3/file",
+                "path_to_backup": "/home/user3/file",
                 "backup_name": "user2_backup",
                 "log_file": "/home/user3/specific_log_file",
                 "container": "my_backup_container"
