@@ -209,7 +209,8 @@ class Job(object):
         parser = configparser.ConfigParser()
         parser.add_section('action')
         for action_k, action_v in action.items():
-            parser.set('action', action_k, action_v)
+            if action_v is not None:
+                parser.set('action', action_k, str(action_v))
         parser.write(f)
         f.seek(0)
 

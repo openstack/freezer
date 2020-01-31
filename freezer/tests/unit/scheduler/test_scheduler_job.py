@@ -12,9 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import tempfile
 import unittest
 
 from freezer.scheduler import scheduler_job
+
+action = {"action": "backup", "storage": "local",
+          "mode": "fs", "backup_name": "test",
+          "container": "/tmp/backuped",
+          "path_to_backup": "/tmp/to_backup"}
 
 
 class TestSchedulerJob(unittest.TestCase):
@@ -23,3 +30,23 @@ class TestSchedulerJob(unittest.TestCase):
 
     def test(self):
         scheduler_job.RunningState.stop(self.job, {})
+
+    def test_save_action_to_disk(self):
+        with tempfile.NamedTemporaryFile(mode='w',
+                                         delete=False) as config_file:
+            self.job.save_action_to_file(action, config_file)
+            self.assertTrue(os.path.exists(config_file.name))
+
+    def test_save_action_with_none_value_to_disk(self):
+        action.update({"log_file": None})
+        with tempfile.NamedTemporaryFile(mode='w',
+                                         delete=False) as config_file:
+            self.job.save_action_to_file(action, config_file)
+            self.assertTrue(os.path.exists(config_file.name))
+
+    def test_save_action_with_bool_value_to_disk(self):
+        action.update({"no_incremental": False})
+        with tempfile.NamedTemporaryFile(mode='w',
+                                         delete=False) as config_file:
+            self.job.save_action_to_file(action, config_file)
+            self.assertTrue(os.path.exists(config_file.name))
