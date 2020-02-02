@@ -97,10 +97,8 @@ class BackupOs(object):
             }
             backups = cinder.backups.list(search_opts=search_opts)
             if len(backups) <= 0:
-                msg = ("Backup volume %s is failed."
-                       "Do a full backup before incremental backup"
-                       % volume_id)
-                raise Exception(msg)
+                cinder.backups.create(volume_id, container, name, description,
+                                      incremental=False, force=True)
             else:
                 cinder.backups.create(volume_id, container, name, description,
                                       incremental=incremental, force=True)
