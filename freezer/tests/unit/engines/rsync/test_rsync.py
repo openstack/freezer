@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
 import shutil
 import stat
 import sys
 import tempfile
 import unittest
+from unittest import mock
+from unittest.mock import patch
 
 from freezer.engine.rsync import rsync
-from mock import patch
 
 
 class TestRsyncEngine(unittest.TestCase):

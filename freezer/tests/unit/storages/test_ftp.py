@@ -16,11 +16,10 @@ import shutil
 import sys
 import tempfile
 import unittest
-
-import mock
+from unittest import mock
+from unittest.mock import patch
 
 from freezer.storage import ftp
-from mock import patch
 
 
 class BaseFtpStorageTestCase(unittest.TestCase):

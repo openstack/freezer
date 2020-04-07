@@ -17,7 +17,7 @@ import sys
 import tempfile
 import unittest
 
-# import mock
+# from unittest import mock
 # from mock import patch
 
 from freezer.utils import crypt

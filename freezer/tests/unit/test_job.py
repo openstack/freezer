@@ -17,8 +17,8 @@
 Freezer main.py related tests
 """
 
-import mock
-from mock import patch
+from unittest import mock
+from unittest.mock import patch
 
 from freezer import job as jobs
 from freezer.tests import commons

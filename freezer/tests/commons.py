@@ -16,9 +16,9 @@
 # limitations under the License.
 
 import os
+from unittest import mock
 
 from glanceclient.common import utils as glance_utils
-import mock
 from oslo_config import cfg
 from oslo_config import fixture as cfg_fixture
 import testtools

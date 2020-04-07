@@ -14,8 +14,7 @@
 
 import os
 import unittest
-
-import mock
+from unittest import mock
 
 from freezer.tests import commons
 from freezer.utils import winutils

@@ -17,11 +17,8 @@ import datetime
 import fixtures
 import os
 import time
-
-
-import mock
-
-from mock import patch
+from unittest import mock
+from unittest.mock import patch
 
 from freezer.exceptions import utils as exception_utils
 from freezer.openstack import osclients

@@ -15,9 +15,8 @@
 import io
 import sys
 import unittest
-
-import mock
-from mock import patch
+from unittest import mock
+from unittest.mock import patch
 
 from freezer.utils.checksum import CheckSum
 

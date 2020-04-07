@@ -14,9 +14,8 @@
 
 import signal
 import unittest
-
-import mock
-from mock import patch
+from unittest import mock
+from unittest.mock import patch
 
 from freezer.scheduler import daemon
 

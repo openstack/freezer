@@ -14,7 +14,7 @@
 
 import unittest
 
-import mock
+from unittest import mock
 
 from freezer.tests.commons import FakeDisableFileSystemRedirection
 
