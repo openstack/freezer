@@ -215,7 +215,7 @@ def get_lvm_info(path):
             ['mount'], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             env=os.environ)
         mount_out, mount_err = mount_process.communicate()
-        mount_points = mount_out.split('\n')
+        mount_points = [m for m in mount_out.split('\n') if m]
         lvm_volgroup, lvm_srcvol, lvm_device = lvm_guess(
             mount_point_path, mount_points, 'mount')
 
