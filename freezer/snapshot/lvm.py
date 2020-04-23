@@ -155,7 +155,7 @@ def lvm_snap(backup_opt_dict):
     filesys_type = get_vol_fs_type(backup_opt_dict.lvm_srcvol)
     mount_options = '-o {}'.format(backup_opt_dict.lvm_snapperm)
     if 'xfs' == filesys_type:
-        mount_options = ' -onouuid '
+        mount_options = ' -onouuid,ro,norecovery '
     # Mount the newly created snapshot to dir_mount
     abs_snap_name = '/dev/{0}/{1}'.format(
         backup_opt_dict.lvm_volgroup,
