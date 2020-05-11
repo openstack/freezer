@@ -47,8 +47,8 @@ class CommandFailed(Exception):
 
 
 def dict_to_args(d):
-    l = [['--' + k.replace('_', '-'), v] for k, v in d.items()]
-    return list(itertools.chain.from_iterable(l))
+    ll = [['--' + k.replace('_', '-'), v] for k, v in d.items()]
+    return list(itertools.chain.from_iterable(ll))
 
 
 def execute_freezerc(dict, must_fail=False, merge_stderr=False):

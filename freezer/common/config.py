@@ -779,8 +779,8 @@ def get_backup_args():
             trickle_executable = distspawn.find_executable(
                 'trickle', path=":".join(sys.path))
             if trickle_executable is None:
-                        trickle_executable = distspawn.find_executable(
-                            'trickle', path=":".join(os.environ.get('PATH')))
+                trickle_executable = distspawn.find_executable(
+                    'trickle', path=":".join(os.environ.get('PATH')))
 
         if trickle_executable:
             LOG.info("Info: Starting trickle ...")

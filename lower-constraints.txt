@@ -26,10 +26,8 @@ eventlet==0.20.0
 extras==1.0.0
 fasteners==0.14.1
 fixtures==3.0.0
-flake8==2.5.4
 future==0.16.0
 greenlet==0.4.13
-hacking==0.12.0
 idna==2.6
 imagesize==1.0.0
 iso8601==0.1.12
@@ -42,7 +40,6 @@ keystoneauth1==3.4.0
 linecache2==1.0.0
 logilab-common==1.4.1
 MarkupSafe==1.0
-mccabe==0.4.0
 monotonic==1.4
 msgpack==0.5.6
 munch==2.2.0
@@ -69,12 +66,10 @@ paramiko==2.0.0
 Paste==2.0.3
 PasteDeploy==1.5.2
 pbr==2.0.0
-pep8==1.7.1
 prettytable==0.7.2
 psutil==3.2.2
 pyasn1==0.4.2
 pycparser==2.18
-pyflakes==1.0.0
 Pygments==2.2.0
 pyinotify==0.9.6
 pylint==1.4.5

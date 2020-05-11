@@ -161,7 +161,7 @@ class TestUtils(commons.FreezerBaseTestCase):
     def test_walk_path_file(self, mock_isfile):
         mock_isfile.return_value = True
         count = utils.walk_path('root', '', False, self.callback)
-        assert count is 1
+        assert count == 1
 
     def callback(self, filepath='', files=[]):
         files.append(filepath)

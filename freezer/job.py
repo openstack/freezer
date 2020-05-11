@@ -184,7 +184,7 @@ class BackupJob(Job):
                          self.conf.hostname, self.conf.mode, self.conf.storage,
                          self.conf.compression))
         try:
-            if self.conf.mode is 'fs' and self.conf.sync:
+            if self.conf.mode == 'fs' and self.conf.sync:
                 LOG.info('Executing sync to flush the file system buffer.')
                 (out, err) = utils.create_subprocess('sync')
                 if err:

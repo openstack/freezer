@@ -48,10 +48,10 @@ def weakchecksum(data):
     Generates a weak checksum from an iterable set of bytes.
     """
     a = b = 0
-    l = len(data)
-    for i in range(l):
+    le = len(data)
+    for i in range(le):
         a += data[i]
-        b += (l - i) * data[i]
+        b += (le - i) * data[i]
 
     return (b << 16) | a, a, b
 

@@ -275,5 +275,6 @@ def main():
         LOG.critical("Run freezer agent process unsuccessfully")
         return fail(1, err, quiet)
 
+
 if __name__ == '__main__':
     sys.exit(main())
