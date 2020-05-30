@@ -77,9 +77,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-repository_name = 'openstack/freezer'
-bug_project = 'freezer'
-bug_tag = 'doc'
+openstackdocs_repo_name = 'openstack/freezer'
+openstackdocs_bug_project = 'freezer'
+openstackdocs_bug_tag = 'doc'
 # project = u'Freezer'
 # copyright = u'2010-present, OpenStack Foundation'
 
