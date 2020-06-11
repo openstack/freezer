@@ -10,8 +10,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from __future__ import print_function
-
 from cinderclient import exceptions
 from os_brick.initiator import connector
 from oslo_concurrency import processutils
