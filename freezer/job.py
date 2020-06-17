@@ -291,11 +291,7 @@ class BackupJob(Job):
                         self.conf, self.conf.shadow,
                         self.conf.windows_volume)
 
-        backup_os = backup.BackupOs(self.conf.client_manager,
-                                    self.conf.container,
-                                    self.storage)
-
-        if backup_media == 'nova':
+        elif backup_media == 'nova':
             if self.conf.project_id:
                 return self.engine.backup_nova_tenant(
                     project_id=self.conf.project_id,
@@ -384,6 +380,9 @@ class BackupJob(Job):
                 futures.wait(futures_list, CONF.timeout)
 
         elif backup_media == 'cindernative':
+            backup_os = backup.BackupOs(self.conf.client_manager,
+                                        self.conf.container,
+                                        self.storage)
             LOG.info('Executing cinder native backup. Volume ID: {0}, '
                      'incremental: {1}'.format(self.conf.cindernative_vol_id,
                                                self.conf.incremental))
@@ -391,6 +390,9 @@ class BackupJob(Job):
                                     name=self.conf.backup_name,
                                     incremental=self.conf.incremental)
         elif backup_media == 'cinder':
+            backup_os = backup.BackupOs(self.conf.client_manager,
+                                        self.conf.container,
+                                        self.storage)
             if self.conf.cinder_vol_id:
                 LOG.info('Executing cinder snapshot. Volume ID: {0}'.format(
                     self.conf.cinder_vol_id))
