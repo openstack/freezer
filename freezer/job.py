@@ -146,7 +146,7 @@ class BackupJob(Job):
                 raise Exception(
                     'no-incremental option is not compatible '
                     'with backup level options')
-        if self.conf.mode == 'nova':
+        elif self.conf.mode == 'nova':
             if not self.conf.no_incremental:
                 raise ValueError("Incremental nova backup is not supported")
 
@@ -154,7 +154,7 @@ class BackupJob(Job):
                     and not self.conf.nova_inst_name:
                 raise ValueError("nova-inst-id or project-id or nova-inst-name"
                                  " argument must be provided")
-        if self.conf.mode == 'glance':
+        elif self.conf.mode == 'glance':
             if not self.conf.no_incremental:
                 raise ValueError("Incremental glance backup is not supported")
 
@@ -166,15 +166,17 @@ class BackupJob(Job):
                                  " glance-image-name_filter "
                                  "argument must be provided")
 
-        if self.conf.mode == 'cinder':
+        elif self.conf.mode == 'cinder':
             if not self.conf.cinder_vol_id and not self.conf.cinder_vol_name:
                 raise ValueError("cinder-vol-id or cinder-vol-name argument "
                                  "must be provided")
 
-        if self.conf.mode == "cindernative":
+        elif self.conf.mode == "cindernative":
             if not self.conf.cindernative_vol_id:
                 raise ValueError("cindernative-vol-id"
                                  " argument must be provided")
+        else:
+            pass
 
     def execute(self):
         LOG.info('Backup job started. '
