@@ -70,30 +70,19 @@ class PySvc(win32serviceutil.ServiceFramework):
         if os.environ.get('SERVICE_INSECURE'):
             self.insecure = True
 
-        # Add support for keystone v2 and v3
+        # only  support for keystone v3
         credentials = {}
-        if os.environ['OS_IDENTITY_API_VERSION'] == 2:
-            credentials = {
-                'version': 2,
-                'username': os.environ['OS_USERNAME'],
-                'password': os.environ['OS_PASSWORD'],
-                'auth_url': os.environ['OS_AUTH_URL'],
-                'endpoint': os.environ['OS_BACKUP_URL'],
-                'tenant_name': os.environ['OS_TENANT_NAME'],
-                'insecure': self.insecure
-            }
-        elif os.environ['OS_IDENTITY_API_VERSION'] == 3:
-            credentials = {
-                'version': 3,
-                'username': os.environ['OS_USERNAME'],
-                'password': os.environ['OS_PASSWORD'],
-                'auth_url': os.environ['OS_AUTH_URL'],
-                'endpoint': os.environ['OS_BACKUP_URL'],
-                'project_name': os.environ['OS_PROJECT_NAME'],
-                'user_domain_name': os.environ['OS_USER_DOMAIN_NAME'],
-                'project_domain_name': os.environ['OS_PROJECT_DOMAIN_NAME'],
-                'insecure': self.insecure
-            }
+        # if os.environ['OS_IDENTITY_API_VERSION'] == 3:
+        credentials = {
+            'username': os.environ['OS_USERNAME'],
+            'password': os.environ['OS_PASSWORD'],
+            'auth_url': os.environ['OS_AUTH_URL'],
+            'endpoint': os.environ['OS_BACKUP_URL'],
+            'project_name': os.environ['OS_PROJECT_NAME'],
+            'user_domain_name': os.environ['OS_USER_DOMAIN_NAME'],
+            'project_domain_name': os.environ['OS_PROJECT_DOMAIN_NAME'],
+            'insecure': self.insecure
+        }
 
         client = Client(**credentials)
 

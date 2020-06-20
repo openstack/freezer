@@ -76,24 +76,24 @@ class TestUtils(commons.FreezerBaseTestCase):
                 self.__dict__.update(opts)
 
         env_dict = dict(OS_USERNAME='testusername',
-                        OS_TENANT_NAME='testtenantename',
+                        OS_PROJECT_NAME='testtenantename',
                         OS_AUTH_URL='testauthurl',
                         OS_PASSWORD='testpassword',
                         OS_REGION_NAME='testregion',
-                        OS_TENANT_ID='0123456789',
+                        OS_PROJECT_ID='0123456789',
                         OS_AUTH_VERSION='2.0')
         options = osclients.OpenstackOpts.create_from_dict(
             env_dict).get_opts_dicts()
         options = FreezerOpts(options)
         assert options.username == env_dict['OS_USERNAME']
-        assert options.tenant_name == env_dict['OS_TENANT_NAME']
+        assert options.project_name == env_dict['OS_PROJECT_NAME']
         assert options.auth_url == env_dict['OS_AUTH_URL']
         assert options.password == env_dict['OS_PASSWORD']
         assert options.region_name == env_dict['OS_REGION_NAME']
-        assert options.tenant_id == env_dict['OS_TENANT_ID']
+        assert options.project_id == env_dict['OS_PROJECT_ID']
 
         env_dict = dict(OS_USERNAME='testusername',
-                        OS_TENANT_NAME='testtenantename',
+                        OS_PROJECT_NAME='testtenantename',
                         OS_AUTH_URL='testauthurl',
                         OS_PASSWORD='testpassword',
                         OS_AUTH_VERSION='2.0')
@@ -101,7 +101,7 @@ class TestUtils(commons.FreezerBaseTestCase):
             env_dict).get_opts_dicts()
         options = FreezerOpts(options)
         assert options.username == env_dict['OS_USERNAME']
-        assert options.tenant_name == env_dict['OS_TENANT_NAME']
+        assert options.project_name == env_dict['OS_PROJECT_NAME']
         assert options.auth_url == env_dict['OS_AUTH_URL']
         assert options.password == env_dict['OS_PASSWORD']
 

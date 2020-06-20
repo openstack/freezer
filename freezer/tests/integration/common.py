@@ -243,20 +243,20 @@ class TestFS(unittest.TestCase):
     container = os.environ.get('FREEZER_TEST_CONTAINER')
     use_ssh = ssh_key and ssh_username and ssh_host and container
 
-    os_tenant_name = os.environ.get('FREEZER_TEST_OS_TENANT_NAME')
+    os_project_name = os.environ.get('FREEZER_TEST_OS_TENANT_NAME')
     os_user_name = os.environ.get('FREEZER_TEST_OS_USERNAME')
     os_region = os.environ.get('FREEZER_TEST_OS_REGION_NAME')
     os_password = os.environ.get('FREEZER_TEST_OS_PASSWORD')
     os_auth_url = os.environ.get('FREEZER_TEST_OS_AUTH_URL')
-    use_os = (os_tenant_name and os_user_name and os_region and
+    use_os = (os_project_name and os_user_name and os_region and
               os_password and os_auth_url)
     if use_os:
         os.environ['OS_USERNAME'] = os_user_name
-        os.environ['OS_TENANT_NAME'] = os_tenant_name
+        os.environ['OS_PROJECT_NAME'] = os_project_name
         os.environ['OS_AUTH_URL'] = os_auth_url
         os.environ['OS_PASSWORD'] = os_password
         os.environ['OS_REGION_NAME'] = os_region
-        os.environ['OS_TENANT_ID'] = ''
+        os.environ['OS_PROJECT_ID'] = ''
 
     openstack_executable = distutils.spawn.find_executable('openstack')
     swift_executable = distutils.spawn.find_executable('swift')

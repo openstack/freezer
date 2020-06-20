@@ -30,11 +30,11 @@ from freezer.storage import swift
 
 CONF = cfg.CONF
 os.environ['OS_REGION_NAME'] = 'testregion'
-os.environ['OS_TENANT_ID'] = '0123456789'
+os.environ['OS_PROJECT_ID'] = '0123456789'
 os.environ['OS_PASSWORD'] = 'testpassword'
-os.environ['OS_AUTH_URL'] = 'http://testauthurl/v2.0'
+os.environ['OS_AUTH_URL'] = 'http://testauthurl/v3'
 os.environ['OS_USERNAME'] = 'testusername'
-os.environ['OS_TENANT_NAME'] = 'testtenantename'
+os.environ['OS_PROJECT_NAME'] = 'testtenantename'
 
 
 class FakeSubProcess(object):

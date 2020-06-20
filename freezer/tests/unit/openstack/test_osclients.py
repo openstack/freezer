@@ -22,7 +22,7 @@ from freezer.openstack import osclients
 class TestOsClients(unittest.TestCase):
     def setUp(self):
         self.opts = osclients.OpenstackOpts(
-            username="user", tenant_name="tenant", project_name="project",
+            username="user", project_name="project",
             auth_url="url/v3", password="password", identity_api_version="3",
             insecure=False, cacert='cert', user_domain_name='Default',
             project_domain_name='Default').get_opts_dicts()

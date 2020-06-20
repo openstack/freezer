@@ -62,7 +62,7 @@ def get_common_opts():
                    short='c',
                    help='Specifies the client_id used when contacting the '
                         'service.\n If not specified it will be automatically '
-                        'created \n using the tenant-id and the machine '
+                        'created \n using the project-id and the machine '
                         'hostname.'),
         cfg.BoolOpt('no-api',
                     default=False,
@@ -154,16 +154,6 @@ def build_os_options():
                    help='User\'s domain name. Defaults to '
                         'env[OS_USER_DOMAIN_NAME].',
                    dest='os_user_domain_name'),
-        cfg.StrOpt('os-tenant-name',
-                   default=env('OS_TENANT_NAME'),
-                   help='Tenant to request authorization on. Defaults to '
-                        'env[OS_TENANT_NAME].',
-                   dest='os_tenant_name'),
-        cfg.StrOpt('os-tenant-id',
-                   default=env('OS_TENANT_ID'),
-                   help='Tenant to request authorization on. Defaults to '
-                        'env[OS_TENANT_ID].',
-                   dest='os_tenant_id'),
         cfg.StrOpt('os-auth-url',
                    default=env('OS_AUTH_URL'),
                    help='Specify the Identity endpoint to use for '
