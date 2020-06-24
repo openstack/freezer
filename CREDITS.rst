@@ -11,6 +11,9 @@ Maintainers
 -  Fausto Marzi
 -  Ryszard Chojnacki
 -  Emil Dimitrov
+-  Geng changcai
+-  Gecong
+-  Carl Caihui
 
 Contributors
 ============
@@ -40,3 +43,5 @@ Credits
 -  Anupriya Ramraj
 -  HP OpsAuto Team
 -  Jon Otero Fernández (logo)
+-  ZTE TECS Team
+
