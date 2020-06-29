@@ -163,9 +163,9 @@ class TestRsyncEngine(unittest.TestCase):
         }
 
         inode_str_struct = (
-            b'{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            '{}\00{}\00{}\00{}\00{}'
+            '\00{}\00{}\00{}\00{}\00{}'
+            '\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
             1, file_mode,
             uid, gid, size, mtime, ctime, uname, gname,
             file_type, lname, inumber, nlink, devminor, devmajor,
@@ -422,8 +422,6 @@ class TestRsyncEngine(unittest.TestCase):
         self.assertEqual(ret1, False)
         self.assertEqual(ret2, False)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('freezer.engine.rsync.rsync.RsyncEngine.get_file_type')
     @patch('os.minor')
     @patch('os.major')
@@ -495,9 +493,9 @@ class TestRsyncEngine(unittest.TestCase):
             }
         }
         inode_bin_str = (
-            b'{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            '{}\00{}\00{}\00{}\00{}'
+            '\00{}\00{}\00{}\00{}\00{}'
+            '\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
             1, file_mode,
             uid, gid, size, mtime, ctime, uname, gname,
             file_type, lname, inumber, nlink, devminor, devmajor,
@@ -570,8 +568,6 @@ class TestRsyncEngine(unittest.TestCase):
         self.delete_rsync_test_file()
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     def test_gen_file_header(self):
         file_path = self.relpath
         self.get_rsync_data_struct()
@@ -588,8 +584,6 @@ class TestRsyncEngine(unittest.TestCase):
                                          inode_str_struct=inode_bin_str)
         self.assertEqual(ret, res)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -642,8 +636,6 @@ class TestRsyncEngine(unittest.TestCase):
         mock_os_unlink.assert_called_with(fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -696,8 +688,6 @@ class TestRsyncEngine(unittest.TestCase):
         mock_os_unlink.assert_called_once_with(fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -756,8 +746,6 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -825,8 +813,6 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -896,8 +882,6 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -967,8 +951,6 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1027,8 +1009,6 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1083,8 +1063,6 @@ class TestRsyncEngine(unittest.TestCase):
         mock_os_symlink.assert_called_once_with(link_name, fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1143,8 +1121,6 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1202,8 +1178,6 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1262,8 +1236,6 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1320,8 +1292,6 @@ class TestRsyncEngine(unittest.TestCase):
                                                mtime, fileabspath)
         self.assertEqual(ret, data_chunk)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.unlink')
     @patch('freezer.engine.rsync.rsync.'
            'RsyncEngine.set_inode')
@@ -1458,9 +1428,7 @@ class TestRsyncEngine(unittest.TestCase):
         ret = fake_rsync.process_restore_data(data=data)
         self.assertEqual(ret, data)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
-    @patch("__builtin__.open")
+    @patch("builtins.open")
     @patch('os.path.lexists')
     @patch('os.path.exists')
     @patch('freezer.engine.rsync.pyrsync.blockchecksums')
@@ -1524,9 +1492,7 @@ class TestRsyncEngine(unittest.TestCase):
                           rel_path,
                           reg_file)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
-    @patch("__builtin__.open")
+    @patch("builtins.open")
     @patch('os.path.lexists')
     @patch('freezer.engine.rsync.rsync.RsyncEngine.rsync_gen_delta')
     @patch('freezer.engine.rsync.rsync.'
@@ -1588,9 +1554,7 @@ class TestRsyncEngine(unittest.TestCase):
         self.assertTrue(file_path_fd.close.called)
         self.assertTrue(mock_rsync_gen_delta.called)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
-    @patch("__builtin__.open")
+    @patch("builtins.open")
     @patch('os.path.lexists')
     @patch('freezer.engine.rsync.rsync.RsyncEngine.rsync_gen_delta')
     @patch('freezer.engine.rsync.rsync.'
@@ -1652,9 +1616,7 @@ class TestRsyncEngine(unittest.TestCase):
         self.assertTrue(write_queue.put.called)
         self.assertTrue(file_path_fd.close.called)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
-    @patch("__builtin__.open")
+    @patch("builtins.open")
     @patch('os.path.lexists')
     @patch('freezer.engine.rsync.rsync.RsyncEngine.rsync_gen_delta')
     @patch('freezer.engine.rsync.rsync.'
@@ -1704,8 +1666,6 @@ class TestRsyncEngine(unittest.TestCase):
                                           deleted=deleted)
         self.assertEqual(ret, files_meta)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.path.isdir')
     @patch('os.path.relpath')
     @patch('os.path.getsize')
@@ -1761,8 +1721,6 @@ class TestRsyncEngine(unittest.TestCase):
         mock_process_backup_data.assert_called_with(file_header)
         self.assertTrue(write_queue.put.called)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.path.isdir')
     @patch('os.path.relpath')
     @patch('os.path.getsize')
@@ -1831,8 +1789,6 @@ class TestRsyncEngine(unittest.TestCase):
         ret = fake_rsync.get_fs_meta_struct(fs_meta_path=fs_meta_path)
         self.assertEqual(ret, fs_meta_struct)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('freezer.engine.rsync.rsync.RsyncEngine.'
            'gen_struct_for_deleted_files')
     @patch('freezer.utils.compress.one_shot_compress')
@@ -1845,7 +1801,7 @@ class TestRsyncEngine(unittest.TestCase):
            'get_fs_meta_struct')
     @patch('freezer.utils.compress.Compressor.flush')
     @patch('os.path.isdir')
-    @patch("__builtin__.open")
+    @patch("builtins.open")
     def test_get_sign_delta_isnot_dir(self, mock_open,
                                       mock_os_path_isdir,
                                       mock_flush,
@@ -1902,8 +1858,6 @@ class TestRsyncEngine(unittest.TestCase):
         self.assertTrue(mock_process_file.called)
         self.assertTrue(mock_process_backup_data.called)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch('os.chdir')
     @patch('freezer.engine.rsync.rsync.RsyncEngine.'
            'gen_struct_for_deleted_files')
@@ -1917,7 +1871,7 @@ class TestRsyncEngine(unittest.TestCase):
            'get_fs_meta_struct')
     @patch('freezer.utils.compress.Compressor.flush')
     @patch('os.path.isdir')
-    @patch("__builtin__.open")
+    @patch("builtins.open")
     def test_get_sign_delta_is_dir(self, mock_open,
                                    mock_os_path_isdir,
                                    mock_flush,

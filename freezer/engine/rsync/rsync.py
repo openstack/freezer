@@ -92,7 +92,7 @@ class RsyncEngine(engine.BackupEngine):
         LOG.info("Starting RSYNC engine backup data stream")
 
         file_read_limit = 0
-        data_chunk = b''
+        data_chunk = ''
         LOG.info(
             'Recursively archiving and compressing files from {}'.format(
                 os.getcwd()))
@@ -125,7 +125,7 @@ class RsyncEngine(engine.BackupEngine):
             file_read_limit += len(file_block)
             if file_read_limit >= self.max_segment_size:
                 yield data_chunk
-                data_chunk = b''
+                data_chunk = ''
                 file_read_limit = 0
 
         # Upload segments smaller then max_segment_size
@@ -269,17 +269,17 @@ class RsyncEngine(engine.BackupEngine):
 
             if not isinstance(block_index, int):
                 len_deltas += len(block_index)
-                all_changed_indexes.write(b'\00{}'.format(previous_index))
+                all_changed_indexes.write('\00{}'.format(previous_index))
                 modified_blocks.append(previous_index)
 
         # Yield the total length data changed blocks
 
-        yield b'\00' + str(len_deltas)
-        previous_index_str = all_changed_indexes.getvalue() + b'\00'
+        yield '\00' + str(len_deltas)
+        previous_index_str = all_changed_indexes.getvalue() + '\00'
         len_previous_index_str = len(previous_index_str) + 1
         # Yield the length of the string that contain all the indexes
 
-        yield b'\00' + str(len_previous_index_str) + b'\00'
+        yield '\00' + str(len_previous_index_str) + '\00'
         # Yield string containing all the indexes separated by \00
 
         yield previous_index_str
@@ -467,10 +467,10 @@ class RsyncEngine(engine.BackupEngine):
         :return: chunk of binary data to be processed on the next iteration
         """
 
-        start_of_block = b'\00{}\00'.format(file_path)
+        start_of_block = '\00{}\00'.format(file_path)
         header_size = len(start_of_block) + len(inode_str_struct)
         header_size += len(str(header_size))
-        file_header = b'{}{}{}'.format(
+        file_header = '{}{}{}'.format(
             header_size, start_of_block, inode_str_struct)
         len_file_header = len(file_header)
 
@@ -666,9 +666,9 @@ class RsyncEngine(engine.BackupEngine):
 
         # build file meta data as binary string
         inode_bin_str = (
-            b'{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            '{}\00{}\00{}\00{}\00{}'
+            '\00{}\00{}\00{}\00{}\00{}'
+            '\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
             RSYNC_DATA_STRUCT_VERSION, file_mode,
             uid, gid, size, mtime, ctime, uname, gname,
             file_type, lname, inumber, nlink, devminor, devmajor,
@@ -697,9 +697,9 @@ class RsyncEngine(engine.BackupEngine):
         level_id = files_meta['files'][rel_path]['inode']['level_id']
 
         inode_bin_str = (
-            b'{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}'
-            b'\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
+            '{}\00{}\00{}\00{}\00{}'
+            '\00{}\00{}\00{}\00{}\00{}'
+            '\00{}\00{}\00{}\00{}\00{}\00{}\00{}\00{}').format(
             RSYNC_DATA_STRUCT_VERSION, file_mode,
             uid, gid, size, mtime, ctime, uname, gname,
             file_type, lname, inumber, nlink, devminor, devmajor,
