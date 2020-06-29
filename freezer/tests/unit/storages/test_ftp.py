@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import shutil
-import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -217,11 +216,9 @@ class FtpStorageTestCase(unittest.TestCase):
         self.assertTrue(mock_ftp.dir.called)
         self.assertTrue(mock_ftp.rmd.called)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch("freezer.storage.ftp.BaseFtpStorage.create_dirs")
     @patch("freezer.storage.ftp.BaseFtpStorage.put_file")
-    @patch("__builtin__.open")
+    @patch("builtins.open")
     @patch('ftplib.FTP')
     def test_write_backup_FtpStorage(self, mock_ftp_constructor,
                                      mock_open,
@@ -252,11 +249,9 @@ class FtpStorageTestCase(unittest.TestCase):
         self.assertTrue(mock_create_dirs.called)
         self.assertTrue(mock_put_file.called)
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     @patch("freezer.storage.ftp.BaseFtpStorage.create_dirs")
     @patch("freezer.storage.ftp.BaseFtpStorage.put_file")
-    @patch("__builtin__.open")
+    @patch("builtins.open")
     @patch('ftplib.FTP')
     def test_add_stream_FtpStorage(self, mock_ftp_constructor,
                                    mock_open,
