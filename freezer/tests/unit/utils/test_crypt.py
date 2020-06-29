@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import shutil
-import sys
 import tempfile
 import unittest
 
@@ -62,16 +61,16 @@ class AESCipherTestCase(unittest.TestCase):
         passwd = crypt.AESCipher._get_pass_from_file(pfile)
         self.assertEqual(passwd, '78f40f2c57eee727a4be179049cecf89')
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
+#    @unittest.skipIf(sys.version_info.major == 3,
+#                     'Not supported on python v 3.x')
     def test_derive_key_and_iv(self):
-        passwd = 'ababab'
-        salt = 'a'
+        passwd = b'ababab'
+        salt = b'a'
         ret1, ret2 = crypt.AESCipher._derive_key_and_iv(password=passwd,
                                                         salt=salt,
                                                         key_length=10,
                                                         iv_length=5)
-        expect1 = '\xb3J5\xce\xd4b\x87\xce\xe0:'
-        expect2 = '\x93\xc9\x9d\x03\x00'
+        expect1 = b'\xb3J5\xce\xd4b\x87\xce\xe0:'
+        expect2 = b'\x93\xc9\x9d\x03\x00'
         self.assertEqual(ret1, expect1)
         self.assertEqual(ret2, expect2)
