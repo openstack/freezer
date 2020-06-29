@@ -175,7 +175,9 @@ def run_job(conf, storage):
         pp.field_names = response[0]
         for i in response[1]:
             pp.add_row(i)
-        print(pp)
+        sys.stdout.writelines(pp.get_string())
+        sys.stdout.write('\n')
+        sys.stdout.flush()
     else:
         return
 
