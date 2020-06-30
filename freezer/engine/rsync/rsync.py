@@ -92,7 +92,7 @@ class RsyncEngine(engine.BackupEngine):
         LOG.info("Starting RSYNC engine backup data stream")
 
         file_read_limit = 0
-        data_chunk = ''
+        data_chunk = b''
         LOG.info(
             'Recursively archiving and compressing files from {}'.format(
                 os.getcwd()))
@@ -125,7 +125,7 @@ class RsyncEngine(engine.BackupEngine):
             file_read_limit += len(file_block)
             if file_read_limit >= self.max_segment_size:
                 yield data_chunk
-                data_chunk = ''
+                data_chunk = b''
                 file_read_limit = 0
 
         # Upload segments smaller then max_segment_size
@@ -269,17 +269,17 @@ class RsyncEngine(engine.BackupEngine):
 
             if not isinstance(block_index, int):
                 len_deltas += len(block_index)
-                all_changed_indexes.write('\00{}'.format(previous_index))
+                all_changed_indexes.write(previous_index.encode('utf-8'))
                 modified_blocks.append(previous_index)
 
         # Yield the total length data changed blocks
 
-        yield '\00' + str(len_deltas)
+        yield b'\00' + str(len_deltas).encode('utf-8')
         previous_index_str = all_changed_indexes.getvalue() + '\00'
         len_previous_index_str = len(previous_index_str) + 1
         # Yield the length of the string that contain all the indexes
 
-        yield '\00' + str(len_previous_index_str) + '\00'
+        yield b'\00' + str(len_previous_index_str).encode('utf-8') + b'\00'
         # Yield string containing all the indexes separated by \00
 
         yield previous_index_str
@@ -467,11 +467,11 @@ class RsyncEngine(engine.BackupEngine):
         :return: chunk of binary data to be processed on the next iteration
         """
 
-        start_of_block = '\00{}\00'.format(file_path)
+        start_of_block = b'\00' + file_path.encode('utf-8') + b'\00'
         header_size = len(start_of_block) + len(inode_str_struct)
         header_size += len(str(header_size))
-        file_header = '{}{}{}'.format(
-            header_size, start_of_block, inode_str_struct)
+        file_header = str(header_size).encode('utf-8') + \
+            start_of_block + inode_str_struct
         len_file_header = len(file_header)
 
         if header_size != len_file_header:
@@ -672,7 +672,7 @@ class RsyncEngine(engine.BackupEngine):
             RSYNC_DATA_STRUCT_VERSION, file_mode,
             uid, gid, size, mtime, ctime, uname, gname,
             file_type, lname, inumber, nlink, devminor, devmajor,
-            RSYNC_BLOCK_SIZE, level_id, '0000')
+            RSYNC_BLOCK_SIZE, level_id, '0000').encode('utf-8')
 
         return inode_dict, inode_bin_str
 
@@ -703,7 +703,8 @@ class RsyncEngine(engine.BackupEngine):
             RSYNC_DATA_STRUCT_VERSION, file_mode,
             uid, gid, size, mtime, ctime, uname, gname,
             file_type, lname, inumber, nlink, devminor, devmajor,
-            RSYNC_BLOCK_SIZE, level_id, '1111')
+            RSYNC_BLOCK_SIZE, level_id, '1111').encode('utf-8')
+
         file_header = self.gen_file_header(rel_path, inode_bin_str)
         compr_block = self.process_backup_data(file_header)
         write_queue.put(compr_block)

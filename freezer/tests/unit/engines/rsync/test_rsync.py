@@ -169,7 +169,7 @@ class TestRsyncEngine(unittest.TestCase):
             1, file_mode,
             uid, gid, size, mtime, ctime, uname, gname,
             file_type, lname, inumber, nlink, devminor, devmajor,
-            4096, level_id, '0000')
+            4096, level_id, '0000').encode('utf-8')
 
         self.inode_str_struct = inode_str_struct
         self.inode_dict_struct = inode_dict_struct
@@ -499,7 +499,8 @@ class TestRsyncEngine(unittest.TestCase):
             1, file_mode,
             uid, gid, size, mtime, ctime, uname, gname,
             file_type, lname, inumber, nlink, devminor, devmajor,
-            4096, level_id, '0000')
+            4096, level_id, '0000').encode('utf-8')
+
         mock_pwd_getpwuid.return_value = [uname, 0, 0]
 
         mock_grp_getgrgid.return_value = [gname, 0, 0]
@@ -574,11 +575,11 @@ class TestRsyncEngine(unittest.TestCase):
         inode_bin_str = self.inode_str_struct
         fake_rsync = self.mock_rsync
 
-        res = '98\x00/home/tecs\x001\x002\x00fakeuid' \
-              '\x00fakegid\x001024\x002\x001\x00tecs' \
-              '\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
-              '\x005\x0015\x004096' \
-              '\x001111\x000000'
+        res = b'98\x00/home/tecs\x001\x002\x00fakeuid' \
+              b'\x00fakegid\x001024\x002\x001\x00tecs' \
+              b'\x00admin\x00u\x00\x00fakeinumber\x00fakenlink' \
+              b'\x005\x0015\x004096' \
+              b'\x001111\x000000'
 
         ret = fake_rsync.gen_file_header(file_path=file_path,
                                          inode_str_struct=inode_bin_str)
