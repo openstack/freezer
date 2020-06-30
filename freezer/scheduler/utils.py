@@ -50,7 +50,7 @@ def find_config_files(path):
         return [expanded_path]
     file_list = []
     if os.path.isdir(expanded_path):
-        for fname in os.walk(expanded_path).next()[2]:
+        for fname in next(os.walk(expanded_path))[2]:
             if CONFIG_FILE_EXT.upper() == os.path.splitext(fname)[1].upper():
                 file_list.append('{0}/{1}'.format(expanded_path, fname))
         return file_list

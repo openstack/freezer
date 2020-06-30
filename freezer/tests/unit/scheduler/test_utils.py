@@ -44,8 +44,8 @@ class TestUtils(unittest.TestCase):
         temp.close()
         self.assertFalse(os.path.exists(temp.name))
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
+    # @unittest.skipIf(sys.version_info.major == 3,
+    #                 'Not supported on python v 3.x')
     def test_find_config_files_path(self):
         temp = tempfile.NamedTemporaryFile('wb', delete=True,
                                            suffix='.conf')
