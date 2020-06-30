@@ -475,10 +475,10 @@ class RsyncEngine(engine.BackupEngine):
         len_file_header = len(file_header)
 
         if header_size != len_file_header:
-            file_header_list = file_header.split('\00')
+            file_header_list = file_header.decode('utf-8').split('\00')
             file_header_list = file_header_list[1:]
             file_header_list.insert(0, str(len_file_header))
-            file_header = '\00'.join(file_header_list)
+            file_header = '\00'.join(file_header_list).encode('utf-8')
         return file_header
 
     def make_files(
