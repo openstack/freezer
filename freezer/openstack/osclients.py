@@ -70,7 +70,7 @@ class OSClientManager(object):
 
         self.compute_version = kwargs.pop('compute_api_version', 2)
         self.image_version = kwargs.pop('image_api_version', 2)
-        self.volume_version = kwargs.pop('volume_api_version', 2)
+        self.volume_version = kwargs.pop('volume_api_version', 3)
         self.neutron_version = kwargs.pop('neutron_api_version', 2)
         self.auth = loader.load_from_options(auth_url=auth_url, **kwargs)
 
@@ -356,7 +356,7 @@ class OpenstackOpts(object):
                  token=None, insecure=False,
                  endpoint_type='internalURL', interface=None,
                  compute_api_version=2, image_api_version=2,
-                 volume_api_version=2, user_domain_name=None, domain_id=None,
+                 volume_api_version=3, user_domain_name=None, domain_id=None,
                  user_domain_id=None, project_domain_id=None, domain_name=None,
                  project_domain_name=None):
         """
@@ -379,7 +379,7 @@ class OpenstackOpts(object):
         :param interface: string internal, ...
         :param compute_api_version: int NOVA API version to use default 2
         :param image_api_version: int Glance API version, default 2
-        :param volume_api_version: int Cinder API version, default 2
+        :param volume_api_version: int Cinder API version, default 3
         :param user_domain_name: string User Domain Name. only with keystone v3
         :param domain_id: string Domain ID. Only with keystone v3
         :param user_domain_id: string User Domain ID. only with keystone v3
@@ -495,7 +495,7 @@ class OpenstackOpts(object):
             domain_id=src_dict.get('OS_DOMAIN_ID'),
             domain_name=src_dict.get('OS_DOMAIN_NAME'),
             compute_api_version=src_dict.get('OS_COMPUTE_API_VERSION', 2),
-            volume_api_version=src_dict.get('OS_VOLUME_API_VERSION', 2),
+            volume_api_version=src_dict.get('OS_VOLUME_API_VERSION', 3),
             image_api_version=src_dict.get('OS_IMAGE_API_VERSION', 2)
         )
 
