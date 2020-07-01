@@ -263,7 +263,7 @@ class ReSizeStream(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         LOG.debug("Transmitted {0} of {1}".format(self.transmitted,
                                                   self.length))
         chunk_size = self.chunk_size

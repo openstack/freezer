@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-import sys
-import unittest
 
 from freezer.openstack import backup
 from freezer.tests import commons
@@ -31,8 +29,6 @@ class TestBackup(commons.FreezerBaseTestCase):
         self.client_manager = self.backup_opt.client_manager
         self.storage = self.backup_opt.storage
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     def test_backup_cinder_by_glance(self):
         self.bakup_os.backup_cinder_by_glance(35)
 
