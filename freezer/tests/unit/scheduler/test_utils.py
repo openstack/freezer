@@ -14,7 +14,6 @@
 
 import os
 import shutil
-import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -44,8 +43,6 @@ class TestUtils(unittest.TestCase):
         temp.close()
         self.assertFalse(os.path.exists(temp.name))
 
-    # @unittest.skipIf(sys.version_info.major == 3,
-    #                 'Not supported on python v 3.x')
     def test_find_config_files_path(self):
         temp = tempfile.NamedTemporaryFile('wb', delete=True,
                                            suffix='.conf')
@@ -55,12 +52,10 @@ class TestUtils(unittest.TestCase):
         temp.close()
         self.assertFalse(os.path.exists(temp.name))
 
-    @unittest.skipIf(sys.version_info.major == 3,
-                     'Not supported on python v 3.x')
     def test_get_jobs_from_disk(self):
         temp = tempfile.mkdtemp()
         file = '/'.join([temp, "test.conf"])
-        data = '{"job_id": "test"}'
+        data = b'{"job_id": "test"}'
         with open(file, 'wb') as f:
             f.write(data)
         ret = utils.get_jobs_from_disk(temp)
