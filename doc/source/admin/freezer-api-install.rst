@@ -24,7 +24,6 @@ Requirements
 - keystonemiddleware>=4.0.0 # Apache-2.0
 - oslo.config>=3.2.0 # Apache-2.0
 - oslo.i18n>=1.5.0 # Apache-2.0
-- six>=1.9.0 # MIT
 - Freezer Agent & Scheduler installed from source
 
 Ubuntu / Debian Installation
