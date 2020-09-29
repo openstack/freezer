@@ -26,6 +26,21 @@ class TestAdmin(commons.FreezerBaseTestCase):
         self.admin_os = admin.AdminOs(self.backup_opt.client_manager)
         self.client_manager = self.backup_opt.client_manager
 
+    def test_del_cinderbackup_and_dependend_incremental(self):
+        self.admin_os.del_cinderbackup_and_dependend_incremental(1)
+        try:
+            self.admin_os.del_cinderbackup_and_dependend_incremental(1023)
+        except Exception as e:
+            msg = "Delete backup 1023 failed, the status of backup is error."
+            self.assertEqual(msg, str(e))
+
+        try:
+            self.admin_os.del_cinderbackup_and_dependend_incremental(1024)
+        except Exception as e:
+            msg = "Delete backup 1024 failed due to timeout over 120s," \
+                  " the status of backup is deleting."
+            self.assertEqual(msg, str(e))
+
     def test_del_off_limit_fullbackup_keep(self):
         self.admin_os.del_off_limit_fullbackup('2', 1)
 
