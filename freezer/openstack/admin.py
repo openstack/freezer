@@ -100,3 +100,52 @@ class AdminOs(object):
             return
         for fullbackup in fullbackups[:-keep_number]:
             self.del_cinderbackup_and_dependend_incremental(fullbackup.id)
+
+    def remove_cinderbackup_older_than(self, volume_id,
+                                       remove_older_timestamp):
+        """
+        :param volume_id: id of Volume
+        :param remove_older_timestamp: int
+        :return:
+        """
+        gmstr_remove_older_timestamp = \
+            time.strftime("%Y-%m-%dT%H:%M:%S",
+                          time.gmtime(remove_older_timestamp))
+        cinder_client = self.cinder_client
+        search_opts = {
+            'volume_id': volume_id,
+            'status': 'available'
+        }
+        # remove cinder backup order by created_at desc, otherwise
+        # we need find it incremental backup
+        backups = cinder_client.backups.list(search_opts=search_opts,
+                                             sort='created_at:desc')
+        for backup in backups:
+
+            if backup.created_at <= gmstr_remove_older_timestamp:
+                LOG.info("preparing to delete backup %s", backup.id)
+                cinder_client.backups.delete(backup.id)
+                start_time = int(time.time())
+
+                def wait_del_backup():
+                    timeout = 120
+                    del_backup = cinder_client.backups.list(
+                        search_opts={'id': backup.id})
+                    if len(del_backup) == 0:
+                        LOG.info("Delete backup %s complete" % backup.id)
+                        raise loopingcall.LoopingCallDone()
+                    if del_backup[0].status in ['error', 'error_deleting']:
+                        raise Exception("Delete backup %s failed, "
+                                        "the status of backup is %s."
+                                        % (backup.id, del_backup[0].status))
+                    if (del_backup[0].status == 'deleting') \
+                            and (int(time.time()) - start_time > timeout):
+                        LOG.error("Delete backup %s failed, In a state of"
+                                  "deleting over 120s")
+                        raise Exception(
+                            "Delete backup %s failed due to timeout over 120s,"
+                            " the status of backup is %s."
+                            % (backup.id, del_backup[0].status))
+
+                timer = loopingcall.FixedIntervalLoopingCall(wait_del_backup)
+                timer.start(interval=0.5).wait()
