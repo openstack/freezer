@@ -2,7 +2,7 @@ Installation
 ============
 
 This guide will help you install Freezer API framework in one of your OpenStack
-controller node. You can install Freeer API in stand alone virtual or bare
+controller node. You can install Freezer API in stand alone virtual or bare
 metal server but it is strongly suggested install in controller node.
 
 Before Installation
