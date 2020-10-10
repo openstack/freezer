@@ -261,7 +261,7 @@ class OSClientManager(object):
             except RuntimeError:
                 LOG.info("Delete volume in error state " + volume.id)
                 self.get_cinder().volumes.delete(volume.id)
-                raise
+                raise Exception("Delete volume in error state " + volume.id)
             except Exception as e:
                 LOG.exception(e)
                 LOG.warning("Exception getting volume status")
@@ -292,11 +292,11 @@ class OSClientManager(object):
                 if image.status == 'killed':
                     LOG.info("Delete image in killed state " + image_id)
                     self.get_glance().images.delete(image_id)
-                raise
+                raise Exception("Delete image in killed state " + image_id)
             except Exception as e:
                 if hasattr(e, 'code') and e.code == 404:
                     LOG.warning('Image is not found ' + image_id)
-                    raise
+                    raise Exception('Image is not found ' + image_id)
                 LOG.exception(e)
                 LOG.warning("Exception getting image status")
         return image
