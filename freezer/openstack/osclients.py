@@ -235,7 +235,8 @@ class OSClientManager(object):
             except RuntimeError:
                 LOG.info("Delete snapshot in error state " + snapshot.id)
                 self.get_cinder().volume_snapshots.delete(snapshot)
-                raise
+                raise Exception("Delete snapshot in error"
+                                " state " + snapshot.id)
             except Exception as e:
                 LOG.exception(e)
         return snapshot
