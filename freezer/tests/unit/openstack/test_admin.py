@@ -46,3 +46,18 @@ class TestAdmin(commons.FreezerBaseTestCase):
 
     def test_del_off_limit_fullbackup_keep_two(self):
         self.admin_os.del_off_limit_fullbackup('2', 2)
+
+    def test_remove_cinderbackup_older_than(self):
+        self.admin_os.remove_cinderbackup_older_than(35, 1463896546.0)
+        try:
+            self.admin_os.remove_cinderbackup_older_than(1023, 1463896546.0)
+        except Exception as e:
+            msg = "Delete backup 1023 failed, the status of backup is error."
+            self.assertEqual(msg, str(e))
+
+        try:
+            self.admin_os.remove_cinderbackup_older_than(1024, 1463896546.0)
+        except Exception as e:
+            msg = "Delete backup 1024 failed due to timeout over 120s," \
+                  " the status of backup is deleting."
+            self.assertEqual(msg, str(e))
