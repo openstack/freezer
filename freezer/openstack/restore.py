@@ -138,7 +138,7 @@ class RestoreOs(object):
                 bucket_name=self.storage.get_bucket_name(),
                 key=metadata
             )
-            info = json.load(metadata_object['Body'])
+            info = json.loads(metadata_object['Body'])
 
             image = self.client_manager.create_image(
                 name="restore_{}".format(path),
@@ -191,7 +191,7 @@ class RestoreOs(object):
                 tmpdir = tempfile.mkdtemp()
             except Exception:
                 LOG.error("Unable to create a tmp directory")
-                raise
+                raise Exception("Unable to create a tmp directory")
             try:
                 data_image = utils.path_join(tmpdir, "data_image")
                 LOG.info('create image restore ftp storage')
