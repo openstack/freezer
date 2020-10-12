@@ -71,9 +71,10 @@ class RestoreOs(object):
             msg = ("{} storage type is not supported at the moment."
                    " Try local, SWIFT, SSH(SFTP), FTP or FTPS ".
                    format(self.storage.type))
-            print(msg)
+            LOG.error(msg)
             raise BaseException(msg)
-        backups = list(filter(lambda x: x >= restore_from_timestamp, backups))
+        backups = list(filter(lambda x: int(x) >= restore_from_timestamp,
+                              backups))
         if not backups:
             msg = "Cannot find backups for path: %s" % path
             LOG.error(msg)
