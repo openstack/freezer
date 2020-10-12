@@ -16,9 +16,15 @@
 """
 Freezer restore.py related tests
 """
+from unittest import mock
 
 from freezer.openstack import restore
 from freezer.tests import commons
+
+
+class Image(object):
+    def __init__(self):
+        self.id = 'test'
 
 
 class TestRestore(commons.FreezerBaseTestCase):
@@ -56,3 +62,26 @@ class TestRestore(commons.FreezerBaseTestCase):
         backup_opt = commons.BackupOpt1()
         restore.RestoreOs(backup_opt.client_manager, backup_opt.container,
                           'local')
+
+    def test_get_backups_exception(self):
+        storage = mock.MagicMock()
+        storage.type = 'ss3'
+        client_manager = mock.MagicMock()
+        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage)
+        try:
+            restore_os._get_backups('/root', 12347)
+        except BaseException as e:
+            self.assertEqual(str(e), "ss3 storage type is not supported at the"
+                                     " moment. Try local, SWIFT, SSH(SFTP),"
+                                     " FTP or FTPS ")
+
+        storage = mock.MagicMock()
+        storage.type = 's3'
+        storage.list_all_objects.return_value = [{'Key': '/12345'},
+                                                 {'Key': '/12346'}]
+        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage)
+        try:
+            restore_os._get_backups('/root', 12347)
+        except BaseException as e:
+            self.assertEqual(str(e), "Cannot find backups for"
+                                     " path: root/test///root")
