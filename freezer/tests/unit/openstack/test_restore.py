@@ -63,6 +63,84 @@ class TestRestore(commons.FreezerBaseTestCase):
         restore.RestoreOs(backup_opt.client_manager, backup_opt.container,
                           'local')
 
+    @mock.patch('shutil.rmtree')
+    @mock.patch('tempfile.mkdtemp')
+    @mock.patch('oslo_serialization.jsonutils.load')
+    @mock.patch('os.listdir')
+    @mock.patch('builtins.open')
+    @mock.patch('freezer.utils.utils.ReSizeStream')
+    @mock.patch('freezer.utils.utils.S3ResponseStream')
+    def test_create_image(self, mock_s3stream, mock_resize, mock_open,
+                          mock_list, mock_load, mock_mkdtemp, mock_rmtree):
+        image = Image()
+        storage = mock.MagicMock()
+        storage.type = 's3'
+        storage.get_object.return_value = {'Body': '{"test": "test_info"}',
+                                           'ContentLength': 3}
+        storage.get_object_prefix.return_value = 'test'
+        storage.list_all_objects.return_value = [{'Key': '/12345'},
+                                                 {'Key': '/12346'}]
+        client_manager = mock.MagicMock()
+        client_manager.create_image.return_value = image
+        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage)
+        result1, result2 = restore_os._create_image('/root', 12344)
+        self.assertEqual(result1, {"test": "test_info"})
+        self.assertEqual(result2, image)
+
+        storage.get_object_prefix.return_value = ''
+        result1, result2 = restore_os._create_image('/root', 12344)
+        self.assertEqual(result1, {"test": "test_info"})
+        self.assertEqual(result2, image)
+
+        mock_open.side_effect = Exception("error")
+        storage.type = 'local'
+        mock_list.return_value = ['12345']
+        restore_os = restore.RestoreOs(client_manager, '/root/test', storage)
+        try:
+            restore_os._create_image('/root', 12344)
+        except BaseException as e:
+            self.assertEqual(str(e), "Failed to open image file"
+                                     " /root/test//root/12345//root")
+
+        mock_open.side_effect = 'test'
+        mock_load.return_value = 'test'
+        result1, result2 = restore_os._create_image('/root', 12344)
+        self.assertEqual(result1, 'test')
+        self.assertEqual(result2, image)
+
+        storage.type = 'ssh'
+        storage.open.side_effect = Exception("error")
+        storage.listdir.return_value = ['12345']
+        restore_os = restore.RestoreOs(client_manager, '/root/test', storage)
+        try:
+            restore_os._create_image('/root', 12344)
+        except BaseException as e:
+            self.assertEqual(str(e), "Failed to open remote image file "
+                                     "/root/test//root/12345//root")
+
+        storage.open.side_effect = 'test'
+        storage.read_metadata_file.return_value = '{"test": "test_info"}'
+        restore_os = restore.RestoreOs(client_manager, '/root/test', storage)
+        result1, result2 = restore_os._create_image('/root', 12344)
+        self.assertEqual(result1, {"test": "test_info"})
+        self.assertEqual(result2, image)
+
+        storage.type = 'ftp'
+        storage.listdir.return_value = ['12345']
+        mock_mkdtemp.side_effect = Exception('error')
+        restore_os = restore.RestoreOs(client_manager, '/root/test', storage)
+        try:
+            restore_os._create_image('/root', 12344)
+        except Exception as e:
+            self.assertEqual(str(e), "Unable to create a tmp directory")
+
+        mock_mkdtemp.side_effect = "success"
+        mock_rmtree.return_value = "success"
+        mock_open.side_effect = 'test'
+        result1, result2 = restore_os._create_image('/root', 12344)
+        self.assertEqual(result1, 'test')
+        self.assertEqual(result2, image)
+
     def test_get_backups_exception(self):
         storage = mock.MagicMock()
         storage.type = 'ss3'
