@@ -65,7 +65,7 @@ FAQ
     Yes.
 
 16) **Will Freezer be included as official project in OpenStack?**
-    We hope so, as soon as we can.
+    Yes.
 
 17) **Does freezer support Windows?**
     Yes. The freezer agent and scheduler can be executed on Windows.
