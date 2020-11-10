@@ -8,5 +8,4 @@ Developer Guide
    metadata_structure
    client_structure
    api_documents
-   known_issues
 
