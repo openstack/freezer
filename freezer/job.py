@@ -482,9 +482,8 @@ class RestoreJob(Job):
                     "Backup Consistency Check failed: could not checksum file"
                     " {0} ({1})".format(e.filename, e.strerror))
             return {}
-        res = restore.RestoreOs(conf.client_manager, conf.container,
-                                self.storage)
-        if conf.backup_media == 'nova':
+
+        elif conf.backup_media == 'nova':
             if self.conf.project_id:
                 return self.engine.restore_nova_tenant(
                     project_id=self.conf.project_id,
@@ -560,6 +559,8 @@ class RestoreJob(Job):
                         backup_media=conf.mode)
 
         elif conf.backup_media == 'cinder':
+            res = restore.RestoreOs(conf.client_manager, conf.container,
+                                    self.storage)
             if conf.cinder_vol_id:
                 LOG.info("Restoring cinder backup from glance. "
                          "Volume ID: {0}, timestamp: {1}".format(
@@ -575,6 +576,8 @@ class RestoreJob(Job):
                     res.restore_cinder_by_glance(instance_id,
                                                  restore_timestamp)
         elif conf.backup_media == 'cindernative':
+            res = restore.RestoreOs(conf.client_manager, conf.container,
+                                    self.storage)
             LOG.info("Restoring cinder native backup. Volume ID {0}, Backup ID"
                      " {1}, timestamp: {2}".format(conf.cindernative_vol_id,
                                                    conf.cindernative_backup_id,
