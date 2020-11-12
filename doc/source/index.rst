@@ -1,10 +1,17 @@
-===================================
-Welcome to Freezer's documentation!
-===================================
+==================================
+Welcome to Freezer's documentation
+==================================
+
+Freezer is a distributed backup restore and disaster recovery as a service
+platform. It is designed to be multi OS (Linux, Windows, OSX, BSD), focused
+on providing efficiency and flexibility for block based backups, file based
+incremental backups, point-in-time actions, jobs synchronization (i.e. backup
+synchronization over multiple nodes) and many other features. It is aimed at
+being useful for all environments, including large ephemeral Clouds.
 
 
-Freezer Key Features
-====================
+Key Features
+============
 
 -  Backup your file system using point in time snapshot
 -  Strong encryption supported: AES-256-CFB
@@ -100,24 +107,23 @@ Freezer Components
 |                   | The Freezer Agent provides a flexible way to execute backup, restore and other actions on a running system.                                    |
 |                   | In order to provide flexibility in terms of data integrity, speed, performance, resources usage, etc the freezer agent offers a                |
 |                   | wide range of options to execute optimized backup according to the available resources as:                                                     |
-|                   |                                                                                                                                                |
-|                   |   - Segments size (the amount of memory used)                                                                                                  |
-|                   |   - Queues size (optimize backups where I/O, bandwidth, memory or CPU is a constraint)                                                         |
-|                   |   - I/O Affinity and process priority (it can be used with real time I/O and maximum user level process priority)                              |
-|                   |   - Bandwidth limitation                                                                                                                       |
-|                   |   - Client side Encryption (AES-256-CFB)                                                                                                       |
-|                   |   - Compression (multiple algorithms supported as zlib, bzip2, xz/lzma)                                                                        |
-|                   |   - Parallel upload to pluggable storage media (i.e., upload backup to swift and to a remote node by ssh,                                      |
-|                   |     or upload to two or more independent swift instances with different credentials, etc)                                                      |
-|                   |   - Execute file based incremental (like tar), block based incremental (like rsync algorithm) and differential based backup and restore        |
-|                   |   - Multi-platform as it can be run on Linux, Windows, \*BSD and OSX                                                                           |
-|                   |   - Automatic removal of old backups                                                                                                           |
+|                   | # Segments size (the amount of memory used)                                                                                                    |
+|                   | # Queues size (optimize backups where I/O, bandwidth, memory or CPU is a constraint)                                                           |
+|                   | # I/O Affinity and process priority (it can be used with real time I/O and maximum user level process priority)                                |
+|                   | # Bandwidth limitation                                                                                                                         |
+|                   | # Client side Encryption (AES-256-CFB)                                                                                                         |
+|                   | # Compression (multiple algorithms supported as zlib, bzip2, xz/lzma)                                                                          |
+|                   | # Parallel upload to pluggable storage media (i.e., upload backup to swift and to a remote node by ssh,                                        |
+|                   |   or upload to two or more independent swift instances with different credentials, etc)                                                        |
+|                   | # Execute file based incremental (like tar), block based incremental (like rsync algorithm) and differential based backup and restore          |
+|                   | # Multi-platform as it can be run on Linux, Windows, \*BSD and OSX                                                                             |
+|                   | # Automatic removal of old backups                                                                                                             |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | Freezer API       | The API is used to store and provide metadata to the Freezer Web UI and to the Freezer Scheduler.                                              |
 |                   | Also the API is used to store session information for multi node backup synchronization. No workload data is stored in the API.                |
 |                   | For more information to the API please refer to: freezer_api/README.rst                                                                        |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| DB Elasticsearch  | Backend used by the API to store and retrieve metrics, metadata sessions information, job status, etc.                                         |
+| DB                | Backend used by the API to store and retrieve metrics, metadata sessions information, job status, etc.                                         |
 |                   | The DB support Elasticserch and Sqlalchemy.                                                                                                    |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 

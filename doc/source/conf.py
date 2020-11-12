@@ -49,6 +49,7 @@ config_generator_config_file = (
     '../../etc/config-generator.conf')
 sample_config_basename = '_static/freezer'
 
+
 # autodoc generation is a bit aggressive and a nuisance
 # when doing heavy text edit cycles. Execute "export SPHINX_DEBUG=1"
 # in your terminal to disable
@@ -81,8 +82,8 @@ openstackdocs_auto_name = False
 openstackdocs_repo_name = 'openstack/freezer'
 openstackdocs_bug_project = 'freezer'
 openstackdocs_bug_tag = 'doc'
-# project = u'Freezer'
-# copyright = u'2010-present, OpenStack Foundation'
+project = u'Freezer'
+copyright = u'OpenStack Foundation'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
