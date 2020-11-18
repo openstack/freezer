@@ -486,7 +486,7 @@ Backup example::
 
 Restore example::
 
-  $ sudo freezer-agent  --action restore --restore-abs-pat /data/dir/to/backup
+  $ sudo freezer-agent  --action restore --restore-abs-path /data/dir/to/backup
   --container /remote-machine-path/ --backup-name my-backup-name
   --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa
   --ssh-host 8.8.8.8
