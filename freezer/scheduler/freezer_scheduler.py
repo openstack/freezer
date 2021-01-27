@@ -208,11 +208,13 @@ def main():
     apiclient = None
     if CONF.no_api is False:
         try:
+            opts = client_utils.Namespace({})
+            opts.opts = CONF
             if CONF.enable_v1_api:
-                apiclient = client_utils.get_client_instance(opts=CONF,
+                apiclient = client_utils.get_client_instance(opts=opts,
                                                              api_version='1')
             else:
-                apiclient = client_utils.get_client_instance(opts=CONF,
+                apiclient = client_utils.get_client_instance(opts=opts,
                                                              api_version='2')
 
             if CONF.client_id:
