@@ -35,6 +35,14 @@ class TestUtils(unittest.TestCase):
         ret = utils.do_register(self.client, args=None)
         self.assertEqual(0, ret)
 
+    def test_del_register_error(self):
+        self.client.clients.delete = mock.Mock(side_effect=Exception(
+            'delete client error: bad request'))
+        with self.assertRaises(Exception) as cm:  # noqa
+            utils.del_register(self.client)
+            the_exception = cm.exception
+            self.assertIn('delete client error', str(the_exception))
+
     def test_find_config_files(self):
         temp = tempfile.NamedTemporaryFile('wb', delete=True,
                                            suffix='.conf')
