@@ -60,6 +60,16 @@ class TestUtils(unittest.TestCase):
         temp.close()
         self.assertFalse(os.path.exists(temp.name))
 
+    @patch('oslo_serialization.jsonutils.load')
+    def test_load_doc_from_json_file(self, mock_load):
+        os.mknod("/tmp/test_freezer.conf")
+        mock_load.side_effect = Exception('error')
+        try:
+            utils.load_doc_from_json_file("/tmp/test_freezer.conf")
+        except Exception as e:
+            self.assertIn("Unable to load conf file", str(e))
+        os.remove("/tmp/test_freezer.conf")
+
     def test_get_jobs_from_disk(self):
         temp = tempfile.mkdtemp()
         file = '/'.join([temp, "test.conf"])
