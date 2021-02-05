@@ -93,6 +93,19 @@ class TestUtils(unittest.TestCase):
         ret = utils.get_active_jobs_from_api(self.client)
         self.assertEqual(job_list, ret)
 
+    @patch('os.kill')
+    @patch('psutil.Process')
+    def test_terminate_subprocess1(self, mock_process, mock_oskill):
+        mock_pro = mock.MagicMock()
+        mock_pro.name.startswith.return_value = False
+        mock_process.return_value = mock_pro
+        result = utils.terminate_subprocess(35, 'test')
+        self.assertIsNone(result)
+        mock_pro.name.startswith.return_value = True
+        mock_oskill.side_effect = Exception("error")
+        result = utils.terminate_subprocess(35, 'test')
+        self.assertIsNone(result)
+
     @patch('psutil.Process')
     def test_terminate_subprocess(self, mock_process_constructor):
         mock_pro = mock_process_constructor.return_value
