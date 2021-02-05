@@ -64,3 +64,11 @@ class TestSchedulerJob1(unittest.TestCase):
     def test_stopstate_stop(self):
         result = scheduler_job.StopState.stop(self.job, self.jobdoc)
         self.assertEqual(result, '')
+
+    def test_stopstate_abort(self):
+        result = scheduler_job.StopState.abort(self.job, self.jobdoc)
+        self.assertEqual(result, '')
+
+    def test_stopstate_start(self):
+        result = scheduler_job.StopState.start(self.job, self.jobdoc)
+        self.assertEqual(result, '')
