@@ -80,3 +80,11 @@ class TestSchedulerJob1(unittest.TestCase):
     def test_scheduledstate_stop(self):
         result = scheduler_job.ScheduledState.stop(self.job, self.jobdoc)
         self.assertEqual(result, 'stop')
+
+    def test_scheduledstate_abort(self):
+        result = scheduler_job.ScheduledState.abort(self.job, self.jobdoc)
+        self.assertEqual(result, '')
+
+    def test_scheduledstate_start(self):
+        result = scheduler_job.ScheduledState.start(self.job, self.jobdoc)
+        self.assertEqual(result, '')
