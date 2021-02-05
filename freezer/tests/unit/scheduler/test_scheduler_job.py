@@ -17,6 +17,7 @@ import tempfile
 import unittest
 
 from freezer.scheduler import scheduler_job
+from unittest import mock
 
 action = {"action": "backup", "storage": "local",
           "mode": "fs", "backup_name": "test",
@@ -50,3 +51,16 @@ class TestSchedulerJob(unittest.TestCase):
                                          delete=False) as config_file:
             self.job.save_action_to_file(action, config_file)
             self.assertTrue(os.path.exists(config_file.name))
+
+
+class TestSchedulerJob1(unittest.TestCase):
+    def setUp(self):
+        self.scheduler = mock.MagicMock()
+        self.job_schedule = {"event": "start", "status": "start",
+                             "schedule_day": "1"}
+        self.jobdoc = {"job_id": "test", "job_schedule": self.job_schedule}
+        self.job = scheduler_job.Job(self.scheduler, None, self.jobdoc)
+
+    def test_stopstate_stop(self):
+        result = scheduler_job.StopState.stop(self.job, self.jobdoc)
+        self.assertEqual(result, '')
