@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -142,3 +143,48 @@ class TestSchedulerJob1(unittest.TestCase):
     def test_job_can_be_removed(self):
         result = self.job.can_be_removed()
         self.assertFalse(result)
+
+    def test_save_action_to_file(self):
+        action = {'start': "test"}
+        temp = tempfile.mkdtemp()
+        filename = '/'.join([temp, "test.conf"])
+        f = mock.MagicMock()
+        f.name = filename
+        result = self.job.save_action_to_file(action, f)
+        self.assertIsNone(result)
+        shutil.rmtree(temp)
+
+    def test_job_schedule_end_date(self):
+        self.assertEqual(self.job.schedule_end_date, '')
+
+    def test_job_schedule_cron_fields(self):
+        result = self.job.schedule_cron_fields
+        self.assertEqual(result, {"day": "1"})
+
+    def test_get_schedule_args(self):
+        jobdoc1 = {"job_schedule":
+                   {"schedule_start_date": "2020-01-10T10:10:10",
+                    "schedule_end_date": "2020-11-10T10:10:10",
+                    "schedule_date": "2020-09-10T10:10:10"}}
+        job1 = scheduler_job.Job(self.scheduler, None, jobdoc1)
+        result = job1.get_schedule_args()
+        self.assertEqual(result, {'trigger': 'date',
+                                  'run_date': "2020-09-10T10:10:10"})
+        jobdoc1 = {"job_schedule":
+                   {"schedule_start_date": "2020-10-10T10:10:10",
+                    "schedule_end_date": "2020-11-10T10:10:10",
+                    "schedule_interval": "continuous"}}
+        job1 = scheduler_job.Job(self.scheduler, None, jobdoc1)
+        result = job1.get_schedule_args()
+        self.assertEqual(result.get('seconds'), 1)
+        jobdoc1 = {"job_schedule":
+                   {"schedule_start_date": "2020-10-10T10:10:10",
+                    "schedule_end_date": "2020-11-10T10:10:10",
+                    "schedule_interval": "5 days"}}
+        job1 = scheduler_job.Job(self.scheduler, None, jobdoc1)
+        result = job1.get_schedule_args()
+        self.assertEqual(result.get('days'), 5)
+        jobdoc1 = {"job_schedule": {}}
+        job1 = scheduler_job.Job(self.scheduler, None, jobdoc1)
+        result = job1.get_schedule_args()
+        self.assertEqual(result.get('trigger'), 'date')
