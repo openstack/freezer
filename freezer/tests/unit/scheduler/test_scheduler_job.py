@@ -188,3 +188,29 @@ class TestSchedulerJob1(unittest.TestCase):
         job1 = scheduler_job.Job(self.scheduler, None, jobdoc1)
         result = job1.get_schedule_args()
         self.assertEqual(result.get('trigger'), 'date')
+
+    def test_job_process_event(self):
+        jobdoc1 = {"job_id": "test", "job_schedule": {"event": "start",
+                                                      "status": "start"}}
+        result = self.job.process_event(jobdoc1)
+        self.assertIsNone(result)
+        jobdoc1 = {"job_id": "test", "job_schedule": {"event": "stop",
+                                                      "status": "start"}}
+        result = self.job.process_event(jobdoc1)
+        self.assertIsNone(result)
+        jobdoc1 = {"job_id": "test", "job_schedule": {"event": "abort",
+                                                      "status": "start"}}
+        result = self.job.process_event(jobdoc1)
+        self.assertIsNone(result)
+        jobdoc1 = {"job_id": "test", "job_schedule": {"event": "aborted",
+                                                      "status": "start"}}
+        result = self.job.process_event(jobdoc1)
+        self.assertIsNone(result)
+
+    def test_job_upload_metadata(self):
+        metatring = '{"test": "freezer"}'
+        self.job.upload_metadata(metatring)
+        self.assertTrue(self.scheduler.upload_metadata.called)
+        metatring = ''
+        result = self.job.upload_metadata(metatring)
+        self.assertIsNone(result)
