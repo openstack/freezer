@@ -108,3 +108,18 @@ class TestSchedulerJob1(unittest.TestCase):
     def test_runningstate_remove(self):
         result = scheduler_job.RunningState.remove(self.job)
         self.assertEqual(result, '')
+
+    def test_job_create(self):
+        jobdoc = {"job_id": "test", "job_schedule": {"status": "running"}}
+        result = scheduler_job.Job.create(None, None, jobdoc)
+        self.assertEqual(result.job_doc_status, 'running')
+        jobdoc = {"job_id": "test", "job_schedule": {"status": "stop"}}
+        result = scheduler_job.Job.create(None, None, jobdoc)
+        self.assertEqual(result.event, 'stop')
+        jobdoc = {"job_id": "test", "job_schedule": {}}
+        result = scheduler_job.Job.create(None, None, jobdoc)
+        self.assertEqual(result.event, 'start')
+
+    def test_job_remove(self):
+        result = self.job.remove()
+        self.assertIsNone(result)
