@@ -123,3 +123,22 @@ class TestSchedulerJob1(unittest.TestCase):
     def test_job_remove(self):
         result = self.job.remove()
         self.assertIsNone(result)
+
+    def test_job_session_id(self):
+        self.assertEqual(self.job.session_id, '')
+        self.job.session_id = 'test'
+        self.assertEqual(self.job.session_id, 'test')
+
+    def test_job_session_tag(self):
+        self.assertEqual(self.job.session_tag, 0)
+        self.job.session_tag = 1
+        self.assertEqual(self.job.session_tag, 1)
+
+    def test_job_result(self):
+        self.assertEqual(self.job.result, '')
+        self.job.result = 'test'
+        self.assertEqual(self.job.result, 'test')
+
+    def test_job_can_be_removed(self):
+        result = self.job.can_be_removed()
+        self.assertFalse(result)
