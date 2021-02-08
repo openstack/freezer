@@ -267,3 +267,102 @@ class TestSchedulerJob1(unittest.TestCase):
         result = job.execute()
         self.assertIsNone(result)
         self.assertEqual(job.result, 'fail')
+
+    def test_job_finish(self):
+        scheduler = mock.MagicMock()
+        freezer_action = {"backup_name": "freezer",
+                          'action': 'exec',
+                          "remove_from_date": "2020-11-10T10:10:10"}
+        jobdoc = {'job_id': 'test', 'job_schedule': {"event": "remove"},
+                  'job_actions': [{'freezer_action': freezer_action,
+                                   'max_retries_interval': 1,
+                                   'max_retries': 1}]}
+        job = scheduler_job.Job(scheduler, None, jobdoc)
+        result = job.finish()
+        self.assertIsNone(result)
+        self.assertEqual(job.job_doc_status, 'removed')
+
+        scheduler.is_scheduled.return_value = False
+        jobdoc = {'job_id': 'test', 'job_schedule': {"event": "start"},
+                  'job_actions': [{'freezer_action': freezer_action,
+                                   'max_retries_interval': 1,
+                                   'max_retries': 1}]}
+        job = scheduler_job.Job(scheduler, None, jobdoc)
+        result = job.finish()
+        self.assertIsNone(result)
+        self.assertEqual(job.job_doc_status, 'completed')
+
+        scheduler.is_scheduled.return_value = True
+        jobdoc = {'job_id': 'test', 'job_schedule': {"event": "stop"},
+                  'job_actions': [{'freezer_action': freezer_action,
+                                   'max_retries_interval': 1,
+                                   'max_retries': 1}]}
+        job = scheduler_job.Job(scheduler, None, jobdoc)
+        result = job.finish()
+        self.assertIsNone(result)
+        self.assertEqual(job.job_doc_status, 'completed')
+
+    def test_job_start_session(self):
+        scheduler = mock.MagicMock()
+        scheduler.start_session.side_effect = [Exception('error'),
+                                               {'result': 'success',
+                                                'session_tag': 1024}]
+        job = scheduler_job.Job(scheduler, None, self.jobdoc)
+        job.session_id = 'test'
+        result = job.start_session()
+        self.assertIsNone(result)
+        self.assertEqual(job.session_tag, 1024)
+
+        scheduler.start_session.side_effect = [Exception('error'),
+                                               Exception('error'),
+                                               Exception('error'),
+                                               Exception('error'),
+                                               Exception('error')]
+        job = scheduler_job.Job(scheduler, None, self.jobdoc)
+        job.session_id = 'test'
+        result = job.start_session()
+        self.assertIsNone(result)
+        self.assertEqual(job.session_tag, 1024)
+
+    def test_job_end_session(self):
+        scheduler = mock.MagicMock()
+        scheduler.end_session.side_effect = [Exception('error'),
+                                             {'result': 'success'}]
+        job = scheduler_job.Job(scheduler, None, self.jobdoc)
+        job.session_id = 'test'
+        result = job.end_session('test')
+        self.assertIsNone(result)
+        self.assertEqual(job.session_tag, 0)
+
+        scheduler.end_session.side_effect = [Exception('error'),
+                                             Exception('error'),
+                                             Exception('error'),
+                                             Exception('error'),
+                                             Exception('error')]
+        job = scheduler_job.Job(scheduler, None, self.jobdoc)
+        job.session_id = 'test'
+        result = job.end_session('test')
+        self.assertIsNone(result)
+        self.assertEqual(job.session_tag, 0)
+
+    def test_job_schedule(self):
+        scheduler = mock.MagicMock()
+        scheduler.is_scheduled.return_value = False
+        scheduler.add_job.side_effect = Exception('error')
+        job = scheduler_job.Job(scheduler, None, self.jobdoc)
+        result = job.schedule()
+        self.assertIsNone(result)
+        self.assertEqual(job.job_doc_status, 'completed')
+
+    def test_job_unschedule(self):
+        scheduler = mock.MagicMock()
+        scheduler.remove_job.side_effect = Exception('error')
+        job = scheduler_job.Job(scheduler, None, self.jobdoc)
+        result = job.unschedule()
+        self.assertIsNone(result)
+
+    def test_job_terminate_kill(self):
+        process = mock.MagicMock()
+        self.job.process = process
+        self.assertIsNone(self.job.terminate())
+        self.assertIsNone(self.job.kill())
