@@ -18,7 +18,11 @@ import tempfile
 import unittest
 
 from freezer.scheduler import scheduler_job
+from oslo_config import cfg
 from unittest import mock
+
+CONF = cfg.CONF
+
 
 action = {"action": "backup", "storage": "local",
           "mode": "fs", "backup_name": "test",
@@ -214,3 +218,52 @@ class TestSchedulerJob1(unittest.TestCase):
         metatring = ''
         result = self.job.upload_metadata(metatring)
         self.assertIsNone(result)
+
+    def test_job_contains_exec(self):
+        jobdoc = {'job_actions': [{'freezer_action': {'action': 'exec'}}]}
+        job = scheduler_job.Job(None, None, jobdoc)
+        result = job.contains_exec()
+        self.assertTrue(result)
+        jobdoc = {'job_actions': [{'freezer_action': {'action': 'stop'}}]}
+        job = scheduler_job.Job(None, None, jobdoc)
+        result = job.contains_exec()
+        self.assertFalse(result)
+
+    def test_job_update_job_schedule_doc(self):
+        jobdoc = {'job_actions': [{'freezer_action': {'action': 'exec'}}]}
+        self.job.update_job_schedule_doc(**jobdoc)
+        self.assertEqual(self.job.job_doc['job_schedule']['job_actions'],
+                         [{'freezer_action': {'action': 'exec'}}])
+
+    @mock.patch('subprocess.Popen')
+    def test_job_execute(self, mock_process):
+        CONF.disable_exec = True
+        scheduler = mock.MagicMock()
+        freezer_action = {"backup_name": "freezer",
+                          'action': 'exec',
+                          "remove_from_date": "2020-11-10T10:10:10"}
+        jobdoc = {'job_id': 'test', 'job_schedule': {},
+                  'job_actions': [{'freezer_action': freezer_action,
+                                   'max_retries_interval': 1,
+                                   'max_retries': 1}]}
+        job = scheduler_job.Job(scheduler, None, jobdoc)
+        result = job.execute()
+        self.assertIsNone(result)
+        self.assertEqual(job.result, 'fail')
+
+        CONF.disable_exec = False
+        process = mock.MagicMock()
+        process.pid = 123
+        process.communicate.return_value = (b'test', 0)
+        process.returncode = -15
+        mock_process.return_value = process
+        result = job.execute()
+        self.assertIsNone(result)
+        self.assertEqual(job.result, 'aborted')
+
+        process.communicate.return_value = ('test', 'test')
+        process.returncode = 1
+        mock_process.return_value = process
+        result = job.execute()
+        self.assertIsNone(result)
+        self.assertEqual(job.result, 'fail')
