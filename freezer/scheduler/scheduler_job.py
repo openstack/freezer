@@ -440,15 +440,13 @@ class Job(object):
             return
 
         for job_action in self.job_doc.get('job_actions', []):
-            if job_action.get('mandatory', False) or\
+            if job_action.get('mandatory', False) or \
                     (result == Job.SUCCESS_RESULT):
 
                 action_result = self.execute_job_action(job_action)
-                if action_result == Job.FAIL_RESULT:
-                    result = Job.FAIL_RESULT
+                if action_result in [Job.FAIL_RESULT, Job.ABORTED_RESULT]:
+                    result = action_result
 
-                if action_result == Job.ABORTED_RESULT:
-                    result = Job.ABORTED_RESULT
             else:
                 freezer_action = job_action.get('freezer_action', {})
                 action_name = freezer_action.get('action', '')
