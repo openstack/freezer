@@ -258,7 +258,7 @@ def lvm_guess(mount_point_path, mount_points, source='/proc/mounts'):
             if mount_match:
                 lvm_volgroup = mount_match.group(1).replace('--', '-')
                 lvm_srcvol = mount_match.group(2).replace('--', '-')
-                lvm_device = u'/dev/{0}/{1}'.format(lvm_volgroup, lvm_srcvol)
+                lvm_device = '/dev/{0}/{1}'.format(lvm_volgroup, lvm_srcvol)
                 break
 
     return lvm_volgroup, lvm_srcvol, lvm_device

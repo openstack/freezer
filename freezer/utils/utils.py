@@ -543,9 +543,9 @@ def set_max_process_priority():
         os.nice(-19)
         # Set I/O Priority to Real Time class with level 0
         subprocess.call([
-            u'{0}'.format(find_executable("ionice")),
-            u'-c', u'1', u'-n', u'0', u'-t',
-            u'-p', u'{0}'.format(pid)
+            '{0}'.format(find_executable("ionice")),
+            '-c', '1', '-n', '0', '-t',
+            '-p', '{0}'.format(pid)
         ])
     except Exception as priority_error:
         LOG.warning('Priority: {0}'.format(priority_error))

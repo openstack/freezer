@@ -82,8 +82,8 @@ openstackdocs_auto_name = False
 openstackdocs_repo_name = 'openstack/freezer'
 openstackdocs_bug_project = 'freezer'
 openstackdocs_bug_tag = 'doc'
-project = u'Freezer'
-copyright = u'OpenStack Foundation'
+project = 'Freezer'
+copyright = 'OpenStack Foundation'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -144,11 +144,11 @@ modindex_common_prefix = ['freezer.']
 # -- Options for man page output ----------------------------------------------
 
 # Grouping the document tree for man pages.
-# List of tuples 'sourcefile', 'target', u'title', u'Authors name', 'manual'
+# List of tuples 'sourcefile', 'target', 'title', 'Authors name', 'manual'
 
 man_pages = [
-    ('man/freezer-manage', 'freezer-manage', u'Cloud controller fabric',
-     [u'OpenStack'], 1)
+    ('man/freezer-manage', 'freezer-manage', 'Cloud controller fabric',
+     ['OpenStack'], 1)
 ]
 
 # -- Options for HTML output --------------------------------------------------

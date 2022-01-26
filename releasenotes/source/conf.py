@@ -58,7 +58,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-copyright = u'2016, Freezer developers'
+copyright = '2016, Freezer developers'
 
 # Release notes are version independent.
 # The short X.Y version.
@@ -194,8 +194,8 @@ htmlhelp_basename = 'FreezerReleaseNotestdoc'
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'PythonFreezer.tex', u'Freezer Release Notes Documentation',
-   u'Freezer developers', 'manual'),
+  ('index', 'PythonFreezer.tex', 'Freezer Release Notes Documentation',
+   'Freezer developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -225,8 +225,8 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'freezer',
-     u'Freezer Release Notes Documentation',
-     [u'Freezer developers'], 1)
+     'Freezer Release Notes Documentation',
+     ['Freezer developers'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -240,8 +240,8 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'Freezer',
-   u'Freezer Release Notes Documentation',
-   u'Freezer developers', 'Freezer',
+   'Freezer Release Notes Documentation',
+   'Freezer developers', 'Freezer',
    'One line description of project.', 'Miscellaneous'),
 ]
 
