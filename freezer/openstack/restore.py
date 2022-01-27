@@ -286,7 +286,7 @@ class RestoreOs(object):
             except Exception as e:
                 LOG.exception(e)
                 if volume.status != "error":
-                    LOG.warn("Exception getting volume status")
+                    LOG.warning("Exception getting volume status")
 
         LOG.info("Deleting temporary image {}".format(image.id))
         self.client_manager.get_glance().images.delete(image.id)
