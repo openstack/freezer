@@ -87,6 +87,7 @@ def rsyncdelta(datastream, remotesignatures, blocksize=4096):
     match = True
     matchblock = -1
     last_byte = []
+    tailsize = 0
     while True:
         if match and datastream is not None:
             # Whenever there is a match or the loop is running for the first
