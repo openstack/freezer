@@ -88,7 +88,7 @@ def ini_parse(fd):
     :return:
     """
     parser = configparser.ConfigParser()
-    parser.readfp(fd)
+    parser.read_file(fd)
     return dict(parser.items('default'))
 
 
