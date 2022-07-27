@@ -289,6 +289,14 @@ class NovaEngine(engine.BackupEngine):
             image_block_mapping_info = image.get("block_device_mapping")
             image_block_mapping = json.loads(image_block_mapping_info) \
                 if image_block_mapping_info else None
+            utils.wait_for(
+                NovaEngine.snapshot_avaliable,
+                1,
+                3600,
+                message="Waiting for instance {0} snapshot to become "
+                        "active".format(backup_resource),
+                kwargs={"cinder_client": self.cinder, "snapshot_id": image_temporary_snapshot_id}
+            )
             image_temporary_snapshot_id = \
                 image_block_mapping[0]['snapshot_id'] \
                 if image_block_mapping else None
@@ -341,6 +349,12 @@ class NovaEngine(engine.BackupEngine):
         image = glance_client.images.get(image_id)
         return image.status == 'active'
 
+    @staticmethod
+    def snapshot_avaliable(cinder_client, snapshot_id):
+        """Check if the volume snapshot is in the avaliable state or not"""
+        snap = cinder_client.volume_snapshots.get(snapshot_id)
+        return snap.status == 'available'
+
     def metadata(self, backup_resource):
         """Construct metadata"""
         server_info = self.nova.servers.get(backup_resource).to_dict()
@@ -354,7 +368,7 @@ class NovaEngine(engine.BackupEngine):
     def set_tenant_meta(self, path, metadata):
         """push data to the manifest file"""
         with open(path, 'wb') as fb:
-            fb.writelines(json.dumps(metadata))
+            fb.writelines([json.dumps(metadata).encode('utf8')])
 
     def get_tenant_meta(self, path):
         with open(path, 'rb') as fb:
