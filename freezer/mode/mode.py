@@ -16,11 +16,13 @@ import abc
 
 
 class Mode(metaclass=abc.ABCMeta):
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def name(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def version(self):
         pass
 

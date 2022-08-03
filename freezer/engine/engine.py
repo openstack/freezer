@@ -81,7 +81,8 @@ class BackupEngine(metaclass=abc.ABCMeta):
         """
         self.storage = storage
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def name(self):
         """
         :rtype: str
