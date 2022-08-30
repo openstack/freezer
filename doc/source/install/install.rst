@@ -20,7 +20,7 @@ Note that installation and configuration vary by distribution.
 
 .. code-block:: console
 
-  $ git clone https://git.openstack.org/openstack/freezer-api.git
+  $ git clone https://opendev.org/openstack/freezer-api.git
   $ cd freezer-api
   $ pip install ./
 
