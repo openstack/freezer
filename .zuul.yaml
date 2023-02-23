@@ -1,4 +1,5 @@
 - project:
+    queue: freezer
     templates:
       - check-requirements
       # - openstack-lower-constraints-jobs
@@ -11,7 +12,6 @@
         - freezer-tempest-agent
         - freezer-tempest-scheduler
     gate:
-      queue: freezer
       jobs:
         - openstack-tox-pylint
         - freezer-tempest-agent
