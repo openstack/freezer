@@ -19,7 +19,7 @@ Install and configure components
 
    .. note:: To list all missing packages needed to install freezer
       in your system use provided ``bindep.txt`` file with `bindep utility.
-      <https://docs.openstack.org/infra/bindep/>`_
+      <https://docs.opendev.org/opendev/bindep/latest/>`_
 
 
 .. include:: common_configure.rst
