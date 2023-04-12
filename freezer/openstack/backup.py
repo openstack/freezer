@@ -77,12 +77,12 @@ class BackupOs(object):
         if attachments:
             headers['server'] = attachments[0]['server_id']
         self.storage.add_stream(stream, package, headers=headers)
-        LOG.debug("Deleting temporary snapshot")
-        client_manager.clean_snapshot(snapshot)
         LOG.debug("Deleting temporary volume")
         cinder.volumes.delete(copied_volume)
         LOG.debug("Deleting temporary image")
         client_manager.get_glance().images.delete(image.id)
+        LOG.debug("Deleting temporary snapshot")
+        client_manager.clean_snapshot(snapshot)
 
     def backup_cinder(self, volume_id, name=None, description=None,
                       incremental=False):
