@@ -22,6 +22,7 @@ Contents
    :maxdepth: 2
 
    unreleased
+   2023.2
    zed
    yoga
    victoria
