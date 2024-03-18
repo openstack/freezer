@@ -46,6 +46,9 @@ class RestoreOs(object):
         :type restore_from_timestamp: int
         :return:
         """
+        if restore_from_timestamp == None:
+            restore_from_timestamp = 0
+            
         if self.storage.type == "swift":
             swift = self.client_manager.get_swift()
             path = "{0}_segments/{1}/".format(self.container, path)
