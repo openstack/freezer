@@ -98,4 +98,4 @@ class FsLikeStorage(physical.PhysicalStorage, metaclass=abc.ABCMeta):
                 backup_file.write(el)
         # write data matadata to backup_metadata
         with self.open(backup_metadata, 'wb') as backup_meta:
-            backup_meta.write(json.dumps(headers))
+            backup_meta.write(json.dumps(headers).encode('utf-8'))
