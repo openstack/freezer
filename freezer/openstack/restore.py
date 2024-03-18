@@ -160,7 +160,7 @@ class RestoreOs(object):
                 msg = "Failed to open image file {}".format(image_file)
                 LOG.error(msg)
                 raise BaseException(msg)
-            info = json.load(open(metadata_file, 'r'))
+            info = json.load(open(metadata_file, 'rb'))
             image = self.client_manager.create_image(
                 name="restore_{}".format(path),
                 container_format="bare",
@@ -271,7 +271,7 @@ class RestoreOs(object):
         LOG.info("Creating volume from image")
         cinder_client = self.client_manager.get_cinder()
         volume = cinder_client.volumes.create(
-            size,
+            round(size),
             imageRef=image.id,
             name=info.get('volume_name',
                           CONF.get('backup_name',
