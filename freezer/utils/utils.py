@@ -254,7 +254,7 @@ class ReSizeStream(object):
         self.stream = stream
         self.length = length
         self.chunk_size = chunk_size
-        self.reminder = ""
+        self.reminder = b""
         self.transmitted = 0
 
     def __len__(self):
