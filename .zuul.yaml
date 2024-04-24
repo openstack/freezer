@@ -26,13 +26,3 @@
 - job:
     name: freezer-ubuntu
     parent: freezer-base
-
-- job:
-    name: freezer-centos-7
-    parent: freezer-base
-    nodeset: centos-7
-
-- job:
-    name: freezer-opensuse-15
-    parent: freezer-base
-    nodeset: opensuse-15
