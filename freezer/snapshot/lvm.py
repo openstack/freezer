@@ -244,6 +244,8 @@ def lvm_guess(mount_point_path, mount_points, source='/proc/mounts'):
 
     lvm_volgroup = lvm_srcvol = lvm_device = None
     for mount_line in mount_points:
+        mount_path = str()
+        device = str()
         if source == '/proc/mounts':
             device, mount_path = mount_line.split(' ')[0:2]
         elif source == 'mount':
