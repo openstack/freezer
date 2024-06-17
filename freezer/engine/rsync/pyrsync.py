@@ -101,7 +101,7 @@ def rsyncdelta(datastream, remotesignatures, blocksize=4096):
             # matching strong hash does not occur at the first match, it will
             # be missed and the data sent over. May fix eventually, but this
             # problem arises very rarely.
-            matchblock = remote_weak.index(checksum, matchblock + 1)
+            matchblock = remote_weak.index(checksum, matchblock + 1)  # pylint: disable=E0606
             stronghash = hashlib.sha1(bytes(window)).hexdigest()
             matchblock = remote_strong.index(stronghash, matchblock)
 
@@ -141,7 +141,7 @@ def rsyncdelta(datastream, remotesignatures, blocksize=4096):
 
             # Yank off the extra byte and calculate the new window checksum
             oldbyte = window.popleft()
-            checksum, a, b = rollingchecksum(oldbyte, newbyte, a, b, blocksize)
+            checksum, a, b = rollingchecksum(oldbyte, newbyte, a, b, blocksize)  # pylint: disable=E0601
 
             last_byte.append(oldbyte)
             if len(last_byte) == blocksize:
