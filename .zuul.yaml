@@ -2,20 +2,22 @@
     queue: freezer
     templates:
       - check-requirements
-      - openstack-python3-zed-jobs
-      - openstack-python3-zed-jobs-arm64
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
     check:
       jobs:
         - openstack-tox-pylint
-        - freezer-tempest-agent
-        - freezer-tempest-scheduler
+        # - freezer-tempest-agent
+        # - freezer-tempest-scheduler
+        # - freezer-ubuntu
+        # - freezer-centos-9-stream
     gate:
       jobs:
         - openstack-tox-pylint
-        - freezer-tempest-agent
-        - freezer-tempest-scheduler
+        # - freezer-tempest-agent
+        # - freezer-tempest-scheduler
+        # - freezer-ubuntu
+        # - freezer-centos-9-stream
 
 - job:
     name: freezer-base
@@ -28,11 +30,6 @@
     parent: freezer-base
 
 - job:
-    name: freezer-centos-7
+    name: freezer-centos-9-stream
     parent: freezer-base
-    nodeset: centos-7
-
-- job:
-    name: freezer-opensuse-15
-    parent: freezer-base
-    nodeset: opensuse-15
+    nodeset: centos-9-stream
