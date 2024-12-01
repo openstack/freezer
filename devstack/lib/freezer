@@ -59,6 +59,11 @@ function install_freezer {
 
     git_clone $FREEZER_REPO $FREEZER_DIR $FREEZER_BRANCH
     setup_develop $FREEZER_DIR
+    if [[ "$GLOBAL_VENV" == "True" ]]; then
+        sudo ln -sf /opt/stack/data/venv/bin/freezer /usr/local/bin
+        sudo ln -sf /opt/stack/data/venv/bin/freezer-agent /usr/local/bin
+        sudo ln -sf /opt/stack/data/venv/bin/freezer-scheduler /usr/local/bin
+    fi
 }
 
 # executed during: stack post-config

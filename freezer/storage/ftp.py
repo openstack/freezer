@@ -322,8 +322,7 @@ class FtpsStorage(BaseFtpStorage):
 
     def init(self):
         try:
-            ftps = ftplib.FTP_TLS(keyfile=self.keyfile,
-                                  certfile=self.certfile)
+            ftps = ftplib.FTP_TLS()
             ftps.set_pasv(True)
             ftps.connect(self.remote_ip, self.port, 60)
             ftps.login(self.remote_username, self.remote_pwd)

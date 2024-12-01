@@ -4,18 +4,19 @@
       - check-requirements
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
+      - openstack-python3-jobs
     check:
       jobs:
         - openstack-tox-pylint
-        # - freezer-tempest-agent
-        # - freezer-tempest-scheduler
+        - freezer-tempest-agent
+        - freezer-tempest-scheduler
         # - freezer-ubuntu
         # - freezer-centos-9-stream
     gate:
       jobs:
         - openstack-tox-pylint
-        # - freezer-tempest-agent
-        # - freezer-tempest-scheduler
+        - freezer-tempest-agent
+        - freezer-tempest-scheduler
         # - freezer-ubuntu
         # - freezer-centos-9-stream
 
