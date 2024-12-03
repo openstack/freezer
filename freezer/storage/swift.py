@@ -115,8 +115,8 @@ class SwiftStorage(physical.PhysicalStorage):
         LOG.info('[*] Uploading Swift Manifest: {0}'.format(backup))
         split = backup.data_path.rsplit('/', 1)
         self.swift().put_object(container=split[0], obj=split[1],
-                                contents=u'', headers=headers,
-                                content_length=len(u''))
+                                contents='', headers=headers,
+                                content_length=len(''))
         LOG.info('Manifest successfully uploaded!')
 
     def prepare(self):
@@ -175,8 +175,8 @@ class SwiftStorage(physical.PhysicalStorage):
         objname = package_name.rsplit('/', 1)[1]
         # This call sets the metadata on a file which will be used to download
         # the whole backup later. Do not remove it ! (szaher)
-        self.swift().put_object(container=full_path, obj=objname, contents=u'',
-                                content_length=len(u''), headers=headers)
+        self.swift().put_object(container=full_path, obj=objname, contents='',
+                                content_length=len(''), headers=headers)
 
     def backup_blocks(self, backup):
         """
@@ -207,7 +207,7 @@ class SwiftStorage(physical.PhysicalStorage):
         """
         backup = backup.copy(storage=self)
         for block_index, message in enumerate(rich_queue.get_messages()):
-            segment_package_name = u'{0}/{1}'.format(
+            segment_package_name = '{0}/{1}'.format(
                 backup.segments_path, "%08d" % block_index)
             self.upload_chunk(message, segment_package_name)
         self.upload_manifest(backup)
