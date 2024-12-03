@@ -26,14 +26,18 @@ class TestBackup(commons.FreezerBaseTestCase):
         self.bakup_os = backup.BackupOs(self.backup_opt.client_manager,
                                         self.backup_opt.container,
                                         self.backup_opt.storage)
-        self.client_manager = self.backup_opt.client_manager
-        self.storage = self.backup_opt.storage
 
     def test_backup_cinder_by_glance(self):
         self.bakup_os.backup_cinder_by_glance(35)
+
+    def test_backup_cinder_by_glance_none_name(self):
+        self.bakup_os.backup_cinder_by_glance(10230)
 
     def test_backup_cinder_with_incremental(self):
         self.bakup_os.backup_cinder(35, incremental=True)
 
     def test_backup_cinder_without_incremental(self):
         self.bakup_os.backup_cinder(35, incremental=False)
+
+    def test_backup_cinder_with_none(self):
+        self.bakup_os.backup_cinder(10240, incremental=True)
