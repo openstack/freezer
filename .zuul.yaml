@@ -10,15 +10,15 @@
         - openstack-tox-pylint
         - freezer-tempest-agent
         - freezer-tempest-scheduler
-        # - freezer-ubuntu
-        # - freezer-centos-9-stream
+        - freezer-ubuntu
+        - freezer-centos-9-stream
     gate:
       jobs:
         - openstack-tox-pylint
         - freezer-tempest-agent
         - freezer-tempest-scheduler
-        # - freezer-ubuntu
-        # - freezer-centos-9-stream
+        - freezer-ubuntu
+        - freezer-centos-9-stream
 
 - job:
     name: freezer-base
