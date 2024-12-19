@@ -15,6 +15,7 @@
 
 import datetime
 import fixtures
+from io import BytesIO
 import os
 import time
 from unittest import mock
@@ -215,3 +216,30 @@ class TestDateTime(object):
         condition = mock.MagicMock(side_effect=[False, False, False])
         self.assertRaises(exception_utils.TimeoutException,
                           utils.wait_for(condition, 0.1, 0.2))
+
+
+class TestReSizeStream(commons.FreezerBaseTestCase):
+    def test_next(self):
+        stream_data = b"12345"
+        stream = BytesIO(stream_data)
+        chunk_size = len(stream_data) - 1
+        resize_stream = utils.ReSizeStream(
+            stream=stream,
+            length=len(stream_data),
+            chunk_size=chunk_size,
+        )
+        next_result = next(resize_stream)
+        self.assertEqual(chunk_size, len(next_result))
+        self.assertEqual(stream_data[:chunk_size], next_result)
+        self.assertIsInstance(next_result, bytes)
+
+    def test_read(self):
+        stream_data = b"abcdef"
+        chunk_size = 2
+        resize_stream = utils.ReSizeStream(
+            stream=BytesIO(stream_data),
+            length=len(stream_data),
+            chunk_size=chunk_size,
+        )
+        read_result = resize_stream.read(chunk_size)
+        self.assertEqual(stream_data[:chunk_size], read_result)

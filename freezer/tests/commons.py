@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from io import BytesIO
 import os
 from unittest import mock
 
@@ -211,7 +212,7 @@ class FakeGlanceClient(object):
 
         @staticmethod
         def data(image):
-            return glance_utils.IterableWithLength(iter("abc"), 3)
+            return glance_utils.IterableWithLength(BytesIO(b"abc"), 3)
 
         @staticmethod
         def delete(image):
