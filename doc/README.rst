@@ -19,7 +19,7 @@ NOTE
 Freezer has four different components; Freezer Web UI, Freezer Scheduler,
 Freezer Agent and Freezer API.
 
-If you need to use Freezer Backup Restore DR as a Service platform, you need to
+If you need to use Freezer Backup Restore as a Service platform, you need to
 install Freezer Scheduler, Freezer Agent on client and Freezer Web UI, Freezer
 API on OpenStack controller server.
 (The server where your Horizon and Keystone installed)
@@ -38,7 +38,7 @@ https://github.com/openstack/freezer-api
 Features
 ========
 
-Freezer is a Backup Restore DR as a Service platform that helps you to automate
+Freezer is a Backup Restore as a Service platform that helps you to automate
 the data backup and restore process.
 
 The following features are available:

@@ -1,5 +1,5 @@
-Backup/Restore and DR service
-=============================
+Backup/Restore service
+======================
 
 .. toctree::
    :maxdepth: 2
