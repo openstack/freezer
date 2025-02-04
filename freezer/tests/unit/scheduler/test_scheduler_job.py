@@ -18,6 +18,8 @@ import tempfile
 import unittest
 
 from freezer.scheduler import scheduler_job
+from freezer.tests.unit.scheduler.commons import set_default_capabilities
+from freezer.tests.unit.scheduler.commons import set_test_capabilities
 from oslo_config import cfg
 from unittest import mock
 
@@ -366,3 +368,145 @@ class TestSchedulerJob1(unittest.TestCase):
         self.job.process = process
         self.assertIsNone(self.job.terminate())
         self.assertIsNone(self.job.kill())
+
+
+class TestSchedulerJobCapabilities(unittest.TestCase):
+    # Tests for SchedulerJob.check_capabilities()
+    def setUp(self):
+        self.scheduler = mock.MagicMock()
+        set_test_capabilities()
+
+    def tearDown(self):
+        set_default_capabilities()
+
+    def test_job_unsupported_action(self):
+        """check_capabilities of a job that contains allowed and disallowed
+        actions. The job should be rejected.
+        """
+        jobdoc = {
+            'job_id': 'test',
+            'job_schedule': {},
+            'job_actions': [
+                {'freezer_action': {'action': 'backup'}},
+                {'freezer_action': {'action': 'exec'}},
+            ],
+        }
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        result = job.check_capabilities()
+        self.assertFalse(result)
+
+    def test_job_supported_action(self):
+        """check_capabilities of a job that contains only allowed actions.
+        The job should be accepted.
+        """
+        jobdoc = {
+            'job_id': 'test',
+            'job_schedule': {},
+            'job_actions': [
+                {'freezer_action': {'action': 'backup'}},
+            ],
+        }
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        result = job.check_capabilities()
+        self.assertTrue(result)
+
+    def test_job_unsupported_mode(self):
+        """check_capabilities of a job that contains allowed and disallowed
+        modes. The job should be rejected.
+        """
+        jobdoc = {
+            'job_id': 'test',
+            'job_schedule': {},
+            'job_actions': [
+                {
+                    'freezer_action': {
+                        'action': 'backup', 'mode': 'cindernative'}},
+                {'freezer_action': {'action': 'backup', 'mode': 'fs'}},
+            ],
+        }
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        result = job.check_capabilities()
+        self.assertFalse(result)
+
+    def test_job_supported_mode(self):
+        """check_capabilities of a job that contains only allowed modes.
+        The job should be accepted.
+        """
+        jobdoc = {
+            'job_id': 'test',
+            'job_schedule': {},
+            'job_actions': [
+                {'freezer_action': {
+                    'action': 'backup', 'mode': 'cindernative'}},
+            ],
+        }
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        result = job.check_capabilities()
+        self.assertTrue(result)
+
+    def test_job_unsupported_storage(self):
+        """check_capabilities of a job that contains allowed and disallowed
+        storages. The job should be rejected.
+        """
+        jobdoc = {
+            'job_id': 'test',
+            'job_schedule': {},
+            'job_actions': [
+                {'freezer_action': {
+                    'action': 'backup', 'storage': 'swift'}},
+                {'freezer_action': {'action': 'backup', 'storage': 'local'}},
+            ],
+        }
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        result = job.check_capabilities()
+        self.assertFalse(result)
+
+    def test_job_supported_storage(self):
+        """check_capabilities of a job that contains only allowed storages.
+        The job should be accepted.
+        """
+        jobdoc = {
+            'job_id': 'test',
+            'job_schedule': {},
+            'job_actions': [
+                {'freezer_action': {'action': 'backup', 'storage': 'swift'}},
+            ],
+        }
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        result = job.check_capabilities()
+        self.assertTrue(result)
+
+    def test_job_unsupported_engine(self):
+        """check_capabilities of a job that contains disallowed engines.
+        The job should be rejected.
+        """
+        jobdoc = {
+            'job_id': 'test',
+            'job_schedule': {},
+            'job_actions': [
+                {'freezer_action': {
+                    'action': 'backup', 'engine_name': 'tar'}},
+                {'freezer_action': {
+                    'action': 'backup', 'engine_name': 'rsync'}},
+            ],
+        }
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        result = job.check_capabilities()
+        self.assertFalse(result)
+
+    def test_job_supported_engine(self):
+        """check_capabilities of a job that contains only allowed engines.
+        The job should be accepted.
+        """
+        CONF.capabilities.supported_engines = ['glance']
+        jobdoc = {
+            'job_id': 'test',
+            'job_schedule': {},
+            'job_actions': [
+                {'freezer_action': {
+                    'action': 'backup', 'engine_name': 'glance'}}
+            ],
+        }
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        result = job.check_capabilities()
+        self.assertTrue(result)

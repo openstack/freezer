@@ -558,3 +558,24 @@ class Job(object):
     def kill(self):
         if self.process:
             self.process.kill()
+
+    def check_capabilities(self):
+        """Check if the requested capabilities are available.
+
+        :return: True if the job can be executed on this node
+        :rtype: bool
+        """
+        capabilities = [
+            (CONF.capabilities.supported_actions, 'action'),
+            (CONF.capabilities.supported_modes, 'mode'),
+            (CONF.capabilities.supported_storages, 'storage'),
+            (CONF.capabilities.supported_engines, 'engine_name'),
+        ]
+        actions = self.job_doc.get('job_actions')
+        for action in actions:
+            for supported_values, key in capabilities:
+                freezer_action = action.get('freezer_action')
+                requested_value = freezer_action.get(key, None)
+                if requested_value and requested_value not in supported_values:
+                    return False
+        return True

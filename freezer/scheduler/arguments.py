@@ -28,6 +28,12 @@ if winutils.is_windows():
 else:
     DEFAULT_FREEZER_SCHEDULER_CONF_D = '/etc/freezer/scheduler/conf.d'
 
+DEFAULT_SUPPORTED_ACTIONS = 'backup,restore,info,admin,exec'
+DEFAULT_SUPPORTED_MODES = ('fs,mongo,mysql,sqlserver,cinder,glance,'
+                           'cindernative,nova')
+DEFAULT_SUPPORTED_STORAGES = 'local,swift,ssh,s3,ftp,ftps'
+DEFAULT_SUPPORTED_ENGINES = 'tar,rsync,rsyncv2,nova,osbrick,glance'
+
 
 def add_filter():
 
@@ -110,6 +116,41 @@ def get_common_opts():
     ]
 
     return _COMMON
+
+
+def get_capabilities_opts():
+    capabilities = [
+        cfg.ListOpt('supported-actions',
+                    item_type=cfg.types.String(),
+                    default=DEFAULT_SUPPORTED_ACTIONS,
+                    dest='supported_actions',
+                    help='List of supported actions separated by comma.'
+                         'Other actions will be ignored. Default value is'
+                         f' "{DEFAULT_SUPPORTED_ACTIONS}"'),
+        cfg.ListOpt('supported-modes',
+                    item_type=cfg.types.String(),
+                    default=DEFAULT_SUPPORTED_MODES,
+                    dest='supported_modes',
+                    help='List of supported modes separated by comma.'
+                         'Other modes will be ignored. Default value is'
+                         f' "{DEFAULT_SUPPORTED_MODES}"'),
+        cfg.ListOpt('supported-storages',
+                    item_type=cfg.types.String(),
+                    default=DEFAULT_SUPPORTED_STORAGES,
+                    dest='supported_storages',
+                    help='List of supported storages separated by comma.'
+                         'Other storages will be ignored. Default value is'
+                         f' "{DEFAULT_SUPPORTED_STORAGES}"'),
+        cfg.ListOpt('supported-engines',
+                    item_type=cfg.types.String(),
+                    default=DEFAULT_SUPPORTED_ENGINES,
+                    dest='supported_engines',
+                    help='List of supported engines separated by comma.'
+                         'Other engines will be ignored. Default value is'
+                         f' "{DEFAULT_SUPPORTED_ENGINES}"'),
+    ]
+
+    return capabilities
 
 
 def build_os_options():
@@ -200,8 +241,17 @@ def build_os_options():
     return osclient_opts
 
 
+def configure_capabilities_options():
+    capabilities_group = cfg.OptGroup(
+        name='capabilities', title='Capabilities of the freezer-scheduler')
+    CONF.register_group(capabilities_group)
+    CONF.register_cli_opts(get_capabilities_opts(), group=capabilities_group)
+
+
 def parse_args(choices):
     default_conf = cfg.find_config_files('freezer', 'scheduler', '.conf')
+
+    configure_capabilities_options()
     CONF.register_cli_opts(get_common_opts())
     CONF.register_cli_opts(build_os_options())
     log.register_options(CONF)
