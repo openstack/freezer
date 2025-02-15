@@ -3,7 +3,7 @@ Install and configure for Red Hat Enterprise Linux and CentOS
 
 
 This section describes how to install and configure the Backup service
-for Red Hat Enterprise Linux 7 and CentOS 7.
+for Red Hat Enterprise Linux 9 and CentOS Stream 9.
 
 .. include:: common_prerequisites.rst
 
@@ -14,7 +14,7 @@ Install and configure components
 
    .. code-block:: console
 
-      $ sudo yum install python-dev python-pip
+      $ sudo dnf install python3-devel python3-pip
 
 .. include:: common_configure.rst
 
