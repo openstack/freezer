@@ -2,8 +2,8 @@
 Welcome to Freezer's documentation
 ==================================
 
-Freezer is a distributed backup restore and disaster recovery as a service
-platform. It is designed to be multi OS (Linux, Windows, OSX, BSD), focused
+Freezer is a distributed backup and restore as a service platform.
+It is designed to be multi OS (Linux, Windows, OSX, BSD), focused
 on providing efficiency and flexibility for block based backups, file based
 incremental backups, point-in-time actions, jobs synchronization (i.e. backup
 synchronization over multiple nodes) and many other features. It is aimed at

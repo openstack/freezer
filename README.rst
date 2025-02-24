@@ -12,7 +12,7 @@ OpenStack Freezer
 
 .. image:: freezer_logo.jpg
 
-Freezer is a Backup Restore DR as a Service platform that helps you to automate
+Freezer is a Backup and Restore Service platform that helps you to automate
 the data backup and restore process.
 
 The following features are available:
@@ -41,13 +41,10 @@ To learn how to use Freezer's API, consult the documentation available online
 at:
 
 - `Backup API Reference <https://docs.openstack.org/api-ref/backup/>`__
-- `Freezer API <https://github.com/openstack/freezer-api>`__
-
-Freezer Disaster Recovery:
-- `Freezer DR <https://github.com/openstack/freezer-dr>`__
+- `Freezer API <https://opendev.org/openstack/freezer-api>`__
 
 Freezer Horizon plugin:
-- `Freezer Web UI <https://github.com/openstack/freezer-web-ui>`__
+- `Freezer Web UI <https://opendev.org/openstack/freezer-web-ui>`__
 
 For more information on OpenStack APIs, SDKs and CLIs in general, refer to:
 
@@ -69,7 +66,7 @@ operating system vendor, it is often wise to use their own bug tracker for
 reporting problems. In all other cases use the master OpenStack bug tracker,
 available at:
 
-- `Bug Tracker <https://storyboard.openstack.org/#!/project/openstack/freezer>`__
+- `Bug Tracker <https://launchpad.net/freezer>`__
 
 Troubleshooting
 ---------------
@@ -109,10 +106,7 @@ During each `Summit`_ and `Project Team Gathering`_, we agree on what the whole
 community wants to focus on for the upcoming release. The plans for freezer can
 be found at:
 
-- `Freezer Old README <https://github.com/openstack/freezer/tree/master/doc/README.rst>`__
-
 - `Freezer Specs <http://specs.openstack.org/openstack/freezer-specs/>`__
 
-.. _Summit: https://www.openstack.org/summit/
-.. _Project Team Gathering: https://www.openstack.org/ptg/
-
+.. _Summit: https://openinfra.org/summit/
+.. _Project Team Gathering: https://openinfra.org/ptg/
