@@ -76,9 +76,26 @@ class FreezerScheduler(object):
         self.remove_job = self.scheduler.remove_job
         self.jobs = {}
 
+    def filter_jobs(self, job_doc_list):
+        """Filter jobs by supported capabilities.
+
+        :param list[dict] job_doc_list: list of jobs
+        :return: list of jobs
+        :rtype: list[dict]
+        """
+        jobs = []
+        for job_doc in job_doc_list:
+            job = scheduler_job.Job(self, self.freezerc_executable, job_doc)
+            if job.check_capabilities():
+                jobs.append(job_doc)
+            else:
+                LOG.debug(f'Job {job_doc["job_id"]} ignored: not supported')
+        return jobs
+
     def get_jobs(self):
         if self.client:
-            job_doc_list = utils.get_active_jobs_from_api(self.client)
+            job_doc_list = self.filter_jobs(
+                utils.get_active_jobs_from_api(self.client))
             try:
                 utils.save_jobs_to_disk(job_doc_list, self.job_path)
             except Exception as e:

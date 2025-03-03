@@ -146,3 +146,17 @@
 
 # Enables or disables fatal status of deprecations. (boolean value)
 #fatal_deprecations = false
+
+[capabilities]
+
+# List of supported actions separated by comma. Other actions will be ignored.
+#supported_actions = backup,restore,info,admin,exec
+
+# List of supported modes separated by comma. Other modes will be ignored.
+#supported_modes = fs,mongo,mysql,sqlserver,cinder,glance,cindernative,nova
+
+# List of supported storages separated by comma. Other storages will be ignored.
+#supported_storages = local,swift,ssh,s3,ftp,ftps
+
+# List of supported engines separated by comma. Other engines will be ignored.
+#supported_engines = tar,rsync,rsyncv2,nova,osbrick,glance

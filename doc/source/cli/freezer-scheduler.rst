@@ -305,6 +305,37 @@ OPTIONS
   Number of jobs that can be executed at the same time
 
 
+.. oslo.config:group:: capabilities
+
+.. oslo.config:option:: supported_actions
+
+    :Type: list
+    :Default: ``backup,restore,info,admin,exec``
+
+    List of supported actions separated by comma. Other actions will be ignored.
+
+.. oslo.config:option:: supported_modes
+
+    :Type: list
+    :Default: ``fs,mongo,mysql,sqlserver,cinder,glance,cindernative,nova``
+
+    List of supported modes separated by comma. Other modes will be ignored.
+
+.. oslo.config:option:: supported_storages
+
+    :Type: list
+    :Default: ``local,swift,ssh,s3,ftp,ftps``
+
+    List of supported storages separated by comma. Other storages will be ignored.
+
+.. oslo.config:option:: supported_engines
+
+    :Type: list
+    :Default: ``tar,rsync,rsyncv2,nova,osbrick,glance``
+
+    List of supported engines separated by comma. Other engines will be ignored.
+
+
 SEE ALSO
 ========
 
