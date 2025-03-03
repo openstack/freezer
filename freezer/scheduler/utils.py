@@ -18,12 +18,14 @@ import signal
 import socket
 
 from freezerclient import exceptions
+from oslo_config import cfg
 from oslo_log import log
 from oslo_serialization import jsonutils as json
 from oslo_utils import uuidutils
 import psutil
 
 
+CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
 CONFIG_FILE_EXT = '.conf'
@@ -33,7 +35,11 @@ def do_register(client, args=None):
     if client:
         client_info = {
             "client_id": client.client_id,
-            "hostname": socket.gethostname()
+            "hostname": socket.gethostname(),
+            "supported_actions": CONF.capabilities.supported_actions,
+            "supported_modes": CONF.capabilities.supported_modes,
+            "supported_storages": CONF.capabilities.supported_storages,
+            "supported_engines": CONF.capabilities.supported_engines,
         }
         try:
             client.clients.create(client_info)
