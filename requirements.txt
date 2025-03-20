@@ -1,9 +1,10 @@
-# The order of packages is significant, because pip processes them in the order
-# of appearance. Changing the order has an impact on the overall integration
-# process, which may cause wedges in the gate later.
+# Requirements lower bounds listed here are our best effort to keep them up to
+# date but we do not test them so no guarantee of having them all correct. If
+# you find any incorrect lower bounds, let us know or propose a fix.
+pbr>=4.0.0 # Apache-2.0
+
 botocore>=1.5.1 # Apache-2.0
 setuptools!=24.0.0,!=34.0.0,!=34.0.1,!=34.0.2,!=34.0.3,!=34.1.0,!=34.1.1,!=34.2.0,!=34.3.0,!=34.3.1,!=34.3.2,!=36.2.0,>=21.0.0 # PSF/ZPL
-pbr!=2.1.0,>=2.0.0 # Apache-2.0
 python-swiftclient>=3.2.0 # Apache-2.0
 python-cinderclient>=3.3.0 # Apache-2.0
 python-glanceclient>=2.8.0 # Apache-2.0
@@ -11,13 +12,13 @@ python-keystoneclient>=3.8.0 # Apache-2.0
 python-novaclient>=9.1.0 # Apache-2.0
 python-neutronclient>=6.7.0 # Apache-2.0
 python-freezerclient>=2.0.0 # Apache-2.0
-oslo.serialization>=2.25.0 # Apache-2.0
-oslo.utils>=3.33.0 # Apache-2.0
-oslo.log>=3.36.0 # Apache-2.0
-oslo.config>=6.0.0 # Apache-2.0
-keystoneauth1>=3.4.0 # Apache-2.0
-os-brick>=2.2.0 # Apache-2.0
+oslo.serialization>=5.5.0 # Apache-2.0
+oslo.utils>=7.3.0 # Apache-2.0
+oslo.log>=5.3.0 # Apache-2.0
+oslo.config>=9.4.0 # Apache-2.0
 oslo.service!=1.28.1,>=1.24.0 # Apache-2.0
+keystoneauth1>=3.14.0 # Apache-2.0
+os-brick>=2.2.0 # Apache-2.0
 
 cryptography>=2.5 # Apache-2.0
 PyMySQL>=0.7.6 # MIT License
