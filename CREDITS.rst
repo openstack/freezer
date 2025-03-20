@@ -28,6 +28,10 @@ Contributors
 -  Jonas Pfannschmidt
 -  Deklan Dieterly
 -  Pierre Mathieu
+-  Dmitriy Rabotyagov
+-  Volodymyr Mevsha
+-  Ivan Anfimov
+-  Dmitriy Chubinidze
 
 Credits
 =======
@@ -44,4 +48,5 @@ Credits
 -  HP OpsAuto Team
 -  Jon Otero Fernández (logo)
 -  ZTE TECS Team
-
+-  Advanced Hosters B.V.
+-  Napa Labs
