@@ -70,11 +70,13 @@ class S3Storage(physical.PhysicalStorage):
 
     def put_file(self, from_path, to_path):
         split = to_path.split('/', 1)
-        self.get_s3_connection().put_object(
-            Bucket=split[0],
-            Key=split[1],
-            Body=open(from_path, 'r')
-        )
+        with open(from_path, 'rb') as f:
+            self.get_s3_connection().put_object(
+                Bucket=split[0],
+                Key=split[1],
+                Body=f,
+                ContentLength=len(f),
+            )
 
     def get_s3_connection(self):
         """
@@ -142,7 +144,8 @@ class S3Storage(physical.PhysicalStorage):
         self.get_s3_connection().put_object(
             Bucket=self.get_bucket_name(),
             Body=json.dumps(headers),
-            Key=backup_meta_data
+            Key=backup_meta_data,
+            ContentLength=len(json.dumps(headers)),
         )
 
     def upload_stream(self, backup_basepath, stream):
@@ -154,12 +157,21 @@ class S3Storage(physical.PhysicalStorage):
         uploaded_parts = []
         try:
             for el in stream:
+                if isinstance(el, str):
+                    body_bytes = el.encode('utf-8')
+                elif isinstance(el, bytes):
+                    body_bytes = el
+                else:
+                    LOG.error(f"Stream yielded unexpected type {type(el)} "
+                              "for part {upload_part_index}. Skipping.")
+                    continue
                 response = self.get_s3_connection().upload_part(
-                    Body=el,
+                    Body=body_bytes,
                     Bucket=self.get_bucket_name(),
                     Key=backup_basepath,
                     PartNumber=upload_part_index,
-                    UploadId=upload_id
+                    UploadId=upload_id,
+                    ContentLength=len(body_bytes),
                 )
                 uploaded_parts.append({
                     'PartNumber': upload_part_index,
@@ -280,5 +292,6 @@ class S3Storage(physical.PhysicalStorage):
         self.get_s3_connection().put_object(
             Bucket=bucket_name,
             Key=key,
-            Body=data
+            Body=data,
+            ContentLength=len(data),
         )
