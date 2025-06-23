@@ -16,9 +16,6 @@ import shutil
 import tempfile
 import unittest
 
-# from unittest import mock
-# from mock import patch
-
 from freezer.utils import crypt
 
 
@@ -61,8 +58,6 @@ class AESCipherTestCase(unittest.TestCase):
         passwd = crypt.AESCipher._get_pass_from_file(pfile)
         self.assertEqual(passwd, '78f40f2c57eee727a4be179049cecf89')
 
-#    @unittest.skipIf(sys.version_info.major == 3,
-#                     'Not supported on python v 3.x')
     def test_derive_key_and_iv(self):
         passwd = b'ababab'
         salt = b'a'
