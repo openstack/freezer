@@ -30,7 +30,7 @@ class TestChecksum(unittest.TestCase):
         self.hello_world_sha256sum = ('17b949eb67acf16bbf2605d57a01f7af4ff4b5'
                                       '7e200259de63fcebf20e75bbf5')
 
-        self.fake_file = io.StringIO(u"hello world\n")
+        self.fake_file = io.StringIO("hello world\n")
         self.increment_hash_one = self.hello_world_sha256sum
         self.increment_hash_multi = ('1b4bc4ff41172a5f29eaeffb7e9fc24c683c693'
                                      '9ab30132ad5d93a1e4a6b16e8')
@@ -92,7 +92,7 @@ class TestChecksum(unittest.TestCase):
         """
         mock_isfile.return_value = False
         chksum = CheckSum('onedir')
-        chksum.get_hash(u"./emptydir")
+        chksum.get_hash("./emptydir")
         self.assertEqual(self.increment_hash_emptydir, chksum._increment_hash)
 
     @patch('freezer.utils.checksum.CheckSum.get_files_hashes_in_path')
