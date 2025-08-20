@@ -19,6 +19,7 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
+from freezer.scheduler.arguments import configure_capabilities_options
 from freezer.scheduler import utils
 
 job_list = [{"job_id": "test"}]
@@ -32,6 +33,9 @@ class TestUtils(unittest.TestCase):
         self.client.client_id = "test"
 
     def test_do_register(self):
+        # Workaround race condition with other tests and
+        # ensure capabilities group is registered
+        configure_capabilities_options()
         ret = utils.do_register(self.client, args=None)
         self.assertEqual(0, ret)
 
