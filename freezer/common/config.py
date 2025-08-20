@@ -86,7 +86,7 @@ DEFAULT_PARAMS = {
     'glance_image_name': '',
     'glance_image_name_filter': '',
     'hostname': None,
-    'incremental': None,
+    'incremental': False,
     'insecure': False,
     'log_file': None,
     'log_level': "info",
