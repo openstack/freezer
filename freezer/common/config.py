@@ -90,7 +90,6 @@ DEFAULT_PARAMS = {
     'insecure': False,
     'log_file': None,
     'log_level': "info",
-    'lvm_auto_snap': None,
     'lvm_dirmount': None,
     'lvm_volgroup': None,
     'lvm_snapname': None,
