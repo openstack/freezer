@@ -13,7 +13,6 @@
 # under the License.
 
 import io
-import sys
 import unittest
 from unittest import mock
 from unittest.mock import patch
@@ -69,8 +68,6 @@ class TestChecksum(unittest.TestCase):
         with self.assertRaises(ValueError):
             CheckSum('nope', 'bulshit')
 
-    @unittest.skipIf(sys.version_info.major == 2,
-                     'Not supported on python v 2.7')
     @patch('builtins.open')
     @patch('freezer.utils.checksum.os.path.isfile')
     def test_get_hash_files(self, mock_isfile, mock_open):
