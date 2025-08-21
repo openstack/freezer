@@ -86,7 +86,7 @@ DEFAULT_PARAMS = {
     'ssh_port': DEFAULT_SSH_PORT,
     'access_key': '', 'secret_key': '', 'endpoint': '',
     'compression': 'gzip', 'overwrite': False,
-    'incremental': None, 'consistency_check': False,
+    'incremental': False, 'consistency_check': False,
     'consistency_checksum': None, 'nova_restore_network': None,
     'cindernative_backup_id': None, 'sync': True, 'engine_name': 'tar',
     'timeout': 120, 'project_id': None, 'ftp_username': '',
