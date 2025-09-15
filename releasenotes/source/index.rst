@@ -22,6 +22,7 @@ Contents
    :maxdepth: 2
 
    unreleased
+   2025.2
    2025.1
    2023.2
    2023.1
