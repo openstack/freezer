@@ -1,3 +1,51 @@
 [build-system]
-requires = ["pbr>=6.0.0", "setuptools>=64.0.0"]
+requires = ["pbr>=6.1.1"]
 build-backend = "pbr.build"
+
+[project]
+name = "freezer"
+description = "OpenStack Backup and Restore as a Service Platform"
+authors = [
+    {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
+]
+readme = {file = "README.rst", content-type = "text/x-rst"}
+license = {text = "Apache-2.0"}
+dynamic = ["version", "dependencies"]
+requires-python = ">=3.10"
+classifiers = [
+  "Environment :: OpenStack",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[project.urls]
+Homepage = "https://docs.openstack.org/freezer/latest/"
+Repository = "https://opendev.org/openstack/freezer"
+
+[tool.setuptools]
+packages = [
+    "freezer"
+]
+
+[tool.setuptools.data-files]
+"freezer/scripts" = [
+    "freezer/scripts/vss.ps1",
+]
+
+[project.entry-points."oslo.config.opts"]
+freezer-agent = "freezer.common.config:list_opts"
+freezer-scheduler = "freezer.scheduler.arguments:list_opts"
+
+[project.entry-points."console_scripts"]
+freezer-scheduler = "freezer.scheduler.freezer_scheduler:main"
+freezer-agent = "freezer.main:main"
