@@ -91,7 +91,8 @@ class TestNovaEngineSwiftStorage(TestNovaEngine):
         self.mock_swift_storage = mock.MagicMock()
         self.mock_swift_storage._type = 'swift'
 
-        self.engine = nova.NovaEngine(self.mock_swift_storage)
+        with mock.patch('openstack.connection.Connection'):
+            self.engine = nova.NovaEngine(self.mock_swift_storage)
         self.engine.client = self.backup_opt.client_manager
         self.engine.client.create_swift = mock.Mock(
             return_value=self.mock_swift_connection)
@@ -146,7 +147,8 @@ class TestNovaEngineFSLikeStorage(TestNovaEngine):
             self.mock_fslike_storage.storage_path,
             "project_test-project-id")
 
-        self.engine = nova.NovaEngine(self.mock_fslike_storage)
+        with mock.patch('openstack.connection.Connection'):
+            self.engine = nova.NovaEngine(self.mock_fslike_storage)
         self.engine.client = self.backup_opt.client_manager
         self.engine.backup = mock.Mock()
         self.engine.restore = mock.Mock()
@@ -199,7 +201,8 @@ class TestNovaEngineS3Storage(TestNovaEngine):
 
         self.mock_s3_storage._type = 's3'
 
-        self.engine = nova.NovaEngine(self.mock_s3_storage)
+        with mock.patch('openstack.connection.Connection'):
+            self.engine = nova.NovaEngine(self.mock_s3_storage)
         self.engine.client = self.backup_opt.client_manager
         self.engine.backup = mock.Mock()
         self.engine.restore = mock.Mock()

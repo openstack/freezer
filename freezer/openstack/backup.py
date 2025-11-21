@@ -82,7 +82,7 @@ class BackupOs(object):
         LOG.debug("Deleting temporary volume")
         cinder.volumes.delete(copied_volume)
         LOG.debug("Deleting temporary image")
-        client_manager.get_glance().images.delete(image.id)
+        client_manager.get_glance().delete_image(image.id)
 
     def backup_cinder(self, volume_id, name=None, description=None,
                       incremental=False):

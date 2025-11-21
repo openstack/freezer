@@ -19,7 +19,6 @@ from io import BytesIO
 import os
 from unittest import mock
 
-from glanceclient.common import utils as glance_utils
 from oslo_config import cfg
 from oslo_config import fixture as cfg_fixture
 import testtools
@@ -204,29 +203,24 @@ class FakeCinderClient(object):
 
 class FakeGlanceClient(object):
     def __init__(self):
-        self.images = FakeGlanceClient.Images()
+        pass
 
-    class Images(object):
-        def __init__(self):
-            pass
+    def download_image(self, image, stream=False):
+        return BytesIO(b"abc")
 
-        @staticmethod
-        def data(image):
-            return glance_utils.IterableWithLength(BytesIO(b"abc"), 3)
+    def delete_image(self, image):
+        pass
 
-        @staticmethod
-        def delete(image):
-            pass
+    def get_image(self, image_id):
+        image = FakeIdObject("5")
+        setattr(image, 'status', 'active')
+        return image
 
-        @staticmethod
-        def get(image_id):
-            image = FakeIdObject("5")
-            setattr(image, 'status', 'active')
-            return image
+    def create_image(self, **kwargs):
+        return FakeIdObject("10")
 
-        @staticmethod
-        def create(data, container_format, disk_format):
-            return FakeIdObject("10")
+    def upload_image(self, image_id, data):
+        pass
 
 
 class FakeSwiftClient(object):

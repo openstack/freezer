@@ -165,7 +165,7 @@ class GlanceEngine(engine.BackupEngine):
                              restart_always_level):
         # import pdb;pdb.set_trace()
         image_ids = [image.id for image in
-                     self.glance.images.list(detailed=False)]
+                     self.glance.images()]
         data = json.dumps(image_ids)
         LOG.info("Saving information about image {0}".format(data))
 
@@ -228,7 +228,7 @@ class GlanceEngine(engine.BackupEngine):
 
     def backup_data(self, backup_resource, manifest_path):
         # import pdb;pdb.set_trace()
-        image = self.glance.images.get(backup_resource)
+        image = self.glance.get_image(backup_resource)
         if not image:
             raise Exception(
                 "Image {0} can't be found.".format(backup_resource)
@@ -262,13 +262,13 @@ class GlanceEngine(engine.BackupEngine):
     @staticmethod
     def image_active(glance_client, image_id):
         """Check if the image is in the active state or not"""
-        image = glance_client.images.get(image_id)
+        image = glance_client.get_image(image_id)
         return image.status == 'active'
 
     def metadata(self, backup_resource):
         """Construct metadata"""
         # import pdb;pdb.set_trace()
-        image_info = self.glance.images.get(backup_resource)
+        image_info = self.glance.get_image(backup_resource)
         return {
             "engine_name": self.name,
             "image": image_info,

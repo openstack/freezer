@@ -52,7 +52,8 @@ class TestOsClients(unittest.TestCase):
     def test_get_swift(self):
         self.client_manager.get_swift()
 
-    def test_get_glance(self):
+    @mock.patch('openstack.connection.Connection')
+    def test_get_glance(self, mock_connection):
         self.client_manager.get_glance()
 
     def test_get_nova(self):

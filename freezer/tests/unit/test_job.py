@@ -30,7 +30,8 @@ class TestJob(commons.FreezerBaseTestCase):
 
     def test_execute(self):
         opt = commons.BackupOpt1()
-        job = jobs.InfoJob(opt, opt.storage)
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.InfoJob(opt, opt.storage)
         assert job.execute() is not None
 
 
@@ -38,12 +39,14 @@ class TestInfoJob(TestJob):
 
     def test_execute_nothing_to_do(self):
         backup_opt = commons.BackupOpt1()
-        job = jobs.InfoJob(backup_opt, backup_opt.storage)
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.InfoJob(backup_opt, backup_opt.storage)
         job.execute()
 
     def test_execute_list_containers(self):
         backup_opt = commons.BackupOpt1()
-        job = jobs.InfoJob(backup_opt, backup_opt.storage)
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.InfoJob(backup_opt, backup_opt.storage)
         job.execute()
 
 
@@ -57,7 +60,8 @@ class TestBackupJob(TestJob):
         backup_opt.no_incremental = True
         backup_opt.max_level = None
         backup_opt.always_level = None
-        job = jobs.BackupJob(backup_opt, backup_opt.storage)
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.BackupJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)  # noqa
 
 
@@ -67,7 +71,8 @@ class TestAdminJob(TestJob):
 
     def test_execute(self):
         backup_opt = commons.BackupOpt1()
-        jobs.AdminJob(backup_opt, backup_opt.storage).execute()
+        with mock.patch('openstack.connection.Connection'):
+            jobs.AdminJob(backup_opt, backup_opt.storage).execute()
 
 
 class TestExecJob(TestJob):
@@ -88,13 +93,15 @@ class TestExecJob(TestJob):
         self.mock_popen.return_value.returncode = 0
         backup_opt = commons.BackupOpt1()
         backup_opt.command = 'ls '
-        jobs.ExecJob(backup_opt, backup_opt.storage).execute()
+        with mock.patch('openstack.connection.Connection'):
+            jobs.ExecJob(backup_opt, backup_opt.storage).execute()
 
     def test_execute_script(self):
         self.mock_popen.return_value.returncode = 0
         backup_opt = commons.BackupOpt1()
         backup_opt.command = 'echo test'
-        jobs.ExecJob(backup_opt, backup_opt.storage).execute()
+        with mock.patch('openstack.connection.Connection'):
+            jobs.ExecJob(backup_opt, backup_opt.storage).execute()
 
     def test_execute_raise(self):
         self.popen = patch('freezer.utils.exec_cmd.subprocess.Popen')
@@ -102,5 +109,6 @@ class TestExecJob(TestJob):
         self.mock_popen.return_value.returncode = 1
         backup_opt = commons.BackupOpt1()
         backup_opt.command = 'echo test'
-        job = jobs.ExecJob(backup_opt, backup_opt.storage)
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.ExecJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)  # noqa

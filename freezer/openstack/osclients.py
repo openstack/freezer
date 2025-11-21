@@ -17,11 +17,11 @@ import os
 import time
 
 from cinderclient import client as cinder_client
-from glanceclient import client as glance_client
 from keystoneauth1 import loading
 from keystoneauth1 import session
 from neutronclient.v2_0 import client as neutron_client
 from novaclient import client as nova_client
+from openstack import connection as os_conn
 from oslo_config import cfg
 from oslo_log import log
 import swiftclient
@@ -99,14 +99,7 @@ class OSClientManager(object):
         Use pre-initialized session to create an instance of glance client.
         :return: glanceclient instance
         """
-        if 'endpoint_type' in self.client_kwargs.keys():
-            self.client_kwargs.pop('endpoint_type')
-        if 'insecure' in self.client_kwargs.keys():
-            self.client_kwargs.pop('insecure')
-
-        self.glance = glance_client.Client(self.image_version,
-                                           session=self.sess,
-                                           **self.client_kwargs)
+        self.glance = os_conn.Connection(session=self.sess).image
         return self.glance
 
     def create_cinder(self):
@@ -280,18 +273,18 @@ class OSClientManager(object):
             image_name=image_volume_name,
             container_format="bare",
             disk_format="raw")[1]["os-volume_upload_image"]["image_id"]
-        image = self.get_glance().images.get(image_id)
+        image = self.get_glance().get_image(image_id)
         while image.status != "active":
             try:
                 time.sleep(5)
                 LOG.info("Image status: " + image.status)
-                image = self.get_glance().images.get(image.id)
+                image = self.get_glance().get_image(image.id)
                 if image.status in ("killed", "deleted"):
                     raise RuntimeError("Image in killed or deleted state")
             except RuntimeError:
                 if image.status == 'killed':
                     LOG.info("Delete image in killed state " + image_id)
-                    self.get_glance().images.delete(image_id)
+                    self.get_glance().delete_image(image_id)
                 raise Exception("Delete image in killed state " + image_id)
             except Exception as e:
                 if hasattr(e, 'code') and e.code == 404:
@@ -316,7 +309,7 @@ class OSClientManager(object):
         :return: stream of image data
         """
         LOG.debug("Download image enter")
-        stream = self.get_glance().images.data(image.id)
+        stream = self.get_glance().download_image(image.id, stream=True)
         LOG.debug("Stream with size {0}".format(image.size))
         return utils.ReSizeStream(stream, image.size,
                                   CONF.get('max_segment_size'))
@@ -324,20 +317,20 @@ class OSClientManager(object):
     def create_image(self, name, container_format, disk_format, data=None):
         LOG.info("Creating glance image")
         glance = self.get_glance()
-        image = glance.images.create(name=name,
-                                     container_format=container_format,
-                                     disk_format=disk_format)
+        image = glance.create_image(name=name,
+                                    container_format=container_format,
+                                    disk_format=disk_format)
         if image is None:
             msg = "Failed to create glance image {}".format(name)
             LOG.error(msg)
             raise BaseException(msg)
         if data is None:
             return image
-        glance.images.upload(image.id, data)
+        glance.upload_image(image.id, data)
         while image.status not in ('active', 'killed'):
             LOG.info("Waiting for glance image upload")
             time.sleep(5)
-            image = glance.images.get(image.id)
+            image = glance.get_image(image.id)
         if image.status == 'killed':
             raise BaseException('Failed to upload data into image')
         LOG.info("Created glance image {}".format(image.id))

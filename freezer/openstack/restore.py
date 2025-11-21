@@ -289,4 +289,4 @@ class RestoreOs(object):
                     LOG.warning("Exception getting volume status")
 
         LOG.info("Deleting temporary image {}".format(image.id))
-        self.client_manager.get_glance().images.delete(image.id)
+        self.client_manager.get_glance().delete_image(image.id)
