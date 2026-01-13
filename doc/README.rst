@@ -939,6 +939,7 @@ Available options::
                      [--download-limit DOWNLOAD_LIMIT] [--dry-run]
                      [--encrypt-pass-file ENCRYPT_PASS_FILE]
                      [--exclude EXCLUDE] [--hostname HOSTNAME] [--insecure]
+                     [--incremental]
                      [--log-config-append PATH]
                      [--log-date-format DATE_FORMAT] [--log-dir LOG_DIR]
                      [--log-file PATH] [--log-format FORMAT]
@@ -952,8 +953,9 @@ Available options::
                      [--max-segment-size MAX_SEGMENT_SIZE]
                      [--metadata-out METADATA_OUT] [--mode MODE]
                      [--mysql-conf MYSQL_CONF]
-                     [--no-incremental NO_INCREMENTAL] [--nodebug]
-                     [--nodry-run] [--noinsecure] [--nooverwrite] [--noquiet]
+                     [--nodebug]
+                     [--nodry-run] [--noincremental] [--noinsecure]
+                     [--nooverwrite] [--noquiet]
                      [--nouse-syslog] [--nouse-syslog-rfc-format]
                      [--nova-inst-id NOVA_INST_ID] [--noverbose]
                      [--nova-inst-name NOVA_INST_NAME]
@@ -1040,6 +1042,11 @@ optional arguments:
                         belonging to another host then you can set this option
                         that hostname and execute appropriate actions. Default
                         current node hostname.
+  --incremental         When the option is set, freezer will perform a
+                        cindernative incremental backup instead of the
+                        default full backup. And if True, but volume do not
+                        have a base full backup, freezer will do a full
+                        backup first
   --insecure            Allow to access swift servers without checking SSL
                         certs.
   --log-config-append PATH, --log_config PATH
@@ -1115,13 +1122,9 @@ optional arguments:
                         password, host, port. Following is an example of
                         config file: # backup_mysql_confhost = <db-host>user =
                         <mysqluser>password = <mysqlpass>port = <db-port>
-  --no-incremental NO_INCREMENTAL
-                        Disable incremental feature. By default freezer build
-                        the meta data even for level 0 backup. By setting this
-                        option incremental meta data is not created at all.
-                        Default disabled
   --nodebug             The inverse of --debug
   --nodry-run           The inverse of --dry-run
+  --noincremental       The inverse of --incremental
   --noinsecure          The inverse of --insecure
   --nooverwrite         The inverse of --overwrite
   --noquiet             The inverse of --quiet

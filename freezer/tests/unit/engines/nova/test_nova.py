@@ -65,7 +65,7 @@ class TestNovaEngine(commons.FreezerBaseTestCase):
                 backup_resource=inst_id,
                 hostname_backup_name=os.path.join(self.backup_opt.backup_name,
                                                   inst_id),
-                no_incremental=self.backup_opt.no_incremental,
+                incremental=self.backup_opt.incremental,
                 max_level=self.backup_opt.max_level,
                 always_level=self.backup_opt.always_level,
                 restart_always_level=self.backup_opt.restart_always_level)
@@ -103,7 +103,7 @@ class TestNovaEngineSwiftStorage(TestNovaEngine):
     def test_backup_nova_tenant_to_swift_storage(self):
         self.engine.backup_nova_tenant(self.project_id,
                                        self.backup_opt.backup_name,
-                                       self.backup_opt.no_incremental,
+                                       self.backup_opt.incremental,
                                        self.backup_opt.max_level,
                                        self.backup_opt.always_level,
                                        self.backup_opt.restart_always_level)
@@ -160,7 +160,7 @@ class TestNovaEngineFSLikeStorage(TestNovaEngine):
         self.mock_fslike_storage._type = storage_type
         self.engine.backup_nova_tenant(self.project_id,
                                        self.backup_opt.backup_name,
-                                       self.backup_opt.no_incremental,
+                                       self.backup_opt.incremental,
                                        self.backup_opt.max_level,
                                        self.backup_opt.always_level,
                                        self.backup_opt.restart_always_level)
@@ -211,7 +211,7 @@ class TestNovaEngineS3Storage(TestNovaEngine):
     def test_backup_nova_tenant_to_s3_storage(self):
         self.engine.backup_nova_tenant(self.project_id,
                                        self.backup_opt.backup_name,
-                                       self.backup_opt.no_incremental,
+                                       self.backup_opt.incremental,
                                        self.backup_opt.max_level,
                                        self.backup_opt.always_level,
                                        self.backup_opt.restart_always_level)

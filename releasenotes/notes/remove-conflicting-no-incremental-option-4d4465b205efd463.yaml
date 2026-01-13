@@ -1,0 +1,20 @@
+---
+prelude: >
+    Up to now, Freezer offered two options for job configurations called
+    ``incremental`` and ``no_incremental``. Both options could be set
+    independently from one another and defaulted to conflicting values.
+    The ``freezer-agent`` CLI offered conflicting ``--noincremental`` and
+    ``--no-incremental`` flags, which were interpreted differently.
+    Parts of the backup and restore procedures were using one option and other
+    parts the other option, leading to inconsistent behavior.
+    With this release the ``no_incremental`` option and corresponding
+    ``--no-incremental`` flag are removed.
+    Users can instead set ``incremental`` to ``false`` in jobs or use the
+    ``--noincremental`` flag in the agent to achieve the same behavior.
+upgrade:
+  - |
+    The ``no_incremental`` option for Freezer jobs and the
+    ``--no-incremental`` flag for the ``freezer-agent`` CLI have been removed.
+    They are functionally replaced with setting the existing ``incremental``
+    job option to ``false`` or using the existing ``--noincremental`` flag
+    respectively.

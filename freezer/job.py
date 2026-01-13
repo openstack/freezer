@@ -141,13 +141,12 @@ class BackupJob(Job):
         if self.conf.mode == 'fs':
             if not self.conf.path_to_backup:
                 raise ValueError('path-to-backup argument must be provided')
-            if self.conf.no_incremental and (self.conf.max_level or
-                                             self.conf.always_level):
+            if not self.conf.incremental and (self.conf.max_level or
+                                              self.conf.always_level):
                 raise Exception(
-                    'no-incremental option is not compatible '
-                    'with backup level options')
+                    'backup-level options require the incremental option')
         elif self.conf.mode == 'nova':
-            if not self.conf.no_incremental:
+            if self.conf.incremental:
                 raise ValueError("Incremental nova backup is not supported")
 
             if not self.conf.nova_inst_id and not self.conf.project_id \
@@ -155,7 +154,7 @@ class BackupJob(Job):
                 raise ValueError("nova-inst-id or project-id or nova-inst-name"
                                  " argument must be provided")
         elif self.conf.mode == 'glance':
-            if not self.conf.no_incremental:
+            if self.conf.incremental:
                 raise ValueError("Incremental glance backup is not supported")
 
             if not self.conf.glance_image_id and not self.conf.project_id \
@@ -280,7 +279,7 @@ class BackupJob(Job):
                 return self.engine.backup(
                     backup_resource=filepath,
                     hostname_backup_name=self.conf.hostname_backup_name,
-                    no_incremental=self.conf.no_incremental,
+                    incremental=self.conf.incremental,
                     max_level=self.conf.max_level,
                     always_level=self.conf.always_level,
                     restart_always_level=self.conf.restart_always_level)
@@ -298,7 +297,7 @@ class BackupJob(Job):
                 return self.engine.backup_nova_tenant(
                     project_id=self.conf.project_id,
                     hostname_backup_name=self.conf.hostname_backup_name,
-                    no_incremental=self.conf.no_incremental,
+                    incremental=self.conf.incremental,
                     max_level=self.conf.max_level,
                     always_level=self.conf.always_level,
                     restart_always_level=self.conf.restart_always_level)
@@ -313,7 +312,7 @@ class BackupJob(Job):
                 return self.engine.backup(
                     backup_resource=self.conf.nova_inst_id,
                     hostname_backup_name=hostname_backup_name,
-                    no_incremental=self.conf.no_incremental,
+                    incremental=self.conf.incremental,
                     max_level=self.conf.max_level,
                     always_level=self.conf.always_level,
                     restart_always_level=self.conf.restart_always_level)
@@ -329,7 +328,7 @@ class BackupJob(Job):
                         self.engine.backup(
                             backup_resource=instance_id,
                             hostname_backup_name=hostname_backup_name,
-                            no_incremental=self.conf.no_incremental,
+                            incremental=self.conf.incremental,
                             max_level=self.conf.max_level,
                             always_level=self.conf.always_level,
                             restart_always_level=self.conf.restart_always_level
@@ -342,7 +341,7 @@ class BackupJob(Job):
                 return self.engine.backup_glance_tenant(
                     project_id=self.conf.project_id,
                     hostname_backup_name=self.conf.hostname_backup_name,
-                    no_incremental=self.conf.no_incremental,
+                    incremental=self.conf.incremental,
                     max_level=self.conf.max_level,
                     always_level=self.conf.always_level,
                     restart_always_level=self.conf.restart_always_level)
@@ -357,7 +356,7 @@ class BackupJob(Job):
                 return self.engine.backup(
                     backup_resource=self.conf.glance_image_id,
                     hostname_backup_name=hostname_backup_name,
-                    no_incremental=self.conf.no_incremental,
+                    incremental=self.conf.incremental,
                     max_level=self.conf.max_level,
                     always_level=self.conf.always_level,
                     restart_always_level=self.conf.restart_always_level)
@@ -373,7 +372,7 @@ class BackupJob(Job):
                         self.engine.backup(
                             backup_resource=image_id,
                             hostname_backup_name=hostname_backup_name,
-                            no_incremental=self.conf.no_incremental,
+                            incremental=self.conf.incremental,
                             max_level=self.conf.max_level,
                             always_level=self.conf.always_level,
                             restart_always_level=self.conf.restart_always_level
@@ -417,7 +416,7 @@ class BackupJob(Job):
             return self.engine.backup(
                 backup_resource=self.conf.cinderbrick_vol_id,
                 hostname_backup_name=self.conf.hostname_backup_name,
-                no_incremental=self.conf.no_incremental,
+                incremental=self.conf.incremental,
                 max_level=self.conf.max_level,
                 always_level=self.conf.always_level,
                 restart_always_level=self.conf.restart_always_level)
@@ -443,11 +442,10 @@ class RestoreJob(Job):
             raise ValueError("--restore-abs-path is required")
         if not self.conf.container:
             raise ValueError("--container is required")
-        if self.conf.no_incremental and (self.conf.max_level or
-                                         self.conf.always_level):
+        if not self.conf.incremental and (self.conf.max_level or
+                                          self.conf.always_level):
             raise Exception(
-                'no-incremental option is not compatible '
-                'with backup level options')
+                'incremental option is required for backup level options')
 
     def execute(self):
         conf = self.conf
