@@ -37,10 +37,12 @@ class TestOsClients(unittest.TestCase):
     def test_create_swift(self):
         self.client_manager.create_swift()
 
-    def test_create_nova(self):
+    @mock.patch('openstack.connection.Connection')
+    def test_create_nova(self, mock_connection):
         self.client_manager.create_nova()
 
-    def test_create_neutron(self):
+    @mock.patch('openstack.connection.Connection')
+    def test_create_neutron(self, mock_connection):
         self.client_manager.create_neutron()
 
     def test_dry_run(self):
@@ -56,8 +58,10 @@ class TestOsClients(unittest.TestCase):
     def test_get_glance(self, mock_connection):
         self.client_manager.get_glance()
 
-    def test_get_nova(self):
+    @mock.patch('openstack.connection.Connection')
+    def test_get_nova(self, mock_connection):
         self.client_manager.get_nova()
 
-    def test_get_neutron(self):
+    @mock.patch('openstack.connection.Connection')
+    def test_get_neutron(self, mock_connection):
         self.client_manager.get_neutron()

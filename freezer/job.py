@@ -56,7 +56,7 @@ class Job(metaclass=abc.ABCMeta):
         self._validate()
         if self.conf.nova_inst_name:
             self.nova_instance_ids = [server.id for server in
-                                      self.nova.servers.list(detailed=False)
+                                      self.nova.servers(details=False)
                                       if server.name ==
                                       self.conf.nova_inst_name]
         if self.conf.cinder_vol_name:

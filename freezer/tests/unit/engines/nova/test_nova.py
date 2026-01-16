@@ -57,7 +57,7 @@ class TestNovaEngine(commons.FreezerBaseTestCase):
                         self.instance_ids]
 
         self.mock_nova = mock.MagicMock()
-        self.mock_nova.servers.list = mock.Mock(return_value=servers_list)
+        self.mock_nova.servers = mock.Mock(return_value=servers_list)
         self.backup_opt.client_manager = mock.MagicMock()
         self.backup_opt.client_manager.get_nova.return_value = self.mock_nova
         self.expected_backup_calls = [
@@ -108,7 +108,7 @@ class TestNovaEngineSwiftStorage(TestNovaEngine):
                                        self.backup_opt.always_level,
                                        self.backup_opt.restart_always_level)
 
-        self.mock_nova.servers.list.assert_called_once_with(detailed=False)
+        self.mock_nova.servers.assert_called_once_with(details=False)
         self.engine.client.create_swift.assert_called_once()
         self.mock_swift_connection.put_object.assert_called_with(
             self.mock_swift_storage.storage_path,
@@ -165,7 +165,7 @@ class TestNovaEngineFSLikeStorage(TestNovaEngine):
                                        self.backup_opt.always_level,
                                        self.backup_opt.restart_always_level)
 
-        self.mock_nova.servers.list.assert_called_once_with(detailed=False)
+        self.mock_nova.servers.assert_called_once_with(details=False)
         self.mock_fslike_storage.open.assert_called_once_with(
             self.local_backup_file,
             'w')
@@ -216,7 +216,7 @@ class TestNovaEngineS3Storage(TestNovaEngine):
                                        self.backup_opt.always_level,
                                        self.backup_opt.restart_always_level)
 
-        self.mock_nova.servers.list.assert_called_once_with(detailed=False)
+        self.mock_nova.servers.assert_called_once_with(details=False)
         self.mock_s3_storage.put_object.assert_called_with(
             bucket_name=self.mock_s3_storage.get_bucket_name(),
             key="{0}/project_test-project-id".format(

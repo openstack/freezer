@@ -118,22 +118,22 @@ class NovaEngine(engine.BackupEngine):
             server_info = metadata.get('server', {})
             length = int(engine_metadata.get('length'))
             available_networks = server_info.get('addresses')
-            nova_networks = self.neutron.list_networks()['networks']
+            nova_networks = self.neutron.networks()
 
             net_names = [network for network, _ in
                          available_networks.items()]
-            match_networks = [{"net-id": network.get('id')} for network in
+            match_networks = [{"uuid": network.id} for network in
                               nova_networks
-                              if network.get('name') in net_names]
+                              if network.name in net_names]
 
             stream = self.stream_image(read_pipe)
             data = utils.ReSizeStream(stream, length, 1)
             image = self.client.create_image(
-                "Restore: {0}".format(
+                "restore_{0}".format(
                     server_info.get('name', server_info.get('id', None))
                 ),
-                'bare',
-                'raw',
+                engine_metadata.get('image_container_format', 'bare'),
+                engine_metadata.get('image_disk_format', 'raw'),
                 data=data
             )
 
@@ -162,11 +162,15 @@ class NovaEngine(engine.BackupEngine):
                         " active".format(image.id),
                 kwargs={"glance_client": self.glance, "image_id": image.id}
             )
-            server = self.nova.servers.create(
+            # note: nova may have returned the flavor's name mislabeled as
+            # "id" in the original server info dict, so we need to look up
+            # the actual id
+            flavor = self.nova.find_flavor(server_info['flavor']['id'])
+            server = self.nova.create_server(
                 name=server_info.get('name'),
-                flavor=server_info['flavor']['id'],
-                image=image.id,
-                nics=match_networks
+                flavor_id=flavor.id,
+                image_id=image.id,
+                networks=match_networks
             )
             return server
         except Exception as e:
@@ -178,7 +182,7 @@ class NovaEngine(engine.BackupEngine):
                            incremental, max_level, always_level,
                            restart_always_level):
         instance_ids = [server.id for server in
-                        self.nova.servers.list(detailed=False)]
+                        self.nova.servers(details=False)]
         data = json.dumps(instance_ids)
         LOG.info("Saving information about instances {0}".format(data))
 
@@ -239,23 +243,23 @@ class NovaEngine(engine.BackupEngine):
         return self.storage.get_bucket_name(), object_name
 
     def backup_data(self, backup_resource, manifest_path):
-        server = self.nova.servers.get(backup_resource)
+        server = self.nova.get_server(backup_resource)
         if not server:
             raise Exception("Server not found {0}".format(backup_resource))
 
         def instance_finish_task():
-            server = self.nova.servers.get(backup_resource)
-            return not server.__dict__['OS-EXT-STS:task_state']
+            server = self.nova.get_server(backup_resource)
+            return not server.task_state
 
         utils.wait_for(
             instance_finish_task, 1, CONF.timeout,
             message="Waiting for instance {0} to finish {1} to start the "
                     "snapshot process".format(
                         backup_resource,
-                        server.__dict__['OS-EXT-STS:task_state']
+                        server.task_state
                     )
         )
-        image_id = self.nova.servers.create_image(
+        image_id = self.nova.create_server_image(
             server,
             "snapshot_of_{0}".format(backup_resource)
         )
@@ -307,8 +311,11 @@ class NovaEngine(engine.BackupEngine):
         LOG.info("Uploading image to storage path")
         headers = {"server_name": server.name,
                    "flavour_id": str(server.flavor.get('id')),
-                   'length': str(len(stream)),
-                   "boot_device_type": boot_device_type}
+                   'length': str(image.size),
+                   "boot_device_type": boot_device_type,
+                   "image_container_format": image.get('container_format',
+                                                       'bare'),
+                   "image_disk_format": image.get('disk_format', 'raw')}
         self.set_tenant_meta(manifest_path, headers)
         for chunk in stream:
             yield chunk
@@ -343,7 +350,7 @@ class NovaEngine(engine.BackupEngine):
 
     def metadata(self, backup_resource):
         """Construct metadata"""
-        server_info = self.nova.servers.get(backup_resource).to_dict()
+        server_info = self.nova.get_server(backup_resource).to_dict()
 
         return {
             "engine_name": self.name,

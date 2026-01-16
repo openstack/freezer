@@ -19,8 +19,6 @@ import time
 from cinderclient import client as cinder_client
 from keystoneauth1 import loading
 from keystoneauth1 import session
-from neutronclient.v2_0 import client as neutron_client
-from novaclient import client as nova_client
 from openstack import connection as os_conn
 from oslo_config import cfg
 from oslo_log import log
@@ -77,19 +75,17 @@ class OSClientManager(object):
     def create_nova(self):
         """
         Use pre-initialized session to create an instance of nova client.
-        :return: novaclient instance
+        :return: compute service proxy instance from OpenStack SDK
         """
-        self.nova = nova_client.Client(self.compute_version, session=self.sess,
-                                       **self.client_kwargs)
+        self.nova = os_conn.Connection(session=self.sess).compute
         return self.nova
 
     def create_neutron(self):
         """
         Use pre-initialized session to create an instance of neutron client.
-        :return: neutronclient instance
+        :return: network service proxy instance from OpenStack SDK
         """
-        self.neutron = neutron_client.Client(session=self.sess,
-                                             **self.client_kwargs)
+        self.neutron = os_conn.Connection(session=self.sess).network
         return self.neutron
 
     def create_glance(self):
@@ -159,8 +155,8 @@ class OSClientManager(object):
 
     def get_nova(self):
         """
-        Get novaclient instance
-        :return: novaclient instance
+        Get nova client instance
+        :return: compute service proxy instance from OpenStack SDK
         """
         if not self.nova:
             self.nova = self.create_nova()
@@ -168,8 +164,8 @@ class OSClientManager(object):
 
     def get_neutron(self):
         """
-        Get neutronclient instance
-        :return: neutronclient instance
+        Get neutron client instance
+        :return: network service proxy instance from OpenStack SDK
         """
         if not self.neutron:
             self.neutron = self.create_neutron()
