@@ -97,5 +97,5 @@ class FsLikeStorage(physical.PhysicalStorage, metaclass=abc.ABCMeta):
             for el in stream:
                 backup_file.write(el)
         # write data matadata to backup_metadata
-        with self.open(backup_metadata, 'wb') as backup_meta:
+        with self.open(backup_metadata, 'w') as backup_meta:
             backup_meta.write(json.dumps(headers))
