@@ -67,13 +67,13 @@ class Job(metaclass=abc.ABCMeta):
 
         if self.conf.glance_image_name:
             self.glance_image_ids = [image.id for image in
-                                     self.glance.images.list()
+                                     self.glance.images()
                                      if image.name ==
                                      self.conf.glance_image_name]
 
         if self.conf.glance_image_name_filter:
             self.glance_image_ids = [image.id for image in
-                                     self.glance.images.list()
+                                     self.glance.images()
                                      if self.conf.glance_image_name_filter
                                      not in image.name]
 

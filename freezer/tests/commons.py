@@ -201,12 +201,25 @@ class FakeCinderClient(object):
             pass
 
 
+class FakePythonRequestsResponse(object):
+
+    def __init__(self) -> None:
+        self.raw = BytesIO(b"abc")
+
+    def iter_content(self, chunk_size=1, decode_unicode=False):
+        while True:
+            chunk = self.raw.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
+
+
 class FakeGlanceClient(object):
     def __init__(self):
         pass
 
     def download_image(self, image, stream=False):
-        return BytesIO(b"abc")
+        return FakePythonRequestsResponse()
 
     def delete_image(self, image):
         pass
