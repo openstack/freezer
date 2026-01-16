@@ -1,0 +1,7 @@
+---
+deprecations:
+  - |
+    Support for OpenStack Identity API versions except ``3`` has been dropped.
+upgrade:
+  - |
+    Please, make sure you are using OpenStack Identity API v3 before upgrading.

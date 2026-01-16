@@ -68,3 +68,15 @@ class TestOsClients(unittest.TestCase):
     @mock.patch('openstack.connection.Connection')
     def test_get_neutron(self, mock_connection):
         self.client_manager.get_neutron()
+
+
+class TestOpenstackOpts(unittest.TestCase):
+    def test_init(self):
+        osclients.OpenstackOpts(auth_url='test', identity_api_version='3')
+        osclients.OpenstackOpts(auth_url='test', identity_api_version=3)
+
+    def test_init_raises(self):
+        self.assertRaises(ValueError, osclients.OpenstackOpts,
+                          auth_url='test', identity_api_version='2')
+        self.assertRaises(ValueError, osclients.OpenstackOpts,
+                          auth_url='test', identity_api_version=4)
