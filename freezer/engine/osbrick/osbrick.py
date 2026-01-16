@@ -62,16 +62,17 @@ class OsbrickEngine(engine.BackupEngine):
         }
 
     @staticmethod
-    def is_active(client_manager, id):
-        get_res = client_manager.get(id)
+    def is_active(get_func, id):
+        get_res = get_func(id)
         return get_res.status == 'available'
 
     def backup_data(self, backup_path, manifest_path):
         LOG.info("Starting os-brick engine backup stream")
-        volume = self.cinder.volumes.get(backup_path)
+        volume = self.cinder.get_volume(backup_path)
         self.volume_info = volume.to_dict()
 
-        snapshot = self.cinder.volume_snapshots.create(backup_path, force=True)
+        snapshot = self.cinder.create_snapshot(volume_id=volume.id,
+                                               force=True)
         LOG.info("[*] Creating volume snapshot")
         utils.wait_for(
             OsbrickEngine.is_active,
@@ -79,13 +80,13 @@ class OsbrickEngine(engine.BackupEngine):
             100,
             message="Waiting for volume {0} snapshot to become "
                     "active".format(backup_path),
-            kwargs={"client_manager": self.cinder.volume_snapshots,
+            kwargs={"get_func": self.cinder.get_snapshot,
                         "id": snapshot.id}
         )
 
         LOG.info("[*] Converting snapshot to volume")
-        backup_volume = self.cinder.volumes.create(snapshot.size,
-                                                   snapshot_id=snapshot.id)
+        backup_volume = self.cinder.create_volume(size=snapshot.size,
+                                                  snapshot_id=snapshot.id)
 
         utils.wait_for(
             OsbrickEngine.is_active,
@@ -93,7 +94,7 @@ class OsbrickEngine(engine.BackupEngine):
             100,
             message="Waiting for backup volume {0} to become "
                     "active".format(backup_volume.id),
-            kwargs={"client_manager": self.cinder.volumes,
+            kwargs={"get_func": self.cinder.get_volume,
                         "id": backup_volume.id}
         )
 
@@ -111,8 +112,12 @@ class OsbrickEngine(engine.BackupEngine):
                                          tmpdir)
 
         if not os.path.ismount(tmpdir):
-            subprocess.check_output(['sudo', 'mount', '-t', 'ext4',
-                                     attach_info.get('path'), tmpdir])
+            try:
+                subprocess.check_output(['sudo', 'mount', '-t', 'ext4',
+                                         attach_info.get('path'), tmpdir])
+            except subprocess.CalledProcessError:
+                brickclient.detach(backup_volume.id)
+                raise
 
         cwd = os.getcwd()
         os.chdir(tmpdir)
@@ -139,13 +144,13 @@ class OsbrickEngine(engine.BackupEngine):
             100,
             message="Waiting for backup volume {0} to become "
                     "active".format(backup_volume.id),
-            kwargs={"client_manager": self.cinder.volumes,
+            kwargs={"get_func": self.cinder.get_volume,
                         "id": backup_volume.id}
         )
 
         LOG.info("[*] Removing backup volume and snapshot")
-        self.cinder.volumes.delete(backup_volume.id)
-        self.cinder.volume_snapshots.delete(snapshot, force=True)
+        self.cinder.delete_volume(backup_volume.id)
+        self.cinder.delete_snapshot(snapshot, force=True)
 
         LOG.info('Backup process completed')
 
@@ -160,11 +165,12 @@ class OsbrickEngine(engine.BackupEngine):
                 raise Exception("Cannot restore encrypted backup without key")
             volume_info = metadata.get("volume_info")
             try:
-                backup_volume = self.cinder.volumes.get(restore_path)
+                backup_volume = self.cinder.get_volume(restore_path)
             except Exception:
                 new_volume = True
                 LOG.info("[*] Volume doesn't exists, creating a new one")
-                backup_volume = self.cinder.volumes.create(volume_info['size'])
+                backup_volume = self.cinder.create_volume(
+                    size=volume_info['size'])
 
                 utils.wait_for(
                     OsbrickEngine.is_active,
@@ -172,27 +178,27 @@ class OsbrickEngine(engine.BackupEngine):
                     100,
                     message="Waiting for backup volume {0} to become "
                             "active".format(backup_volume.id),
-                    kwargs={"client_manager": self.cinder.volumes,
+                    kwargs={"get_func": self.cinder.get_volume,
                                 "id": backup_volume.id}
                 )
 
             if backup_volume.attachments:
                 LOG.info('Volume is used, creating a copy from snapshot')
-                snapshot = self.cinder.volume_snapshots.create(
-                    backup_volume.id, force=True)
+                snapshot = self.cinder.create_snapshot(
+                    volume_id=backup_volume.id, force=True)
                 utils.wait_for(
                     OsbrickEngine.is_active,
                     1,
                     100,
                     message="Waiting for volume {0} snapshot to become "
                             "active".format(backup_volume.id),
-                    kwargs={"client_manager": self.cinder.volume_snapshots,
+                    kwargs={"get_func": self.cinder.get_snapshot,
                                 "id": snapshot.id}
                 )
 
                 LOG.info("[*] Converting snapshot to volume")
-                backup_volume = self.cinder.volumes.create(
-                    snapshot.size, snapshot_id=snapshot.id)
+                backup_volume = self.cinder.create_volume(
+                    size=snapshot.size, snapshot_id=snapshot.id)
 
                 utils.wait_for(
                     OsbrickEngine.is_active,
@@ -200,11 +206,11 @@ class OsbrickEngine(engine.BackupEngine):
                     100,
                     message="Waiting for backup volume {0} to become "
                             "active".format(backup_volume.id),
-                    kwargs={"client_manager": self.cinder.volumes,
+                    kwargs={"get_func": self.cinder.get_volume,
                                 "id": backup_volume.id}
                 )
 
-            backup_volume = self.cinder.volumes.get(backup_volume.id)
+            backup_volume = self.cinder.get_volume(backup_volume.id)
             if backup_volume.status != 'available':
                 raise RuntimeError('Unable to use volume for restore data')
 
@@ -250,7 +256,7 @@ class OsbrickEngine(engine.BackupEngine):
                 100,
                 message="Waiting for backup volume {0} to become "
                         "active".format(backup_volume.id),
-                kwargs={"client_manager": self.cinder.volumes,
+                kwargs={"get_func": self.cinder.get_volume,
                             "id": backup_volume.id}
             )
 

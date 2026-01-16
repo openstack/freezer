@@ -115,90 +115,71 @@ class FakeIdObject(object):
         self.created_at = '2016-05-12T02:00:22.000000'
         self.is_incremental = False
         self.name = None
+        self.attachments = []
 
 
 class FakeCinderClient(object):
     def __init__(self):
-        self.volumes = FakeCinderClient.Volumes()
-        self.volume_snapshots = FakeCinderClient.VolumeSnapshot
-        self.backups = FakeCinderClient.Backups()
-        self.restores = FakeCinderClient.Restores()
+        self.del_flag = False
 
-    class Backups(object):
-        def __init__(self):
-            self.del_flag = False
+    def create_backup(self, volume_id=None, container=None, name=None,
+                      description=None, is_incremental=False, force=True,
+                      snapshot_id=None):
+        pass
 
-        def _set_del_flag(self, value):
-            self.del_flag = value
+    def _set_backup_del_flag(self, value):
+        self.del_flag = value
 
-        def create(self, id, container, name, desription,
-                   incremental=None, force=True,
-                   snapshot_id=None):
-            pass
+    def backups(self, details=True, **search_opts):
+        if 'parent_id' in search_opts:
+            return []
+        if self.del_flag:
+            self._set_backup_del_flag(False)
+            return []
+        return [FakeIdObject(4), FakeIdObject(5)]
 
-        def list(self, search_opts=None, **kwargs):
-            if 'parent_id' in search_opts:
-                return []
-            if self.del_flag:
-                self._set_del_flag(False)
-                return []
-            return [FakeIdObject(4), FakeIdObject(5)]
+    def delete_backup(self, id):
+        self._set_backup_del_flag(True)
+        return
 
-        def delete(self, id):
-            self._set_del_flag(True)
-            return
+    @staticmethod
+    def get_volume(id):
+        volume = FakeIdObject("5")
+        setattr(volume, 'availability_zone', 'nova')
+        volume._info = {'id': volume.id, 'name': None, 'size': 10,
+                        'attachments': []}
+        return volume
 
-    class Volumes(object):
-        def __init__(self):
-            pass
+    @staticmethod
+    def create_volume(size=None, snapshot_id=None, imageRef=None, name=None):
+        return FakeIdObject("2")
 
-        @staticmethod
-        def get(id):
-            volume = FakeIdObject("5")
-            setattr(volume, 'availability_zone', 'nova')
-            volume._info = {'id': volume.id, 'name': None, 'size': 10,
-                            'attachments': []}
-            return volume
+    @staticmethod
+    def upload_volume_to_image(volume, force, image_name,
+                               container_format, disk_format):
+        return ({
+            "status": "uploading",
+            "image_id": "image_1"})
 
-        @staticmethod
-        def create(size, snapshot_id=None, imageRef=None):
-            return FakeIdObject("2")
+    @staticmethod
+    def delete_volume(volume):
+        pass
 
-        @staticmethod
-        def upload_to_image(volume, force, image_name,
-                            container_format, disk_format):
-            return ({}, {
-                "os-volume_upload_image": {
-                    "status": "uploading",
-                    "image_id": "image_1"}})
+    @staticmethod
+    def create_snapshot(volume_id, name, force):
+        return FakeIdObject("10")
 
-        @staticmethod
-        def delete(volume):
-            pass
+    @staticmethod
+    def delete_snapshot(snapshot):
+        pass
 
-    class VolumeSnapshot(object):
-        def __init__(self):
-            pass
+    @staticmethod
+    def get_snapshot(snapshot_id):
+        return FakeIdObject("2")
 
-        @staticmethod
-        def create(volume_id, name, force):
-            return FakeIdObject("10")
-
-        @staticmethod
-        def delete(snapshot):
-            pass
-
-        @staticmethod
-        def get(snapshot_id):
-            return FakeIdObject("2")
-
-    class Restores(object):
-        def __init__(self):
-            pass
-
-        @staticmethod
-        def restore(backup_id):
-            pass
+    @staticmethod
+    def restore_backup(backup_id, volume_id=None):
+        pass
 
 
 class FakePythonRequestsResponse(object):

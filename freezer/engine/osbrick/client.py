@@ -12,10 +12,13 @@
 
 from cinderclient import exceptions
 from os_brick.initiator import connector
+from oslo_concurrency import lockutils
 from oslo_concurrency import processutils
 
 from freezer.engine.osbrick import brick_utils
 from freezer.engine.osbrick import volume_actions as actions
+
+import tempfile
 
 
 class Client(object):
@@ -23,6 +26,10 @@ class Client(object):
 
     def __init__(self, volumes_client=None):
         self.volumes_client = volumes_client
+        # During the connect() call on the osbrick connector, oslo_concurrency
+        # requires the lock_path option to be set for lock file management.
+        lockutils.set_defaults(lock_path=tempfile.mkdtemp(
+            prefix='oslo_concurrency_lock'))
 
     def _brick_get_connector(self, protocol, driver=None,
                              execute=processutils.execute,
@@ -58,16 +65,16 @@ class Client(object):
         # Check protocol type of storage backend.
         with actions.VerifyProtocol(self.volumes_client, volume_id) as cmd:
             # Retrieve vol-host attribute of volume.
-            volume_info = self.volumes_client.volumes.get(volume_id)
-            volume_capabilities = self.volumes_client.capabilities.get(
-                volume_info.__dict__['os-vol-host-attr:host'])
+            volume_info = self.volumes_client.get_volume(volume_id)
+            volume_capabilities = self.volumes_client.get_capabilities(
+                volume_info.host)
             # Retrieve storage_protocol from storage backend capabilities.
             protocol = volume_capabilities.storage_protocol.upper()
             cmd.verify(protocol)
 
         # Reserve volume before attachment
         with actions.Reserve(self.volumes_client, volume_id) as cmd:
-            cmd.reserve()
+            attachment = cmd.reserve(mountpoint, mode, hostname)
 
         with actions.InitializeConnection(
                 self.volumes_client, volume_id) as cmd:
@@ -78,7 +85,7 @@ class Client(object):
                 protocol, do_local_attach=True)
             device_info = cmd.connect(brick_connector,
                                       connection['data'],
-                                      mountpoint, mode, hostname)
+                                      attachment)
             return device_info
 
     def detach(self, volume_id, attachment_uuid=None, multipath=False,
@@ -103,7 +110,7 @@ class Client(object):
     def get_volume_paths(self, volume_id, use_multipath=False):
         """Gets volume paths on the system for a specific volume."""
         conn_props = self.get_connector(multipath=use_multipath)
-        vols = self.volumes_client.volumes.list()
+        vols = self.volumes_client.volumes()
         vol_in_use = False
         vol_found = False
         for vol in vols:
@@ -121,7 +128,7 @@ class Client(object):
 
         paths = []
         if vol_in_use:
-            conn_info = self.volumes_client.volumes.initialize_connection(
+            conn_info = self.volumes_client.init_volume_attachment(
                 volume_id, conn_props)
             protocol = conn_info['driver_volume_type']
             conn = self._brick_get_connector(protocol,

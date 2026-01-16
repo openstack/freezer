@@ -61,7 +61,7 @@ class Job(metaclass=abc.ABCMeta):
                                       self.conf.nova_inst_name]
         if self.conf.cinder_vol_name:
             self.cinder_vol_ids = [volume.id for volume in
-                                   self.cinder.volumes.list()
+                                   self.cinder.volumes()
                                    if volume.name ==
                                    self.conf.cinder_inst_name]
 
@@ -175,6 +175,10 @@ class BackupJob(Job):
             if not self.conf.cindernative_vol_id:
                 raise ValueError("cindernative-vol-id"
                                  " argument must be provided")
+            if '/' in self.conf.container:
+                raise ValueError("in cindernative mode, container name must "
+                                 "not contain any slash characters, i.e, no "
+                                 "subdirectory structure")
         else:
             pass
 

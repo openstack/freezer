@@ -45,19 +45,18 @@ class AdminOs(object):
         search_opts = {
             'parent_id': backup_id
         }
-        backups = cinder_client.backups.list(search_opts=search_opts)
+        backups = cinder_client.backups(**search_opts)
         if backups:
             for backup in backups:
                 self.del_cinderbackup_and_dependend_incremental(backup.id)
         LOG.info("preparing to delete backup %s", backup_id)
-        cinder_client.backups.delete(backup_id)
+        cinder_client.delete_backup(backup_id)
 
         start_time = int(time.time())
 
         def wait_del_backup():
             timeout = 120
-            del_backup = cinder_client.backups.list(
-                search_opts={'id': backup_id})
+            del_backup = cinder_client.backups(id=backup_id)
             if len(del_backup) == 0:
                 LOG.info("Delete backup %s complete" % backup_id)
                 raise loopingcall.LoopingCallDone()
@@ -87,8 +86,7 @@ class AdminOs(object):
             'volume_id': volume_id,
             'status': 'available'
         }
-        backups = cinder_client.backups.list(search_opts=search_opts,
-                                             sort='created_at:asc')
+        backups = cinder_client.backups(sort='created_at:asc', **search_opts)
         # Filter fullbackup
         fullbackups = [backup for backup in backups
                        if not backup.is_incremental]
@@ -118,19 +116,17 @@ class AdminOs(object):
         }
         # remove cinder backup order by created_at desc, otherwise
         # we need find it incremental backup
-        backups = cinder_client.backups.list(search_opts=search_opts,
-                                             sort='created_at:desc')
+        backups = cinder_client.backups(sort='created_at:desc', **search_opts)
         for backup in backups:
 
             if backup.created_at <= gmstr_remove_older_timestamp:
                 LOG.info("preparing to delete backup %s", backup.id)
-                cinder_client.backups.delete(backup.id)
+                cinder_client.delete_backup(backup.id)
                 start_time = int(time.time())
 
                 def wait_del_backup():
                     timeout = 120
-                    del_backup = cinder_client.backups.list(
-                        search_opts={'id': backup.id})
+                    del_backup = cinder_client.backups(id=backup.id)
                     if len(del_backup) == 0:
                         LOG.info("Delete backup %s complete" % backup.id)
                         raise loopingcall.LoopingCallDone()

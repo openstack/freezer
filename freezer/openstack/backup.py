@@ -52,7 +52,7 @@ class BackupOs(object):
         client_manager = self.client_manager
         cinder = client_manager.get_cinder()
 
-        volume = cinder.volumes.get(volume_id)
+        volume = cinder.get_volume(volume_id)
         LOG.debug("Creation temporary snapshot")
         snapshot = client_manager.provide_snapshot(
             volume, "backup_snapshot_for_volume_%s" % volume_id)
@@ -73,14 +73,14 @@ class BackupOs(object):
                    'volume_name': name,
                    'availability_zone': volume.availability_zone
                    }
-        attachments = volume._info['attachments']
+        attachments = volume.attachments
         if attachments:
             headers['server'] = attachments[0]['server_id']
         self.storage.add_stream(stream, package, headers=headers)
         LOG.debug("Deleting temporary snapshot")
         client_manager.clean_snapshot(snapshot)
         LOG.debug("Deleting temporary volume")
-        cinder.volumes.delete(copied_volume)
+        cinder.delete_volume(copied_volume)
         LOG.debug("Deleting temporary image")
         client_manager.get_glance().delete_image(image.id)
 
@@ -88,20 +88,23 @@ class BackupOs(object):
                       incremental=False):
         client_manager = self.client_manager
         cinder = client_manager.get_cinder()
-        container = "{0}/{1}/{2}".format(self.container, volume_id,
-                                         utils.DateTime.now().timestamp)
+        container = self.container
+
         if incremental:
             search_opts = {
                 'volume_id': volume_id,
                 'status': 'available'
             }
-            backups = cinder.backups.list(search_opts=search_opts)
+            backups = cinder.backups(details=False, **search_opts)
             if len(backups) <= 0:
-                cinder.backups.create(volume_id, container, name, description,
-                                      incremental=False, force=True)
+                cinder.create_backup(volume_id=volume_id, container=container,
+                                     name=name, description=description,
+                                     is_incremental=False, force=True)
             else:
-                cinder.backups.create(volume_id, container, name, description,
-                                      incremental=incremental, force=True)
+                cinder.create_backup(volume_id=volume_id, container=container,
+                                     name=name, description=description,
+                                     is_incremental=incremental, force=True)
         else:
-            cinder.backups.create(volume_id, container, name, description,
-                                  incremental=incremental, force=True)
+            cinder.create_backup(volume_id=volume_id, container=container,
+                                 name=name, description=description,
+                                 is_incremental=incremental, force=True)
