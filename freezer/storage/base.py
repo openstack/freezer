@@ -124,19 +124,19 @@ class Storage(metaclass=abc.ABCMeta):
     def info(self):
         pass
 
-    def previous_backup(self, engine, hostname_backup_name, no_incremental,
+    def previous_backup(self, engine, hostname_backup_name, incremental,
                         max_level, always_level, restart_always_level):
         """
         :type engine: freezer.engine.engine.BackupEngine
         :param engine: engine instance
         :param hostname_backup_name: name of backup
-        :param no_incremental:
+        :param incremental:
         :param max_level:
         :param always_level:
         :param restart_always_level:
         :return:
         """
-        if no_incremental:
+        if not incremental:
             return None
         try:
             increments = self.get_latest_level_zero_increments(

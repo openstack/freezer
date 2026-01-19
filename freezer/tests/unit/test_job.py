@@ -57,7 +57,7 @@ class TestBackupJob(TestJob):
     def test_execute_backup_fs_no_incremental_and_backup_level_raise(self):
         backup_opt = commons.BackupOpt1()
         backup_opt.mode = 'default'
-        backup_opt.no_incremental = True
+        backup_opt.incremental = False
         backup_opt.max_level = None
         backup_opt.always_level = None
         with mock.patch('openstack.connection.Connection'):

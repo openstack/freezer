@@ -333,7 +333,7 @@ class BackupOpt1(object):
         self.curr_backup_level = 0
         self.path_to_backup = '/tmp'
         self.tar_path = 'true'
-        self.no_incremental = 'true'
+        self.incremental = False
         self.exclude = 'true'
         self.encrypt_pass_file = 'true'
         self.openssl_path = 'true'

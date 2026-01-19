@@ -189,7 +189,7 @@ Execute a nova backup:
 
     freezer-agent --backup-name [my-backup-name] \
     --mode nova --engine nova \
-    --no-incremental True \
+    --noincremental \
     --nova-inst-id [nova-instance-id]
 
 Execute a MySQL backup with nova:
@@ -223,7 +223,7 @@ Execute a glance backup with image-id:
     freezer-agent --backup-name [my-backup-name] \
     --mode glance --engine glance \
     --action backup \
-    --no-incremental True \
+    --noincremental \
     --container /home/freezer_data \
     --storage local \
     --glance-image-id [glance-image-id]
@@ -235,7 +235,7 @@ Execute a glance backup with image-name:
     freezer-agent --backup-name [my-backup-name] \
     --mode glance --engine glance \
     --action backup \
-    --no-incremental True \
+    --noincremental \
     --container /home/freezer_data \
     --storage local \
     --glance-image-name [glance-image-name]
@@ -247,7 +247,7 @@ Execute a glance backup with image-name-filter:
     freezer-agent --backup-name [my-backup-name] \
     --mode glance --engine glance \
     --action backup \
-    --no-incremental True \
+    --noincremental \
     --container /home/freezer_data \
     --storage local \
     --glance-image-name-filter [glance-image-name-filter]
@@ -259,7 +259,7 @@ Execute a glance backup with project_id:
     freezer-agent --backup-name [my-backup-name] \
     --mode glance --engine glance \
     --action backup \
-    --no-incremental True \
+    --noincremental \
     --container /home/freezer_data \
     --storage local \
     --project-id [project-id]
@@ -275,7 +275,7 @@ Execute a glance restore with image-id:
     freezer-agent --backup-name [my-backup-name] \
     --mode glance --engine glance \
     --action restore \
-    --no-incremental True \
+    --noincremental \
     --container /home/freezer_data \
     --storage local \
     --glance-image-id [glance-image-id]
@@ -287,7 +287,7 @@ Execute a glance restore with image-name:
     freezer-agent --backup-name [my-backup-name] \
     --mode glance --engine glance \
     --action restore \
-    --no-incremental True \
+    --noincremental \
     --container /home/freezer_data \
     --storage local \
     --glance-image-name [glance-image-name]
@@ -299,7 +299,7 @@ Execute a glance restore with image-name-filter:
     freezer-agent --backup-name [my-backup-name] \
     --mode glance --engine glance \
     --action restore \
-    --no-incremental True \
+    --noincremental \
     --container /home/freezer_data \
     --storage local \
     --glance-image-name-filter [glance-image-name-filter]
@@ -311,7 +311,7 @@ Execute a glance restore with project_id:
     freezer-agent --backup-name [my-backup-name] \
     --mode glance --engine glance \
     --action restore \
-    --no-incremental True \
+    --noincremental \
     --container /home/freezer_data \
     --storage local \
     --project-id [project-id]

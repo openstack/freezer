@@ -139,7 +139,7 @@ example backup freezer_action
       "max_backup_level" : int
       "always_backup_level": int
       "restart_always_backup": int
-      "no_incremental" : bool
+      "incremental" : bool
       "encrypt_pass_file" : private_key_file
       "log_file" : "/var/log/freezer.log"
       "hostname" : false

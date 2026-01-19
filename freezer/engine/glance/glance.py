@@ -161,7 +161,7 @@ class GlanceEngine(engine.BackupEngine):
             raise
 
     def backup_glance_tenant(self, project_id, hostname_backup_name,
-                             no_incremental, max_level, always_level,
+                             incremental, max_level, always_level,
                              restart_always_level):
         # import pdb;pdb.set_trace()
         image_ids = [image.id for image in
@@ -209,7 +209,7 @@ class GlanceEngine(engine.BackupEngine):
                 self.backup,
                 backup_resource=image_id,
                 hostname_backup_name=backup_name,
-                no_incremental=no_incremental,
+                incremental=incremental,
                 max_level=max_level,
                 always_level=always_level,
                 restart_always_level=restart_always_level))

@@ -394,14 +394,6 @@ OPTIONS
   Checks the specified container and removes objects older than the provided datetime in the form 'YYYY-MM-DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. Make sure the 'T' is between date and time
 
 
-.. oslo.config:option:: no_incremental
-
-  :Type: string
-  :Default: ``<None>``
-
-  Disable incremental feature. By default freezer build the meta data even for level 0 backup. By setting this option incremental meta data is not created at all. Default disabled
-
-
 .. oslo.config:option:: hostname
 
   :Type: string

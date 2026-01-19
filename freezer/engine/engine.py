@@ -101,7 +101,7 @@ class BackupEngine(metaclass=abc.ABCMeta):
         rich_queue.put_messages(self.backup_data(backup_resource,
                                                  manifest_path))
 
-    def backup(self, backup_resource, hostname_backup_name, no_incremental,
+    def backup(self, backup_resource, hostname_backup_name, incremental,
                max_level, always_level, restart_always_level, queue_size=2):
         """
         Here we now location of all interesting artifacts like metadata
@@ -111,7 +111,7 @@ class BackupEngine(metaclass=abc.ABCMeta):
         prev_backup = self.storage.previous_backup(
             engine=self,
             hostname_backup_name=hostname_backup_name,
-            no_incremental=no_incremental,
+            incremental=incremental,
             max_level=max_level,
             always_level=always_level,
             restart_always_level=restart_always_level

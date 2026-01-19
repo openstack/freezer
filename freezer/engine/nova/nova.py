@@ -175,7 +175,7 @@ class NovaEngine(engine.BackupEngine):
             raise
 
     def backup_nova_tenant(self, project_id, hostname_backup_name,
-                           no_incremental, max_level, always_level,
+                           incremental, max_level, always_level,
                            restart_always_level):
         instance_ids = [server.id for server in
                         self.nova.servers.list(detailed=False)]
@@ -221,7 +221,7 @@ class NovaEngine(engine.BackupEngine):
                 self.backup,
                 backup_resource=instance_id,
                 hostname_backup_name=backup_name,
-                no_incremental=no_incremental,
+                incremental=incremental,
                 max_level=max_level,
                 always_level=always_level,
                 restart_always_level=restart_always_level))

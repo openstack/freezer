@@ -102,7 +102,6 @@ DEFAULT_PARAMS = {
     'metadata_out': None,
     'mode': 'fs',
     'mysql_conf': False,
-    'no_incremental': None,
     'nova_inst_id': '',
     'nova_inst_name': '',
     'nova_restore_network': None,
@@ -288,13 +287,6 @@ _COMMON = [
                     "than the provided datetime in the form "
                     "'YYYY-MM-DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. "
                     "Make sure the 'T' is between date and time "),
-    cfg.StrOpt('no-incremental',
-               dest='no_incremental',
-               default=DEFAULT_PARAMS['no_incremental'],
-               help="Disable incremental feature. By default freezer build the"
-                    " meta data even for level 0 backup. By setting this "
-                    "option incremental meta data is not created at all. "
-                    "Default disabled"),
     cfg.StrOpt('hostname',
                dest='hostname',
                default=DEFAULT_PARAMS['hostname'],
