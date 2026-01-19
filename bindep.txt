@@ -9,6 +9,5 @@ python3-devel [platform:rpm test]
 build-essential [platform:dpkg test]
 # these are needed by infra for python-* jobs
 mariadb [platform:rpm test]
-mariadb-server [platform:rpm test]
-mysql-client [platform:dpkg test]
-mysql-server [platform:dpkg test]
+mariadb-client [platform:dpkg test]
+mariadb-server [platform:rpm platform:dpkg test]
