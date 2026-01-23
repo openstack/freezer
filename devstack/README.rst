@@ -4,9 +4,9 @@ Enabling Freezer in Devstack
 
 This directory contains the Freezer DevStack plugin.
 
-Download Devstack::
+Download DevStack::
 
-    git clone https://git.openstack.org/openstack-dev/devstack
+    git clone https://opendev.org/openstack/devstack
     cd devstack
 
 To configure the Freezer scheduler and agent with DevStack, you will need to
@@ -25,7 +25,7 @@ where::
 
 For example::
 
-    enable_plugin freezer https://git.openstack.org/openstack/freezer master
+    enable_plugin freezer https://opendev.org/openstack/freezer master
 
 Then run devstack normally::
 
@@ -47,10 +47,10 @@ This is a sample ``local.conf`` file for freezer developer::
     # disable_all_services
     # enable_service key mysql s-proxy s-object s-container s-account horizon
 
-    enable_plugin freezer http://git.openstack.org/openstack/freezer master
-    enable_plugin freezer-api http://git.openstack.org/openstack/freezer-api.git master
-    enable_plugin freezer-tempest-plugin http://git.openstack.org/openstack/freezer-tempest-plugin.git master
-    enable_plugin freezer-web-ui http://git.openstack.org/openstack/freezer-web-ui.git master
+    enable_plugin freezer https://opendev.org/openstack/freezer master
+    enable_plugin freezer-api https://opendev.org/openstack/freezer-api master
+    enable_plugin freezer-tempest-plugin https://opendev.org/openstack/freezer-tempest-plugin master
+    enable_plugin freezer-web-ui https://opendev.org/openstack/freezer-web-ui master
 
     export FREEZER_BACKEND='sqlalchemy'
 

@@ -1,4 +1,4 @@
-Devstack Plugin
+DevStack Plugin
 ===============
 
 Edit local.conf
@@ -25,9 +25,9 @@ For example
 
 .. code-block:: ini
 
-    enable_plugin freezer-api https://git.openstack.org/openstack/freezer-api.git master
-    enable_plugin freezer https://git.openstack.org/openstack/freezer.git master
-    enable_plugin freezer-web-ui https://git.openstack.org/openstack/freezer-web-ui.git master
+    enable_plugin freezer-api https://opendev.org/openstack/freezer-api master
+    enable_plugin freezer https://opendev.org/openstack/freezer master
+    enable_plugin freezer-web-ui https://opendev.org/openstack/freezer-web-ui master
 
 Plugin Options
 --------------

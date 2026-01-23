@@ -1,12 +1,3 @@
-========================
-Team and repository tags
-========================
-
-.. image:: https://governance.openstack.org/tc/badges/freezer.svg
-    :target: https://governance.openstack.org/tc/reference/tags/index.html
-
-.. Change things from this point on
-
 =======
 Freezer
 =======
@@ -27,13 +18,13 @@ API on OpenStack controller server.
 This is the source code of Freezer Scheduler and Freezer Agent.
 
 If you need to get the source code of other components,
-please visit proper Github pages:
+please visit proper OpenDev pages:
 
 Freezer Web UI:
-https://github.com/openstack/freezer-web-ui
+https://opendev.org/openstack/freezer-web-ui
 
 Freezer API:
-https://github.com/openstack/freezer-api
+https://opendev.org/openstack/freezer-api
 
 Features
 ========
@@ -46,8 +37,8 @@ The following features are available:
 -  Backup file system using point-in-time snapshot
 -  Strong encryption supported: AES-256-CFB
 -  Backup file system tree directly (without volume snapshot)
--  Backup journalled MongoDB directory tree using lvm snapshot to Swift
--  Backup MySQL with lvm snapshot
+-  Backup journalled MongoDB directory tree using LVM snapshot to Swift
+-  Backup MySQL with LVM snapshot
 -  Restore data from a specific date automatically to file system
 -  Low storage consumption as the backup are uploaded as a stream
 -  Flexible backup policy (incremental and differential)
@@ -159,13 +150,10 @@ Freezer scheduler on windows run as a windows service and it needs to be install
 - cd C:\\Python27\\Lib\\site-packages\\freezer\\scheduler
 - python win_service.py --username {whoami} --password {pc-password} install
 
-
 Unofficial Installer for Windows
 --------------------------------
 
 Freezer offers a [windows installer] (https://github.com/openstack-freezer-utils/freezer-windows-installer#windows-freezer-installer) supported by the community
-
-
 
 Installation & Env Setup
 ========================
@@ -186,14 +174,11 @@ release with Freeze API Stable/Liberty release.
 4-) Following installation instructions only for Freezer Scheduler
 and Freezer Agent.
 
-
 Ubuntu / Debian
 ---------------
 
 Swift client and Keystone client::
 
-    $ sudo apt-get install python-dev
-    For python3:
     $ sudo apt-get install python3-dev
     $ sudo easy_install -U pip
 
@@ -240,7 +225,6 @@ These are just use case example using Swift in the HP Cloud.
 freezer will execute a backup on point-in-time data. This avoids the risk of
 data inconsistencies and corruption.*
 
-
 Windows
 -------
 General packages::
@@ -256,7 +240,6 @@ The basic Swift account configuration is needed to use freezer. Make sure python
     set OS_AUTH_URL=https://region-a.geo-1.identity.hpcloudsvc.com:5000/v3
     set OS_USERNAME=automationbackup
     set OS_TENANT_NAME=automationbackup
-
 
 Usage Example
 =============
@@ -491,7 +474,6 @@ Restore example::
   --storage ssh --ssh-username ubuntu --ssh-key ~/.ssh/id_rsa
   --ssh-host 8.8.8.8
 
-
 Restore
 -------
 
@@ -536,7 +518,6 @@ Execute a MongoDB restore of the backup name mongobigdata::
     --backup-name mongobigdata --hostname db-HP-DL380-host-001
     --restore-abs-path /var/lib/mongo --restore-from-date "2014-05-23T23:23:23"
 
-
 List remote containers::
 
     $ sudo freezer-agent --action info
@@ -545,11 +526,9 @@ List remote objects in container::
 
     $ sudo freezer-agent --action info --container freezer_testcontainer -l
 
-
 Remove backups older then 1 day::
 
     $ freezer-agent --action admin --container freezer_dev-test --remove-older-than 1 --backup-name dev-test-01
-
 
 Cinder restore currently creates a volume with the contents of the saved one,
 but doesn't implement detachment of existing volume and attachment of the new
@@ -580,11 +559,10 @@ Local storage restore execution::
 Architecture
 ============
 
-
 Freezer architectural components are the following:
 
 -  OpenStack Swift (the storage)
--  freezer client running on the node where the backups and restores are to be executed
+-  Freezer client running on the node where the backups and restores are to be executed
 
 Freezer uses GNU Tar or Rsync algorithm under the hood to execute incremental backup and
 restore. When a key is provided, it uses OpenSSL or cryptography module (OpenSSL compatible)
@@ -720,7 +698,6 @@ following basic logic happens when Freezer executes:
    important as the Manifest file contains the information of the
    previous Freezer execution.
 
-
 Nova and Cinder Backups
 -----------------------
 
@@ -747,7 +724,6 @@ Restore will create a snapshot from stored data and restore an instance from
 this snapshot. Instance will have different id and old instance should be
 terminated manually.
 
-
 Cinder backups
 ==============
 
@@ -755,7 +731,6 @@ Cinder has its own mechanism for backups, and freezer supports it. But it also
 allows creating a glance image from volume and uploading to swift.
 
 To use standard cinder backups please provide --cindernative-vol-id argument.
-
 
 Parallel backup
 ---------------
@@ -809,6 +784,7 @@ Example of Config file for two local storages and one swift storage::
 
 freezer-scheduler
 -----------------
+
 The freezer-scheduler is one of the two freezer components which is run on
 the client nodes; the other one being the freezer-agent.
 It has a double role: it is used both to start the scheduler process, and as
@@ -857,7 +833,6 @@ with its specific jobs.
 When not provided with a custom client-id, the scheduler falls back to the default
 which is composed from the tenant-id and the hostname of the machine on which it is
 running.
-
 
 The first step to use the scheduler is creating a document with the job::
 
@@ -909,7 +884,6 @@ The scheduler can be started on the target node with::
 
 The scheduler could have already been started. As soon as the freezer-scheduler contacts the API,
 it fetches the job and schedules it.
-
 
 Misc
 ====
@@ -1223,7 +1197,6 @@ optional arguments:
                         option is specified and Linux platform is used. This
                         option is ignored if log_config_append is set.
 
-
 Scheduler Options
 -----------------
 
@@ -1243,7 +1216,6 @@ To list options available in freezer-agent use the following command::
 this will print all options to the screen you direct the output to a file if you want::
 
     oslo-config-generator --namespace freezer --namespace oslo.log --output-file etc/agent.conf.sample
-
 
 Bandwidth limitation (Trickle)
 ------------------------------

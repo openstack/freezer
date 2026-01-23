@@ -2,6 +2,10 @@
 OpenStack Freezer
 =================
 
+.. image:: https://governance.openstack.org/tc/badges/freezer.svg
+
+.. Change things from this point on
+
 .. image:: freezer_logo.jpg
 
 Freezer is a Backup and Restore Service platform that helps you to automate
