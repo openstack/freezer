@@ -34,34 +34,36 @@ class TestRestore(commons.FreezerBaseTestCase):
     def test_restore_cinder_by_glance(self):
         backup_opt = commons.BackupOpt1()
         restore.RestoreOs(backup_opt.client_manager, backup_opt.container,
-                          backup_opt.storage)
+                          backup_opt.storage, backup_opt.temp_resource_prefix)
 
     def test_restore_cinder_by_glance_from_local(self):
         backup_opt = commons.BackupOpt1()
         restore.RestoreOs(backup_opt.client_manager, backup_opt.container,
-                          'local')
+                          'local', backup_opt.temp_resource_prefix)
 
     def test_restore_cinder_with_backup_id(self):
         backup_opt = commons.BackupOpt1()
         ros = restore.RestoreOs(backup_opt.client_manager,
-                                backup_opt.container, backup_opt.storage)
+                                backup_opt.container, backup_opt.storage,
+                                backup_opt.temp_resource_prefix)
         ros.restore_cinder(35, 34, 33)
 
     def test_restore_cinder_without_backup_id(self):
         backup_opt = commons.BackupOpt1()
         ros = restore.RestoreOs(backup_opt.client_manager,
-                                backup_opt.container, backup_opt.storage)
+                                backup_opt.container, backup_opt.storage,
+                                backup_opt.temp_resource_prefix)
         ros.restore_cinder(35, 34)
 
     def test_restore_nova(self):
         backup_opt = commons.BackupOpt1()
         restore.RestoreOs(backup_opt.client_manager, backup_opt.container,
-                          backup_opt.storage)
+                          backup_opt.storage, backup_opt.temp_resource_prefix)
 
     def test_restore_nova_from_local(self):
         backup_opt = commons.BackupOpt1()
         restore.RestoreOs(backup_opt.client_manager, backup_opt.container,
-                          'local')
+                          'local', backup_opt.temp_resource_prefix)
 
     def test_restore_cinder(self):
         storage = mock.MagicMock()
@@ -75,7 +77,8 @@ class TestRestore(commons.FreezerBaseTestCase):
         cinder_client.restore_backup.return_value = 'test'
         client_manager = mock.MagicMock()
         client_manager.get_cinder.return_value = cinder_client
-        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage)
+        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage,
+                                       'freezer_')
         result = restore_os.restore_cinder(restore_from_timestamp=1598862750)
         self.assertIsNone(result)
         result = restore_os.restore_cinder(restore_from_timestamp=1598862749)
@@ -100,20 +103,24 @@ class TestRestore(commons.FreezerBaseTestCase):
                                                  {'Key': '/12346'}]
         client_manager = mock.MagicMock()
         client_manager.create_image.return_value = image
-        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage)
-        result1, result2 = restore_os._create_image('/root', 12344)
+        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage,
+                                       'freezer_')
+        result1, result2, result3 = restore_os._create_image('/root', 12344)
         self.assertEqual(result1, {"test": "test_info"})
         self.assertEqual(result2, image)
+        self.assertEqual(result3, '12346')
 
         storage.get_object_prefix.return_value = ''
-        result1, result2 = restore_os._create_image('/root', 12344)
+        result1, result2, result3 = restore_os._create_image('/root', 12344)
         self.assertEqual(result1, {"test": "test_info"})
         self.assertEqual(result2, image)
+        self.assertEqual(result3, '12346')
 
         mock_open.side_effect = Exception("error")
         storage.type = 'local'
         mock_list.return_value = ['12345']
-        restore_os = restore.RestoreOs(client_manager, '/root/test', storage)
+        restore_os = restore.RestoreOs(client_manager, '/root/test', storage,
+                                       'freezer_')
         try:
             restore_os._create_image('/root', 12344)
         except BaseException as e:
@@ -122,14 +129,16 @@ class TestRestore(commons.FreezerBaseTestCase):
 
         mock_open.side_effect = mock.MagicMock()
         mock_load.return_value = 'test'
-        result1, result2 = restore_os._create_image('/root', 12344)
+        result1, result2, result3 = restore_os._create_image('/root', 12344)
         self.assertEqual(result1, 'test')
         self.assertEqual(result2, image)
+        self.assertEqual(result3, '12345')
 
         storage.type = 'ssh'
         storage.open.side_effect = Exception("error")
         storage.listdir.return_value = ['12345']
-        restore_os = restore.RestoreOs(client_manager, '/root/test', storage)
+        restore_os = restore.RestoreOs(client_manager, '/root/test', storage,
+                                       'freezer_')
         try:
             restore_os._create_image('/root', 12344)
         except BaseException as e:
@@ -138,15 +147,18 @@ class TestRestore(commons.FreezerBaseTestCase):
 
         storage.open.side_effect = 'test'
         storage.read_metadata_file.return_value = '{"test": "test_info"}'
-        restore_os = restore.RestoreOs(client_manager, '/root/test', storage)
-        result1, result2 = restore_os._create_image('/root', 12344)
+        restore_os = restore.RestoreOs(client_manager, '/root/test', storage,
+                                       'freezer_')
+        result1, result2, result3 = restore_os._create_image('/root', 12344)
         self.assertEqual(result1, {"test": "test_info"})
         self.assertEqual(result2, image)
+        self.assertEqual(result3, '12345')
 
         storage.type = 'ftp'
         storage.listdir.return_value = ['12345']
         mock_mkdtemp.side_effect = Exception('error')
-        restore_os = restore.RestoreOs(client_manager, '/root/test', storage)
+        restore_os = restore.RestoreOs(client_manager, '/root/test', storage,
+                                       'freezer_')
         try:
             restore_os._create_image('/root', 12344)
         except Exception as e:
@@ -155,17 +167,19 @@ class TestRestore(commons.FreezerBaseTestCase):
         mock_mkdtemp.side_effect = "success"
         mock_rmtree.return_value = "success"
         mock_open.side_effect = 'test'
-        result1, result2 = restore_os._create_image('/root', 12344)
+        result1, result2, result3 = restore_os._create_image('/root', 12344)
         self.assertEqual(result1, 'test')
         self.assertEqual(result2, image)
+        self.assertEqual(result3, '12345')
 
     def test_get_backups_exception(self):
         storage = mock.MagicMock()
         storage.type = 'ss3'
         client_manager = mock.MagicMock()
-        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage)
+        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage,
+                                       'freezer_')
         try:
-            restore_os._get_backups('/root', 12347)
+            restore_os._get_latest_backup('/root', 12347)
         except BaseException as e:
             self.assertEqual(str(e), "ss3 storage type is not supported at the"
                                      " moment. Try local, SWIFT, SSH(SFTP),"
@@ -175,9 +189,10 @@ class TestRestore(commons.FreezerBaseTestCase):
         storage.type = 's3'
         storage.list_all_objects.return_value = [{'Key': '/12345'},
                                                  {'Key': '/12346'}]
-        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage)
+        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage,
+                                       'freezer_')
         try:
-            restore_os._get_backups('/root', 12347)
+            restore_os._get_latest_backup('/root', 12347)
         except BaseException as e:
             self.assertEqual(str(e), "Cannot find backups for"
                                      " path: root/test///root")

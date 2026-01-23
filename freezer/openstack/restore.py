@@ -33,12 +33,14 @@ LOG = log.getLogger(__name__)
 
 
 class RestoreOs(object):
-    def __init__(self, client_manager, container, storage):
+    def __init__(self, client_manager, container, storage,
+                 temp_resource_prefix):
         self.client_manager = client_manager
         self.container = container
         self.storage = storage
+        self.temp_resource_prefix = temp_resource_prefix
 
-    def _get_backups(self, path, restore_from_timestamp):
+    def _get_latest_backup(self, path, restore_from_timestamp):
         """
         :param path:
         :type path: str
@@ -97,7 +99,8 @@ class RestoreOs(object):
         :type restore_from_timestamp: int
         :return:
         """
-        backup = self._get_backups(path, restore_from_timestamp)
+        backup = self._get_latest_backup(path, restore_from_timestamp)
+        backup_timestamp = str(backup)
         if self.storage.type == 'swift':
             swift = self.client_manager.get_swift()
             path = "{0}_segments/{1}/{2}".format(self.container, path, backup)
@@ -108,11 +111,11 @@ class RestoreOs(object):
             data = utils.ReSizeStream(stream[1], length, 1)
             info = stream[0]
             image = self.client_manager.create_image(
-                name="restore_{}".format(path),
+                name="{0}restore_{1}".format(self.temp_resource_prefix, path),
                 container_format="bare",
                 disk_format="raw",
                 data=data)
-            return info, image
+            return info, image, backup_timestamp
         elif self.storage.type == 's3':
             if self.storage.get_object_prefix() != '':
                 base_path = "{0}/{1}/{2}".format(
@@ -142,11 +145,11 @@ class RestoreOs(object):
             info = json.loads(metadata_object['Body'])
 
             image = self.client_manager.create_image(
-                name="restore_{}".format(path),
+                name="{0}restore_{1}".format(self.temp_resource_prefix, path),
                 container_format="bare",
                 disk_format="raw",
                 data=data)
-            return info, image
+            return info, image, backup_timestamp
         elif self.storage.type == 'local':
             image_file = "{0}/{1}/{2}/{3}".format(self.container, path,
                                                   backup, path)
@@ -161,11 +164,11 @@ class RestoreOs(object):
             with open(metadata_file, 'rb') as f:
                 info = json.load(f)
             image = self.client_manager.create_image(
-                name="restore_{}".format(path),
+                name="{0}restore_{1}".format(self.temp_resource_prefix, path),
                 container_format="bare",
                 disk_format="raw",
                 data=data)
-            return info, image
+            return info, image, backup_timestamp
         elif self.storage.type == 'ssh':
             image_file = "{0}/{1}/{2}/{3}".format(self.container, path,
                                                   backup, path)
@@ -179,11 +182,11 @@ class RestoreOs(object):
                 raise BaseException(msg)
             info = json.loads(self.storage.read_metadata_file(metadata_file))
             image = self.client_manager.create_image(
-                name="restore_{}".format(path),
+                name="{0}restore_{1}".format(self.temp_resource_prefix, path),
                 container_format="bare",
                 disk_format="raw",
                 data=data)
-            return info, image
+            return info, image, backup_timestamp
         elif self.storage.type in ['ftp', 'ftps']:
             image_file = "{0}/{1}/{2}/{3}".format(self.container, path,
                                                   backup, path)
@@ -203,11 +206,12 @@ class RestoreOs(object):
                 data = open(data_image, 'rb')
                 info = json.load(open(data_meta, 'r'))
                 image = self.client_manager.create_image(
-                    name="restore_{}".format(path),
+                    name="{0}restore_{1}".format(self.temp_resource_prefix,
+                                                 path),
                     container_format="bare",
                     disk_format="raw",
                     data=data)
-                return info, image
+                return info, image, backup_timestamp
             finally:
                 shutil.rmtree(tmpdir)
         else:
@@ -265,7 +269,8 @@ class RestoreOs(object):
         :type restore_from_timestamp: int
         :param volume_id: - id of attached cinder volume
         """
-        (info, image) = self._create_image(volume_id, restore_from_timestamp)
+        (info, image, backup_timestamp) = self._create_image(
+            volume_id, restore_from_timestamp)
         length = int(info["x-object-meta-length"])
         gb = 1073741824
         size = length / gb
@@ -276,11 +281,11 @@ class RestoreOs(object):
         volume = cinder_client.create_volume(
             size=int(size),
             imageRef=image.id,
-            name=info.get('volume_name',
-                          CONF.get('backup_name',
-                                   CONF.get('cinder_vol_id', None)
-                                   )
-                          )
+            name="{0}~{1}".format(
+                info.get(
+                    'volume_name',
+                    CONF.get('backup_name', CONF.get('cinder_vol_id', None))
+                ), backup_timestamp)
         )
         while volume.status != "available":
             try:

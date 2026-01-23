@@ -225,13 +225,15 @@ class OSClientManager(object):
                 LOG.exception(e)
         return snapshot
 
-    def do_copy_volume(self, snapshot):
+    def do_copy_volume(self, name, snapshot):
         """
         Creates new volume from a snapshot
+        :param name: name of the volume to create
         :param snapshot: provided snapshot
         :return: created volume
         """
         volume = self.get_cinder().create_volume(
+            name=name,
             size=snapshot.size,
             snapshot_id=snapshot.id)
 

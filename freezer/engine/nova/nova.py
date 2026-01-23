@@ -50,6 +50,7 @@ class NovaEngine(engine.BackupEngine):
         self.max_segment_size = kwargs.get('max_segment_size')
         self.storage = storage
         self.dereference_symlink = kwargs.get('symlinks')
+        self.temp_resource_prefix = kwargs.get('temp_resource_prefix')
 
     @property
     def name(self):
@@ -128,9 +129,11 @@ class NovaEngine(engine.BackupEngine):
 
             stream = self.stream_image(read_pipe)
             data = utils.ReSizeStream(stream, length, 1)
+            server_id = server_info.get('name', server_info.get('id', None))
             image = self.client.create_image(
-                "restore_{0}".format(
-                    server_info.get('name', server_info.get('id', None))
+                "{0}restore_{1}".format(
+                    self.temp_resource_prefix,
+                    server_id
                 ),
                 engine_metadata.get('image_container_format', 'bare'),
                 engine_metadata.get('image_disk_format', 'raw'),
@@ -167,7 +170,8 @@ class NovaEngine(engine.BackupEngine):
             # the actual id
             flavor = self.nova.find_flavor(server_info['flavor']['id'])
             server = self.nova.create_server(
-                name=server_info.get('name'),
+                name="{0}~{1}".format(server_info.get('name'),
+                                      backup.timestamp),
                 flavor_id=flavor.id,
                 image_id=image.id,
                 networks=match_networks
@@ -261,7 +265,7 @@ class NovaEngine(engine.BackupEngine):
         )
         image_id = self.nova.create_server_image(
             server,
-            "snapshot_of_{0}".format(backup_resource)
+            "{0}backup_{1}".format(self.temp_resource_prefix, backup_resource)
         )
         image = self.glance.get_image(image_id)
         if not image:
@@ -297,6 +301,8 @@ class NovaEngine(engine.BackupEngine):
                 image_block_mapping[0]['snapshot_id'] \
                 if image_block_mapping else None
             copied_volume = self.client.do_copy_volume(
+                "{0}backup_{1}".format(self.temp_resource_prefix,
+                                       image_temporary_snapshot_id),
                 self.cinder.volume_snapshots.get(
                     image_temporary_snapshot_id))
             LOG.debug("Deleting temporary glance image "

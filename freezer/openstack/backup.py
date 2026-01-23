@@ -28,7 +28,8 @@ LOG = log.getLogger(__name__)
 
 class BackupOs(object):
 
-    def __init__(self, client_manager, container, storage):
+    def __init__(self, client_manager, container, storage,
+                 temp_resource_prefix):
         """
 
         :param client_manager:
@@ -40,6 +41,7 @@ class BackupOs(object):
         self.client_manager = client_manager
         self.container = container
         self.storage = storage
+        self.temp_resource_prefix = temp_resource_prefix
 
     def backup_cinder_by_glance(self, volume_id):
         """
@@ -55,12 +57,17 @@ class BackupOs(object):
         volume = cinder.get_volume(volume_id)
         LOG.debug("Creation temporary snapshot")
         snapshot = client_manager.provide_snapshot(
-            volume, "backup_snapshot_for_volume_%s" % volume_id)
+            volume, "{0}backup_{1}".format(self.temp_resource_prefix,
+                                           volume_id))
         LOG.debug("Creation temporary volume")
-        copied_volume = client_manager.do_copy_volume(snapshot)
+        copied_volume = client_manager.do_copy_volume(
+            "{0}backup_{1}".format(self.temp_resource_prefix, volume_id),
+            snapshot)
         LOG.debug("Creation temporary glance image")
-        image = client_manager.make_glance_image(copied_volume.id,
-                                                 copied_volume)
+        image = client_manager.make_glance_image(
+            "{0}backup_{1}".format(self.temp_resource_prefix,
+                                   copied_volume.id),
+            copied_volume)
         LOG.debug("Download temporary glance image {0}".format(image.id))
         stream = client_manager.download_image(image)
         package = "{0}/{1}".format(volume_id, utils.DateTime.now().timestamp)

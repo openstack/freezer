@@ -1,0 +1,29 @@
+---
+upgrade:
+  - |
+    Starting with this release, the naming of OpenStack resources created
+    during backup and restore procedures changes. This affects both
+    temporary resources as well as final resources resulting from restore
+    actions.
+
+    Server, volume and image resources restored from backup will receive a
+    timestamp suffix to their name, preceeded by a tilde (``~``) character,
+    e.g., "my-server~1769185234". The timestamp is the backup timestamp of
+    the backup that has been restored.
+    This avoids duplicate names of resources with different historical states
+    and makes restored resources easier to discern.
+
+    A new job configuration option ``temp_resource_prefix`` and corresponding
+    **freezer-agent** command-line flag ``--temp-resource-prefix`` is
+    introduced. It defaults to ``freezer_``.
+
+    Temporary resources (snapshots, images, volumes) created during **backup**
+    operations will receive a ``freezer_backup_`` prefix to their name.
+    Temporary resources (snapshots, images, volumes) created during **restore**
+    operations will receive a ``freezer_restore_`` prefix to their name.
+    The ``freezer_`` part can be configured using the new
+    ``temp_resource_prefix`` option.
+
+    All temporary resources created by Freezer that historically did not
+    receive a name (resulting in the name being "None") will now receive
+    proper naming as described above.

@@ -101,6 +101,7 @@ def freezer_main(backup_args):
         max_segment_size=backup_args.max_segment_size,
         rsync_block_size=backup_args.rsync_block_size,
         encrypt_key=backup_args.encrypt_pass_file,
+        temp_resource_prefix=backup_args.temp_resource_prefix,
         dry_run=backup_args.dry_run
     )
 

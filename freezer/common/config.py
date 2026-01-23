@@ -129,6 +129,7 @@ DEFAULT_PARAMS = {
     'storage': 'swift',
     'sql_server_conf': False,
     'sync': True,
+    'temp_resource_prefix': 'freezer_',
     'timeout': 120,
     'upload_limit': -1,
     'version': None,
@@ -628,6 +629,12 @@ _COMMON = [
                dest='ftp_certfile',
                default=DEFAULT_PARAMS['ftp_certfile'],
                help="Required if ftps server requires client certificate"
+               ),
+    cfg.StrOpt('temp-resource-prefix',
+               dest='temp_resource_prefix',
+               default=DEFAULT_PARAMS['temp_resource_prefix'],
+               help="Naming prefix for temporary resources created by "
+                    "Freezer during backup and restore procedures."
                ),
 ]
 
