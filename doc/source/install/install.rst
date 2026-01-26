@@ -14,7 +14,6 @@ Note that installation and configuration vary by distribution.
    :maxdepth: 2
 
    db-install
-   install-obs
    install-rdo
    install-ubuntu
 
@@ -22,8 +21,7 @@ Note that installation and configuration vary by distribution.
 
   $ git clone https://opendev.org/openstack/freezer-api.git
   $ cd freezer-api
-  $ pip install ./
-
+  $ python3 -m pip install -e .
 
 .. toctree::
 
