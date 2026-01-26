@@ -26,8 +26,6 @@ from oslo_config import cfg
 from oslo_log import log
 import swiftclient
 
-from freezer.utils import utils
-
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
@@ -97,7 +95,7 @@ class OSClientManager(object):
     def create_glance(self):
         """
         Use pre-initialized session to create an instance of glance client.
-        :return: glanceclient instance
+        :return: image service proxy instance from OpenStack SDK
         """
         self.glance = os_conn.Connection(session=self.sess).image
         return self.glance
@@ -179,8 +177,8 @@ class OSClientManager(object):
 
     def get_glance(self):
         """
-        Get glanceclient instance
-        :return: glanceclient instance
+        Get glance client instance
+        :return: image service proxy instance from OpenStack SDK
         """
         if not self.glance:
             self.glance = self.create_glance()
@@ -311,8 +309,7 @@ class OSClientManager(object):
         LOG.debug("Download image enter")
         stream = self.get_glance().download_image(image.id, stream=True)
         LOG.debug("Stream with size {0}".format(image.size))
-        return utils.ReSizeStream(stream, image.size,
-                                  CONF.get('max_segment_size'))
+        return stream.iter_content(chunk_size=CONF.get('max_segment_size'))
 
     def create_image(self, name, container_format, disk_format, data=None):
         LOG.info("Creating glance image")
@@ -326,7 +323,7 @@ class OSClientManager(object):
             raise BaseException(msg)
         if data is None:
             return image
-        glance.upload_image(image.id, data)
+        image.upload(glance, data=data)
         while image.status not in ('active', 'killed'):
             LOG.info("Waiting for glance image upload")
             time.sleep(5)

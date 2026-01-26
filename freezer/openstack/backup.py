@@ -69,7 +69,7 @@ class BackupOs(object):
             name = volume_id
         else:
             name = volume.name
-        headers = {'x-object-meta-length': str(len(stream)),
+        headers = {'x-object-meta-length': str(image.size),
                    'volume_name': name,
                    'availability_zone': volume.availability_zone
                    }
