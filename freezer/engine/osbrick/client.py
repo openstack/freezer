@@ -15,10 +15,12 @@ from os_brick.initiator import connector
 from oslo_concurrency import lockutils
 from oslo_concurrency import processutils
 
+from freezer.common import config as freezer_config
 from freezer.engine.osbrick import brick_utils
 from freezer.engine.osbrick import volume_actions as actions
 
-import tempfile
+
+CONF = freezer_config.CONF
 
 
 class Client(object):
@@ -28,8 +30,8 @@ class Client(object):
         self.volumes_client = volumes_client
         # During the connect() call on the osbrick connector, oslo_concurrency
         # requires the lock_path option to be set for lock file management.
-        lockutils.set_defaults(lock_path=tempfile.mkdtemp(
-            prefix='oslo_concurrency_lock'))
+        lock_path = CONF.os_brick.lock_path or CONF.oslo_concurrency.lock_path
+        lockutils.set_defaults(lock_path=lock_path)
 
     def _brick_get_connector(self, protocol, driver=None,
                              execute=processutils.execute,
