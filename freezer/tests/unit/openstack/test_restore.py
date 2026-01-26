@@ -120,7 +120,7 @@ class TestRestore(commons.FreezerBaseTestCase):
             self.assertEqual(str(e), "Failed to open image file"
                                      " /root/test//root/12345//root")
 
-        mock_open.side_effect = 'test'
+        mock_open.side_effect = mock.MagicMock()
         mock_load.return_value = 'test'
         result1, result2 = restore_os._create_image('/root', 12344)
         self.assertEqual(result1, 'test')

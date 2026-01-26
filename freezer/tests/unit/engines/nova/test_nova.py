@@ -168,7 +168,7 @@ class TestNovaEngineFSLikeStorage(TestNovaEngine):
         self.mock_nova.servers.list.assert_called_once_with(detailed=False)
         self.mock_fslike_storage.open.assert_called_once_with(
             self.local_backup_file,
-            'wb')
+            'w')
         self.mock_file.write.assert_called_once_with(self.instance_ids_str)
         self.engine.backup.assert_has_calls(self.expected_backup_calls,
                                             any_order=True)

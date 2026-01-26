@@ -73,8 +73,9 @@ class RestoreOs(object):
                    format(self.storage.type))
             LOG.error(msg)
             raise BaseException(msg)
-        backups = list(filter(lambda x: int(x) >= restore_from_timestamp,
-                              backups))
+        if restore_from_timestamp:
+            backups = list(filter(lambda x: int(x) >= restore_from_timestamp,
+                                  backups))
         if not backups:
             msg = "Cannot find backups for path: %s" % path
             LOG.error(msg)
@@ -157,7 +158,8 @@ class RestoreOs(object):
                 msg = "Failed to open image file {}".format(image_file)
                 LOG.error(msg)
                 raise BaseException(msg)
-            info = json.load(open(metadata_file, 'r'))
+            with open(metadata_file, 'rb') as f:
+                info = json.load(f)
             image = self.client_manager.create_image(
                 name="restore_{}".format(path),
                 container_format="bare",
@@ -237,8 +239,12 @@ class RestoreOs(object):
                     if backup_created_timestamp >= restore_from_timestamp:
                         yield backup
 
-            backups_filter = get_backups_from_timestamp(backups,
-                                                        restore_from_timestamp)
+            if restore_from_timestamp:
+                backups_filter = get_backups_from_timestamp(
+                    backups, restore_from_timestamp)
+            else:
+                backups_filter = None
+
             if not backups_filter:
                 LOG.warning("no available backups for cinder volume,"
                             "restore newest backup")

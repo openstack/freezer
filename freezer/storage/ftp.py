@@ -252,7 +252,7 @@ class BaseFtpStorage(fslike.FsLikeStorage):
             self.put_file(data_backup, backup_basepath)
             # write data matadata to backup_metadata
             metadata = utils.path_join(tmpdir, "metadata")
-            with open(metadata, 'wb') as backup_meta:
+            with open(metadata, 'w') as backup_meta:
                 backup_meta.write(json.dumps(headers))
             self.put_file(metadata, backup_metadata)
         finally:

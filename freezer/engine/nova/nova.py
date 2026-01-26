@@ -197,13 +197,13 @@ class NovaEngine(engine.BackupEngine):
         elif self.storage._type in ['local', 'ssh']:
             backup_basepath = os.path.join(self.storage.storage_path,
                                            "project_" + project_id)
-            with self.storage.open(backup_basepath, 'wb') as backup_file:
+            with self.storage.open(backup_basepath, 'w') as backup_file:
                 backup_file.write(data)
         elif self.storage._type in ['ftp', 'ftps']:
             backup_basepath = os.path.join(self.storage.storage_path,
                                            'project_' + project_id)
             file = tempfile.NamedTemporaryFile('wb', delete=True)
-            with open(file.name, 'wb') as f:
+            with open(file.name, 'w') as f:
                 f.write(data)
             LOG.info("backup_nova_tenant data={0}".format(data))
             self.storage.put_file(file.name, backup_basepath)
@@ -353,9 +353,9 @@ class NovaEngine(engine.BackupEngine):
 
     def set_tenant_meta(self, path, metadata):
         """push data to the manifest file"""
-        with open(path, 'wb') as fb:
+        with open(path, 'w') as fb:
             fb.writelines(json.dumps(metadata))
 
     def get_tenant_meta(self, path):
-        with open(path, 'rb') as fb:
+        with open(path, 'r') as fb:
             json.loads(fb.read())

@@ -286,7 +286,7 @@ class ReSizeStream(object):
             if stop:
                 result = self.reminder
                 if len(self.reminder) == 0:
-                    raise StopIteration()
+                    raise StopIteration
                 self.reminder = bytes()
                 self.transmitted += len(result)
                 return result
