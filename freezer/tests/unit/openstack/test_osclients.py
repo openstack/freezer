@@ -28,10 +28,12 @@ class TestOsClients(unittest.TestCase):
             project_domain_name='Default').get_opts_dicts()
         self.client_manager = osclients.OSClientManager(**self.opts)
 
-    def test_init(self):
+    @mock.patch('openstack.connection.Connection')
+    def test_init(self, mock_connection):
         self.client_manager.get_cinder()
 
-    def test_create_cinder(self):
+    @mock.patch('openstack.connection.Connection')
+    def test_create_cinder(self, mock_connection):
         self.client_manager.create_cinder()
 
     def test_create_swift(self):
@@ -48,7 +50,8 @@ class TestOsClients(unittest.TestCase):
     def test_dry_run(self):
         osclients.DryRunSwiftclientConnectionWrapper(mock.Mock())
 
-    def test_get_cinder(self):
+    @mock.patch('openstack.connection.Connection')
+    def test_get_cinder(self, mock_connection):
         self.client_manager.get_cinder()
 
     def test_get_swift(self):

@@ -24,20 +24,24 @@ class VolumeAction(object):
 
     def __exit__(self, type, value, traceback):
         if traceback:
-            self.volumes_client.volumes.unreserve(self.volume_id)
+            self.volumes_client.unreserve_volume(self.volume_id)
             return False
         return True
 
 
 class Reserve(VolumeAction):
-    def reserve(self):
-        self.volumes_client.volumes.reserve(self.volume_id)
+    def reserve(self, mountpoint, mode, hostname):
+        return self.volumes_client.create_attachment(self.volume_id,
+                                                     instance_uuid=None,
+                                                     mountpoint=mountpoint,
+                                                     mode=mode,
+                                                     host_name=hostname)
 
 
 class InitializeConnection(VolumeAction):
     def initialize(self, brick_client, multipath, enforce_multipath):
         conn_prop = brick_client.get_connector(multipath, enforce_multipath)
-        return self.volumes_client.volumes.initialize_connection(
+        return self.volumes_client.init_volume_attachment(
             self.volume_id, conn_prop)
 
 
@@ -56,28 +60,23 @@ class VerifyProtocol(VolumeAction):
 
 
 class ConnectVolume(VolumeAction):
-    def connect(self, brick_connector, connection_data,
-                mountpoint, mode, hostname):
+    def connect(self, brick_connector, connection_data, attachment):
         device_info = brick_connector.connect_volume(connection_data)
-
-        self.volumes_client.volumes.attach(self.volume_id, instance_uuid=None,
-                                           mountpoint=mountpoint,
-                                           mode=mode,
-                                           host_name=hostname)
+        self.volumes_client.complete_attachment(attachment)
         return device_info
 
 
 class VolumeDetachAction(VolumeAction):
     def __exit__(self, type, value, traceback):
         if traceback:
-            self.volumes_client.volumes.roll_detaching(self.volume_id)
+            self.volumes_client.abort_volume_detaching(self.volume_id)
             return False
         return True
 
 
 class BeginDetach(VolumeDetachAction):
     def reserve(self):
-        self.volumes_client.volumes.begin_detaching(self.volume_id)
+        self.volumes_client.begin_volume_detaching(self.volume_id)
 
 
 class InitializeConnectionForDetach(InitializeConnection, VolumeDetachAction):
@@ -96,6 +95,6 @@ class DetachVolume(VolumeDetachAction):
                attachment_uuid, multipath, enforce_multipath):
         conn_prop = brick_client.get_connector(multipath, enforce_multipath)
 
-        self.volumes_client.volumes.terminate_connection(self.volume_id,
-                                                         conn_prop)
-        self.volumes_client.volumes.detach(self.volume_id, attachment_uuid)
+        self.volumes_client.terminate_volume_attachment(self.volume_id,
+                                                        conn_prop)
+        self.volumes_client.detach_volume(self.volume_id, attachment_uuid)

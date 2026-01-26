@@ -71,8 +71,8 @@ class TestRestore(commons.FreezerBaseTestCase):
         backup2 = mock.MagicMock()
         backup2.created_at = "2020-08-31T16:32:31"
         cinder_client = mock.MagicMock()
-        cinder_client.backups.list.return_value = [backup1, backup2]
-        cinder_client.restores.restore.return_value = 'test'
+        cinder_client.backups.return_value = [backup1, backup2]
+        cinder_client.restore_backup.return_value = 'test'
         client_manager = mock.MagicMock()
         client_manager.get_cinder.return_value = cinder_client
         restore_os = restore.RestoreOs(client_manager, '/root/test/', storage)

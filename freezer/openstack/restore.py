@@ -229,7 +229,7 @@ class RestoreOs(object):
             'status': 'available',
         }
         if not backup_id:
-            backups = cinder.backups.list(search_opts=search_opts)
+            backups = cinder.backups(details=True, **search_opts)
 
             def get_backups_from_timestamp(backups, restore_from_timestamp):
                 for backup in backups:
@@ -252,7 +252,7 @@ class RestoreOs(object):
             else:
                 backup = min(backups_filter, key=lambda x: x.created_at)
             backup_id = backup.id
-        cinder.restores.restore(backup_id=backup_id)
+        cinder.restore_backup(backup_id, volume_id=volume_id)
 
     def restore_cinder_by_glance(self, volume_id, restore_from_timestamp):
         """
@@ -273,8 +273,8 @@ class RestoreOs(object):
             size += 1
         LOG.info("Creating volume from image")
         cinder_client = self.client_manager.get_cinder()
-        volume = cinder_client.volumes.create(
-            size,
+        volume = cinder_client.create_volume(
+            size=int(size),
             imageRef=image.id,
             name=info.get('volume_name',
                           CONF.get('backup_name',
@@ -285,7 +285,7 @@ class RestoreOs(object):
         while volume.status != "available":
             try:
                 LOG.info("Volume copy status: " + volume.status)
-                volume = cinder_client.volumes.get(volume.id)
+                volume = cinder_client.get_volume(volume.id)
                 if volume.status == "error":
                     raise Exception("Volume copy status: error")
                 time.sleep(5)

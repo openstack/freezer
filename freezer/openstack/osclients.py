@@ -16,7 +16,6 @@
 import os
 import time
 
-from cinderclient import client as cinder_client
 from keystoneauth1 import loading
 from keystoneauth1 import session
 from openstack import connection as os_conn
@@ -99,11 +98,9 @@ class OSClientManager(object):
     def create_cinder(self):
         """
         Use pre-initialized session to create an instance of cinder client.
-        :return: cinderclient instance
+        :return: volume service proxy instance from OpenStack SDK
         """
-        self.cinder = cinder_client.Client(self.volume_version,
-                                           session=self.sess,
-                                           **self.client_kwargs)
+        self.cinder = os_conn.Connection(session=self.sess).block_storage
         return self.cinder
 
     def create_swift(self):
@@ -182,8 +179,8 @@ class OSClientManager(object):
 
     def get_cinder(self):
         """
-        Get cinderclient instance
-        :return: cinderclient instance
+        Get cinder client instance
+        :return: volume service proxy instance from OpenStack SDK
         """
         if not self.cinder:
             self.cinder = self.create_cinder()
@@ -205,7 +202,7 @@ class OSClientManager(object):
         :param snapshot_name: name of snapshot
         :return: snapshot object
         """
-        snapshot = self.get_cinder().volume_snapshots.create(
+        snapshot = self.get_cinder().create_snapshot(
             volume_id=volume.id,
             name=snapshot_name,
             force=True)
@@ -215,13 +212,13 @@ class OSClientManager(object):
         while snapshot.status != "available":
             try:
                 LOG.debug("Snapshot status: " + snapshot.status)
-                snapshot = self.get_cinder().volume_snapshots.get(snapshot.id)
+                snapshot = self.get_cinder().get_snapshot(snapshot.id)
                 if snapshot.status == "error":
                     raise RuntimeError("snapshot has error state")
                 time.sleep(5)
             except RuntimeError:
                 LOG.info("Delete snapshot in error state " + snapshot.id)
-                self.get_cinder().volume_snapshots.delete(snapshot)
+                self.get_cinder().delete_snapshot(snapshot)
                 raise Exception("Delete snapshot in error"
                                 " state " + snapshot.id)
             except Exception as e:
@@ -234,20 +231,20 @@ class OSClientManager(object):
         :param snapshot: provided snapshot
         :return: created volume
         """
-        volume = self.get_cinder().volumes.create(
+        volume = self.get_cinder().create_volume(
             size=snapshot.size,
             snapshot_id=snapshot.id)
 
         while volume.status != "available":
             try:
                 LOG.info("Volume copy status: " + volume.status)
-                volume = self.get_cinder().volumes.get(volume.id)
+                volume = self.get_cinder().get_volume(volume.id)
                 if volume.status == "error":
                     raise RuntimeError("Volume copy has error state")
                 time.sleep(5)
             except RuntimeError:
                 LOG.info("Delete volume in error state " + volume.id)
-                self.get_cinder().volumes.delete(volume.id)
+                self.get_cinder().delete_volume(volume.id)
                 raise Exception("Delete volume in error state " + volume.id)
             except Exception as e:
                 LOG.exception(e)
@@ -261,12 +258,12 @@ class OSClientManager(object):
         :param copy_volume: volume to make an image
         :return: Glance image object
         """
-        image_id = self.get_cinder().volumes.upload_to_image(
+        image_id = self.get_cinder().upload_volume_to_image(
             volume=copy_volume,
             force=True,
             image_name=image_volume_name,
             container_format="bare",
-            disk_format="raw")[1]["os-volume_upload_image"]["image_id"]
+            disk_format="raw")["image_id"]
         image = self.get_glance().get_image(image_id)
         while image.status != "active":
             try:
@@ -294,7 +291,7 @@ class OSClientManager(object):
         :param snapshot: snapshot name
         """
         LOG.info("Deleting existed snapshot: " + snapshot.id)
-        self.get_cinder().volume_snapshots.delete(snapshot)
+        self.get_cinder().delete_snapshot(snapshot)
 
     def download_image(self, image):
         """
