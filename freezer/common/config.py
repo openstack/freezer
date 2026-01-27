@@ -18,6 +18,7 @@ import socket
 import sys
 import tempfile
 
+from oslo_concurrency import opts as lock_opts
 from oslo_config import cfg
 from oslo_config.cfg import NoSuchOptError
 from oslo_log import log
@@ -135,6 +136,19 @@ DEFAULT_PARAMS = {
     'volume': None,
     'windows_volume': '',
 }
+
+_OS_BRICK_GROUP = cfg.OptGroup(
+    'os_brick',
+    title='os-brick Options',
+    help='Configuration options for os-brick'
+)
+
+_OS_BRICK_OPTS = [
+    cfg.StrOpt('lock_path',
+               default=None,
+               help='Directory to use for lock files. '
+                    'Defaults to lock_path in [oslo_concurrency].')
+]
 
 _COMMON = [
     cfg.StrOpt('action',
@@ -635,6 +649,10 @@ _COMMON = [
 def config(args=[]):
     CONF.register_opts(_COMMON)
     CONF.register_cli_opts(_COMMON)
+    for group, opts in lock_opts.list_opts():
+        CONF.register_opts(opts, group=group)
+    CONF.register_group(_OS_BRICK_GROUP)
+    CONF.register_opts(_OS_BRICK_OPTS, group=_OS_BRICK_GROUP)
     log.register_options(CONF)
     CONF(args=args,
          project='freezer',
@@ -859,7 +877,8 @@ def prepare_logging(log_file=None):
 
 def list_opts():
     _OPTS = {
-        None: _COMMON
+        None: _COMMON,
+        _OS_BRICK_GROUP: _OS_BRICK_OPTS
     }
 
     return _OPTS.items()

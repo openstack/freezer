@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    Add ``[os_brick]/lock_path`` configuration option to define temporary
+    lock file location. This option is required when ``engine`` is set to
+    ``osbrick``.
+upgrade:
+  - |
+    For deployment using ``engine=osbrick`` the ``lock_path`` option in
+    ``[os_brick]`` section has to be defined.
