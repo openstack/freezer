@@ -47,6 +47,7 @@ class GlanceEngine(engine.BackupEngine):
         self.max_segment_size = kwargs.get('max_segment_size')
         self.storage = storage
         self.dereference_symlink = kwargs.get('symlinks')
+        self.temp_resource_prefix = kwargs.get('temp_resource_prefix')
 
     @property
     def name(self):
@@ -121,8 +122,9 @@ class GlanceEngine(engine.BackupEngine):
             stream = self.stream_image(read_pipe)
             data = utils.ReSizeStream(stream, length, 1)
             image = self.client.create_image(
-                "restore_{0}".format(
-                    image_info.get('name', image_info.get('id', None))
+                "{0}~{1}".format(
+                    image_info.get('name', image_info.get('id', None)),
+                    backup.timestamp
                 ),
                 container_format,
                 disk_format,

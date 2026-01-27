@@ -25,7 +25,8 @@ class TestBackup(commons.FreezerBaseTestCase):
         self.backup_opt = commons.BackupOpt1()
         self.bakup_os = backup.BackupOs(self.backup_opt.client_manager,
                                         self.backup_opt.container,
-                                        self.backup_opt.storage)
+                                        self.backup_opt.storage,
+                                        self.backup_opt.temp_resource_prefix)
 
     def test_backup_cinder_by_glance(self):
         self.bakup_os.backup_cinder_by_glance(35)

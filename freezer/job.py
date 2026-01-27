@@ -387,20 +387,25 @@ class BackupJob(Job):
         elif backup_media == 'cindernative':
             backup_os = backup.BackupOs(self.conf.client_manager,
                                         self.conf.container,
-                                        self.storage)
+                                        self.storage,
+                                        self.conf.temp_resource_prefix)
             LOG.info('Executing cinder native backup. Volume ID: {0}, '
                      'incremental: {1}'.format(self.conf.cindernative_vol_id,
                                                self.conf.incremental))
-            backup_os.backup_cinder(self.conf.cindernative_vol_id,
-                                    name=self.conf.backup_name,
-                                    incremental=self.conf.incremental)
+            backup_os.backup_cinder(
+                self.conf.cindernative_vol_id,
+                name=self.conf.backup_name,
+                incremental=self.conf.incremental,
+                description="Backup created by Freezer for volume {0}".format(
+                    self.conf.cindernative_vol_id))
         elif backup_media == 'cinder':
             backup_os = backup.BackupOs(self.conf.client_manager,
                                         self.conf.container,
-                                        self.storage)
+                                        self.storage,
+                                        self.conf.temp_resource_prefix)
             if self.conf.cinder_vol_id:
                 LOG.info('Executing cinder snapshot. Volume ID: {0}'.format(
-                    self.conf.cinder_vol_id))
+                         self.conf.cinder_vol_id))
                 backup_os.backup_cinder_by_glance(self.conf.cinder_vol_id)
             else:
                 executor = futures.ThreadPoolExecutor(
@@ -562,7 +567,7 @@ class RestoreJob(Job):
 
         elif conf.backup_media == 'cinder':
             res = restore.RestoreOs(conf.client_manager, conf.container,
-                                    self.storage)
+                                    self.storage, conf.temp_resource_prefix)
             if conf.cinder_vol_id:
                 LOG.info("Restoring cinder backup from glance. "
                          "Volume ID: {0}, timestamp: {1}".format(
@@ -579,7 +584,7 @@ class RestoreJob(Job):
                                                  restore_timestamp)
         elif conf.backup_media == 'cindernative':
             res = restore.RestoreOs(conf.client_manager, conf.container,
-                                    self.storage)
+                                    self.storage, conf.temp_resource_prefix)
             LOG.info("Restoring cinder native backup. Volume ID {0}, Backup ID"
                      " {1}, timestamp: {2}".format(conf.cindernative_vol_id,
                                                    conf.cindernative_backup_id,
