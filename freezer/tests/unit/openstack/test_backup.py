@@ -15,8 +15,11 @@ limitations under the License.
 
 """
 
+from unittest import mock
+
 from freezer.openstack import backup
 from freezer.tests import commons
+from freezer.utils import utils
 
 
 class TestBackup(commons.FreezerBaseTestCase):
@@ -42,3 +45,27 @@ class TestBackup(commons.FreezerBaseTestCase):
 
     def test_backup_cinder_with_none(self):
         self.bakup_os.backup_cinder(10240, incremental=True)
+
+    def test_backup_cinder_by_snapshot_timestamp(self):
+        volume_id = 12345
+        # Mock the snapshot object to have a specific created_at
+        mock_snapshot = commons.FakeIdObject("snapshot_id")
+        # 1463018422 is 2016-05-12 02:00:22 UTC
+        mock_snapshot.created_at = '2016-05-12T02:00:22.123456'
+
+        self.backup_opt.client_manager.provide_snapshot = \
+            mock.Mock(return_value=mock_snapshot)
+        self.bakup_os.storage.add_stream = mock.Mock()
+
+        self.bakup_os.backup_cinder_by_glance(volume_id)
+
+        expected_dt = '2016-05-12T02:00:22'
+        expected_timestamp = utils.DateTime(expected_dt).timestamp
+        expected_package = "{0}/{1}".format(volume_id, expected_timestamp)
+
+        # Verify storage.add_stream was called with the correct package name
+        self.bakup_os.storage.add_stream.assert_called()
+        args, _ = self.bakup_os.storage.add_stream.call_args
+        # add_stream(self, stream, package_name, headers=None)
+        # In backup.py: storage.add_stream(stream, package, headers=headers)
+        self.assertEqual(args[1], expected_package)

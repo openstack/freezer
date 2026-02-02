@@ -92,10 +92,12 @@ class DateTime(object):
             self.date_time = value
         else:
             fmt = '%Y-%m-%dT%H:%M:%S'
+            if '.' in value:
+                fmt = '%Y-%m-%dT%H:%M:%S.%f'
             try:
                 self.date_time = datetime.datetime.strptime(value, fmt)
             except Exception:
-                raise Exception('bad datetime format: "{0}'.format(value))
+                raise Exception('bad datetime format: "{0}"'.format(value))
 
     @property
     def timestamp(self):

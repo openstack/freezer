@@ -69,8 +69,9 @@ class BackupOs(object):
                                    copied_volume.id),
             copied_volume)
         LOG.debug("Download temporary glance image {0}".format(image.id))
+        resource_timestamp = utils.DateTime(snapshot.created_at).timestamp
         stream = client_manager.download_image(image)
-        package = "{0}/{1}".format(volume_id, utils.DateTime.now().timestamp)
+        package = "{0}/{1}".format(volume_id, resource_timestamp)
         LOG.debug("Saving image to {0}".format(self.storage.type))
         if volume.name is None:
             name = volume_id
