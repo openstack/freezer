@@ -76,7 +76,7 @@ class RestoreOs(object):
             LOG.error(msg)
             raise BaseException(msg)
         if restore_from_timestamp:
-            backups = list(filter(lambda x: int(x) >= restore_from_timestamp,
+            backups = list(filter(lambda x: int(x) <= restore_from_timestamp,
                                   backups))
         if not backups:
             msg = "Cannot find backups for path: %s" % path
@@ -240,12 +240,12 @@ class RestoreOs(object):
                     backup_created_date = backup.created_at.split('.')[0]
                     backup_created_timestamp = (
                         utils.date_to_timestamp(backup_created_date))
-                    if backup_created_timestamp >= restore_from_timestamp:
+                    if backup_created_timestamp <= restore_from_timestamp:
                         yield backup
 
             if restore_from_timestamp:
-                backups_filter = get_backups_from_timestamp(
-                    backups, restore_from_timestamp)
+                backups_filter = list(get_backups_from_timestamp(
+                    backups, restore_from_timestamp))
             else:
                 backups_filter = None
 
@@ -254,7 +254,7 @@ class RestoreOs(object):
                             "restore newest backup")
                 backup = max(backups, key=lambda x: x.created_at)
             else:
-                backup = min(backups_filter, key=lambda x: x.created_at)
+                backup = max(backups_filter, key=lambda x: x.created_at)
             backup_id = backup.id
         cinder.restore_backup(backup_id, volume_id=volume_id)
 
