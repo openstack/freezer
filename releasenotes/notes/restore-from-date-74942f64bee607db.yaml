@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes behavor of restore-from-date option which had an opposite logic.
+    Now it restores the most recent backup previous to the specified date
+    (included).

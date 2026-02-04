@@ -20,6 +20,7 @@ from unittest import mock
 
 from freezer.openstack import restore
 from freezer.tests import commons
+from freezer.utils import utils
 
 
 class Image(object):
@@ -105,13 +106,13 @@ class TestRestore(commons.FreezerBaseTestCase):
         client_manager.create_image.return_value = image
         restore_os = restore.RestoreOs(client_manager, '/root/test/', storage,
                                        'freezer_')
-        result1, result2, result3 = restore_os._create_image('/root', 12344)
+        result1, result2, result3 = restore_os._create_image('/root', 12347)
         self.assertEqual(result1, {"test": "test_info"})
         self.assertEqual(result2, image)
         self.assertEqual(result3, '12346')
 
         storage.get_object_prefix.return_value = ''
-        result1, result2, result3 = restore_os._create_image('/root', 12344)
+        result1, result2, result3 = restore_os._create_image('/root', 12347)
         self.assertEqual(result1, {"test": "test_info"})
         self.assertEqual(result2, image)
         self.assertEqual(result3, '12346')
@@ -122,14 +123,14 @@ class TestRestore(commons.FreezerBaseTestCase):
         restore_os = restore.RestoreOs(client_manager, '/root/test', storage,
                                        'freezer_')
         try:
-            restore_os._create_image('/root', 12344)
+            restore_os._create_image('/root', 12347)
         except BaseException as e:
             self.assertEqual(str(e), "Failed to open image file"
                                      " /root/test//root/12345//root")
 
         mock_open.side_effect = mock.MagicMock()
         mock_load.return_value = 'test'
-        result1, result2, result3 = restore_os._create_image('/root', 12344)
+        result1, result2, result3 = restore_os._create_image('/root', 12347)
         self.assertEqual(result1, 'test')
         self.assertEqual(result2, image)
         self.assertEqual(result3, '12345')
@@ -140,7 +141,7 @@ class TestRestore(commons.FreezerBaseTestCase):
         restore_os = restore.RestoreOs(client_manager, '/root/test', storage,
                                        'freezer_')
         try:
-            restore_os._create_image('/root', 12344)
+            restore_os._create_image('/root', 12347)
         except BaseException as e:
             self.assertEqual(str(e), "Failed to open remote image file "
                                      "/root/test//root/12345//root")
@@ -149,7 +150,7 @@ class TestRestore(commons.FreezerBaseTestCase):
         storage.read_metadata_file.return_value = '{"test": "test_info"}'
         restore_os = restore.RestoreOs(client_manager, '/root/test', storage,
                                        'freezer_')
-        result1, result2, result3 = restore_os._create_image('/root', 12344)
+        result1, result2, result3 = restore_os._create_image('/root', 12347)
         self.assertEqual(result1, {"test": "test_info"})
         self.assertEqual(result2, image)
         self.assertEqual(result3, '12345')
@@ -160,14 +161,14 @@ class TestRestore(commons.FreezerBaseTestCase):
         restore_os = restore.RestoreOs(client_manager, '/root/test', storage,
                                        'freezer_')
         try:
-            restore_os._create_image('/root', 12344)
+            restore_os._create_image('/root', 12347)
         except Exception as e:
             self.assertEqual(str(e), "Unable to create a tmp directory")
 
         mock_mkdtemp.side_effect = "success"
         mock_rmtree.return_value = "success"
         mock_open.side_effect = 'test'
-        result1, result2, result3 = restore_os._create_image('/root', 12344)
+        result1, result2, result3 = restore_os._create_image('/root', 12347)
         self.assertEqual(result1, 'test')
         self.assertEqual(result2, image)
         self.assertEqual(result3, '12345')
@@ -179,7 +180,7 @@ class TestRestore(commons.FreezerBaseTestCase):
         restore_os = restore.RestoreOs(client_manager, '/root/test/', storage,
                                        'freezer_')
         try:
-            restore_os._get_latest_backup('/root', 12347)
+            restore_os._get_latest_backup('/root', 12344)
         except BaseException as e:
             self.assertEqual(str(e), "ss3 storage type is not supported at the"
                                      " moment. Try local, SWIFT, SSH(SFTP),"
@@ -192,7 +193,68 @@ class TestRestore(commons.FreezerBaseTestCase):
         restore_os = restore.RestoreOs(client_manager, '/root/test/', storage,
                                        'freezer_')
         try:
-            restore_os._get_latest_backup('/root', 12347)
+            restore_os._get_latest_backup('/root', 12344)
         except BaseException as e:
-            self.assertEqual(str(e), "Cannot find backups for"
-                                     " path: root/test///root")
+            self.assertEqual(str(e), "Cannot find backups for path: "
+                                     "root/test///root")
+
+    def test_get_latest_backup_logic(self):
+        storage = mock.MagicMock()
+        storage.type = 's3'
+        storage.list_all_objects.return_value = [
+            {'Key': '/1000'},
+            {'Key': '/2000'},
+            {'Key': '/3000'}
+        ]
+        client_manager = mock.MagicMock()
+        ros = restore.RestoreOs(client_manager, 'container', storage,
+                                'freezer_')
+
+        # Logic: select most recent backup <= restore_from_timestamp
+        # If timestamp is 2500, should select 2000
+        res = ros._get_latest_backup('path', 2500)
+        self.assertEqual(
+            res, 2000, "Should select 2000 (most recent <= 2500)")
+
+        # If timestamp is 1500, should select 1000
+        res = ros._get_latest_backup('path', 1500)
+        self.assertEqual(
+            res, 1000, "Should select 1000 (most recent <= 1500)")
+
+    def test_restore_cinder_logic(self):
+        storage = mock.MagicMock()
+        storage.type = 'swift'
+
+        # Mock three backups: oldest, middle, newest
+        backup_old = mock.MagicMock()
+        backup_old.id = 'oldest'
+        backup_old.created_at = "2026-01-22T14:30:16"
+
+        backup_mid = mock.MagicMock()
+        backup_mid.id = 'middle'
+        backup_mid.created_at = "2026-01-22T14:37:16"
+
+        backup_new = mock.MagicMock()
+        backup_new.id = 'newest'
+        backup_new.created_at = "2026-01-22T14:45:56"
+
+        cinder_client = mock.MagicMock()
+        cinder_client.backups.return_value = [backup_old, backup_mid,
+                                              backup_new]
+        client_manager = mock.MagicMock()
+        client_manager.get_cinder.return_value = cinder_client
+
+        ros = restore.RestoreOs(client_manager, 'container', storage,
+                                'freezer_')
+
+        # restore_from_date = 2026-01-22T14:40:00
+        # T14:40:00 is between middle (T14:37:16) and newest (T14:45:56)
+        # Expected: middle (T14:37:16)
+
+        timestamp = utils.date_to_timestamp("2026-01-22T14:40:00")
+
+        ros.restore_cinder(volume_id='vol-id',
+                           restore_from_timestamp=timestamp)
+
+        cinder_client.restore_backup.assert_called_with('middle',
+                                                        volume_id='vol-id')
