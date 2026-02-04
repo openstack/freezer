@@ -227,6 +227,11 @@ class RestoreOs(object):
         :param restore_from_timestamp:
         :return:
         """
+        if not volume_id and not backup_id:
+            msg = "Either volume_id or backup_id must be supplied"
+            LOG.error(msg)
+            raise BaseException(msg)
+
         cinder = self.client_manager.get_cinder()
         search_opts = {
             'volume_id': volume_id,
@@ -242,6 +247,11 @@ class RestoreOs(object):
                         utils.date_to_timestamp(backup_created_date))
                     if backup_created_timestamp <= restore_from_timestamp:
                         yield backup
+
+            if not backups:
+                msg = "No backups found for cinder volume {}".format(volume_id)
+                LOG.error(msg)
+                raise BaseException(msg)
 
             if restore_from_timestamp:
                 backups_filter = list(get_backups_from_timestamp(
