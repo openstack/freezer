@@ -70,8 +70,10 @@ class TestRestore(commons.FreezerBaseTestCase):
         storage = mock.MagicMock()
         storage.type = 'swift'
         backup1 = mock.MagicMock()
+        backup1.id = 'backup1'
         backup1.created_at = "2020-08-31T16:32:30"
         backup2 = mock.MagicMock()
+        backup2.id = 'backup2'
         backup2.created_at = "2020-08-31T16:32:31"
         cinder_client = mock.MagicMock()
         cinder_client.backups.return_value = [backup1, backup2]
@@ -80,10 +82,49 @@ class TestRestore(commons.FreezerBaseTestCase):
         client_manager.get_cinder.return_value = cinder_client
         restore_os = restore.RestoreOs(client_manager, '/root/test/', storage,
                                        'freezer_')
-        result = restore_os.restore_cinder(restore_from_timestamp=1598862750)
-        self.assertIsNone(result)
-        result = restore_os.restore_cinder(restore_from_timestamp=1598862749)
-        self.assertIsNone(result)
+        with mock.patch('freezer.utils.utils.date_to_timestamp') as mock_dt:
+            mock_dt.side_effect = lambda x: (
+                1598862750 if x == "2020-08-31T16:32:30" else 1598862751)
+            result = restore_os.restore_cinder(
+                volume_id='vol-123',
+                restore_from_timestamp=1598862750)
+            self.assertIsNone(result)
+            cinder_client.restore_backup.assert_called_with(
+                'backup1', volume_id='vol-123')
+            result = restore_os.restore_cinder(
+                volume_id='vol-123',
+                restore_from_timestamp=1598862749)
+            self.assertIsNone(result)
+            cinder_client.restore_backup.assert_called_with(
+                'backup2', volume_id='vol-123')
+
+    def test_restore_cinder_no_backup_no_volume(self):
+        storage = mock.MagicMock()
+        storage.type = 'swift'
+        cinder_client = mock.MagicMock()
+        cinder_client.backups.return_value = []
+        client_manager = mock.MagicMock()
+        client_manager.get_cinder.return_value = cinder_client
+        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage,
+                                       'freezer_')
+        with self.assertRaisesRegex(BaseException,
+                                    "Either volume_id or backup_id must be "
+                                    "supplied"):
+            restore_os.restore_cinder()
+
+    def test_restore_cinder_no_backups(self):
+        storage = mock.MagicMock()
+        storage.type = 'swift'
+        cinder_client = mock.MagicMock()
+        cinder_client.backups.return_value = []
+        client_manager = mock.MagicMock()
+        client_manager.get_cinder.return_value = cinder_client
+        restore_os = restore.RestoreOs(client_manager, '/root/test/', storage,
+                                       'freezer_')
+        with self.assertRaisesRegex(BaseException,
+                                    "No backups found for cinder volume "
+                                    "vol-123"):
+            restore_os.restore_cinder(volume_id='vol-123')
 
     @mock.patch('shutil.rmtree')
     @mock.patch('tempfile.mkdtemp')
