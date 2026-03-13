@@ -41,6 +41,9 @@ packages = [
 "freezer/scripts" = [
     "freezer/scripts/vss.ps1",
 ]
+"etc/freezer" = [
+    "etc/scheduler.conf.sample",
+]
 
 [project.entry-points."oslo.config.opts"]
 freezer-agent = "freezer.common.config:list_opts"
