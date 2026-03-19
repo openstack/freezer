@@ -106,7 +106,7 @@ DEFAULT_PARAMS = {
     'nova_inst_id': '',
     'nova_inst_name': '',
     'nova_restore_network': None,
-    'os_identity_api_version': None,
+    'os_identity_api_version': 3,
     'overwrite': False,
     'path_to_backup': None,
     'project_id': None,
@@ -406,8 +406,8 @@ _COMMON = [
                deprecated_name='os-auth-ver',
                default=DEFAULT_PARAMS['os_identity_api_version'],
                dest='os_identity_api_version',
-               choices=['1', '2', '2.0', '3'],
-               help="Openstack identity api version, can be 1, 2, 2.0 or 3"
+               choices=['3'],
+               help="OpenStack Identity API version, only 3 is supported"
                ),
     cfg.StrOpt('proxy',
                dest='proxy',

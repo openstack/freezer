@@ -399,22 +399,15 @@ class OpenstackOpts(object):
         self.domain_id = domain_id
         self.domain_name = domain_name
         if auth_url is None:
-            raise Exception('auth_url required to authenticate. Make sure to '
-                            'export OS_AUTH_URL=http://keystone_url:5000/v3')
-        if auth_version is None and identity_api_version is None:
-            version = auth_url.rstrip('/').rsplit('/')[-1]
-            if version == 'v3':
-                self.auth_version = self.identity_api_version = str('3')
-            elif version == 'v2.0':
-                self.auth_version = self.identity_api_version = str('2.0')
-            else:
-                raise Exception('Keystone Auth version {0} is not supported!. '
-                                'Generated from auth_url: {1}'
-                                .format(version, auth_url))
+            raise ValueError('auth_url required to authenticate. Make sure to '
+                             'export OS_AUTH_URL=http://keystone_url:5000')
+        if str(identity_api_version) != '3':
+            raise ValueError('Keystone Auth version {0} is not supported!.'
+                             .format(identity_api_version))
 
         LOG.info('Authenticating with Keystone version: '
                  '{0}, auth_url: {1}, username: {2}, project: {3}'.
-                 format(self.auth_version, self.auth_url,
+                 format(self.identity_api_version, self.auth_url,
                         self.username, self.project_name))
 
     def get_opts_dicts(self):
@@ -470,7 +463,7 @@ class OpenstackOpts(object):
             region_name=src_dict.get('OS_REGION_NAME', None),
             endpoint_type=src_dict.get('OS_ENDPOINT_TYPE', 'publicURL'),
             cacert=src_dict.get('OS_CACERT', None),
-            identity_api_version=src_dict.get('OS_IDENTITY_API_VERSION', None),
+            identity_api_version=src_dict.get('OS_IDENTITY_API_VERSION', 3),
             insecure=src_dict.get('OS_INSECURE', CONF.get('insecure', False)),
             token=src_dict.get('OS_TOKEN', None),
             interface=src_dict.get('OS_INTERFACE', None),

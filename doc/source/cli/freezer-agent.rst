@@ -502,10 +502,10 @@ OPTIONS
 .. oslo.config:option:: os_identity_api_version
 
   :Type: string
-  :Default: ``<None>``
-  :Valid Values: 1, 2, 2.0, 3
+  :Default: ``3``
+  :Valid Values: 3
 
-  Openstack identity api version, can be 1, 2, 2.0 or 3
+  OpenStack Identity API version, only 3 is supported.
 
   .. list-table:: Deprecated Variations
      :header-rows: 1
