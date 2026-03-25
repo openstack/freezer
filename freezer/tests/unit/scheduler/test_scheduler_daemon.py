@@ -175,3 +175,46 @@ class TestDaemon(unittest.TestCase):
     #     self.daemon.pid = 33
     #     res = self.daemon.status()
     #     self.assertIsNone(res)
+
+
+class TestGetFilenos(unittest.TestCase):
+    def test_get_filenos_with_valid_stream(self):
+        mock_handler = mock.Mock()
+        mock_handler.stream.fileno.return_value = 10
+        mock_logger = mock.Mock()
+        mock_logger.handlers = [mock_handler]
+        mock_logger.parent = None
+
+        result = daemon.get_filenos(mock_logger)
+        self.assertEqual([10], result)
+
+    def test_get_filenos_no_stream(self):
+        # Simulate a handler like OSJournalHandler that lacks a 'stream' attr
+        mock_handler = mock.Mock(spec=[])
+        mock_logger = mock.Mock()
+        mock_logger.handlers = [mock_handler]
+        mock_logger.parent = None
+        self.assertEqual([], daemon.get_filenos(mock_logger))
+
+    def test_get_filenos_stream_no_fileno(self):
+        # Simulate a stream object that doesn't have a fileno method
+        mock_stream = mock.Mock(spec=[])
+        mock_handler = mock.Mock()
+        mock_handler.stream = mock_stream
+        mock_logger = mock.Mock()
+        mock_logger.handlers = [mock_handler]
+        mock_logger.parent = None
+        self.assertEqual([], daemon.get_filenos(mock_logger))
+
+    def test_get_filenos_recursive(self):
+        handler1 = mock.Mock()
+        handler1.stream.fileno.return_value = 1
+        handler2 = mock.Mock()
+        handler2.stream.fileno.return_value = 2
+        parent = mock.Mock()
+        parent.handlers = [handler2]
+        parent.parent = None
+        child = mock.Mock()
+        child.handlers = [handler1]
+        child.parent = parent
+        self.assertEqual([1, 2], daemon.get_filenos(child))

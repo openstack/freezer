@@ -34,9 +34,11 @@ def get_filenos(logger):
     Get a list of file no from logger
     """
     filenos = []
-    for handler in logger.handlers:
-        filenos.append(handler.stream.fileno())
-    if logger.parent:
+    for handler in getattr(logger, 'handlers', []):
+        stream = getattr(handler, 'stream', None)
+        if stream and hasattr(stream, 'fileno'):
+            filenos.append(stream.fileno())
+    if getattr(logger, 'parent', None):
         filenos += get_filenos(logger.parent)
     return filenos
 
