@@ -270,6 +270,32 @@ class TestSchedulerJob1(unittest.TestCase):
         self.assertIsNone(result)
         self.assertEqual(job.result, 'fail')
 
+    @mock.patch('subprocess.Popen')
+    def test_job_execute_with_trust(self, mock_process):
+        CONF.disable_exec = False
+        scheduler = mock.MagicMock()
+        freezer_action = {"backup_name": "freezer",
+                          'action': 'exec',
+                          "remove_from_date": "2020-11-10T10:10:10"}
+        jobdoc = {'job_id': 'test', 'job_schedule': {},
+                  'user_credentials': {'trust_id': 'fake_trust'},
+                  'job_actions': [{'freezer_action': freezer_action,
+                                   'max_retries_interval': 1,
+                                   'max_retries': 1}]}
+        job = scheduler_job.Job(scheduler, None, jobdoc)
+
+        process = mock.MagicMock()
+        process.pid = 123
+        process.communicate.return_value = (b'test', 0)
+        process.returncode = 0
+        mock_process.return_value = process
+
+        with mock.patch.object(job, 'save_action_to_file') as mock_save:
+            job.execute()
+            mock_save.assert_called_once()
+            action_arg = mock_save.call_args[0][0]
+            self.assertEqual('fake_trust', action_arg['os_trust_id'])
+
     def test_job_finish(self):
         scheduler = mock.MagicMock()
         freezer_action = {"backup_name": "freezer",

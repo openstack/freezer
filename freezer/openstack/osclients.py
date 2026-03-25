@@ -344,7 +344,7 @@ class OpenstackOpts(object):
                  compute_api_version=2, image_api_version=2,
                  volume_api_version=3, user_domain_name=None, domain_id=None,
                  user_domain_id=None, project_domain_id=None, domain_name=None,
-                 project_domain_name=None):
+                 project_domain_name=None, trust_id=None):
         """
         Authentication Options to build a valid opts dict to be used to
         authenticate against keystone. You must provide auth_url with a vaild
@@ -398,6 +398,7 @@ class OpenstackOpts(object):
         self.project_domain_name = project_domain_name
         self.domain_id = domain_id
         self.domain_name = domain_name
+        self.trust_id = trust_id
         if auth_url is None:
             raise ValueError('auth_url required to authenticate. Make sure to '
                              'export OS_AUTH_URL=http://keystone_url:5000')
@@ -473,6 +474,7 @@ class OpenstackOpts(object):
             project_domain_name=src_dict.get('OS_PROJECT_DOMAIN_NAME', None),
             domain_id=src_dict.get('OS_DOMAIN_ID'),
             domain_name=src_dict.get('OS_DOMAIN_NAME'),
+            trust_id=src_dict.get('OS_TRUST_ID', None),
             compute_api_version=src_dict.get('OS_COMPUTE_API_VERSION', 2),
             volume_api_version=src_dict.get('OS_VOLUME_API_VERSION', 3),
             image_api_version=src_dict.get('OS_IMAGE_API_VERSION', 2)

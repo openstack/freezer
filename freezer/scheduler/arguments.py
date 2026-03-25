@@ -138,6 +138,10 @@ def get_common_opts():
                                                        group='DEFAULT')],
                     help='If set to true, it will use freezer v1 api '
                          'instead of v2'),
+        cfg.BoolOpt('centralized-scheduler',
+                    default=False,
+                    dest='centralized_scheduler',
+                    help='Enable centralized scheduler mode'),
     ]
 
     return _common

@@ -122,9 +122,13 @@ class FreezerScheduler(object):
         else:
             raise Exception("Unable to end session: api not in use.")
 
-    def upload_metadata(self, metadata_doc):
+    def upload_metadata(self, metadata_doc, project_id=None):
         if self.client:
-            self.client.backups.create(metadata_doc)
+            if project_id:
+                self.client.backups.create(metadata_doc,
+                                           project_id=project_id)
+            else:
+                self.client.backups.create(metadata_doc)
 
     def start(self):
         utils.do_register(self.client)

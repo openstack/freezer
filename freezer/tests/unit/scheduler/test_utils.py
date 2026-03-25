@@ -97,6 +97,7 @@ class TestUtils(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
     def test_get_active_jobs_from_api(self):
+        register_scheduler_opts(utils.CONF)
         ret = utils.get_active_jobs_from_api(self.client)
         self.assertEqual(job_list, ret)
 

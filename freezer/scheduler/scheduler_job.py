@@ -324,7 +324,9 @@ class Job(object):
             metadata = json.loads(metadata_string)
             if metadata:
                 metadata['job_id'] = self.id
-                self.scheduler.upload_metadata(metadata)
+                self.scheduler.upload_metadata(metadata,
+                                               project_id=self.job_doc.get(
+                                                   'project_id'))
                 LOG.info("Job {0}, freezer action metadata uploaded"
                          .format(self.id))
         except Exception as e:
@@ -336,6 +338,10 @@ class Job(object):
         freezer_action = job_action.get('freezer_action', {})
         max_retries_interval = job_action.get('max_retries_interval', 60)
         action_name = freezer_action.get('action', '')
+        user_credentials = self.job_doc.get('user_credentials', {})
+        os_trust_id = user_credentials.get('trust_id')
+        if os_trust_id:
+            freezer_action['os_trust_id'] = os_trust_id
         while tries:
             with tempfile.NamedTemporaryFile(mode='w',
                                              delete=False) as config_file:

@@ -28,6 +28,31 @@ class TestOsClients(unittest.TestCase):
             project_domain_name='Default').get_opts_dicts()
         self.client_manager = osclients.OSClientManager(**self.opts)
 
+    @mock.patch('keystoneauth1.loading.get_plugin_loader')
+    @mock.patch('openstack.connection.Connection')
+    def test_client_manager_uses_trust(self, mock_connection, mock_loader):
+        opts = osclients.OpenstackOpts(
+            username="user", auth_url="url/v3", password="password",
+            identity_api_version="3", insecure=False, cacert='cert',
+            user_domain_name='Default', trust_id='fake_trust_123'
+        ).get_opts_dicts()
+
+        client_mgr = osclients.OSClientManager(**opts)
+
+        mock_loader.assert_called_with('password')
+        plugin = mock_loader.return_value
+        plugin.load_from_options.assert_called_with(
+            auth_url='url/v3',
+            trust_id='fake_trust_123',
+            username='user',
+            password='password',
+            user_domain_name='Default'
+        )
+
+        client_mgr.get_cinder()
+        mock_connection.assert_called_with(session=client_mgr.sess)
+        self.assertTrue(mock_connection.return_value.block_storage)
+
     @mock.patch('openstack.connection.Connection')
     def test_init(self, mock_connection):
         self.client_manager.get_cinder()

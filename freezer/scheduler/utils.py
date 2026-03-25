@@ -106,7 +106,10 @@ def get_active_jobs_from_api(client):
     job_list, offset = [], 0
     while True:
         LOG.debug("Fetching jobs from API with offset {0}".format(offset))
-        jobs = client.jobs.list(limit=10, offset=offset, search=search)
+        jobs = client.jobs.list(
+            limit=10, offset=offset, search=search,
+            all_projects=CONF.scheduler.centralized_scheduler
+        )
         LOG.info("Fetched {0} jobs from API".format(len(jobs)))
         job_list.extend(jobs)
         if len(jobs) < 10:

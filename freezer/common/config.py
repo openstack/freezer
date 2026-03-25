@@ -110,6 +110,7 @@ DEFAULT_PARAMS = {
     'overwrite': False,
     'path_to_backup': None,
     'project_id': None,
+    'os_trust_id': None,
     'proxy': None,
     'quiet': False,
     'remove_from_date': None,
@@ -485,6 +486,12 @@ _COMMON = [
                dest='project_id',
                default=DEFAULT_PARAMS['project_id'],
                help="Id of project for backup"
+               ),
+    cfg.StrOpt('os-trust-id',
+               dest='os_trust_id',
+               default=DEFAULT_PARAMS['os_trust_id'],
+               help='Trust ID to use for authentication with the OpenStack '
+                    'Identity service.'
                ),
     cfg.StrOpt('sql-server-conf',
                dest='sql_server_conf',

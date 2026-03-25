@@ -33,9 +33,18 @@ def get_client_manager(backup_args):
             parse_osrc(backup_args['osrc']))
     else:
         options = osclients.OpenstackOpts.create_from_env().get_opts_dicts()
-    if backup_args['project_id']:
+
+    backup_project_id = backup_args.get('project_id')
+    backup_trust_id = backup_args.get('os_trust_id')
+    if backup_trust_id:
+        options['trust_id'] = backup_trust_id
+        options['project_id'] = None
         options['project_name'] = None
-        options['project_id'] = backup_args['project_id']
+        options['project_domain_id'] = None
+        options['project_domain_name'] = None
+    elif backup_project_id:
+        options['project_id'] = backup_project_id
+        options['project_name'] = None
     client_manager = osclients.OSClientManager(
         auth_url=options.pop('auth_url', None),
         auth_method=options.pop('auth_method', 'password'),
