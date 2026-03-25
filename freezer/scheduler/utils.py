@@ -45,7 +45,8 @@ def do_register(client, args=None):
             client.clients.create(client_info)
         except exceptions.ApiClientException as e:
             if e.status_code == 409:
-                print("Client already registered")
+                LOG.info("Client already registered")
+                return 0
             return 73  # os.EX_CANTCREAT
         return 0  # os.EX_OK
 
@@ -104,7 +105,9 @@ def get_active_jobs_from_api(client):
     search = {"match_not": [{"status": "completed"}]}
     job_list, offset = [], 0
     while True:
+        LOG.debug("Fetching jobs from API with offset {0}".format(offset))
         jobs = client.jobs.list(limit=10, offset=offset, search=search)
+        LOG.info("Fetched {0} jobs from API".format(len(jobs)))
         job_list.extend(jobs)
         if len(jobs) < 10:
             break

@@ -13,14 +13,15 @@
 # limitations under the License.
 
 
+import errno
 import os
 import signal
+import stat
 import traceback
 
 from oslo_log import log
 from tempfile import gettempdir
 from time import sleep
-
 
 from freezer.lib.pep3143daemon import DaemonContext
 from freezer.lib.pep3143daemon import PidFile
@@ -33,14 +34,42 @@ def get_filenos(logger):
     """
     Get a list of file no from logger
     """
-    filenos = []
+    filenos = set()
     for handler in getattr(logger, 'handlers', []):
-        stream = getattr(handler, 'stream', None)
-        if stream and hasattr(stream, 'fileno'):
-            filenos.append(stream.fileno())
+        for attr in ('stream', 'socket', 'sock', '_socket'):
+            stream = getattr(handler, attr, None)
+            if stream and hasattr(stream, 'fileno'):
+                try:
+                    filenos.add(stream.fileno())
+                except (OSError, ValueError):
+                    continue
     if getattr(logger, 'parent', None):
-        filenos += get_filenos(logger.parent)
-    return filenos
+        filenos.update(get_filenos(logger.parent))
+    return list(filenos)
+
+
+def get_open_sockets():
+    """
+    Get all currently open sockets in the process.
+    On Linux, this explores /proc/self/fd.
+    """
+    sockets = []
+    try:
+        # This is Linux specific as Windows uses win_service.py instead
+        if os.path.exists('/proc/self/fd'):
+            for fd_str in os.listdir('/proc/self/fd'):
+                try:
+                    fd = int(fd_str)
+                    if fd <= 2:
+                        continue
+                    s = os.fstat(fd)
+                    if stat.S_ISSOCK(s.st_mode):
+                        sockets.append(fd)
+                except (OSError, ValueError):
+                    continue
+    except OSError:
+        pass
+    return sockets
 
 
 def is_process_running(pid):
@@ -50,9 +79,13 @@ def is_process_running(pid):
     :param pid: process pid to check
     :return: true if the process is running
     """
+    if not pid:
+        return False
     try:
         os.kill(pid, 0)
-    except OSError:
+    except OSError as e:
+        if e.errno == errno.EPERM:
+            return True
         return False
     else:
         return True
@@ -103,7 +136,7 @@ class NoDaemon(object):
                 NoDaemon.exit_flag = True
             except Exception as e:
                 if dump_stack_trace:
-                    LOG.error(traceback.format_exc(e))
+                    LOG.error(traceback.format_exc())
                 LOG.error('Restarting procedure in no-daemon mode '
                           'after Fatal Error: {0}'.format(e))
                 sleep(10)
@@ -176,7 +209,9 @@ class Daemon(object):
                   'pid: {0}'.format(self.pid))
             return
         pidfile = PidFile(self.pid_fname)
-        files_preserve = get_filenos(LOG.logger)
+        files_preserve = list(
+            set(get_filenos(LOG.logger) + get_open_sockets())
+        )
         with DaemonContext(pidfile=pidfile, signal_map=self.signal_map,
                            files_preserve=files_preserve):
             while not Daemon.exit_flag:
@@ -187,7 +222,7 @@ class Daemon(object):
                     Daemon.exit_flag = True
                 except Exception as e:
                     if dump_stack_trace:
-                        LOG.error(traceback.format_exc(e))
+                        LOG.error(traceback.format_exc())
                     LOG.error('Restarting daemonized procedure '
                               'after Fatal Error: {0}'.format(e))
                     sleep(10)
@@ -196,7 +231,7 @@ class Daemon(object):
     def stop(self):
         pid = self.pid
         if pid:
-            os.kill(self.pid, signal.SIGTERM)
+            os.kill(pid, signal.SIGTERM)
         else:
             print('Not Running')
 
