@@ -73,13 +73,6 @@
 # Deprecated group/name - [DEFAULT]/logdir
 #log_dir = <None>
 
-# Uses logging handler designed to watch file system. When log file is moved or
-# removed this handler will open a new log file with specified path
-# instantaneously. It makes sense only if log_file option is specified and
-# Linux platform is used. This option is ignored if log_config_append is set.
-# (boolean value)
-#watch_log_file = false
-
 # Use syslog for logging. Existing syslog format is DEPRECATED and will be
 # changed later to honor RFC5424. This option is ignored if log_config_append
 # is set. (boolean value)
@@ -103,11 +96,10 @@
 # set. (boolean value)
 #use_stderr = false
 
-# DEPRECATED: Log output to Windows Event Log. (boolean value)
-# This option is deprecated for removal.
-# Its value may be silently ignored in the future.
-# Reason: Windows support is no longer maintained.
-#use_eventlog = false
+# (Optional) Set the 'color' key according to log levels. This option takes
+# effect only when logging to stderr or stdout is used. This option is ignored
+# if log_config_append is set. (boolean value)
+#log_color = false
 
 # The amount of time before the log files are rotated. This option is ignored
 # unless log_rotation_type is set to "interval". (integer value)
@@ -162,7 +154,7 @@
 
 # List of package logging levels in logger=LEVEL pairs. This option is ignored
 # if log_config_append is set. (list value)
-#default_log_levels = amqp=WARN,amqplib=WARN,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,oslo_messaging=INFO,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=WARN,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=WARN,oslo.cache=INFO,oslo_policy=INFO,dogpile.core.dogpile=INFO
+#default_log_levels = amqp=WARN,boto=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,oslo_messaging=INFO,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=WARN,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=WARN,oslo.cache=INFO,oslo_policy=INFO,dogpile.core.dogpile=INFO
 
 # Enables or disables publication of error events. (boolean value)
 #publish_errors = false
@@ -181,10 +173,16 @@
 # Maximum number of logged messages per rate_limit_interval. (integer value)
 #rate_limit_burst = 0
 
-# Log level name used by rate limiting: CRITICAL, ERROR, INFO, WARNING, DEBUG
-# or empty string. Logs with level greater or equal to rate_limit_except_level
-# are not filtered. An empty string means that all levels are filtered. (string
-# value)
+# Log level name used by rate limiting. Logs with level greater or equal to
+# rate_limit_except_level are not filtered. An empty string means that all
+# levels are filtered. (string value)
+# Possible values:
+# CRITICAL - <No description provided>
+# ERROR - <No description provided>
+# INFO - <No description provided>
+# WARNING - <No description provided>
+# DEBUG - <No description provided>
+# '' - <No description provided>
 #rate_limit_except_level = CRITICAL
 
 # Enables or disables fatal status of deprecations. (boolean value)

@@ -16,13 +16,4 @@ Note that installation and configuration vary by distribution.
    db-install
    install-rdo
    install-ubuntu
-
-.. code-block:: console
-
-  $ git clone https://opendev.org/openstack/freezer-api.git
-  $ cd freezer-api
-  $ python3 -m pip install -e .
-
-.. toctree::
-
-   devstack_plugin.rst
+   devstack_plugin

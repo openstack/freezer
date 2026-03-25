@@ -203,6 +203,7 @@ Admin Guides
    :maxdepth: 2
 
    admin/index
+   admin/config
 
 Dev Guides
 >>>>>>>>>>
