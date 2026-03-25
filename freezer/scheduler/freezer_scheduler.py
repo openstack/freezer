@@ -174,6 +174,7 @@ class FreezerScheduler(object):
 
     def poll(self):
         try:
+            LOG.info("Polling for jobs from API")
             work_job_doc_list = self.get_jobs()
         except Exception as e:
             LOG.error("Unable to get jobs: {0}".format(e))

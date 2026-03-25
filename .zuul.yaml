@@ -1,4 +1,7 @@
 - project:
+    vars:
+      devstack_localrc:
+        FREEZER_BACKEND: 'sqlalchemy'
     queue: freezer
     templates:
       - check-requirements

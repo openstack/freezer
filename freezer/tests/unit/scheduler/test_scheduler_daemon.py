@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import errno
 import signal
 import unittest
 from unittest import mock
@@ -126,6 +127,77 @@ class TestDaemon(unittest.TestCase):
         self.assertEqual(daemon.Daemon.exit_flag, True)
         self.assertTrue(self.daemonizable.start.called)
 
+    @mock.patch('freezer.scheduler.daemon.os.kill')
+    def test_is_process_running_eperm(self, mock_kill):
+        mock_kill.side_effect = OSError(errno.EPERM, "Operation not permitted")
+        self.assertTrue(daemon.is_process_running(1234))
+
+    @mock.patch('freezer.scheduler.daemon.os.kill')
+    def test_is_process_running_srch(self, mock_kill):
+        mock_kill.side_effect = OSError(errno.ESRCH, "No such process")
+        self.assertFalse(daemon.is_process_running(1234))
+
+    @mock.patch('freezer.scheduler.daemon.os.kill')
+    def test_is_process_running_success(self, mock_kill):
+        mock_kill.return_value = None
+        self.assertTrue(daemon.is_process_running(1234))
+
+    @mock.patch('freezer.scheduler.daemon.os.path.exists')
+    @mock.patch('freezer.scheduler.daemon.os.listdir')
+    @mock.patch('freezer.scheduler.daemon.os.fstat')
+    def test_get_open_sockets(self, mock_fstat, mock_listdir, mock_exists):
+        import stat
+        mock_exists.return_value = True
+        mock_listdir.return_value = ['3', '4', '5']
+
+        # fd 3 is a socket
+        s3 = mock.Mock()
+        s3.st_mode = stat.S_IFSOCK | 0o666
+
+        # fd 4 is a regular file
+        s4 = mock.Mock()
+        s4.st_mode = stat.S_IFREG | 0o666
+
+        # fd 5 is a socket
+        s5 = mock.Mock()
+        s5.st_mode = stat.S_IFSOCK | 0o666
+
+        mock_fstat.side_effect = [s3, s4, s5]
+
+        res = daemon.get_open_sockets()
+        self.assertEqual(res, [3, 5])
+
+    @mock.patch('freezer.scheduler.daemon.PidFile')
+    @mock.patch('freezer.scheduler.daemon.DaemonContext')
+    @mock.patch('freezer.scheduler.daemon.get_filenos')
+    @mock.patch('freezer.scheduler.daemon.get_open_sockets')
+    def test_daemon_start_preserves_sockets(
+            self, mock_get_sockets, mock_get_filenos,
+            mock_DaemonContext, mock_PidFile):
+
+        daemonizable = mock.Mock()
+        d = daemon.Daemon(daemonizable=daemonizable)
+        d._pid_fname = "/tmp/fake.pid"
+
+        mock_get_filenos.return_value = [10]
+        mock_get_sockets.return_value = [20]
+
+        # Mock DaemonContext to act as a proper context manager
+        mock_ctx = mock_DaemonContext.return_value
+        mock_ctx.__enter__.return_value = mock_ctx
+
+        # Set exit_flag to True immediately to avoid infinite loop
+        daemon.Daemon.exit_flag = True
+
+        with mock.patch('freezer.scheduler.daemon.is_process_running',
+                        return_value=False):
+            d.start()
+
+        # Verify files_preserve includes both filenos and sockets
+        args, kwargs = mock_DaemonContext.call_args
+        self.assertIn(10, kwargs['files_preserve'])
+        self.assertIn(20, kwargs['files_preserve'])
+
     # @patch('freezer.scheduler.daemon.logging')
     # @patch('freezer.scheduler.daemon.PidFile')
     # @patch('freezer.scheduler.daemon.DaemonContext')
@@ -175,3 +247,72 @@ class TestDaemon(unittest.TestCase):
     #     self.daemon.pid = 33
     #     res = self.daemon.status()
     #     self.assertIsNone(res)
+
+
+class TestGetFilenos(unittest.TestCase):
+    def test_get_filenos_with_valid_stream(self):
+        mock_handler = mock.Mock(spec=['stream'])
+        mock_handler.stream.fileno.return_value = 10
+        mock_logger = mock.Mock()
+        mock_logger.handlers = [mock_handler]
+        mock_logger.parent = None
+
+        result = daemon.get_filenos(mock_logger)
+        self.assertCountEqual([10], result)
+
+    def test_get_filenos_no_stream(self):
+        # Simulate a handler like OSJournalHandler that lacks a 'stream' attr
+        mock_handler = mock.Mock(spec=['level', 'filters', 'lock'])
+        mock_logger = mock.Mock()
+        mock_logger.handlers = [mock_handler]
+        mock_logger.parent = None
+        self.assertCountEqual([], daemon.get_filenos(mock_logger))
+
+    def test_get_filenos_stream_no_fileno(self):
+        # Simulate a stream object that doesn't have a fileno method
+        mock_stream = mock.Mock(spec=[])
+        mock_handler = mock.Mock(spec=['stream'])
+        mock_handler.stream = mock_stream
+        mock_logger = mock.Mock()
+        mock_logger.handlers = [mock_handler]
+        mock_logger.parent = None
+        self.assertCountEqual([], daemon.get_filenos(mock_logger))
+
+    def test_get_filenos_recursive(self):
+        handler1 = mock.Mock(spec=['stream'])
+        handler1.stream.fileno.return_value = 1
+        handler2 = mock.Mock(spec=['stream'])
+        handler2.stream.fileno.return_value = 2
+        parent = mock.Mock()
+        parent.handlers = [handler2]
+        parent.parent = None
+        child = mock.Mock()
+        child.handlers = [handler1]
+        child.parent = parent
+        self.assertCountEqual([1, 2], daemon.get_filenos(child))
+
+    def test_get_filenos_extended_attributes(self):
+        # Test finding filenos through various attributes
+        mock_logger = mock.Mock()
+        mock_logger.parent = None
+
+        # Handler 1: .stream
+        h1 = mock.Mock(spec=['stream'])
+        h1.stream.fileno.return_value = 10
+
+        # Handler 2: .socket
+        h2 = mock.Mock(spec=['socket'])
+        h2.socket.fileno.return_value = 11
+
+        # Handler 3: .sock
+        h3 = mock.Mock(spec=['sock'])
+        h3.sock.fileno.return_value = 12
+
+        # Handler 4: ._socket
+        h4 = mock.Mock(spec=['_socket'])
+        h4._socket.fileno.return_value = 13
+
+        mock_logger.handlers = [h1, h2, h3, h4]
+
+        res = daemon.get_filenos(mock_logger)
+        self.assertCountEqual(res, [10, 11, 12, 13])
