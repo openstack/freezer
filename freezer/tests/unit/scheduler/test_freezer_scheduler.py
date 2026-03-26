@@ -66,7 +66,6 @@ class TestFreezerScheduler(unittest.TestCase):
             # Case 1: CONF has no value (empty string/None),
             # service_auth has value.
             # Should take from service_auth.
-            mock_conf.os_username = ''
             mock_conf.service_auth.os_username = 'service_user'
             freezer_scheduler.update_auth_options(mock_conf, opts)
             self.assertEqual('service_user', opts.os_username)
@@ -74,8 +73,7 @@ class TestFreezerScheduler(unittest.TestCase):
             # Case 2: CONF has value (CLI/Env), service_auth has value.
             # Should prefer CONF value, so opts is NOT updated
             # (client gets it from CONF directly via opts.opts)
-            mock_conf.os_username = 'admin_user'
-            mock_conf.service_auth.os_username = 'service_user'
+            mock_conf.service_auth.os_username = None
             opts = mock.Mock(spec=[])
             freezer_scheduler.update_auth_options(mock_conf, opts)
             self.assertFalse(hasattr(opts, 'os_username'))

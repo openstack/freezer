@@ -17,7 +17,7 @@ CONF = cfg.CONF
 
 
 def set_test_capabilities():
-    arguments.configure_capabilities_options()
+    arguments.register_scheduler_opts(CONF)
     CONF.capabilities.supported_actions = ['backup']
     CONF.capabilities.supported_modes = ['cindernative']
     CONF.capabilities.supported_storages = ['swift']
@@ -25,6 +25,7 @@ def set_test_capabilities():
 
 
 def set_default_capabilities():
+    arguments.register_scheduler_opts(CONF)
     CONF.capabilities.supported_actions = arguments.DEFAULT_SUPPORTED_ACTIONS
     CONF.capabilities.supported_modes = arguments.DEFAULT_SUPPORTED_MODES
     CONF.capabilities.supported_storages = arguments.DEFAULT_SUPPORTED_STORAGES

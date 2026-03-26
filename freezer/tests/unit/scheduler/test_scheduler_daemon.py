@@ -18,7 +18,11 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
+from freezer.scheduler import arguments
 from freezer.scheduler import daemon
+from oslo_config import cfg
+
+CONF = cfg.CONF
 
 
 class TestNoDaemon(unittest.TestCase):
@@ -72,6 +76,11 @@ class TestNoDaemon(unittest.TestCase):
 
 
 class TestDaemon(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        arguments.register_scheduler_opts(CONF)
+        CONF.capabilities.supported_actions = ['backup']
+
     def setUp(self):
         self.daemonizable = mock.Mock()
         self.daemon = daemon.Daemon(daemonizable=self.daemonizable)
@@ -118,9 +127,13 @@ class TestDaemon(unittest.TestCase):
     #
     #     self.assertEqual(res, 125)
 
+    @patch('freezer.scheduler.daemon.is_process_running')
     @patch('freezer.scheduler.daemon.PidFile')
     @patch('freezer.scheduler.daemon.DaemonContext')
-    def test_start(self, mock_DaemonContext, mock_PidFile):
+    def test_start(self, mock_DaemonContext, mock_PidFile,
+                   mock_is_process_running):
+        mock_is_process_running.return_value = False
+
         daemon.Daemon.exit_flag = False
         res = self.daemon.start()
         self.assertIsNone(res)

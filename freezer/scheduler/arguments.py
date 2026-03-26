@@ -58,14 +58,23 @@ def env(*args, **kwargs):
     return kwargs.get('default', '')
 
 
+SCHEDULER_GROUP = cfg.OptGroup(
+    name='scheduler', title='Scheduler Options')
+
+
 def get_common_opts():
+    """
+    Common options for freezer-scheduler
+    :return: list of oslo_config.cfg.Opt
+    """
     scheduler_conf_d = os.environ.get('FREEZER_SCHEDULER_CONF_D',
                                       DEFAULT_FREEZER_SCHEDULER_CONF_D)
-
-    _COMMON = [
+    _common = [
         cfg.StrOpt('client-id',
                    dest='client_id',
                    short='c',
+                   deprecated_opts=[cfg.DeprecatedOpt('client-id',
+                                                      group='DEFAULT')],
                    help='Specifies the client_id used when contacting the '
                         'service.\n If not specified it will be automatically '
                         'created \n using the project-id and the machine '
@@ -74,48 +83,64 @@ def get_common_opts():
                     default=False,
                     dest='no_api',
                     short='n',
-                    help='Prevents the scheduler from using the api service'),
-        cfg.StrOpt('conf',
+                    deprecated_opts=[cfg.DeprecatedOpt('no-api',
+                                                       group='DEFAULT')],
+                    help='Prevents the scheduler from connecting to the '
+                         'API. In this case, scheduler will only read jobs '
+                         'from the local conf.d directory'),
+        cfg.StrOpt('jobs-dir',
                    default=scheduler_conf_d,
                    dest='jobs_dir',
                    short='f',
-                   help='Used to store/retrieve files on local storage, '
-                        'including those exchanged with the api service. '
+                   deprecated_opts=[cfg.DeprecatedOpt('conf',
+                                                      group='DEFAULT')],
+                   help='Path to the directory containing jobs '
+                        'configuration files. '
                         'Default value is {0} (Env: FREEZER_SCHEDULER_CONF_D)'
-                   .format(scheduler_conf_d)),
+                        .format(scheduler_conf_d)),
         cfg.IntOpt('interval',
                    default=60,
                    dest='interval',
                    short='i',
+                   deprecated_opts=[cfg.DeprecatedOpt('interval',
+                                                      group='DEFAULT')],
                    help='Specifies the api-polling interval in seconds. '
                         'Defaults to 60 seconds'),
         cfg.BoolOpt('no-daemon',
                     default=False,
                     dest='no_daemon',
+                    deprecated_opts=[cfg.DeprecatedOpt('no-daemon',
+                                                       group='DEFAULT')],
                     help='Prevents the scheduler from running in daemon mode'),
         cfg.BoolOpt('insecure',
                     default=False,
                     dest='insecure',
-                    help='Initialize freezer scheduler with insecure mode'),
+                    help='Allow to access servers without checking SSL '
+                         'certs.'),
         cfg.BoolOpt('disable-exec',
                     default=False,
                     dest='disable_exec',
+                    deprecated_opts=[cfg.DeprecatedOpt('disable-exec',
+                                                       group='DEFAULT')],
                     help='Allow Freezer Scheduler to deny jobs that execute '
                          'commands for security reasons'),
-        cfg.IntOpt('concurrent_jobs',
+        cfg.IntOpt('concurrent-jobs',
                    default=1,
                    dest='concurrent_jobs',
-                   help='Number of jobs that can be executed at the'
-                        ' same time'),
+                   deprecated_opts=[cfg.DeprecatedOpt('concurrent_jobs',
+                                                      group='DEFAULT')],
+                   help='Specifies how many jobs can be run '
+                        'at the same time'),
         cfg.BoolOpt('enable-v1-api',
                     default=False,
                     dest='enable_v1_api',
-                    help='Use freezer-api v1 interface if enable_v1_api'
-                         ' is set as True, otherwise use freezer-api'
-                         ' v2 interface'),
+                    deprecated_opts=[cfg.DeprecatedOpt('enable-v1-api',
+                                                       group='DEFAULT')],
+                    help='If set to true, it will use freezer v1 api '
+                         'instead of v2'),
     ]
 
-    return _COMMON
+    return _common
 
 
 def get_capabilities_opts():
@@ -155,69 +180,93 @@ def get_capabilities_opts():
 
 def build_os_options():
     osclient_opts = [
-        cfg.StrOpt('os-username',
+        cfg.StrOpt('username',
                    default=env('OS_USERNAME'),
                    help='Name used for authentication with the OpenStack '
                         'Identity service. Defaults to env[OS_USERNAME].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-username',
+                                                      group='DEFAULT')],
                    dest='os_username'),
-        cfg.StrOpt('os-password',
+        cfg.StrOpt('password',
                    default=env('OS_PASSWORD'),
                    help='Password used for authentication with the OpenStack '
                         'Identity service. Defaults to env[OS_PASSWORD].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-password',
+                                                      group='DEFAULT')],
                    dest='os_password'),
-        cfg.StrOpt('os-project-id',
+        cfg.StrOpt('project-id',
                    default=env('OS_PROJECT_ID'),
                    help='Project id to scope to. Defaults to '
                         'env[OS_PROJECT_ID].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-project-id',
+                                                      group='DEFAULT')],
                    dest='os_project_id'),
-        cfg.StrOpt('os-project-name',
+        cfg.StrOpt('project-name',
                    default=env('OS_PROJECT_NAME'),
                    help='Project name to scope to. Defaults to '
                         'env[OS_PROJECT_NAME].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-project-name',
+                                                      group='DEFAULT')],
                    dest='os_project_name'),
-        cfg.StrOpt('os-project-domain-id',
+        cfg.StrOpt('project-domain-id',
                    default=env('OS_PROJECT_DOMAIN_ID'),
                    help='Domain ID containing project. Defaults to '
                         'env[OS_PROJECT_DOMAIN_ID].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-project-domain-id',
+                                                      group='DEFAULT')],
                    dest='os_project_domain_id'),
-        cfg.StrOpt('os-project-domain-name',
+        cfg.StrOpt('project-domain-name',
                    default=env('OS_PROJECT_DOMAIN_NAME'),
                    help='Domain name containing project. Defaults to '
                         'env[OS_PROJECT_DOMAIN_NAME].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-project-domain-name',
+                                                      group='DEFAULT')],
                    dest='os_project_domain_name'),
-        cfg.StrOpt('os-user-domain-id',
+        cfg.StrOpt('user-domain-id',
                    default=env('OS_USER_DOMAIN_ID'),
                    help='User\'s domain id. Defaults to '
                         'env[OS_USER_DOMAIN_ID].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-user-domain-id',
+                                                      group='DEFAULT')],
                    dest='os_user_domain_id'),
-        cfg.StrOpt('os-user-domain-name',
+        cfg.StrOpt('user_domain_name',
                    default=env('OS_USER_DOMAIN_NAME'),
                    help='User\'s domain name. Defaults to '
                         'env[OS_USER_DOMAIN_NAME].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-user-domain-name',
+                                                      group='DEFAULT')],
                    dest='os_user_domain_name'),
-        cfg.StrOpt('os-auth-url',
+        cfg.StrOpt('auth-url',
                    default=env('OS_AUTH_URL'),
                    help='Specify the Identity endpoint to use for '
                         'authentication. Defaults to env[OS_AUTH_URL].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-auth-url',
+                                                      group='DEFAULT')],
                    dest='os_auth_url'),
-        cfg.StrOpt('os-backup-url',
+        cfg.StrOpt('backup_url',
                    default=env('OS_BACKUP_URL'),
                    help='Specify the Freezer backup service endpoint to use. '
                         'Defaults to env[OS_BACKUP_URL].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-backup-url',
+                                                      group='DEFAULT')],
                    dest='os_backup_url'),
-        cfg.StrOpt('os-region-name',
+        cfg.StrOpt('region-name',
                    default=env('OS_REGION_NAME'),
                    help='Specify the region to use. Defaults to '
                         'env[OS_REGION_NAME].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-region-name',
+                                                      group='DEFAULT')],
                    dest='os_region_name'),
-        cfg.StrOpt('os-token',
+        cfg.StrOpt('token',
                    default=env('OS_TOKEN'),
                    help='Specify an existing token to use instead of '
                         'retrieving one via authentication '
                         '(e.g. with username & password). Defaults '
                         'to env[OS_TOKEN].',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-token',
+                                                      group='DEFAULT')],
                    dest='os_token'),
-        cfg.StrOpt('os-endpoint-type',
+        cfg.StrOpt('endpoint-type',
                    choices=['public', 'publicURL', 'internal', 'internalURL',
                             'admin', 'adminURL'],
                    default=env('OS_ENDPOINT_TYPE') or 'public',
@@ -225,22 +274,24 @@ def build_os_options():
                         '"public" or "publicURL", "internal" or "internalURL",'
                         ' "admin" or "adminURL". Defaults to '
                         'env[OS_ENDPOINT_TYPE] or "public"',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-endpoint-type',
+                                                      group='DEFAULT')],
                    dest='os_endpoint_type'),
-        cfg.StrOpt('os-cert',
+        cfg.StrOpt('cert',
                    default=env('OS_CERT'),
                    help='Specify a cert file to use in verifying a TLS '
                         '(https) server certificate',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-cert',
+                                                      group='DEFAULT')],
                    dest='os_cert'),
-        cfg.StrOpt('os-cacert',
+        cfg.StrOpt('cacert',
                    default=env('OS_CACERT'),
                    help='Specify a CA bundle file to use in verifying a TLS '
                         '(https) server certificate. Defaults to',
+                   deprecated_opts=[cfg.DeprecatedOpt('os-cacert',
+                                                      group='DEFAULT')],
                    dest='os_cacert'),
     ]
-
-    # Ensure backward compatibility for config files
-    for opt in osclient_opts:
-        opt.deprecated_group = 'DEFAULT'
 
     return osclient_opts
 
@@ -253,19 +304,30 @@ SERVICE_AUTH_GROUP = cfg.OptGroup(
     name='service_auth', title='Service Authentication Options')
 
 
-def configure_capabilities_options():
-    CONF.register_group(CAPABILITIES_GROUP)
-    CONF.register_cli_opts(get_capabilities_opts(), group=CAPABILITIES_GROUP)
+def register_scheduler_opts(conf):
+    """
+    Register all scheduler-related groups and options.
+    This is used by parse_args and by unit tests to ensure consistent
+    configuration state.
+    """
+    if 'capabilities' not in conf:
+        conf.register_group(CAPABILITIES_GROUP)
+        conf.register_cli_opts(get_capabilities_opts(),
+                               group=CAPABILITIES_GROUP)
+
+    if 'scheduler' not in conf:
+        conf.register_group(SCHEDULER_GROUP)
+        conf.register_cli_opts(get_common_opts(), group=SCHEDULER_GROUP)
+
+    if 'service_auth' not in conf:
+        conf.register_group(SERVICE_AUTH_GROUP)
+        conf.register_cli_opts(build_os_options(), group=SERVICE_AUTH_GROUP)
 
 
 def parse_args(choices):
     default_conf = cfg.find_config_files('freezer', 'scheduler', '.conf')
 
-    configure_capabilities_options()
-    CONF.register_cli_opts(get_common_opts())
-    CONF.register_cli_opts(build_os_options())
-    CONF.register_group(SERVICE_AUTH_GROUP)
-    CONF.register_cli_opts(build_os_options(), group=SERVICE_AUTH_GROUP)
+    register_scheduler_opts(CONF)
     log.register_options(CONF)
 
     positional = [
@@ -300,7 +362,7 @@ def setup_logging():
 
 def list_opts():
     _opt = {
-        None: get_common_opts(),
+        SCHEDULER_GROUP: get_common_opts(),
         CAPABILITIES_GROUP: get_capabilities_opts(),
         SERVICE_AUTH_GROUP: build_os_options()
     }

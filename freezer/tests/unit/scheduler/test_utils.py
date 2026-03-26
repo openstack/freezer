@@ -19,8 +19,11 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
-from freezer.scheduler.arguments import configure_capabilities_options
+from freezer.scheduler.arguments import register_scheduler_opts
 from freezer.scheduler import utils
+from oslo_config import cfg
+
+CONF = cfg.CONF
 
 job_list = [{"job_id": "test"}]
 
@@ -35,7 +38,7 @@ class TestUtils(unittest.TestCase):
     def test_do_register(self):
         # Workaround race condition with other tests and
         # ensure capabilities group is registered
-        configure_capabilities_options()
+        register_scheduler_opts(CONF)
         ret = utils.do_register(self.client, args=None)
         self.assertEqual(0, ret)
 

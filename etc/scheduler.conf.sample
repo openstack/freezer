@@ -1,44 +1,6 @@
 [DEFAULT]
 
 #
-# From freezer-scheduler
-#
-
-# Specifies the client_id used when contacting the service.
-#  If not specified it will be automatically created
-#  using the project-id and the machine hostname. (string value)
-#client_id = <None>
-
-# Prevents the scheduler from using the api service (boolean value)
-#no_api = false
-
-# Used to store/retrieve files on local storage, including those exchanged with
-# the api service. Default value is /etc/freezer/scheduler/conf.d (Env:
-# FREEZER_SCHEDULER_CONF_D) (string value)
-#jobs_dir = /etc/freezer/scheduler/conf.d
-
-# Specifies the api-polling interval in seconds. Defaults to 60 seconds
-# (integer value)
-#interval = 60
-
-# Prevents the scheduler from running in daemon mode (boolean value)
-#no_daemon = false
-
-# Initialize freezer scheduler with insecure mode (boolean value)
-#insecure = false
-
-# Allow Freezer Scheduler to deny jobs that execute commands for security
-# reasons (boolean value)
-#disable_exec = false
-
-# Number of jobs that can be executed at the same time (integer value)
-#concurrent_jobs = 1
-
-# Use freezer-api v1 interface if enable_v1_api is set as True, otherwise use
-# freezer-api v2 interface (boolean value)
-#enable_v1_api = false
-
-#
 # From oslo.log
 #
 
@@ -213,6 +175,54 @@
 #supported_engines = tar,rsync,rsyncv2,nova,osbrick,glance
 
 
+[scheduler]
+
+#
+# From freezer-scheduler
+#
+
+# Specifies the client_id used when contacting the service.
+#  If not specified it will be automatically created
+#  using the project-id and the machine hostname. (string value)
+# Deprecated group/name - [DEFAULT]/client_id
+#client_id = <None>
+
+# Prevents the scheduler from connecting to the API. In this case, scheduler
+# will only read jobs from the local conf.d directory (boolean value)
+# Deprecated group/name - [DEFAULT]/no_api
+#no_api = false
+
+# Path to the directory containing jobs configuration files. Default value is
+# /etc/freezer/scheduler/conf.d (Env: FREEZER_SCHEDULER_CONF_D) (string value)
+# Deprecated group/name - [DEFAULT]/conf
+#jobs_dir = /etc/freezer/scheduler/conf.d
+
+# Specifies the api-polling interval in seconds. Defaults to 60 seconds
+# (integer value)
+# Deprecated group/name - [DEFAULT]/interval
+#interval = 60
+
+# Prevents the scheduler from running in daemon mode (boolean value)
+# Deprecated group/name - [DEFAULT]/no_daemon
+#no_daemon = false
+
+# Allow to access servers without checking SSL certs. (boolean value)
+#insecure = false
+
+# Allow Freezer Scheduler to deny jobs that execute commands for security
+# reasons (boolean value)
+# Deprecated group/name - [DEFAULT]/disable_exec
+#disable_exec = false
+
+# Specifies how many jobs can be run at the same time (integer value)
+# Deprecated group/name - [DEFAULT]/concurrent_jobs
+#concurrent_jobs = 1
+
+# If set to true, it will use freezer v1 api instead of v2 (boolean value)
+# Deprecated group/name - [DEFAULT]/enable_v1_api
+#enable_v1_api = false
+
+
 [service_auth]
 
 #
@@ -221,45 +231,57 @@
 
 # Name used for authentication with the OpenStack Identity service. Defaults to
 # env[OS_USERNAME]. (string value)
+# Deprecated group/name - [DEFAULT]/os_username
 #os_username =
 
 # Password used for authentication with the OpenStack Identity service.
 # Defaults to env[OS_PASSWORD]. (string value)
+# Deprecated group/name - [DEFAULT]/os_password
 #os_password =
 
 # Project id to scope to. Defaults to env[OS_PROJECT_ID]. (string value)
+# Deprecated group/name - [DEFAULT]/os_project_id
 #os_project_id =
 
 # Project name to scope to. Defaults to env[OS_PROJECT_NAME]. (string value)
+# Deprecated group/name - [DEFAULT]/os_project_name
 #os_project_name =
 
 # Domain ID containing project. Defaults to env[OS_PROJECT_DOMAIN_ID]. (string
 # value)
+# Deprecated group/name - [DEFAULT]/os_project_domain_id
 #os_project_domain_id =
 
 # Domain name containing project. Defaults to env[OS_PROJECT_DOMAIN_NAME].
 # (string value)
+# Deprecated group/name - [DEFAULT]/os_project_domain_name
 #os_project_domain_name =
 
 # User's domain id. Defaults to env[OS_USER_DOMAIN_ID]. (string value)
+# Deprecated group/name - [DEFAULT]/os_user_domain_id
 #os_user_domain_id =
 
 # User's domain name. Defaults to env[OS_USER_DOMAIN_NAME]. (string value)
+# Deprecated group/name - [DEFAULT]/os_user_domain_name
 #os_user_domain_name =
 
 # Specify the Identity endpoint to use for authentication. Defaults to
 # env[OS_AUTH_URL]. (string value)
+# Deprecated group/name - [DEFAULT]/os_auth_url
 #os_auth_url =
 
 # Specify the Freezer backup service endpoint to use. Defaults to
 # env[OS_BACKUP_URL]. (string value)
+# Deprecated group/name - [DEFAULT]/os_backup_url
 #os_backup_url =
 
 # Specify the region to use. Defaults to env[OS_REGION_NAME]. (string value)
+# Deprecated group/name - [DEFAULT]/os_region_name
 #os_region_name =
 
 # Specify an existing token to use instead of retrieving one via authentication
 # (e.g. with username & password). Defaults to env[OS_TOKEN]. (string value)
+# Deprecated group/name - [DEFAULT]/os_token
 #os_token =
 
 # Endpoint type to select. Valid endpoint types: "public" or "publicURL",
@@ -272,12 +294,15 @@
 # internalURL - <No description provided>
 # admin - <No description provided>
 # adminURL - <No description provided>
+# Deprecated group/name - [DEFAULT]/os_endpoint_type
 #os_endpoint_type = public
 
 # Specify a cert file to use in verifying a TLS (https) server certificate
 # (string value)
+# Deprecated group/name - [DEFAULT]/os_cert
 #os_cert =
 
 # Specify a CA bundle file to use in verifying a TLS (https) server
 # certificate. Defaults to (string value)
+# Deprecated group/name - [DEFAULT]/os_cacert
 #os_cacert =

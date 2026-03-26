@@ -213,21 +213,17 @@ class FreezerScheduler(object):
         LOG.warning("reload not supported")
 
 
-def update_auth_options(conf, opts):
+def update_auth_options(conf, client_opts):
     """
-    Map options from the group to the flat namespace for freezerclient.
-    This handles the fact that options are now in [service_auth]
-    but the client expects them as direct attributes.
+    Map options from the service_auth group onto a flat Namespace for
+    freezerclient. Values from [service_auth] in the config file are used;
+    CLI/env-var values (already resolved by oslo_config onto CONF.service_auth)
+    naturally take precedence because oslo_config resolves them first.
     """
-    if hasattr(conf, 'service_auth'):
-        for opt in arguments.build_os_options():
-            # CLI/Env vars (in CONF.dest) take precedence over
-            # Config File
-            main_val = getattr(conf, opt.dest, None)
-            group_val = getattr(conf.service_auth, opt.dest, None)
-
-            if not main_val and group_val:
-                setattr(opts, opt.dest, group_val)
+    for opt in arguments.build_os_options():
+        main_val = getattr(conf.service_auth, opt.dest, None)
+        if main_val:
+            setattr(client_opts, opt.dest, main_val)
 
 
 def main():
@@ -241,22 +237,23 @@ def main():
         return 65  # os.EX_DATAERR
 
     apiclient = None
-    if CONF.no_api is False:
+    if CONF.scheduler.no_api is False:
         try:
             opts = client_utils.Namespace({})
-            opts.opts = CONF
-
+            opts.insecure = CONF.scheduler.insecure
             update_auth_options(CONF, opts)
 
-            if CONF.enable_v1_api:
-                apiclient = client_utils.get_client_instance(opts=opts,
+            client_opts = client_utils.Namespace({'opts': opts})
+
+            if CONF.scheduler.enable_v1_api:
+                apiclient = client_utils.get_client_instance(opts=client_opts,
                                                              api_version='1')
             else:
-                apiclient = client_utils.get_client_instance(opts=opts,
+                apiclient = client_utils.get_client_instance(opts=client_opts,
                                                              api_version='2')
 
-            if CONF.client_id:
-                apiclient.client_id = CONF.client_id
+            if CONF.scheduler.client_id:
+                apiclient.client_id = CONF.scheduler.client_id
         except Exception as e:
             LOG.error(e)
             print(e)
@@ -266,13 +263,15 @@ def main():
             print("--no-api mode is not available on windows")
             return 69  # os.EX_UNAVAILABLE
 
-    freezer_utils.create_dir(CONF.jobs_dir, do_log=False)
-    freezer_scheduler = FreezerScheduler(apiclient=apiclient,
-                                         interval=int(CONF.interval),
-                                         job_path=CONF.jobs_dir,
-                                         concurrent_jobs=CONF.concurrent_jobs)
+    freezer_utils.create_dir(CONF.scheduler.jobs_dir, do_log=False)
+    freezer_scheduler = FreezerScheduler(
+        apiclient=apiclient,
+        interval=int(CONF.scheduler.interval),
+        job_path=CONF.scheduler.jobs_dir,
+        concurrent_jobs=CONF.scheduler.concurrent_jobs
+    )
 
-    if CONF.no_daemon:
+    if CONF.scheduler.no_daemon:
         print('Freezer Scheduler running in no-daemon mode')
         LOG.debug('Freezer Scheduler running in no-daemon mode')
         if winutils.is_windows():
@@ -281,11 +280,13 @@ def main():
             daemon = linux_daemon.NoDaemon(daemonizable=freezer_scheduler)
     else:
         if winutils.is_windows():
-            daemon = win_daemon.Daemon(daemonizable=freezer_scheduler,
-                                       interval=int(CONF.interval),
-                                       job_path=CONF.jobs_dir,
-                                       insecure=CONF.insecure,
-                                       concurrent_jobs=CONF.concurrent_jobs)
+            daemon = win_daemon.Daemon(
+                daemonizable=freezer_scheduler,
+                interval=int(CONF.scheduler.interval),
+                job_path=CONF.scheduler.jobs_dir,
+                insecure=CONF.scheduler.insecure,
+                concurrent_jobs=CONF.scheduler.concurrent_jobs
+            )
         else:
             daemon = linux_daemon.Daemon(daemonizable=freezer_scheduler)
 

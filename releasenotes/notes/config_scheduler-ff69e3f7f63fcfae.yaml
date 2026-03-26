@@ -1,0 +1,13 @@
+---
+features:
+  - |
+    A new configuration group ``scheduler`` has been introduced. All options
+    related to the ``freezer-scheduler`` have been moved to this group.
+    Previous options under ``DEFAULT`` group are still respected, though are
+    considered deprecated.
+
+deprecations:
+  - |
+    The ``DEFAULT`` group options related to the ``freezer-scheduler`` are
+    considered deprecated. Please refer to the ``scheduler`` group options
+    for more information.
