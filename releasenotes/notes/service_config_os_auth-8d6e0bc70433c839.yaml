@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    A new configuration section ``[service_auth]`` has been introduced
+    and configuration of connection to Keystone is expected to be defined
+    there.
+deprecations:
+  - |
+    Definition of keystone connection details in the ``[DEFAULT]`` section of
+    freezer.conf is deprecated and will be removed in next releases.

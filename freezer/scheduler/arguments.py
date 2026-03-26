@@ -238,14 +238,24 @@ def build_os_options():
                    dest='os_cacert'),
     ]
 
+    # Ensure backward compatibility for config files
+    for opt in osclient_opts:
+        opt.deprecated_group = 'DEFAULT'
+
     return osclient_opts
 
 
+CAPABILITIES_GROUP = cfg.OptGroup(
+    name='capabilities', title='Capabilities of the freezer-scheduler')
+
+
+SERVICE_AUTH_GROUP = cfg.OptGroup(
+    name='service_auth', title='Service Authentication Options')
+
+
 def configure_capabilities_options():
-    capabilities_group = cfg.OptGroup(
-        name='capabilities', title='Capabilities of the freezer-scheduler')
-    CONF.register_group(capabilities_group)
-    CONF.register_cli_opts(get_capabilities_opts(), group=capabilities_group)
+    CONF.register_group(CAPABILITIES_GROUP)
+    CONF.register_cli_opts(get_capabilities_opts(), group=CAPABILITIES_GROUP)
 
 
 def parse_args(choices):
@@ -254,6 +264,8 @@ def parse_args(choices):
     configure_capabilities_options()
     CONF.register_cli_opts(get_common_opts())
     CONF.register_cli_opts(build_os_options())
+    CONF.register_group(SERVICE_AUTH_GROUP)
+    CONF.register_cli_opts(build_os_options(), group=SERVICE_AUTH_GROUP)
     log.register_options(CONF)
 
     positional = [
@@ -288,6 +300,8 @@ def setup_logging():
 
 def list_opts():
     _opt = {
-        None: get_common_opts()
+        None: get_common_opts(),
+        CAPABILITIES_GROUP: get_capabilities_opts(),
+        SERVICE_AUTH_GROUP: build_os_options()
     }
     return _opt.items()

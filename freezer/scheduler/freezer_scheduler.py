@@ -213,6 +213,23 @@ class FreezerScheduler(object):
         LOG.warning("reload not supported")
 
 
+def update_auth_options(conf, opts):
+    """
+    Map options from the group to the flat namespace for freezerclient.
+    This handles the fact that options are now in [service_auth]
+    but the client expects them as direct attributes.
+    """
+    if hasattr(conf, 'service_auth'):
+        for opt in arguments.build_os_options():
+            # CLI/Env vars (in CONF.dest) take precedence over
+            # Config File
+            main_val = getattr(conf, opt.dest, None)
+            group_val = getattr(conf.service_auth, opt.dest, None)
+
+            if not main_val and group_val:
+                setattr(opts, opt.dest, group_val)
+
+
 def main():
     possible_actions = ['start', 'stop', 'restart', 'status', 'reload']
 
@@ -228,6 +245,9 @@ def main():
         try:
             opts = client_utils.Namespace({})
             opts.opts = CONF
+
+            update_auth_options(CONF, opts)
+
             if CONF.enable_v1_api:
                 apiclient = client_utils.get_client_instance(opts=opts,
                                                              api_version='1')
