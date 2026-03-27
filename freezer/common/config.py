@@ -330,9 +330,9 @@ _COMMON = [
     cfg.StrOpt('exclude',
                dest='exclude',
                default=DEFAULT_PARAMS['exclude'],
-               help="Exclude files,given as a PATTERN.Ex: --exclude '*.log' "
-                    "will exclude any file with name ending with .log. "
-                    "Default no exclude"
+               help="Exclude files, given as a PATTERN. "
+                    "Ex: --exclude ``'*.log'`` will exclude any file with name"
+                    " ending with .log. Default no exclude."
                ),
     cfg.StrOpt('dereference-symlink',
                dest='dereference_symlink',

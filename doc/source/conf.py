@@ -31,7 +31,6 @@ import sys
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 # sys.path.insert(0, os.path.abspath('../../'))
 # sys.path.insert(0, os.path.abspath('../'))
-# sys.path.insert(0, os.path.abspath('./'))
 
 # -- General configuration ----------------------------------------------------
 
@@ -42,7 +41,8 @@ import sys
 extensions = ['sphinxcontrib.apidoc',
               'openstackdocstheme',
               'oslo_config.sphinxconfiggen',
-              'oslo_config.sphinxext'
+              'oslo_config.sphinxext',
+              'sphinxcontrib.programoutput',
               ]
 
 config_generator_config_file = (

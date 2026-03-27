@@ -10,3 +10,4 @@ mock>=2.0.0 # BSD
 ddt>=1.0.1 # MIT
 testtools>=2.2.0 # MIT
 tempest>=17.1.0 # Apache-2.0
+sphinxcontrib-programoutput>=0.18 # BSD
