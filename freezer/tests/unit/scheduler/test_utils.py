@@ -42,6 +42,26 @@ class TestUtils(unittest.TestCase):
         ret = utils.do_register(self.client, args=None)
         self.assertEqual(0, ret)
 
+    def test_do_register_is_central_true(self):
+        register_scheduler_opts(CONF)
+        CONF.set_override('centralized_scheduler', True, group='scheduler')
+        self.addCleanup(CONF.clear_override, 'centralized_scheduler',
+                        group='scheduler')
+        ret = utils.do_register(self.client)
+        self.assertEqual(0, ret)
+        client_info = self.client.clients.create.call_args[0][0]
+        self.assertTrue(client_info['is_central'])
+
+    def test_do_register_is_central_false(self):
+        register_scheduler_opts(CONF)
+        CONF.set_override('centralized_scheduler', False, group='scheduler')
+        self.addCleanup(CONF.clear_override, 'centralized_scheduler',
+                        group='scheduler')
+        ret = utils.do_register(self.client)
+        self.assertEqual(0, ret)
+        client_info = self.client.clients.create.call_args[0][0]
+        self.assertFalse(client_info['is_central'])
+
     def test_del_register_error(self):
         self.client.clients.delete = mock.Mock(side_effect=Exception(
             'delete client error: bad request'))
