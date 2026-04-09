@@ -40,6 +40,7 @@ def do_register(client, args=None):
             "supported_modes": CONF.capabilities.supported_modes,
             "supported_storages": CONF.capabilities.supported_storages,
             "supported_engines": CONF.capabilities.supported_engines,
+            "is_central": CONF.scheduler.centralized_scheduler,
         }
         try:
             client.clients.create(client_info)
