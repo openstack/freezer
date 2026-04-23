@@ -20,6 +20,7 @@ import subprocess
 import tempfile
 import time
 
+from freezer.scheduler import arguments
 from freezer.utils import utils
 from oslo_config import cfg
 from oslo_log import log
@@ -37,7 +38,9 @@ class StopState(object):
         job.job_doc = doc
         job.event = Job.NO_EVENT
         job.job_doc_status = Job.STOP_STATUS
-        job.scheduler.update_job(job.id, job.job_doc)
+        job.scheduler.update_job_metadata(
+            job.id, job.job_doc,
+            user_credentials=job.job_doc.get('user_credentials', {}))
         return Job.NO_EVENT
 
     @staticmethod
@@ -50,7 +53,9 @@ class StopState(object):
         job.event = Job.NO_EVENT
         job.job_doc_status = Job.STOP_STATUS
         job.schedule()
-        job.scheduler.update_job(job.id, job.job_doc)
+        job.scheduler.update_job_metadata(
+            job.id, job.job_doc,
+            user_credentials=job.job_doc.get('user_credentials', {}))
         return Job.NO_EVENT
 
     @staticmethod
@@ -65,7 +70,9 @@ class ScheduledState(object):
     @staticmethod
     def stop(job, doc):
         job.unschedule()
-        job.scheduler.update_job(job.id, job.job_doc)
+        job.scheduler.update_job_metadata(
+            job.id, job.job_doc,
+            user_credentials=job.job_doc.get('user_credentials', {}))
         return Job.STOP_EVENT
 
     @staticmethod
@@ -75,7 +82,9 @@ class ScheduledState(object):
     @staticmethod
     def start(job, doc):
         job.event = Job.NO_EVENT
-        job.scheduler.update_job(job.id, job.job_doc)
+        job.scheduler.update_job_metadata(
+            job.id, job.job_doc,
+            user_credentials=job.job_doc.get('user_credentials', {}))
         return Job.NO_EVENT
 
     @staticmethod
@@ -95,13 +104,15 @@ class RunningState(object):
     @staticmethod
     def abort(job, doc):
         job.event = Job.ABORT_EVENT
-        job.scheduler.update_job(job.id, job.job_doc)
+        job.scheduler.update_job_metadata(job.id, job.job_doc)
         return Job.ABORTED_RESULT
 
     @staticmethod
     def start(job, doc):
         job.event = Job.NO_EVENT
-        job.scheduler.update_job(job.id, job.job_doc)
+        job.scheduler.update_job_metadata(
+            job.id, job.job_doc,
+            user_credentials=job.job_doc.get('user_credentials', {}))
         return Job.NO_EVENT
 
     @staticmethod
@@ -324,19 +335,20 @@ class Job(object):
             metadata = json.loads(metadata_string)
             if metadata:
                 metadata['job_id'] = self.id
-                self.scheduler.upload_metadata(metadata,
-                                               project_id=self.job_doc.get(
-                                                   'project_id'))
+                self.scheduler.upload_metadata(
+                    metadata,
+                    project_id=self.job_doc.get('project_id'),
+                    user_credentials=self.job_doc.get('user_credentials', {}))
                 LOG.info("Job {0}, freezer action metadata uploaded"
                          .format(self.id))
         except Exception as e:
             LOG.error('metrics upload error: {0}'.format(e))
 
     def execute_job_action(self, job_action):
-        max_tries = (job_action.get('max_retries', 0) + 1)
+        max_tries = (int(job_action.get('max_retries', 0)) + 1)
         tries = max_tries
         freezer_action = job_action.get('freezer_action', {})
-        max_retries_interval = job_action.get('max_retries_interval', 60)
+        max_retries_interval = int(job_action.get('max_retries_interval', 60))
         action_name = freezer_action.get('action', '')
         user_credentials = self.job_doc.get('user_credentials', {})
         os_trust_id = user_credentials.get('trust_id')
@@ -349,18 +361,38 @@ class Job(object):
                 config_file_name = config_file.name
                 freezer_command = '{0} --metadata-out - --config {1}'.\
                     format(self.executable, config_file.name)
+
+                agent_env = os.environ.copy()
+                for opt in arguments.build_os_options():
+                    val = getattr(CONF.service_auth, opt.dest, None)
+                    if val:
+                        agent_env[opt.dest.upper()] = str(val)
+
+                if os_trust_id:
+                    agent_env['OS_TRUST_ID'] = str(os_trust_id)
+                    # When using a trust, project scoping shouldn't be used
+                    for project_opt in ['OS_PROJECT_NAME', 'OS_PROJECT_ID',
+                                        'OS_PROJECT_DOMAIN_NAME',
+                                        'OS_PROJECT_DOMAIN_ID']:
+                        agent_env.pop(project_opt, None)
+
+                if CONF.scheduler.insecure:
+                    agent_env['OS_INSECURE'] = 'True'
+
                 self.process = subprocess.Popen(freezer_command.split(),
                                                 stdout=subprocess.PIPE,
                                                 stderr=subprocess.PIPE,
-                                                env=os.environ.copy())
+                                                env=agent_env)
 
                 # store the pid for this process in the api
                 try:
                     self.job_doc['job_schedule']['current_pid'] = \
                         self.process.pid
 
-                    self.scheduler.update_job(self.job_doc['job_id'],
-                                              self.job_doc)
+                    self.scheduler.update_job_metadata(
+                        self.job_doc['job_id'],
+                        self.job_doc,
+                        user_credentials=user_credentials)
                 except Exception as error:
                     LOG.error("Error saving the process id {}".format(error))
 
@@ -430,9 +462,10 @@ class Job(object):
                                          result="",
                                          time_started=int(time.time()),
                                          time_ended=Job.TIME_NULL)
-            self.scheduler.update_job_schedule(
+            self.scheduler.update_job_metadata(
                 self.id,
-                self.job_doc['job_schedule'])
+                self.job_doc,
+                user_credentials=self.job_doc.get('user_credentials', {}))
 
         self.start_session()
         # if the job contains exec action and the scheduler passes the
@@ -473,19 +506,24 @@ class Job(object):
             if not self.scheduled:
                 self.job_doc_status = Job.COMPLETED_STATUS
                 self.state = StopState
-                self.scheduler.update_job(self.id, self.job_doc)
+                self.scheduler.update_job_metadata(
+                    self.id, self.job_doc,
+                    user_credentials=self.job_doc.get('user_credentials', {}))
                 return
 
             if self.event in [Job.STOP_EVENT, Job.ABORT_EVENT]:
                 self.unschedule()
                 self.job_doc_status = Job.COMPLETED_STATUS
-                self.scheduler.update_job(self.id, self.job_doc)
+                self.scheduler.update_job_metadata(
+                    self.id, self.job_doc,
+                    user_credentials=self.job_doc.get('user_credentials', {}))
             else:
                 self.job_doc_status = Job.SCHEDULED_STATUS
                 self.state = ScheduledState
-                self.scheduler.update_job_schedule(
+                self.scheduler.update_job_metadata(
                     self.id,
-                    self.job_doc['job_schedule'])
+                    self.job_doc,
+                    user_credentials=self.job_doc.get('user_credentials', {}))
 
     def start_session(self):
         if not self.session_id:
@@ -498,6 +536,7 @@ class Job(object):
                                                     self.session_tag)
                 if resp['result'] == 'success':
                     self.session_tag = resp['session_tag']
+                    self.job_doc['session_tag'] = self.session_tag
                     return
             except Exception as e:
                 LOG.error('Error while starting session {0}. {1}'.

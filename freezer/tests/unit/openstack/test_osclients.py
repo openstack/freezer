@@ -105,3 +105,27 @@ class TestOpenstackOpts(unittest.TestCase):
                           auth_url='test', identity_api_version='2')
         self.assertRaises(ValueError, osclients.OpenstackOpts,
                           auth_url='test', identity_api_version=4)
+
+    @mock.patch('freezer.openstack.osclients.CONF')
+    @mock.patch('swiftclient.client.Connection')
+    def test_create_swift_with_session_and_trust(self, mock_swift_conn,
+                                                 mock_conf):
+        # Mock CONF options used by OSClientManager
+        mock_conf.service_auth.cafile = None
+        mock_conf.service_auth.certfile = None
+        mock_conf.service_auth.keyfile = None
+        mock_conf.service_auth.insecure = False
+
+        opts = osclients.OpenstackOpts(
+            username="user", auth_url="url/v3", password="password",
+            identity_api_version="3", insecure=False, cacert='cert',
+            user_domain_name='Default', trust_id='fake_trust_123'
+        ).get_opts_dicts()
+
+        client_mgr = osclients.OSClientManager(**opts)
+        client_mgr.create_swift()
+
+        mock_swift_conn.assert_called_once()
+        kwargs = mock_swift_conn.call_args.kwargs
+        self.assertEqual(kwargs['session'], client_mgr.sess)
+        self.assertEqual(kwargs['os_options']['trust_id'], 'fake_trust_123')

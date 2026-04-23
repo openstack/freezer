@@ -85,6 +85,13 @@ class FreezerScheduler(object):
         """
         jobs = []
         for job_doc in job_doc_list:
+            if CONF.scheduler.centralized_scheduler:
+                user_credentials = job_doc.get('user_credentials', {})
+                if not user_credentials.get('trust_id'):
+                    LOG.error("Job {0} ignored: missing trust_id in "
+                              "centralized mode".format(job_doc['job_id']))
+                    continue
+
             job = scheduler_job.Job(self, self.freezerc_executable, job_doc)
             if job.check_capabilities():
                 jobs.append(job_doc)
@@ -122,13 +129,17 @@ class FreezerScheduler(object):
         else:
             raise Exception("Unable to end session: api not in use.")
 
-    def upload_metadata(self, metadata_doc, project_id=None):
-        if self.client:
-            if project_id:
-                self.client.backups.create(metadata_doc,
-                                           project_id=project_id)
-            else:
-                self.client.backups.create(metadata_doc)
+    def upload_metadata(self, metadata_doc, project_id=None,
+                        user_credentials=None):
+        client = self._get_client_for_user_credentials(user_credentials)
+        if not client:
+            return
+        if project_id and not (user_credentials and
+                               user_credentials.get('trust_id')):
+            client.backups.create(metadata_doc,
+                                  project_id=project_id)
+        else:
+            client.backups.create(metadata_doc)
 
     def start(self):
         utils.do_register(self.client)
@@ -144,28 +155,52 @@ class FreezerScheduler(object):
             # should be done if possible
             self.scheduler.shutdown(wait=False)
 
-    def update_job(self, job_id, job_doc):
-        if self.client:
-            try:
-                return self.client.jobs.update(job_id, job_doc)
-            except Exception as e:
-                LOG.error("Job update error: {0}".format(e))
+    def update_job(self, job_id, job_doc, user_credentials=None):
+        client = self._get_client_for_user_credentials(user_credentials)
+        if not client:
+            return
+        try:
+            return client.jobs.update(job_id, job_doc)
+        except Exception as e:
+            LOG.error("Job update error: {0}".format(e))
 
-    def update_job_schedule(self, job_id, job_schedule):
+    def update_job_metadata(self, job_id, job_doc, user_credentials=None):
         """
-        Pushes to the API the updates the job_schedule information
-        of the job_doc
+        Pushes to the API the updates the job_schedule, session_id and
+        session_tag information of the job_doc. This avoids sending
+        job_actions and causing 409 conflicts.
 
         :param job_id: id of the job to modify
-        :param job_schedule: dict containing the job_scheduler information
+        :param job_doc: dict containing the job information
+        :param user_credentials: dict containing user credentials
         :return: None
         """
-        doc = {'job_schedule': job_schedule}
-        self.update_job(job_id, doc)
+        doc = {
+            'job_schedule': job_doc.get('job_schedule', {}),
+            'session_id': job_doc.get('session_id', ''),
+            'session_tag': job_doc.get('session_tag', 0)
+        }
+        self.update_job(job_id, doc, user_credentials=user_credentials)
 
-    def update_job_status(self, job_id, status):
-        doc = {'job_schedule': {'status': status}}
-        self.update_job(job_id, doc)
+    def _get_client_for_user_credentials(self, user_credentials):
+        if not user_credentials:
+            return self.client
+
+        os_trust_id = user_credentials.get('trust_id')
+        if os_trust_id:
+            opts = client_utils.Namespace({})
+            opts.insecure = CONF.scheduler.insecure
+            update_auth_options(CONF, opts)
+            opts.os_trust_id = os_trust_id
+
+            client_opts = client_utils.Namespace({'opts': opts})
+            api_version = '1' if CONF.scheduler.enable_v1_api else '2'
+            trust_client = client_utils.get_client_instance(
+                opts=client_opts, api_version=api_version)
+            if CONF.scheduler.client_id:
+                trust_client.client_id = CONF.scheduler.client_id
+            return trust_client
+        return self.client
 
     def is_scheduled(self, job_id):
         return self.scheduler.get_job(job_id) is not None

@@ -77,3 +77,35 @@ class TestFreezerScheduler(unittest.TestCase):
             opts = mock.Mock(spec=[])
             freezer_scheduler.update_auth_options(mock_conf, opts)
             self.assertFalse(hasattr(opts, 'os_username'))
+
+    def test_filter_jobs_centralized(self):
+        from freezer.scheduler.freezer_scheduler import CONF
+        CONF.scheduler.centralized_scheduler = True
+        job1 = {'job_id': 'job1', 'user_credentials': {'trust_id': 'trust1'}}
+        job2 = {'job_id': 'job2', 'user_credentials': {}}
+        job_doc_list = [job1, job2]
+
+        patch_path = 'freezer.scheduler.scheduler_job.Job.check_capabilities'
+        with mock.patch(patch_path) as mock_check:
+            mock_check.return_value = True
+            filtered = self.scheduler.filter_jobs(job_doc_list)
+            self.assertEqual(len(filtered), 1)
+            self.assertEqual(filtered[0]['job_id'], 'job1')
+        CONF.scheduler.centralized_scheduler = False
+
+    def test_update_job_metadata_filters_actions(self):
+        job_doc = {
+            'job_schedule': {'status': 'completed'},
+            'session_id': 'session123',
+            'session_tag': 1,
+            'job_actions': [{'action': 'backup'}]
+        }
+        with mock.patch.object(self.scheduler, 'update_job') as mock_update:
+            self.scheduler.update_job_metadata("test_job_123", job_doc)
+            mock_update.assert_called_once()
+            called_id, called_doc = mock_update.call_args[0]
+            self.assertEqual(called_id, "test_job_123")
+            self.assertIn('job_schedule', called_doc)
+            self.assertIn('session_id', called_doc)
+            self.assertIn('session_tag', called_doc)
+            self.assertNotIn('job_actions', called_doc)

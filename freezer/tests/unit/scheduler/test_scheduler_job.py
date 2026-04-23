@@ -17,6 +17,7 @@ import shutil
 import tempfile
 import unittest
 
+from freezer.scheduler import arguments
 from freezer.scheduler import scheduler_job
 from freezer.tests.unit.scheduler.commons import set_default_capabilities
 from freezer.tests.unit.scheduler.commons import set_test_capabilities
@@ -62,6 +63,8 @@ class TestSchedulerJob(unittest.TestCase):
 
 class TestSchedulerJob1(unittest.TestCase):
     def setUp(self):
+        # Ensure groups are registered
+        arguments.register_scheduler_opts(CONF)
         self.scheduler = mock.MagicMock()
         self.job_schedule = {"event": "start", "status": "start",
                              "schedule_day": "1"}
@@ -295,6 +298,55 @@ class TestSchedulerJob1(unittest.TestCase):
             mock_save.assert_called_once()
             action_arg = mock_save.call_args[0][0]
             self.assertEqual('fake_trust', action_arg['os_trust_id'])
+
+    @mock.patch('subprocess.Popen')
+    def test_execute_job_action_env_propagation(self, mock_popen):
+        # Ensure groups are registered
+        arguments.register_scheduler_opts(CONF)
+
+        # Setup mocks and data
+        mock_process = mock.MagicMock()
+        mock_process.pid = 1234
+        mock_process.communicate.return_value = (b'stdout', b'')
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+
+        # Configure CONF using override
+        CONF.set_override('os_username', 'testuser', group='service_auth')
+        CONF.set_override('os_password', 'testpassword', group='service_auth')
+        CONF.set_override('os_project_name', 'testproject',
+                          group='service_auth')
+        CONF.set_override('os_auth_url',
+                          'http://keystone:5000/v3',
+                          group='service_auth')
+        CONF.set_override('insecure', True, group='scheduler')
+
+        job_action = {
+            'freezer_action': {'action': 'backup'},
+            'max_retries': 0
+        }
+
+        # Scenario 1: No trust_id
+        self.job.execute_job_action(job_action)
+
+        called_env = mock_popen.call_args.kwargs['env']
+        self.assertEqual('testuser', called_env['OS_USERNAME'])
+        self.assertEqual('testpassword', called_env['OS_PASSWORD'])
+        self.assertEqual('testproject', called_env['OS_PROJECT_NAME'])
+        self.assertEqual('http://keystone:5000/v3', called_env['OS_AUTH_URL'])
+        self.assertEqual('True', called_env['OS_INSECURE'])
+        self.assertNotIn('OS_TRUST_ID', called_env)
+
+        # Scenario 2: With trust_id
+        self.job.job_doc['user_credentials'] = {'trust_id': 'secret_trust'}
+        self.job.execute_job_action(job_action)
+
+        called_env_trust = mock_popen.call_args.kwargs['env']
+        self.assertEqual('secret_trust', called_env_trust['OS_TRUST_ID'])
+        # Project info should be removed
+        self.assertNotIn('OS_PROJECT_NAME', called_env_trust)
+        # Authentication info should remain
+        self.assertEqual('testuser', called_env_trust['OS_USERNAME'])
 
     def test_job_finish(self):
         scheduler = mock.MagicMock()

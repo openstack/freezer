@@ -132,18 +132,20 @@ class OSClientManager(object):
             self.swift_args.get('project_domain_id')
         os_options['user_domain_id'] = self.swift_args.get('user_domain_id')
         os_options['project_id'] = self.swift_args.get('project_id')
+        os_options['trust_id'] = self.swift_args.get('trust_id')
 
         tenant_name = self.swift_args.get('project_name') or self.swift_args.\
             get('tenant_name')
+
+        if auth_version:
+            os_options['auth_version'] = auth_version
+
+        if tenant_name:
+            os_options['tenant_name'] = tenant_name
+
         self.swift = swiftclient.client.Connection(
-            authurl=self.swift_args.get('auth_url'),
-            user=self.swift_args.get('username'),
-            key=self.swift_args.get('password'),
-            tenant_name=tenant_name,
-            insecure=self.swift_args.get('insecure', False),
-            cacert=self.swift_args.get('cacert', None),
-            os_options=os_options,
-            auth_version=auth_version
+            session=self.sess,
+            os_options=os_options
         )
 
         if self.dry_run:
@@ -333,7 +335,7 @@ class OpenstackOpts(object):
     """
     Gathering and maintaining the right Openstack credentials that will be used
     to authenticate against keystone. Now we support keystone v3.
-    We need to provide a correct url that ends with either  v3
+    We need to provide a correct url that ends with either v3
     or provide auth_version or identity_api_version
     """
     def __init__(self, auth_url, auth_method='password', auth_version=None,
@@ -347,8 +349,8 @@ class OpenstackOpts(object):
                  project_domain_name=None, trust_id=None):
         """
         Authentication Options to build a valid opts dict to be used to
-        authenticate against keystone. You must provide auth_url with a vaild
-        Openstack version at the end  v3 or provide auth_version.
+        authenticate against keystone. You must provide auth_url with a valid
+        Openstack version at the end v3 or provide auth_version.
         :param auth_url: string Keystone API URL
         :param auth_method: string defaults to password or token (not tested)
         :param auth_version: string Keystone API version. v3
