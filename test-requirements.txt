@@ -19,6 +19,5 @@ openstacksdk>=0.13.0 # Apache-2.0
 
 # Used in doc8 check
 doc8>=0.6.0 # Apache-2.0
-Pygments>=2.2.0 # BSD license
 # astroid<=2.5.0;python_version>="3.0" # LGPLv2.1
 pylint>=2.6.0 # GPLv2
