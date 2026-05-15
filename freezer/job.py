@@ -654,7 +654,7 @@ class AdminJob(Job):
                     )
                     self.remove_backup_dirs(old_backups,
                                             instance_id)
-                    return {}
+                return {}
         hostname_backup_name_set = set()
 
         if self.conf.backup_media == 'nova':

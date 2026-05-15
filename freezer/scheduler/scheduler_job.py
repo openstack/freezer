@@ -382,6 +382,7 @@ class Job(object):
                 self.process = subprocess.Popen(freezer_command.split(),
                                                 stdout=subprocess.PIPE,
                                                 stderr=subprocess.PIPE,
+                                                text=True,
                                                 env=agent_env)
 
                 # store the pid for this process in the api
@@ -401,8 +402,13 @@ class Job(object):
                 utils.delete_file(config_file_name)
 
             if error:
-                LOG.error("Freezer client error: {0}".format(error))
-            elif output:
+                if self.process.returncode != 0:
+                    LOG.error("Freezer client error: {0}".format(error))
+                else:
+                    LOG.warning(
+                        "Freezer client warnings: {0}".format(error))
+
+            if output:
                 self.upload_metadata(output)
 
             if self.process.returncode == -15:
