@@ -81,6 +81,7 @@ class AdminOs(object):
         :param keep_number: int  keep number of fullbackup
         :return:
         """
+        keep_full_backup_num = int(keep_number)
         cinder_client = self.cinder_client
         search_opts = {
             'volume_id': volume_id,
@@ -90,13 +91,13 @@ class AdminOs(object):
         # Filter fullbackup
         fullbackups = [backup for backup in backups
                        if not backup.is_incremental]
-        if len(fullbackups) <= keep_number:
+        if len(fullbackups) <= keep_full_backup_num:
             LOG.info("The numbers of %s fullbackup is %d,"
                      "but keep-number-of-fullbackup is %d,"
                      "don't need delete old backups."
-                     % (volume_id, len(fullbackups), keep_number))
+                     % (volume_id, len(fullbackups), keep_full_backup_num))
             return
-        for fullbackup in fullbackups[:-keep_number]:
+        for fullbackup in fullbackups[:-keep_full_backup_num]:
             self.del_cinderbackup_and_dependend_incremental(fullbackup.id)
 
     def remove_cinderbackup_older_than(self, volume_id,

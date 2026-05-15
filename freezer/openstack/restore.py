@@ -76,8 +76,10 @@ class RestoreOs(object):
             LOG.error(msg)
             raise BaseException(msg)
         if restore_from_timestamp:
-            backups = list(filter(lambda x: int(x) <= restore_from_timestamp,
-                                  backups))
+            backups = list(filter(
+                lambda x: int(x) <= int(restore_from_timestamp),
+                backups
+            ))
         if not backups:
             msg = "Cannot find backups for path: %s" % path
             LOG.error(msg)
@@ -243,9 +245,9 @@ class RestoreOs(object):
             def get_backups_from_timestamp(backups, restore_from_timestamp):
                 for backup in backups:
                     backup_created_date = backup.created_at.split('.')[0]
-                    backup_created_timestamp = (
-                        utils.date_to_timestamp(backup_created_date))
-                    if backup_created_timestamp <= restore_from_timestamp:
+                    backup_created_timestamp = \
+                        utils.date_to_timestamp(backup_created_date)
+                    if backup_created_timestamp <= int(restore_from_timestamp):
                         yield backup
 
             if not backups:
