@@ -23,7 +23,7 @@ LOG = log.getLogger(__name__)
 
 
 def vss_create_shadow_copy(windows_volume):
-    """
+    r"""
     Create a new shadow copy for the specified volume
 
     Windows registry path for vssadmin:
