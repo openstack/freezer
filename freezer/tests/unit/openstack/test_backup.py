@@ -38,13 +38,56 @@ class TestBackup(commons.FreezerBaseTestCase):
         self.bakup_os.backup_cinder_by_glance(10230)
 
     def test_backup_cinder_with_incremental(self):
-        self.bakup_os.backup_cinder(35, incremental=True)
+        cinder = self.bakup_os.client_manager.get_cinder()
+        with mock.patch.object(
+            cinder, 'backups',
+            return_value=[commons.FakeIdObject(4)]
+        ) as mock_backups, \
+                mock.patch.object(
+                    cinder, 'create_backup') as mock_create_backup:
+            self.bakup_os.backup_cinder(35, incremental=True)
+            mock_backups.assert_called_once_with(
+                details=False, volume_id=35, status='available')
+            mock_create_backup.assert_called_once_with(
+                volume_id=35,
+                container=self.bakup_os.container,
+                name=None,
+                description=None,
+                is_incremental=True,
+                force=True
+            )
 
     def test_backup_cinder_without_incremental(self):
-        self.bakup_os.backup_cinder(35, incremental=False)
+        cinder = self.bakup_os.client_manager.get_cinder()
+        with mock.patch.object(cinder, 'create_backup') as mock_create_backup:
+            self.bakup_os.backup_cinder(35, incremental=False)
+            mock_create_backup.assert_called_once_with(
+                volume_id=35,
+                container=self.bakup_os.container,
+                name=None,
+                description=None,
+                is_incremental=False,
+                force=True
+            )
 
     def test_backup_cinder_with_none(self):
-        self.bakup_os.backup_cinder(10240, incremental=True)
+        cinder = self.bakup_os.client_manager.get_cinder()
+        with mock.patch.object(
+            cinder, 'backups', return_value=[]
+        ) as mock_backups, \
+                mock.patch.object(
+                    cinder, 'create_backup') as mock_create_backup:
+            self.bakup_os.backup_cinder(10240, incremental=True)
+            mock_backups.assert_called_once_with(
+                details=False, volume_id=10240, status='available')
+            mock_create_backup.assert_called_once_with(
+                volume_id=10240,
+                container=self.bakup_os.container,
+                name=None,
+                description=None,
+                is_incremental=False,
+                force=True
+            )
 
     def test_backup_cinder_by_snapshot_timestamp(self):
         volume_id = 12345
@@ -69,3 +112,17 @@ class TestBackup(commons.FreezerBaseTestCase):
         # add_stream(self, stream, package_name, headers=None)
         # In backup.py: storage.add_stream(stream, package, headers=headers)
         self.assertEqual(args[1], expected_package)
+
+        cinder = self.bakup_os.client_manager.get_cinder()
+        with mock.patch.object(cinder, 'create_backup') as mock_create_backup:
+            self.bakup_os.backup_cinder(
+                35, incremental=False, availability_zone='my_az')
+            mock_create_backup.assert_called_once_with(
+                volume_id=35,
+                container=self.bakup_os.container,
+                name=None,
+                description=None,
+                is_incremental=False,
+                force=True,
+                availability_zone='my_az'
+            )

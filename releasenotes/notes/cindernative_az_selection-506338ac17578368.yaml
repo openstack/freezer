@@ -1,0 +1,7 @@
+---
+
+features:
+  - |
+    Cinder native backup jobs now support the ``cindernative_backup_az``
+    (CLI option ``--cindernative-backup-az``) parameter, allowing users
+    to specify the availability zone for backup operations.

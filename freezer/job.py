@@ -233,7 +233,8 @@ class BackupJob(Job):
                   'ssh_username',
                   'ssh_host',
                   'ssh_port',
-                  'consistency_checksum'
+                  'consistency_checksum',
+                  'cindernative_backup_az'
                   ]
         for field_name in fields:
             metadata[field_name] = self.conf.__dict__.get(field_name, '') or ''
@@ -396,6 +397,7 @@ class BackupJob(Job):
                 self.conf.cindernative_vol_id,
                 name=self.conf.backup_name,
                 incremental=self.conf.incremental,
+                availability_zone=self.conf.cindernative_backup_az,
                 description="Backup created by Freezer for volume {0}".format(
                     self.conf.cindernative_vol_id))
         elif backup_media == 'cinder':

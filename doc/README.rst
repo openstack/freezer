@@ -732,6 +732,38 @@ allows creating a glance image from volume and uploading to swift.
 
 To use standard cinder backups please provide --cindernative-vol-id argument.
 
+To execute a native cinder backup, specify ``--mode cindernative`` along with the ``--cindernative-vol-id`` parameter. You can optionally specify a target Cinder backup availability zone via the ``--cindernative-backup-az`` parameter:
+
+.. code:: bash
+
+    freezer-agent --mode cindernative --cindernative-vol-id [cinder-volume-id] \
+    --cindernative-backup-az [backup-availability-zone]
+
+Cinder Native Backup Scheduler Job Example:
+
+.. code:: json
+
+    {
+      "job_actions": [
+        {
+          "freezer_action": {
+            "action": "backup",
+            "mode": "cindernative",
+            "cindernative_vol_id": "cinder-volume-id",
+            "cindernative_backup_az": "backup-availability-zone",
+            "container": "freezer_cinder_native_backups"
+          },
+          "max_retries": 3,
+          "max_retries_interval": 60
+        }
+      ],
+      "job_schedule": {
+        "schedule_interval": "1 day",
+        "schedule_start_date": "2026-06-11T12:00:00"
+      },
+      "description": "Cinder Native Backup Job with target AZ"
+    }
+
 Parallel backup
 ---------------
 

@@ -64,6 +64,59 @@ class TestBackupJob(TestJob):
             job = jobs.BackupJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)  # noqa
 
+    @mock.patch('freezer.openstack.backup.BackupOs')
+    def test_execute_cindernative(self, mock_backup_os):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'cindernative'
+        backup_opt.sync = False
+        backup_opt.__version__ = '1.0.0'
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'test_volume_id'
+        backup_opt.cindernative_backup_az = 'test_az'
+        backup_opt.backup_name = 'test_backup_name'
+        backup_opt.incremental = False
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.BackupJob(backup_opt, backup_opt.storage)
+            metadata = job.execute()
+
+        mock_backup_os.return_value.backup_cinder.assert_called_once_with(
+            'test_volume_id',
+            name='test_backup_name',
+            incremental=False,
+            availability_zone='test_az',
+            description="Backup created by Freezer for volume test_volume_id"
+        )
+        self.assertEqual('test_az', metadata.get('cindernative_backup_az'))
+
+    @mock.patch('freezer.openstack.backup.BackupOs')
+    def test_execute_cindernative_without_az(self, mock_backup_os):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'cindernative'
+        backup_opt.sync = False
+        backup_opt.__version__ = '1.0.0'
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'test_volume_id'
+        backup_opt.backup_name = 'test_backup_name'
+        backup_opt.incremental = False
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.BackupJob(backup_opt, backup_opt.storage)
+            metadata = job.execute()
+
+        mock_backup_os.return_value.backup_cinder.assert_called_once_with(
+            'test_volume_id',
+            name='test_backup_name',
+            incremental=False,
+            availability_zone=None,
+            description="Backup created by Freezer for volume test_volume_id"
+        )
+        self.assertEqual('', metadata.get('cindernative_backup_az'))
+
 
 class TestAdminJob(TestJob):
     def setUp(self):

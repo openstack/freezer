@@ -124,7 +124,7 @@ class FakeCinderClient(object):
 
     def create_backup(self, volume_id=None, container=None, name=None,
                       description=None, is_incremental=False, force=True,
-                      snapshot_id=None):
+                      snapshot_id=None, **kwargs):
         pass
 
     def _set_backup_del_flag(self, value):
@@ -361,6 +361,7 @@ class BackupOpt1(object):
         self.cinder_vol_name = ''
         self.cindernative_vol_id = ''
         self.cindernative_backup_id = ''
+        self.cindernative_backup_az = None
         self.nova_inst_id = ''
         self.nova_inst_name = ''
         self.lvm_snapperm = 'ro'

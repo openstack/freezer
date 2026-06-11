@@ -64,6 +64,7 @@ DEFAULT_PARAMS = {
     'consistency_check': False,
     'consistency_checksum': None,
     'cindernative_backup_id': None,
+    'cindernative_backup_az': None,
     'cinder_vol_id': '',
     'cindernative_vol_id': '',
     'cinderbrick_vol_id': '',
@@ -455,6 +456,11 @@ _COMMON = [
                default=DEFAULT_PARAMS['cindernative_backup_id'],
                dest='cindernative_backup_id',
                help="Id of the cindernative backup to be restored"
+               ),
+    cfg.StrOpt('cindernative-backup-az',
+               dest='cindernative_backup_az',
+               default=DEFAULT_PARAMS['cindernative_backup_az'],
+               help="Availability zone for cinder backup"
                ),
     cfg.StrOpt('glance-image-id',
                dest='glance_image_id',
