@@ -65,6 +65,7 @@ DEFAULT_PARAMS = {
     'consistency_checksum': None,
     'cindernative_backup_id': None,
     'cindernative_backup_az': None,
+    'cindernative_backup_container': '$container',
     'cinder_vol_id': '',
     'cindernative_vol_id': '',
     'cinderbrick_vol_id': '',
@@ -461,6 +462,14 @@ _COMMON = [
                dest='cindernative_backup_az',
                default=DEFAULT_PARAMS['cindernative_backup_az'],
                help="Availability zone for cinder backup"
+               ),
+    cfg.StrOpt('cindernative-backup-container',
+               dest='cindernative_backup_container',
+               default=DEFAULT_PARAMS['cindernative_backup_container'],
+               help="Target container name or container template for "
+                    "cinder native backup. Supported variables: "
+                    "{project_id}, {volume_id}, {backup_name}. "
+                    "Example: 'freezer_{project_id}_{volume_id}'"
                ),
     cfg.StrOpt('glance-image-id',
                dest='glance_image_id',

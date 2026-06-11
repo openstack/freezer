@@ -33,8 +33,8 @@ LOG = log.getLogger(__name__)
 
 
 class RestoreOs(object):
-    def __init__(self, client_manager, container, storage,
-                 temp_resource_prefix):
+    def __init__(self, client_manager, container=None, storage=None,
+                 temp_resource_prefix=None):
         self.client_manager = client_manager
         self.container = container
         self.storage = storage

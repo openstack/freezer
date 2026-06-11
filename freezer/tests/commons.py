@@ -359,9 +359,12 @@ class BackupOpt1(object):
         self.sql_server_instance = 'Sql Server'
         self.cinder_vol_id = ''
         self.cinder_vol_name = ''
+        self.cinderbrick_vol_id = ''
         self.cindernative_vol_id = ''
         self.cindernative_backup_id = ''
         self.cindernative_backup_az = None
+        self.cindernative_backup_container = 'test-container'
+        self.project_id = ''
         self.nova_inst_id = ''
         self.nova_inst_name = ''
         self.lvm_snapperm = 'ro'

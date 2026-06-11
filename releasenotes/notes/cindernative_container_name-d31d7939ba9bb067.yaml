@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    Add `--cindernative-backup-container` parameter to the backup command for
+    cindernative volume backups. This allows users to specify a custom container
+    name or container template (supporting `{project_id}`, `{volume_id}`, and
+    `{backup_name}`) separately from the global default container name.
+upgrade:
+  - |
+    Make the `--container` CLI option optional for Cinder native restore jobs
+    (`--backup-media cindernative`), as Cinder resolves the backup storage
+    container internally from its database.

@@ -100,6 +100,17 @@ class Job(metaclass=abc.ABCMeta):
                 and not self.conf.backup_name:
             raise ValueError('A value for --backup-name is required')
 
+    def get_cindernative_container(self):
+        container_template = self.conf.cindernative_backup_container
+        try:
+            return container_template.format(
+                project_id=self.conf.project_id or '',
+                volume_id=self.conf.cindernative_vol_id or '',
+                backup_name=self.conf.backup_name or ''
+            )
+        except (KeyError, ValueError, IndexError):
+            return container_template
+
     @abc.abstractmethod
     def execute(self):
         pass
@@ -174,7 +185,7 @@ class BackupJob(Job):
             if not self.conf.cindernative_vol_id:
                 raise ValueError("cindernative-vol-id"
                                  " argument must be provided")
-            if '/' in self.conf.container:
+            if '/' in self.get_cindernative_container():
                 raise ValueError("in cindernative mode, container name must "
                                  "not contain any slash characters, i.e, no "
                                  "subdirectory structure")
@@ -234,7 +245,8 @@ class BackupJob(Job):
                   'ssh_host',
                   'ssh_port',
                   'consistency_checksum',
-                  'cindernative_backup_az'
+                  'cindernative_backup_az',
+                  'cindernative_backup_container',
                   ]
         for field_name in fields:
             metadata[field_name] = self.conf.__dict__.get(field_name, '') or ''
@@ -386,13 +398,18 @@ class BackupJob(Job):
                 futures.wait(futures_list, CONF.timeout)
 
         elif backup_media == 'cindernative':
+            container = self.get_cindernative_container()
+
+            LOG.info('Executing cinder native backup. Volume ID: {0}, '
+                     'incremental: {1}, container: {2}'.format(
+                         self.conf.cindernative_vol_id,
+                         self.conf.incremental,
+                         container))
+
             backup_os = backup.BackupOs(self.conf.client_manager,
-                                        self.conf.container,
+                                        container,
                                         self.storage,
                                         self.conf.temp_resource_prefix)
-            LOG.info('Executing cinder native backup. Volume ID: {0}, '
-                     'incremental: {1}'.format(self.conf.cindernative_vol_id,
-                                               self.conf.incremental))
             backup_os.backup_cinder(
                 self.conf.cindernative_vol_id,
                 name=self.conf.backup_name,
@@ -451,7 +468,8 @@ class RestoreJob(Job):
                     self.conf.glance_image_name_filter,
                     self.conf.project_id]):
             raise ValueError("--restore-abs-path is required")
-        if not self.conf.container:
+        if (self.conf.backup_media != 'cindernative' and
+                not self.conf.container):
             raise ValueError("--container is required")
         if not self.conf.incremental and (self.conf.max_level or
                                           self.conf.always_level):
@@ -585,8 +603,7 @@ class RestoreJob(Job):
                     res.restore_cinder_by_glance(instance_id,
                                                  restore_timestamp)
         elif conf.backup_media == 'cindernative':
-            res = restore.RestoreOs(conf.client_manager, conf.container,
-                                    self.storage, conf.temp_resource_prefix)
+            res = restore.RestoreOs(conf.client_manager)
             LOG.info("Restoring cinder native backup. Volume ID {0}, Backup ID"
                      " {1}, timestamp: {2}".format(conf.cindernative_vol_id,
                                                    conf.cindernative_backup_id,

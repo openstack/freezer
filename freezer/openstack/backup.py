@@ -96,11 +96,10 @@ class BackupOs(object):
                       incremental=False, availability_zone=None):
         client_manager = self.client_manager
         cinder = client_manager.get_cinder()
-        container = self.container
 
         kwargs = {
             'volume_id': volume_id,
-            'container': container,
+            'container': self.container,
             'name': name,
             'description': description,
             'force': True

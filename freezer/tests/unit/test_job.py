@@ -82,6 +82,12 @@ class TestBackupJob(TestJob):
             job = jobs.BackupJob(backup_opt, backup_opt.storage)
             metadata = job.execute()
 
+        mock_backup_os.assert_called_once_with(
+            backup_opt.client_manager,
+            'test-container',
+            backup_opt.storage,
+            backup_opt.temp_resource_prefix
+        )
         mock_backup_os.return_value.backup_cinder.assert_called_once_with(
             'test_volume_id',
             name='test_backup_name',
@@ -108,6 +114,12 @@ class TestBackupJob(TestJob):
             job = jobs.BackupJob(backup_opt, backup_opt.storage)
             metadata = job.execute()
 
+        mock_backup_os.assert_called_once_with(
+            backup_opt.client_manager,
+            'test-container',
+            backup_opt.storage,
+            backup_opt.temp_resource_prefix
+        )
         mock_backup_os.return_value.backup_cinder.assert_called_once_with(
             'test_volume_id',
             name='test_backup_name',
@@ -116,6 +128,60 @@ class TestBackupJob(TestJob):
             description="Backup created by Freezer for volume test_volume_id"
         )
         self.assertEqual('', metadata.get('cindernative_backup_az'))
+
+    @mock.patch('freezer.openstack.backup.BackupOs')
+    def test_execute_cindernative_with_container_template(
+            self, mock_backup_os):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'cindernative'
+        backup_opt.sync = False
+        backup_opt.__version__ = '1.0.0'
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'test_volume_id'
+        backup_opt.project_id = 'test_project'
+        backup_opt.cindernative_backup_container = (
+            'freezer_{project_id}_{volume_id}')
+        backup_opt.backup_name = 'test_backup_name'
+        backup_opt.incremental = False
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.BackupJob(backup_opt, backup_opt.storage)
+            metadata = job.execute()
+
+        mock_backup_os.assert_called_once_with(
+            backup_opt.client_manager,
+            'freezer_test_project_test_volume_id',
+            backup_opt.storage,
+            backup_opt.temp_resource_prefix
+        )
+        mock_backup_os.return_value.backup_cinder.assert_called_once_with(
+            'test_volume_id',
+            name='test_backup_name',
+            incremental=False,
+            availability_zone=None,
+            description="Backup created by Freezer for volume test_volume_id"
+        )
+        self.assertEqual('freezer_{project_id}_{volume_id}',
+                         metadata.get('cindernative_backup_container'))
+
+    def test_execute_cindernative_invalid_container(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'cindernative'
+        backup_opt.sync = False
+        backup_opt.__version__ = '1.0.0'
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'test_volume_id'
+        backup_opt.cindernative_backup_container = 'invalid/container/name'
+        backup_opt.backup_name = 'test_backup_name'
+        backup_opt.incremental = False
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.BackupJob,
+                              backup_opt, backup_opt.storage)
 
 
 class TestAdminJob(TestJob):
@@ -165,3 +231,61 @@ class TestExecJob(TestJob):
         with mock.patch('openstack.connection.Connection'):
             job = jobs.ExecJob(backup_opt, backup_opt.storage)
         self.assertRaises(Exception, job.execute)  # noqa
+
+
+class TestRestoreJob(TestJob):
+    def setUp(self):
+        super(TestRestoreJob, self).setUp()
+
+    def test_validate_cindernative_no_container(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'restore'
+        backup_opt.action = 'restore'
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'test_volume_id'
+        backup_opt.cindernative_backup_id = 'test_backup_id'
+        backup_opt.container = None
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.RestoreJob(backup_opt, backup_opt.storage)
+            self.assertIsNotNone(job)
+
+    def test_validate_non_cindernative_requires_container(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'restore'
+        backup_opt.action = 'restore'
+        backup_opt.backup_media = 'fs'
+        backup_opt.restore_abs_path = '/tmp/restore'
+        backup_opt.container = None
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.RestoreJob,
+                              backup_opt, backup_opt.storage)
+
+    @mock.patch('freezer.openstack.restore.RestoreOs')
+    def test_execute_cindernative(self, mock_restore_os):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'restore'
+        backup_opt.action = 'restore'
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'test_volume_id'
+        backup_opt.cindernative_backup_id = 'test_backup_id'
+        backup_opt.container = None
+        backup_opt.restore_from_date = None
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.RestoreJob(backup_opt, backup_opt.storage)
+            job.execute()
+
+        mock_restore_os.assert_called_once_with(backup_opt.client_manager)
+        mock_restore_os.return_value.restore_cinder.assert_called_once_with(
+            'test_volume_id',
+            'test_backup_id',
+            None
+        )

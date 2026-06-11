@@ -126,3 +126,20 @@ class TestBackup(commons.FreezerBaseTestCase):
                 force=True,
                 availability_zone='my_az'
             )
+
+    def test_backup_cinder_with_custom_container(self):
+        bakup_os = backup.BackupOs(self.backup_opt.client_manager,
+                                   'my_custom_container',
+                                   self.backup_opt.storage,
+                                   self.backup_opt.temp_resource_prefix)
+        cinder = bakup_os.client_manager.get_cinder()
+        with mock.patch.object(cinder, 'create_backup') as mock_create_backup:
+            bakup_os.backup_cinder(35, incremental=False)
+            mock_create_backup.assert_called_once_with(
+                volume_id=35,
+                container='my_custom_container',
+                name=None,
+                description=None,
+                is_incremental=False,
+                force=True
+            )
