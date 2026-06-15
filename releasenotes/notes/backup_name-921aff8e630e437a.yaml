@@ -1,0 +1,23 @@
+---
+features:
+  - |
+    Added support for dynamic backup name templates in the Freezer agent.
+    Administrators can now use placeholders such as `{mode}`, `{hostname}`,
+    `{resource_id}`, `{container}`, and `{storage}` in `--backup-name`. If not
+    configured, the agent automatically defaults to mode-specific template
+    names (e.g. `freezer_{mode}_{resource_id}`).
+  - |
+    Unified backup naming so that the resolved backup name is used for both
+    the backend (e.g., the Cinder volume backup created in OpenStack) and the
+    metadata payload registered in the Freezer API.
+fixes:
+  - |
+    Resolved multiple integration issues in the native Cinder backup driver
+    (`cindernative` mode), including timezone-aware UTC datetime and timestamp
+    comparison for rotation/cleanup, and fixing generator length check errors.
+upgrade:
+  - |
+    The default value for the `--backup-name` configuration option has been
+    changed from ``None`` to ``"freezer_{mode}_{resource_id}"``. This means
+    that if `--backup-name` is omitted, backups will be dynamically named
+    using this template instead of failing validation or using static fallbacks.

@@ -58,7 +58,7 @@ DEFAULT_PARAMS = {
     'access_key': '',
     'action': 'backup',
     'always_level': False,
-    'backup_name': None,
+    'backup_name': "freezer_{mode}_{resource_id}",
     'command': None,
     'compression': 'gzip',
     'consistency_check': False,
@@ -174,7 +174,10 @@ _COMMON = [
                short='N',
                default=DEFAULT_PARAMS['backup_name'],
                help="The backup name you want to use to identify your backup "
-                    "on Swift"
+                    "on storage. If not set, a default template will be "
+                    "used based on the mode. Supported variables: "
+                    "{mode}, {backup_media}, {storage}, {container}, "
+                    "{project_id}, {resource_id}."
                ),
     cfg.StrOpt('mode',
                short='m',

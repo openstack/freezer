@@ -183,6 +183,56 @@ class TestBackupJob(TestJob):
             self.assertRaises(ValueError, jobs.BackupJob,
                               backup_opt, backup_opt.storage)
 
+    @mock.patch('freezer.openstack.backup.BackupOs')
+    def test_execute_cindernative_default_backup_name(self, mock_backup_os):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'cindernative'
+        backup_opt.sync = False
+        backup_opt.__version__ = '1.0.0'
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'test_volume_id'
+        backup_opt.backup_name = None
+        backup_opt.incremental = False
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.BackupJob(backup_opt, backup_opt.storage)
+            metadata = job.execute()
+
+        expected_name = 'freezer_cindernative_test_volume_id'
+        self.assertEqual(expected_name, job.backup_name)
+        self.assertEqual(expected_name, metadata.get('backup_name'))
+        mock_backup_os.return_value.backup_cinder.assert_called_once_with(
+            'test_volume_id',
+            name=expected_name,
+            incremental=False,
+            availability_zone=None,
+            description="Backup created by Freezer for volume test_volume_id"
+        )
+
+    @mock.patch('freezer.openstack.backup.BackupOs')
+    def test_execute_cindernative_custom_backup_name_template(self,
+                                                              mock_backup_os):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'cindernative'
+        backup_opt.sync = False
+        backup_opt.__version__ = '1.0.0'
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'test_volume_id'
+        backup_opt.backup_name = 'custom_{mode}_{resource_id}'
+        backup_opt.incremental = False
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.BackupJob(backup_opt, backup_opt.storage)
+            metadata = job.execute()
+
+        expected_name = 'custom_cindernative_test_volume_id'
+        self.assertEqual(expected_name, job.backup_name)
+        self.assertEqual(expected_name, metadata.get('backup_name'))
+
 
 class TestAdminJob(TestJob):
     def setUp(self):
