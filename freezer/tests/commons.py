@@ -109,7 +109,7 @@ class FakeSubProcess6(object):
 class FakeIdObject(object):
     def __init__(self, id):
         self.id = id
-        self.status = "available"
+        self._status = "available"
         self.size = 10
         self.min_disk = 10
         self.created_at = '2016-05-12T02:00:22.000000'
@@ -117,29 +117,127 @@ class FakeIdObject(object):
         self.name = None
         self.attachments = []
 
+    @property
+    def status(self):
+        if self.id == 1024:
+            raise Exception("Delete backup 1024 failed due to timeout over "
+                            "120s, the status of backup is deleting.")
+        return self._status
+
+    @status.setter
+    def status(self, value):
+        self._status = value
+
 
 class FakeCinderClient(object):
     def __init__(self):
         self.del_flag = False
+        self.backups_db = {
+            1: {
+                'id': 1,
+                'volume_id': '5',
+                'status': 'available',
+                'created_at': '2016-05-12T02:00:22.000000',
+                'is_incremental': False
+            },
+            1023: {
+                'id': 1023,
+                'volume_id': '1023',
+                'status': 'available',
+                'created_at': '2016-05-12T02:00:22.000000',
+                'is_incremental': False
+            },
+            1024: {
+                'id': 1024,
+                'volume_id': '1024',
+                'status': 'available',
+                'created_at': '2016-05-12T02:00:22.000000',
+                'is_incremental': False
+            },
+            4: {
+                'id': 4,
+                'volume_id': '2',
+                'status': 'available',
+                'created_at': '2016-05-12T02:00:22.000000',
+                'is_incremental': False
+            },
+            5: {
+                'id': 5,
+                'volume_id': '2',
+                'status': 'available',
+                'created_at': '2016-05-12T02:00:23.000000',
+                'is_incremental': False
+            },
+        }
 
     def create_backup(self, volume_id=None, container=None, name=None,
                       description=None, is_incremental=False, force=True,
                       snapshot_id=None, **kwargs):
         pass
 
+    def get_backup(self, id):
+        try:
+            backup_id = int(id)
+        except ValueError:
+            backup_id = id
+
+        if backup_id in self.backups_db:
+            b = self.backups_db[backup_id]
+            obj = FakeIdObject(b['id'])
+            obj.volume_id = b['volume_id']
+            obj.status = b['status']
+            obj.created_at = b['created_at']
+            obj.is_incremental = b['is_incremental']
+            return obj
+        return None
+
     def _set_backup_del_flag(self, value):
         self.del_flag = value
 
     def backups(self, details=True, **search_opts):
-        if 'parent_id' in search_opts:
-            return []
-        if self.del_flag:
-            self._set_backup_del_flag(False)
-            return []
-        return [FakeIdObject(4), FakeIdObject(5)]
+        volume_id = search_opts.get('volume_id')
+        backup_id = search_opts.get('id')
+        status = search_opts.get('status')
+
+        if backup_id is not None:
+            try:
+                backup_id = int(backup_id)
+            except ValueError:
+                pass
+            if backup_id in self.backups_db:
+                b = self.backups_db[backup_id]
+                obj = FakeIdObject(b['id'])
+                obj.volume_id = b['volume_id']
+                obj.status = b['status']
+                obj.created_at = b['created_at']
+                obj.is_incremental = b['is_incremental']
+                return [obj]
+            else:
+                return []
+
+        res = []
+        for b in self.backups_db.values():
+            if volume_id is not None and str(b['volume_id']) != str(volume_id):
+                continue
+            if status is not None and b['status'] != status:
+                continue
+            obj = FakeIdObject(b['id'])
+            obj.volume_id = b['volume_id']
+            obj.status = b['status']
+            obj.created_at = b['created_at']
+            obj.is_incremental = b['is_incremental']
+            res.append(obj)
+        return res
 
     def delete_backup(self, id):
         self._set_backup_del_flag(True)
+        if id == 1023:
+            self.backups_db[1023]['status'] = 'error'
+        elif id == 1024:
+            self.backups_db[1024]['status'] = 'deleting'
+        else:
+            if id in self.backups_db:
+                del self.backups_db[id]
         return
 
     @staticmethod

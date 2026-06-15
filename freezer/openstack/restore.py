@@ -240,7 +240,7 @@ class RestoreOs(object):
             'status': 'available',
         }
         if not backup_id:
-            backups = cinder.backups(details=True, **search_opts)
+            backups = list(cinder.backups(details=True, **search_opts))
 
             def get_backups_from_timestamp(backups, restore_from_timestamp):
                 for backup in backups:

@@ -112,13 +112,12 @@ class BackupOs(object):
                 'volume_id': volume_id,
                 'status': 'available'
             }
-            backups = cinder.backups(details=False, **search_opts)
+            backups = list(cinder.backups(details=False, **search_opts))
             if len(backups) <= 0:
                 kwargs['is_incremental'] = False
-                cinder.create_backup(**kwargs)
             else:
                 kwargs['is_incremental'] = incremental
-                cinder.create_backup(**kwargs)
         else:
             kwargs['is_incremental'] = incremental
-            cinder.create_backup(**kwargs)
+
+        cinder.create_backup(**kwargs)
