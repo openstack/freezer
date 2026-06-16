@@ -52,6 +52,8 @@ class Job(metaclass=abc.ABCMeta):
         self.nova = self.client.get_nova()
         self.cinder = self.client.get_cinder()
         self.glance = self.client.get_glance()
+        self.backup_name = self.get_backup_name()
+        self.container = self.get_container()
         self._general_validation()
         self._validate()
         if self.conf.nova_inst_name:
@@ -77,6 +79,42 @@ class Job(metaclass=abc.ABCMeta):
                                      if self.conf.glance_image_name_filter
                                      not in image.name]
 
+    def get_backup_name(self):
+        template = getattr(self.conf, 'backup_name', None)
+        if not template:
+            template = "freezer_{mode}_{resource_id}"
+
+        mode = getattr(self.conf, 'mode', '')
+        if mode in ('cindernative', 'cinder'):
+            resource_id = (getattr(self.conf, 'cindernative_vol_id', None) or
+                           getattr(self.conf, 'cinder_vol_id', None) or
+                           '')
+        elif mode == 'nova':
+            resource_id = getattr(self.conf, 'nova_inst_id', None) or ''
+        elif mode == 'glance':
+            resource_id = getattr(self.conf, 'glance_image_id', None) or ''
+        else:
+            resource_id = getattr(self.conf, 'hostname', '') or ''
+
+        try:
+            return template.format(
+                mode=mode,
+                backup_media=getattr(self.conf, 'backup_media', '') or '',
+                storage=getattr(self.conf, 'storage', '') or '',
+                container=getattr(self.conf, 'container', '') or '',
+                project_id=getattr(self.conf, 'project_id', '') or '',
+                resource_id=resource_id,
+            )
+        except (KeyError, ValueError, IndexError) as e:
+            LOG.warning("Failed to format backup name template '{0}': {1}. "
+                        "Returning template as-is.".format(template, e))
+            return template
+
+    def get_container(self):
+        if getattr(self.conf, 'mode', None) == 'cindernative':
+            return self.get_cindernative_container()
+        return getattr(self.conf, 'container', '')
+
     @abc.abstractmethod
     def _validate(self):
         """
@@ -97,16 +135,19 @@ class Job(metaclass=abc.ABCMeta):
 
         if self.conf.action in ('backup', 'restore', 'admin') \
                 and self.conf.backup_media == 'fs' \
-                and not self.conf.backup_name:
+                and not self.backup_name:
             raise ValueError('A value for --backup-name is required')
 
     def get_cindernative_container(self):
-        container_template = self.conf.cindernative_backup_container
+        container_template = getattr(self.conf,
+                                     'cindernative_backup_container', '')
+        if not container_template:
+            return ''
         try:
             return container_template.format(
-                project_id=self.conf.project_id or '',
-                volume_id=self.conf.cindernative_vol_id or '',
-                backup_name=self.conf.backup_name or ''
+                project_id=getattr(self.conf, 'project_id', ''),
+                volume_id=getattr(self.conf, 'cindernative_vol_id', ''),
+                backup_name=self.backup_name
             )
         except (KeyError, ValueError, IndexError):
             return container_template
@@ -129,9 +170,9 @@ class InfoJob(Job):
         fields = ["Container", "Size", "Object Count"]
         data = []
         for container in info:
-            if self.conf.container:
+            if self.container:
                 container_name = container.get('container_name')
-                if container_name != self.conf.container:
+                if container_name != self.container:
                     continue
 
             values = [
@@ -141,7 +182,7 @@ class InfoJob(Job):
             ]
             data.append(values)
 
-            if self.conf.container:
+            if self.container:
                 break  # values for given container were found
         return [fields, data]
 
@@ -185,7 +226,7 @@ class BackupJob(Job):
             if not self.conf.cindernative_vol_id:
                 raise ValueError("cindernative-vol-id"
                                  " argument must be provided")
-            if '/' in self.get_cindernative_container():
+            if '/' in self.container:
                 raise ValueError("in cindernative mode, container name must "
                                  "not contain any slash characters, i.e, no "
                                  "subdirectory structure")
@@ -196,7 +237,7 @@ class BackupJob(Job):
         LOG.info('Backup job started. '
                  'backup_name: {0}, container: {1}, hostname: {2}, mode: {3},'
                  ' Storage: {4}, compression: {5}'
-                 .format(self.conf.backup_name, self.conf.container,
+                 .format(self.backup_name, self.container,
                          self.conf.hostname, self.conf.mode, self.conf.storage,
                          self.conf.compression))
         try:
@@ -232,8 +273,6 @@ class BackupJob(Job):
                   'hostname',
                   'path_to_backup',
                   'max_level',
-                  'mode',
-                  'backup_name',
                   'time_stamp',
                   'log_file',
                   'storage',
@@ -250,6 +289,8 @@ class BackupJob(Job):
                   ]
         for field_name in fields:
             metadata[field_name] = self.conf.__dict__.get(field_name, '') or ''
+        metadata['backup_name'] = self.backup_name
+        metadata['container'] = self.container
         return metadata
 
     def backup(self, app_mode):
@@ -398,28 +439,26 @@ class BackupJob(Job):
                 futures.wait(futures_list, CONF.timeout)
 
         elif backup_media == 'cindernative':
-            container = self.get_cindernative_container()
-
             LOG.info('Executing cinder native backup. Volume ID: {0}, '
                      'incremental: {1}, container: {2}'.format(
                          self.conf.cindernative_vol_id,
                          self.conf.incremental,
-                         container))
+                         self.container))
 
             backup_os = backup.BackupOs(self.conf.client_manager,
-                                        container,
+                                        self.container,
                                         self.storage,
                                         self.conf.temp_resource_prefix)
             backup_os.backup_cinder(
                 self.conf.cindernative_vol_id,
-                name=self.conf.backup_name,
+                name=self.backup_name,
                 incremental=self.conf.incremental,
                 availability_zone=self.conf.cindernative_backup_az,
                 description="Backup created by Freezer for volume {0}".format(
                     self.conf.cindernative_vol_id))
         elif backup_media == 'cinder':
             backup_os = backup.BackupOs(self.conf.client_manager,
-                                        self.conf.container,
+                                        self.container,
                                         self.storage,
                                         self.conf.temp_resource_prefix)
             if self.conf.cinder_vol_id:
@@ -469,7 +508,7 @@ class RestoreJob(Job):
                     self.conf.project_id]):
             raise ValueError("--restore-abs-path is required")
         if (self.conf.backup_media != 'cindernative' and
-                not self.conf.container):
+                not self.container):
             raise ValueError("--container is required")
         if not self.conf.incremental and (self.conf.max_level or
                                           self.conf.always_level):
@@ -586,7 +625,7 @@ class RestoreJob(Job):
                         backup_media=conf.mode)
 
         elif conf.backup_media == 'cinder':
-            res = restore.RestoreOs(conf.client_manager, conf.container,
+            res = restore.RestoreOs(conf.client_manager, self.container,
                                     self.storage, conf.temp_resource_prefix)
             if conf.cinder_vol_id:
                 LOG.info("Restoring cinder backup from glance. "
