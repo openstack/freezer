@@ -13,9 +13,16 @@
 # limitations under the License.
 
 import io
+import os
+import tempfile
 import unittest
 
+from freezer.common import config as freezer_config
+from freezer.tests import commons
 from freezer.utils import config
+from oslo_config import cfg
+
+CONF = cfg.CONF
 
 
 class TestConfig(unittest.TestCase):
@@ -61,3 +68,62 @@ spaced =   value"""
                          .strip('\''))
 
         self.assertEqual('value', res['spaced'])
+
+
+class TestConfigCoercion(commons.FreezerBaseTestCase):
+
+    def setUp(self):
+        super(TestConfigCoercion, self).setUp()
+        self.temp_files = []
+
+    def tearDown(self):
+        for path in self.temp_files:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+        super(TestConfigCoercion, self).tearDown()
+
+    def _create_temp_config(self, content):
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            f.write(content)
+            self.temp_files.append(f.name)
+            return f.name
+
+    def test_get_backup_args_coercion_falsy(self):
+        log_path = self._create_temp_config("")
+        config_content = """[default]
+log_file = {0}
+incremental = false
+consistency_check = no
+overwrite = 0
+timeout = 120
+""".format(log_path)
+        config_path = self._create_temp_config(config_content)
+
+        CONF.reset()
+        freezer_config.config(args=['--config', config_path])
+        backup_args = freezer_config.get_backup_args()
+
+        self.assertIs(backup_args.incremental, False)
+        self.assertIs(backup_args.consistency_check, False)
+        self.assertIs(backup_args.overwrite, False)
+        self.assertEqual(backup_args.timeout, 120)
+
+    def test_get_backup_args_coercion_truthy(self):
+        log_path = self._create_temp_config("")
+        config_content = """[default]
+log_file = {0}
+incremental = true
+consistency_check = yes
+overwrite = 1
+""".format(log_path)
+        config_path = self._create_temp_config(config_content)
+
+        CONF.reset()
+        freezer_config.config(args=['--config', config_path])
+        backup_args = freezer_config.get_backup_args()
+
+        self.assertIs(backup_args.incremental, True)
+        self.assertIs(backup_args.consistency_check, True)
+        self.assertIs(backup_args.overwrite, True)
