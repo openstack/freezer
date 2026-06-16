@@ -719,17 +719,24 @@ def get_backup_args():
 
         defaults.update(conf.default)
         for config_key in conf.default.keys():
+            # Oslo options use underscores in Python
+            opt_name = config_key.replace('-', '_')
             try:
-                CONF.get(config_key)
-                CONF.set_override(config_key, conf.default[config_key])
+                # Try setting override on the registered option
+                CONF.set_override(opt_name, conf.default[config_key])
+                defaults[opt_name] = CONF.get(opt_name)
             except NoSuchOptError:
-                LOG.debug('No such opt, {0}, so set it'.format(config_key))
-                setattr(CONF, config_key, conf.default[config_key])
-            except KeyError:
-                real_opt, real_group = CONF._find_deprecated_opts(config_key)
-                if '-' in real_opt:
-                    real_opt = real_opt.replace('-', '_')
-                CONF.set_override(real_opt, conf.default[real_opt])
+                # Check if it's a deprecated option name
+                try:
+                    real_opt, _ = CONF._find_deprecated_opts(config_key)
+                    real_opt_name = real_opt.replace('-', '_')
+                    CONF.set_override(real_opt_name, conf.default[config_key])
+                    defaults[real_opt_name] = CONF.get(real_opt_name)
+                except KeyError:
+                    # Unregistered custom option
+                    LOG.debug('No such opt, {0}, so set it'.format(config_key))
+                    setattr(CONF, config_key, conf.default[config_key])
+                    defaults[config_key] = conf.default[config_key]
 
         if defaults['log_file']:
             CONF.set_override('log_file', defaults['log_file'])
