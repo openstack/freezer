@@ -48,6 +48,7 @@ def do_register(client, args=None):
             if e.status_code == 409:
                 LOG.info("Client already registered")
                 return 0
+            LOG.error("Failed to register client: {0}".format(e))
             return 73  # os.EX_CANTCREAT
         return 0  # os.EX_OK
 
