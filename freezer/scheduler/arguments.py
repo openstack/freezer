@@ -233,7 +233,7 @@ def build_os_options():
                    deprecated_opts=[cfg.DeprecatedOpt('os-user-domain-id',
                                                       group='DEFAULT')],
                    dest='os_user_domain_id'),
-        cfg.StrOpt('user_domain_name',
+        cfg.StrOpt('user-domain-name',
                    default=env('OS_USER_DOMAIN_NAME'),
                    help='User\'s domain name. Defaults to '
                         'env[OS_USER_DOMAIN_NAME].',
@@ -247,7 +247,7 @@ def build_os_options():
                    deprecated_opts=[cfg.DeprecatedOpt('os-auth-url',
                                                       group='DEFAULT')],
                    dest='os_auth_url'),
-        cfg.StrOpt('backup_url',
+        cfg.StrOpt('backup-url',
                    default=env('OS_BACKUP_URL'),
                    help='Specify the Freezer backup service endpoint to use. '
                         'Defaults to env[OS_BACKUP_URL].',
