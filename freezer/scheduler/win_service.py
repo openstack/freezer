@@ -58,7 +58,7 @@ class PySvc(win32serviceutil.ServiceFramework):
 
     def main(self):
         from freezer.scheduler.freezer_scheduler import FreezerScheduler
-        from freezerclient.v1.client import Client
+        from freezerclient.v2.client import Client
 
         servicemanager.LogMsg(
             servicemanager.EVENTLOG_INFORMATION_TYPE,
