@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
+import math
 import os
 import shutil
 import tempfile
 import unittest
 
+from apscheduler.jobstores.base import JobLookupError
 from freezer.scheduler import arguments
 from freezer.scheduler import scheduler_job
 from freezer.tests.unit.scheduler.commons import set_default_capabilities
@@ -588,3 +591,115 @@ class TestSchedulerJobCapabilities(unittest.TestCase):
         job = scheduler_job.Job(self.scheduler, None, jobdoc)
         result = job.check_capabilities()
         self.assertTrue(result)
+
+
+class TestJobLockRetryBackoff(unittest.TestCase):
+    def setUp(self):
+        self.scheduler = mock.MagicMock()
+        self.jobdoc = {'job_id': 'test', 'job_schedule': {}}
+        self.job = scheduler_job.Job(self.scheduler, None, self.jobdoc)
+        self.scheduler.job_lock.return_value.__enter__.return_value = False
+        # No pre-existing schedule to race against, unless a test sets one.
+        self.scheduler.get_job.return_value = None
+
+    def _run_date(self, call_index=0):
+        return self.scheduler.add_job.call_args_list[
+            call_index].kwargs['run_date']
+
+    def test_first_retry_uses_base_delay(self):
+        self.job.execute()
+
+        self.scheduler.add_job.assert_called_once()
+        kwargs = self.scheduler.add_job.call_args.kwargs
+        self.assertEqual(self.job._lock_retry_id, kwargs['id'])
+        self.assertTrue(kwargs['replace_existing'])
+        expected = (datetime.datetime.now(datetime.timezone.utc) +
+                    datetime.timedelta(
+                        seconds=scheduler_job.Job.LOCK_RETRY_BASE_SECONDS))
+        self.assertAlmostEqual(
+            expected.timestamp(), self._run_date().timestamp(), delta=5)
+        self.assertEqual(1, self.job._lock_retry_attempts)
+
+    def test_second_retry_doubles_the_delay(self):
+        self.job.execute()
+        self.job.execute()
+
+        self.assertEqual(2, self.scheduler.add_job.call_count)
+        first_run_date = self._run_date(0)
+        second_run_date = self._run_date(1)
+        delta = (second_run_date - first_run_date).total_seconds()
+        self.assertAlmostEqual(
+            scheduler_job.Job.LOCK_RETRY_BASE_SECONDS, delta, delta=5)
+        self.assertEqual(2, self.job._lock_retry_attempts)
+
+    def test_delay_is_capped_at_max(self):
+        self.job._lock_retry_attempts = 10  # far past the cap
+
+        self.job.execute()
+
+        expected = (datetime.datetime.now(datetime.timezone.utc) +
+                    datetime.timedelta(
+                        seconds=scheduler_job.Job.LOCK_RETRY_MAX_SECONDS))
+        self.assertAlmostEqual(
+            expected.timestamp(), self._run_date().timestamp(), delta=5)
+
+    def test_attempts_freeze_once_capped(self):
+        # Once the delay reaches the cap the exponent must stop growing,
+        # otherwise it would climb without bound during a long outage.
+        base = scheduler_job.Job.LOCK_RETRY_BASE_SECONDS
+        cap = scheduler_job.Job.LOCK_RETRY_MAX_SECONDS
+        capped_attempts = math.ceil(math.log2(cap / base))
+        self.job._lock_retry_attempts = capped_attempts
+
+        for _ in range(5):
+            self.job.execute()
+
+        self.assertEqual(capped_attempts, self.job._lock_retry_attempts)
+
+    def test_skips_retry_when_own_schedule_fires_sooner(self):
+        soon = (datetime.datetime.now(datetime.timezone.utc) +
+                datetime.timedelta(seconds=10))
+        self.scheduler.get_job.return_value = mock.Mock(next_run_time=soon)
+
+        self.job.execute()
+
+        self.scheduler.add_job.assert_not_called()
+        # The attempt still counted, so a later failure keeps backing off
+        # instead of restarting from the base delay.
+        self.assertEqual(1, self.job._lock_retry_attempts)
+
+    def test_retries_when_own_schedule_fires_later(self):
+        far = (datetime.datetime.now(datetime.timezone.utc) +
+               datetime.timedelta(hours=2))
+        self.scheduler.get_job.return_value = mock.Mock(next_run_time=far)
+
+        self.job.execute()
+
+        self.scheduler.add_job.assert_called_once()
+
+    def test_add_job_failure_is_logged_not_raised(self):
+        self.scheduler.add_job.side_effect = Exception('backend down')
+
+        result = self.job.execute()
+
+        self.assertIsNone(result)
+
+    def test_success_resets_backoff_and_cancels_pending_retry(self):
+        self.job._lock_retry_attempts = 3
+        self.scheduler.job_lock.return_value.__enter__.return_value = True
+
+        with mock.patch.object(self.job, '_execute') as mock_execute:
+            self.job.execute()
+            mock_execute.assert_called_once()
+
+        self.assertEqual(0, self.job._lock_retry_attempts)
+        self.scheduler.remove_job.assert_called_once_with(
+            self.job._lock_retry_id)
+
+    def test_cancel_swallows_missing_retry_job(self):
+        self.scheduler.remove_job.side_effect = JobLookupError(
+            self.job._lock_retry_id)
+        self.scheduler.job_lock.return_value.__enter__.return_value = True
+
+        with mock.patch.object(self.job, '_execute'):
+            self.job.execute()  # must not raise

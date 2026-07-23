@@ -93,6 +93,97 @@ class TestFreezerScheduler(unittest.TestCase):
             self.assertEqual(filtered[0]['job_id'], 'job1')
         CONF.scheduler.centralized_scheduler = False
 
+    def test_owns_job_standalone_is_always_true(self):
+        # No coordinator configured -> behaves as today.
+        self.assertTrue(self.scheduler.owns_job('any-job'))
+
+    def test_owns_job_delegates_to_coordinator(self):
+        self.scheduler.coordinator = mock.MagicMock()
+        self.scheduler.coordinator.is_owner.return_value = False
+        self.assertFalse(self.scheduler.owns_job('j1'))
+        self.scheduler.coordinator.is_owner.assert_called_once_with('j1')
+
+    def test_job_lock_standalone_grants_run(self):
+        with self.scheduler.job_lock('j1') as may_run:
+            self.assertTrue(may_run)
+
+    def test_poll_skips_jobs_not_owned(self):
+        self.scheduler.coordinator = mock.MagicMock()
+        self.scheduler.coordinator.is_owner.return_value = False
+        job_doc = {'job_id': 'j1', 'job_schedule': {'event': ''}}
+        with mock.patch.object(self.scheduler, 'get_jobs',
+                               return_value=[job_doc]), \
+                mock.patch.object(self.scheduler, 'create_job') as mock_create:
+            self.scheduler.poll()
+            mock_create.assert_not_called()
+        self.assertNotIn('j1', self.scheduler.jobs)
+
+    def test_poll_runs_jobs_owned(self):
+        self.scheduler.coordinator = mock.MagicMock()
+        self.scheduler.coordinator.is_owner.return_value = True
+        job_doc = {'job_id': 'j1', 'job_schedule': {'event': ''}}
+        fake_job = mock.MagicMock()
+        with mock.patch.object(self.scheduler, 'get_jobs',
+                               return_value=[job_doc]), \
+                mock.patch.object(self.scheduler, 'create_job',
+                                  return_value=fake_job) as mock_create:
+            self.scheduler.poll()
+            mock_create.assert_called_once_with(job_doc)
+            fake_job.process_event.assert_called_once_with(job_doc)
+
+    def test_poll_unschedules_job_when_ownership_lost(self):
+        self.scheduler.coordinator = mock.MagicMock()
+        self.scheduler.coordinator.is_owner.return_value = False
+        # We used to own j1 and have it scheduled locally (not running).
+        local_job = mock.MagicMock()
+        local_job.is_running.return_value = False
+        self.scheduler.jobs = {'j1': local_job}
+        job_doc = {'job_id': 'j1', 'job_schedule': {'event': ''}}
+        with mock.patch.object(self.scheduler, 'get_jobs',
+                               return_value=[job_doc]):
+            self.scheduler.poll()
+        local_job.unschedule.assert_called_once()
+        self.assertNotIn('j1', self.scheduler.jobs)
+
+    def test_poll_keeps_running_job_despite_ownership_loss(self):
+        # A member still executing a job keeps handling its events (e.g.
+        # abort) until the run ends, even if the ring moved the job away.
+        self.scheduler.coordinator = mock.MagicMock()
+        self.scheduler.coordinator.is_owner.return_value = False
+        local_job = mock.MagicMock()
+        local_job.is_running.return_value = True
+        local_job.can_be_removed.return_value = False
+        self.scheduler.jobs = {'j1': local_job}
+        job_doc = {'job_id': 'j1', 'job_schedule': {'event': ''}}
+        with mock.patch.object(self.scheduler, 'get_jobs',
+                               return_value=[job_doc]):
+            self.scheduler.poll()
+        local_job.unschedule.assert_not_called()
+        local_job.process_event.assert_called_once_with(job_doc)
+        self.assertIn('j1', self.scheduler.jobs)
+
+    def test_poll_abort_only_kills_locally_running_job(self):
+        # In clustered mode current_pid may belong to another member's
+        # host: a member must not kill that pid unless it runs the job.
+        self.scheduler.coordinator = mock.MagicMock()
+        self.scheduler.coordinator.is_owner.return_value = True
+        local_job = mock.MagicMock()
+        self.scheduler.jobs = {'j1': local_job}
+        job_doc = {'job_id': 'j1',
+                   'job_schedule': {'event': 'abort', 'current_pid': 4242}}
+        term_path = 'freezer.scheduler.utils.terminate_subprocess'
+        for running, expect_kill in ((False, False), (True, True)):
+            local_job.is_running.return_value = running
+            self.scheduler.jobs = {'j1': local_job}
+            with mock.patch.object(self.scheduler, 'get_jobs',
+                                   return_value=[job_doc]), \
+                    mock.patch(term_path) as mock_term:
+                self.scheduler.poll()
+                if expect_kill:
+                    mock_term.assert_called_once_with(4242, 'freezer-agent')
+                else:
+                    mock_term.assert_not_called()
+
     def test_update_job_metadata_filters_actions(self):
         job_doc = {
             'job_schedule': {'status': 'completed'},

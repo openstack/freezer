@@ -8,3 +8,4 @@ Table of Contents:
 
    installation
    operation
+   scheduler-coordination

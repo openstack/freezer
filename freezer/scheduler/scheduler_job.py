@@ -20,6 +20,7 @@ import subprocess
 import tempfile
 import time
 
+from apscheduler.jobstores.base import JobLookupError
 from freezer.scheduler import arguments
 from freezer.utils import utils
 from oslo_config import cfg
@@ -141,6 +142,11 @@ class Job(object):
 
     TIME_NULL = -1
 
+    # Backoff for retrying a firing that lost the coordination lock:
+    # 60s, 120s, 240s, ... capped at LOCK_RETRY_MAX_SECONDS.
+    LOCK_RETRY_BASE_SECONDS = 60
+    LOCK_RETRY_MAX_SECONDS = 3600
+
     @staticmethod
     def create(scheduler, executable, job_doc):
         job = Job(scheduler, executable, job_doc)
@@ -161,6 +167,11 @@ class Job(object):
         self.job_doc = job_doc
         self.process = None
         self.state = StopState
+        self._lock_retry_attempts = 0
+
+    @property
+    def _lock_retry_id(self):
+        return '{0}-lock-retry'.format(self.id)
 
     def remove(self):
         with self.scheduler.lock:
@@ -214,6 +225,9 @@ class Job(object):
 
     def can_be_removed(self):
         return self.job_doc_status == Job.REMOVED_STATUS
+
+    def is_running(self):
+        return self.state == RunningState
 
     @staticmethod
     def save_action_to_file(action, f):
@@ -460,6 +474,60 @@ class Job(object):
         job_schedule.update(kwargs)
 
     def execute(self):
+        with self.scheduler.job_lock(self.id) as may_run:
+            if may_run:
+                self._lock_retry_attempts = 0
+                self._cancel_lock_retry()
+                return self._execute()
+        # Do not consume the firing silently: a run-once ('date') trigger
+        # would be lost forever, and a recurring trigger may not fire
+        # again for a long time. Re-arm a retry (own id, so a recurring
+        # trigger under self.id is never overwritten) with exponential
+        # backoff, unless the job's own schedule will beat it there
+        # anyway.
+        LOG.info('Job {0} skipped: coordination lock unavailable'
+                 .format(self.id))
+        self._schedule_lock_retry()
+
+    def _schedule_lock_retry(self):
+        delay = min(self.LOCK_RETRY_BASE_SECONDS *
+                    (2 ** self._lock_retry_attempts),
+                    self.LOCK_RETRY_MAX_SECONDS)
+        # Stop growing the exponent once the cap is reached; otherwise
+        # _lock_retry_attempts (only reset on a successful run) would
+        # climb without bound during a long outage.
+        if delay < self.LOCK_RETRY_MAX_SECONDS:
+            self._lock_retry_attempts += 1
+        retry_at = (datetime.datetime.now(datetime.timezone.utc) +
+                    datetime.timedelta(seconds=delay))
+
+        scheduled_job = self.scheduler.get_job(self.id)
+        next_natural_run = (
+            scheduled_job.next_run_time if scheduled_job else None)
+        if next_natural_run is not None and next_natural_run <= retry_at:
+            # The job's own trigger fires sooner than our backoff would
+            # retry it; nothing to do.
+            return
+
+        try:
+            self.scheduler.add_job(
+                self.execute, 'date', id=self._lock_retry_id,
+                executor='threadpool',
+                misfire_grace_time=self.LOCK_RETRY_MAX_SECONDS,
+                run_date=retry_at, replace_existing=True)
+            LOG.info('Job {0} rescheduled to retry in {1}s'
+                     .format(self.id, delay))
+        except Exception as e:
+            LOG.error('Unable to reschedule job {0}: {1}'
+                      .format(self.id, e))
+
+    def _cancel_lock_retry(self):
+        try:
+            self.scheduler.remove_job(self._lock_retry_id)
+        except JobLookupError:
+            pass
+
+    def _execute(self):
         result = Job.SUCCESS_RESULT
         with self.scheduler.lock:
             LOG.info('job {0} running'.format(self.id))

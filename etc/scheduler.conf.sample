@@ -175,6 +175,21 @@
 #supported_engines = tar,rsync,rsyncv2,nova,osbrick,glance
 
 
+[coordination]
+
+#
+# From freezer-scheduler
+#
+
+# URL of the tooz coordination backend used to form a scheduler cluster, e.g.
+# "redis://host:6379", "etcd3+http://host:2379" or "zookeeper://host:2181". The
+# matching client library must be installed (e.g. "tooz[redis]"). Membership
+# heartbeats and the session timeout are handled by tooz and tunable via URL
+# options (e.g. "?timeout=30"). When unset the scheduler runs standalone (no
+# coordination) as before. (string value)
+#backend_url = <None>
+
+
 [scheduler]
 
 #
@@ -221,6 +236,9 @@
 # If set to true, it will use freezer v1 api instead of v2 (boolean value)
 # Deprecated group/name - [DEFAULT]/enable_v1_api
 #enable_v1_api = false
+
+# Enable centralized scheduler mode (boolean value)
+#centralized_scheduler = false
 
 
 [service_auth]
