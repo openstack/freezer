@@ -93,7 +93,8 @@ class BackupOs(object):
         client_manager.get_glance().delete_image(image.id)
 
     def backup_cinder(self, volume_id, name=None, description=None,
-                      incremental=False, availability_zone=None):
+                      incremental=False, availability_zone=None,
+                      metadata=None):
         client_manager = self.client_manager
         cinder = client_manager.get_cinder()
 
@@ -106,6 +107,8 @@ class BackupOs(object):
         }
         if availability_zone:
             kwargs['availability_zone'] = availability_zone
+        if metadata:
+            kwargs['metadata'] = metadata
 
         if incremental:
             search_opts = {
@@ -120,4 +123,4 @@ class BackupOs(object):
         else:
             kwargs['is_incremental'] = incremental
 
-        cinder.create_backup(**kwargs)
+        return cinder.create_backup(**kwargs)

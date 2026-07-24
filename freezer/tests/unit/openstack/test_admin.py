@@ -47,6 +47,27 @@ class TestAdmin(commons.FreezerBaseTestCase):
     def test_del_off_limit_fullbackup_keep_two(self):
         self.admin_os.del_off_limit_fullbackup('2', 2)
 
+    def test_del_off_limit_fullbackup_freezer_only_ignores_user_backups(self):
+        user_backup = commons.FakeIdObject(100)
+        user_backup.metadata = {}
+        freezer_backup_1 = commons.FakeIdObject(101)
+        freezer_backup_1.metadata = {'created_by': 'freezer'}
+        freezer_backup_2 = commons.FakeIdObject(102)
+        freezer_backup_2.metadata = {'created_by': 'freezer'}
+
+        backups = [user_backup, freezer_backup_1, freezer_backup_2]
+
+        self.admin_os.cinder_client.backups = (
+            commons.mock.Mock(return_value=backups))
+        self.admin_os.del_cinderbackup_and_dependend_incremental = (
+            commons.mock.Mock(return_value=[101]))
+
+        # Keep 1 full backup; out of 2 freezer backups, 1 should be deleted
+        # (101). User backup (100) should be ignored.
+        self.admin_os.del_off_limit_fullbackup('vol1', 1, freezer_only=True)
+        (self.admin_os.del_cinderbackup_and_dependend_incremental
+            .assert_called_once_with(101))
+
     def test_remove_cinderbackup_older_than(self):
         self.admin_os.remove_cinderbackup_older_than(35, 1463896546.0)
         try:
@@ -61,3 +82,81 @@ class TestAdmin(commons.FreezerBaseTestCase):
             msg = "Delete backup 1024 failed due to timeout over 120s," \
                   " the status of backup is deleting."
             self.assertEqual(msg, str(e))
+
+    def test_delete_single_backup_returns_freezer_backup_id(self):
+        cinder_backup = commons.FakeIdObject('cinder_101')
+        cinder_backup.metadata = {'created_by': 'freezer',
+                                  'freezer_backup_id': 'freezer_uuid_999'}
+        self.admin_os.cinder_client.get_backup = commons.mock.Mock(
+            return_value=cinder_backup)
+        self.admin_os.cinder_client.delete_backup = commons.mock.Mock()
+        self.admin_os.cinder_client.backups = (
+            commons.mock.Mock(return_value=[]))
+
+        fid = self.admin_os._delete_single_backup('cinder_101')
+
+        self.admin_os.cinder_client.delete_backup.assert_called_once_with(
+            'cinder_101')
+        self.assertEqual('freezer_uuid_999', fid)
+
+    def test_delete_single_backup_get_backup_fails(self):
+        self.admin_os.cinder_client.get_backup = commons.mock.Mock(
+            side_effect=Exception("API connection error"))
+        self.admin_os.cinder_client.delete_backup = commons.mock.Mock()
+        self.admin_os.cinder_client.backups = (
+            commons.mock.Mock(return_value=[]))
+
+        fid = self.admin_os._delete_single_backup('cinder_101')
+
+        self.admin_os.cinder_client.delete_backup.assert_called_once_with(
+            'cinder_101')
+        self.assertIsNone(fid)
+
+    def test_is_freezer_backup_and_get_freezer_backup_id(self):
+        # Backup created with freezer-api (has both tags)
+        valid_b1 = commons.FakeIdObject('1')
+        valid_b1.metadata = {'created_by': 'freezer',
+                             'freezer_backup_id': 'f1'}
+        self.assertTrue(admin.AdminOs.is_freezer_backup(valid_b1))
+        self.assertEqual('f1', admin.AdminOs.get_freezer_backup_id(valid_b1))
+
+        # Backup created in standalone mode without API (only created_by)
+        valid_b2 = commons.FakeIdObject('2')
+        valid_b2.metadata = {'created_by': 'freezer'}
+        self.assertTrue(admin.AdminOs.is_freezer_backup(valid_b2))
+        self.assertIsNone(admin.AdminOs.get_freezer_backup_id(valid_b2))
+
+        # User backup with different created_by
+        invalid_b = commons.FakeIdObject('3')
+        invalid_b.metadata = {'created_by': 'user'}
+        self.assertFalse(admin.AdminOs.is_freezer_backup(invalid_b))
+        self.assertIsNone(admin.AdminOs.get_freezer_backup_id(invalid_b))
+
+        # Backup without metadata
+        no_meta_b = commons.FakeIdObject('4')
+        no_meta_b.metadata = None
+        self.assertFalse(admin.AdminOs.is_freezer_backup(no_meta_b))
+        self.assertIsNone(admin.AdminOs.get_freezer_backup_id(no_meta_b))
+
+    def test_remove_cinderbackup_older_than_freezer_only(self):
+        user_backup = commons.FakeIdObject(100)
+        user_backup.metadata = {}
+        user_backup.created_at = '2020-01-01T00:00:00.000000'
+
+        freezer_backup = commons.FakeIdObject(101)
+        freezer_backup.metadata = {'created_by': 'freezer',
+                                   'freezer_backup_id': 'f_uuid_101'}
+        freezer_backup.created_at = '2020-01-01T00:00:00.000000'
+
+        backups = [user_backup, freezer_backup]
+        self.admin_os.cinder_client.backups = (
+            commons.mock.Mock(return_value=backups))
+        self.admin_os._delete_single_backup = commons.mock.Mock(
+            return_value='f_uuid_101')
+
+        # Remove backups older than 2025 (timestamp 1735689600)
+        res = self.admin_os.remove_cinderbackup_older_than(
+            'vol1', 1735689600.0, freezer_only=True)
+
+        self.assertEqual(['f_uuid_101'], res)
+        self.admin_os._delete_single_backup.assert_called_once_with(101)

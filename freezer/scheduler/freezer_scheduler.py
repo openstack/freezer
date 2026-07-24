@@ -157,17 +157,81 @@ class FreezerScheduler(object):
         else:
             raise Exception("Unable to end session: api not in use.")
 
-    def upload_metadata(self, metadata_doc, project_id=None,
-                        user_credentials=None):
+    def create_backup_record(self, metadata_doc, project_id=None,
+                             user_credentials=None):
+        """Create a backup record in freezer-api.
+
+        :param metadata_doc: dict containing backup metadata
+        :param project_id: optional project ID to scope the creation
+        :param user_credentials: dict containing user credentials/trust_id
+        :return: created backup_id string (or dict if API returns object)
+        """
+        client = self._get_client_for_user_credentials(user_credentials)
+        if not client:
+            return None
+        # The backup metadata record is scoped by the auth token (the project
+        # is encoded in the request URL /v2/{project_id}/backups), so there is
+        # no need to pass project_id explicitly. The client never sent it, so
+        # passing it was a no-op that raised a TypeError against the stock
+        # client. Upload the metadata document as-is.
+        res = client.backups.create(metadata_doc)
+        LOG.info("Created backup record in freezer-api: %s", res)
+        return res
+
+    def delete_backup_record(self, backup_id, user_credentials=None):
+        """Delete a backup record from freezer-api.
+
+        :param backup_id: string ID of the backup record to delete
+        :param user_credentials: dict containing user credentials/trust_id
+        """
         client = self._get_client_for_user_credentials(user_credentials)
         if not client:
             return
+        try:
+            client.backups.delete(backup_id)
+            LOG.info("Successfully deleted backup record %s from freezer-api",
+                     backup_id)
+        except Exception as e:
+            LOG.warning("Failed to delete backup record %s: %s", backup_id, e)
+
+    def upload_metadata(self, metadata_doc, project_id=None,
+                        user_credentials=None):
+        """Upload or update backup metadata in freezer-api."""
+        client = self._get_client_for_user_credentials(user_credentials)
+        if not client:
+            return
+        backup_id = metadata_doc.get('backup_id')
+        if backup_id:
+            try:
+                client.backups.update(backup_id, metadata_doc)
+                LOG.info(
+                    "Successfully updated backup record %s in freezer-api",
+                    backup_id
+                )
+                return
+            except Exception as e:
+                LOG.warning(
+                    "Failed to update backup record %s in freezer-api: %s",
+                    backup_id, e
+                )
         # The backup metadata record is scoped by the auth token (the project
         # is encoded in the request URL /v2/{project_id}/backups), so there is
         # no need to pass project_id explicitly. The client never sent it, so
         # passing it was a no-op that raised a TypeError against the stock
         # client. Upload the metadata document as-is.
         client.backups.create(metadata_doc)
+
+    def process_agent_result(self, result_doc, project_id=None,
+                             user_credentials=None):
+        """Process execution result payload returned by freezer-agent."""
+        deleted_ids = result_doc.get('deleted_freezer_backup_ids', [])
+        for del_id in deleted_ids:
+            self.delete_backup_record(del_id,
+                                      user_credentials=user_credentials)
+
+        if 'backup_id' in result_doc or 'action' in result_doc:
+            self.upload_metadata(result_doc, project_id=project_id,
+                                 user_credentials=user_credentials)
 
     def start(self):
         if self.coordinator:

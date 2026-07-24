@@ -221,3 +221,67 @@ class TestFreezerScheduler(unittest.TestCase):
             self.assertIn('session_id', called_doc)
             self.assertIn('session_tag', called_doc)
             self.assertNotIn('job_actions', called_doc)
+
+    def test_process_agent_result_handles_deleted_freezer_backup_ids(self):
+        self.scheduler._get_client_for_user_credentials = mock.MagicMock()
+        mock_client = mock.MagicMock()
+        self.scheduler._get_client_for_user_credentials.return_value = (
+            mock_client)
+
+        metadata_doc = {
+            'deleted_freezer_backup_ids': ['id1', 'id2']
+        }
+        self.scheduler.process_agent_result(metadata_doc)
+        mock_client.backups.delete.assert_has_calls([
+            mock.call('id1'),
+            mock.call('id2')
+        ])
+
+    def test_create_backup_record(self):
+        self.scheduler._get_client_for_user_credentials = mock.MagicMock()
+        mock_client = mock.MagicMock()
+        mock_client.backups.create.return_value = 'allocated_uuid_123'
+        self.scheduler._get_client_for_user_credentials.return_value = (
+            mock_client)
+
+        res = self.scheduler.create_backup_record({'status': 'creating'})
+        self.assertEqual('allocated_uuid_123', res)
+
+    def test_create_backup_record_no_client(self):
+        self.scheduler._get_client_for_user_credentials = (
+            mock.MagicMock(return_value=None))
+        res = self.scheduler.create_backup_record({'status': 'creating'})
+        self.assertIsNone(res)
+
+    def test_delete_backup_record_exception(self):
+        self.scheduler._get_client_for_user_credentials = mock.MagicMock()
+        mock_client = mock.MagicMock()
+        mock_client.backups.delete.side_effect = Exception("API error")
+        self.scheduler._get_client_for_user_credentials.return_value = (
+            mock_client)
+
+        # Should not raise exception
+        self.scheduler.delete_backup_record('id_123')
+        mock_client.backups.delete.assert_called_once_with('id_123')
+
+    def test_upload_metadata_updates_existing_backup_id(self):
+        self.scheduler._get_client_for_user_credentials = mock.MagicMock()
+        mock_client = mock.MagicMock()
+        self.scheduler._get_client_for_user_credentials.return_value = (
+            mock_client)
+
+        doc = {'backup_id': 'b123', 'status': 'available'}
+        self.scheduler.upload_metadata(doc)
+        mock_client.backups.update.assert_called_once_with('b123', doc)
+
+    def test_upload_metadata_update_fails_falls_back_to_create(self):
+        self.scheduler._get_client_for_user_credentials = mock.MagicMock()
+        mock_client = mock.MagicMock()
+        mock_client.backups.update.side_effect = Exception("Not found")
+        self.scheduler._get_client_for_user_credentials.return_value = (
+            mock_client)
+
+        doc = {'backup_id': 'b123', 'status': 'available'}
+        self.scheduler.upload_metadata(doc)
+        mock_client.backups.update.assert_called_once_with('b123', doc)
+        mock_client.backups.create.assert_called_once_with(doc)

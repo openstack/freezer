@@ -1,0 +1,17 @@
+---
+features:
+  - |
+    Cinder native volume backups are now created with metadata tags
+    (``created_by: freezer`` and ``freezer_backup_id: <uuid>``), allowing
+    seamless tracking and correlation between Cinder backups and
+    ``freezer-api`` records.
+  - |
+    Added the ``cindernative_freezer_only`` configuration option
+    (CLI flag ``--cindernative-freezer-only``), defaulting to ``True``.
+    When enabled, Cinder rotation actions only manage and delete backups
+    created by Freezer, preserving user-created manual volume backups.
+fixes:
+  - |
+    Cinder backup rotation actions now report deleted backup IDs to
+    ``freezer-scheduler``, which automatically deletes the corresponding
+    backup entries in ``freezer-api``.

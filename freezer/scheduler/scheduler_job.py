@@ -344,29 +344,61 @@ class Job(object):
                     LOG.info('JOB {0} aborted.'.format(self.id))
                     break
 
-    def upload_metadata(self, metadata_string):
+    def process_agent_output(self, output_string):
+        """
+        Process action execution output string from freezer-agent
+        :param output_string: stdout serialized to json string
+        """
         try:
-            metadata = json.loads(metadata_string)
-            if metadata:
+            metadata = json.loads(output_string)
+            if metadata and self.scheduler:
                 metadata['job_id'] = self.id
-                self.scheduler.upload_metadata(
+                self.scheduler.process_agent_result(
                     metadata,
                     user_credentials=self.job_doc.get('user_credentials', {}))
-                LOG.info("Job {0}, freezer action metadata uploaded"
+                LOG.info("Job {0}, freezer agent output processed"
                          .format(self.id))
         except Exception as e:
-            LOG.error('metrics upload error: {0}'.format(e))
+            LOG.error('agent output processing error: {0}'.format(e))
 
     def execute_job_action(self, job_action):
         max_tries = (int(job_action.get('max_retries', 0)) + 1)
         tries = max_tries
         freezer_action = job_action.get('freezer_action', {})
         max_retries_interval = int(job_action.get('max_retries_interval', 60))
+        action_mode = freezer_action.get('mode')
         action_name = freezer_action.get('action', '')
         user_credentials = self.job_doc.get('user_credentials', {})
         os_trust_id = user_credentials.get('trust_id')
         if os_trust_id:
             freezer_action['os_trust_id'] = os_trust_id
+
+        if action_name == 'backup' \
+                and action_mode == 'cindernative':
+            if not freezer_action.get('backup_id'):
+                initial_doc = {
+                    'status': 'creating',
+                    'mode': 'cindernative',
+                    'action': 'backup',
+                    'backup_media': 'cindernative',
+                    'backup_name': freezer_action.get('backup_name'),
+                    'container': freezer_action.get('container'),
+                    'cindernative_vol_id': freezer_action.get(
+                        'cindernative_vol_id'),
+                    'time_stamp': int(time.time()),
+                }
+                try:
+                    backup_id = self.scheduler.create_backup_record(
+                        initial_doc,
+                        project_id=self.job_doc.get('project_id'),
+                        user_credentials=user_credentials
+                    )
+                    if backup_id:
+                        freezer_action['backup_id'] = backup_id
+                except Exception as e:
+                    LOG.warning("Failed to pre-create backup record in "
+                                "freezer-api: %s", e)
+
         while tries:
             with tempfile.NamedTemporaryFile(mode='w',
                                              delete=False) as config_file:
@@ -422,7 +454,7 @@ class Job(object):
                         "Freezer client warnings: {0}".format(error))
 
             if output:
-                self.upload_metadata(output)
+                self.process_agent_output(output)
 
             if self.process.returncode == -15:
                 # This means the job action was aborted by the scheduler

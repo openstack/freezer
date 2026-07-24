@@ -286,9 +286,16 @@ class BackupJob(Job):
                   'consistency_checksum',
                   'cindernative_backup_az',
                   'cindernative_backup_container',
+                  'cindernative_vol_id',
                   ]
         for field_name in fields:
             metadata[field_name] = self.conf.__dict__.get(field_name, '') or ''
+        if getattr(self.conf, 'backup_id', None):
+            metadata['backup_id'] = self.conf.backup_id
+        if getattr(self.conf, 'cinder_backup_id', None):
+            metadata['cinder_backup_id'] = self.conf.cinder_backup_id
+        if getattr(self.conf, 'status', None):
+            metadata['status'] = self.conf.status
         metadata['backup_name'] = self.backup_name
         metadata['container'] = self.container
         return metadata
@@ -449,13 +456,29 @@ class BackupJob(Job):
                                         self.container,
                                         self.storage,
                                         self.conf.temp_resource_prefix)
-            backup_os.backup_cinder(
+            metadata = {
+                'created_by': 'freezer',
+            }
+            if getattr(self.conf, 'backup_id', None):
+                metadata['freezer_backup_id'] = self.conf.backup_id
+
+            cinder_backup = backup_os.backup_cinder(
                 self.conf.cindernative_vol_id,
                 name=self.backup_name,
                 incremental=self.conf.incremental,
                 availability_zone=self.conf.cindernative_backup_az,
                 description="Backup created by Freezer for volume {0}".format(
-                    self.conf.cindernative_vol_id))
+                    self.conf.cindernative_vol_id),
+                metadata=metadata)
+            self.conf.cinder_backup_id = getattr(cinder_backup, 'id', None)
+            # Cinder native backups are handled asynchronously by the Cinder
+            # service without returning multi-level backup numbers to Freezer.
+            # We return level 0 as the default curr_backup_level.
+            # TODO(noonedeadpunk): Periodically poll/wait for Cinder backup
+            # so we can verify the actual status before updating freezer-api
+            # records to 'available', rather than assuming immediate success.
+            self.conf.status = 'available'
+            return 0
         elif backup_media == 'cinder':
             backup_os = backup.BackupOs(self.conf.client_manager,
                                         self.container,
@@ -683,10 +706,13 @@ class AdminJob(Job):
         backup_media = self.conf.backup_media
         if backup_media == 'cindernative':
             admin_os = admin.AdminOs(self.conf.client_manager)
-            admin_os.del_off_limit_fullbackup(
+            freezer_only = getattr(self.conf, 'cindernative_freezer_only',
+                                   True)
+            deleted_ids = admin_os.del_off_limit_fullbackup(
                 self.conf.cindernative_vol_id,
-                self.conf.fullbackup_rotation)
-            return {}
+                self.conf.fullbackup_rotation,
+                freezer_only=freezer_only)
+            return {'deleted_freezer_backup_ids': deleted_ids}
         if self.conf.remove_from_date:
             timestamp = utils.date_to_timestamp(self.conf.remove_from_date)
         else:

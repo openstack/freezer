@@ -143,3 +143,19 @@ class TestBackup(commons.FreezerBaseTestCase):
                 is_incremental=False,
                 force=True
             )
+
+    def test_backup_cinder_with_metadata(self):
+        cinder = self.bakup_os.client_manager.get_cinder()
+        metadata = {'created_by': 'freezer', 'freezer_backup_id': 'test-uuid'}
+        with mock.patch.object(cinder, 'create_backup') as mock_create_backup:
+            self.bakup_os.backup_cinder(35, incremental=False,
+                                        metadata=metadata)
+            mock_create_backup.assert_called_once_with(
+                volume_id=35,
+                container=self.bakup_os.container,
+                name=None,
+                description=None,
+                is_incremental=False,
+                force=True,
+                metadata=metadata
+            )

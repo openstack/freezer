@@ -66,6 +66,9 @@ class TestBackupJob(TestJob):
 
     @mock.patch('freezer.openstack.backup.BackupOs')
     def test_execute_cindernative(self, mock_backup_os):
+        fake_cinder = commons.FakeIdObject('cinder_backup_123')
+        mock_backup_os.return_value.backup_cinder.return_value = fake_cinder
+
         backup_opt = commons.BackupOpt1()
         backup_opt.mode = 'cindernative'
         backup_opt.sync = False
@@ -77,6 +80,7 @@ class TestBackupJob(TestJob):
         backup_opt.incremental = False
         backup_opt.max_level = None
         backup_opt.always_level = None
+        backup_opt.backup_id = 'freezer_backup_uuid_123'
 
         with mock.patch('openstack.connection.Connection'):
             job = jobs.BackupJob(backup_opt, backup_opt.storage)
@@ -93,9 +97,36 @@ class TestBackupJob(TestJob):
             name='test_backup_name',
             incremental=False,
             availability_zone='test_az',
-            description="Backup created by Freezer for volume test_volume_id"
+            description="Backup created by Freezer for volume test_volume_id",
+            metadata={'created_by': 'freezer',
+                      'freezer_backup_id': 'freezer_backup_uuid_123'}
         )
         self.assertEqual('test_az', metadata.get('cindernative_backup_az'))
+        self.assertEqual(0, metadata.get('curr_backup_level'))
+        self.assertIsInstance(metadata.get('curr_backup_level'), int)
+        self.assertEqual('freezer_backup_uuid_123', metadata.get('backup_id'))
+        self.assertEqual('cinder_backup_123', metadata.get('cinder_backup_id'))
+        self.assertEqual('available', metadata.get('status'))
+
+    def test_execute_fs_metadata_no_extra_cinder_ids(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'fs'
+        backup_opt.sync = False
+        backup_opt.__version__ = '1.0.0'
+        backup_opt.backup_media = 'fs'
+        backup_opt.path_to_backup = '/tmp'
+        backup_opt.incremental = False
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'), \
+                mock.patch.object(jobs.BackupJob, 'backup', return_value=0):
+            job = jobs.BackupJob(backup_opt, backup_opt.storage)
+            metadata = job.execute()
+
+        self.assertEqual(0, metadata.get('curr_backup_level'))
+        self.assertNotIn('backup_id', metadata)
+        self.assertNotIn('cinder_backup_id', metadata)
 
     @mock.patch('freezer.openstack.backup.BackupOs')
     def test_execute_cindernative_without_az(self, mock_backup_os):
@@ -125,7 +156,8 @@ class TestBackupJob(TestJob):
             name='test_backup_name',
             incremental=False,
             availability_zone=None,
-            description="Backup created by Freezer for volume test_volume_id"
+            description="Backup created by Freezer for volume test_volume_id",
+            metadata=mock.ANY
         )
         self.assertEqual('', metadata.get('cindernative_backup_az'))
 
@@ -161,7 +193,8 @@ class TestBackupJob(TestJob):
             name='test_backup_name',
             incremental=False,
             availability_zone=None,
-            description="Backup created by Freezer for volume test_volume_id"
+            description="Backup created by Freezer for volume test_volume_id",
+            metadata=mock.ANY
         )
         self.assertEqual('freezer_{project_id}_{volume_id}',
                          metadata.get('cindernative_backup_container'))
@@ -208,7 +241,8 @@ class TestBackupJob(TestJob):
             name=expected_name,
             incremental=False,
             availability_zone=None,
-            description="Backup created by Freezer for volume test_volume_id"
+            description="Backup created by Freezer for volume test_volume_id",
+            metadata=mock.ANY
         )
 
     @mock.patch('freezer.openstack.backup.BackupOs')

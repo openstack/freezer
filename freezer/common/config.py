@@ -66,6 +66,7 @@ DEFAULT_PARAMS = {
     'cindernative_backup_id': None,
     'cindernative_backup_az': None,
     'cindernative_backup_container': '$container',
+    'cindernative_freezer_only': True,
     'cinder_vol_id': '',
     'cindernative_vol_id': '',
     'cinderbrick_vol_id': '',
@@ -474,6 +475,12 @@ _COMMON = [
                     "{project_id}, {volume_id}, {backup_name}. "
                     "Example: 'freezer_{project_id}_{volume_id}'"
                ),
+    cfg.BoolOpt('cindernative-freezer-only',
+                dest='cindernative_freezer_only',
+                default=DEFAULT_PARAMS['cindernative_freezer_only'],
+                help="If true, only backups created by Freezer are "
+                     "considered during cindernative rotation."
+                ),
     cfg.StrOpt('glance-image-id',
                dest='glance_image_id',
                default=DEFAULT_PARAMS['glance_image_id'],

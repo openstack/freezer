@@ -188,6 +188,7 @@ class FakeCinderClient(object):
             obj.status = b['status']
             obj.created_at = b['created_at']
             obj.is_incremental = b['is_incremental']
+            obj.metadata = b.get('metadata', {'created_by': 'freezer'})
             return obj
         return None
 
@@ -211,6 +212,7 @@ class FakeCinderClient(object):
                 obj.status = b['status']
                 obj.created_at = b['created_at']
                 obj.is_incremental = b['is_incremental']
+                obj.metadata = b.get('metadata', {'created_by': 'freezer'})
                 return [obj]
             else:
                 return []
@@ -226,6 +228,7 @@ class FakeCinderClient(object):
             obj.status = b['status']
             obj.created_at = b['created_at']
             obj.is_incremental = b['is_incremental']
+            obj.metadata = b.get('metadata', {'created_by': 'freezer'})
             res.append(obj)
         return res
 

@@ -219,13 +219,74 @@ class TestSchedulerJob1(unittest.TestCase):
         result = self.job.process_event(jobdoc1)
         self.assertIsNone(result)
 
-    def test_job_upload_metadata(self):
+    def test_job_process_agent_output(self):
         metatring = '{"test": "freezer"}'
-        self.job.upload_metadata(metatring)
-        self.assertTrue(self.scheduler.upload_metadata.called)
+        self.job.process_agent_output(metatring)
+        self.assertTrue(self.scheduler.process_agent_result.called)
         metatring = ''
-        result = self.job.upload_metadata(metatring)
+        result = self.job.process_agent_output(metatring)
         self.assertIsNone(result)
+
+    def test_job_process_agent_output_invalid_json(self):
+        # Negative test: invalid JSON string should be caught gracefully
+        invalid_json = '{invalid json'
+        self.job.process_agent_output(invalid_json)
+
+    def test_execute_job_action_pre_creates_cindernative_backup(self):
+        job_action = {
+            'freezer_action': {
+                'action': 'backup',
+                'mode': 'cindernative',
+                'backup_name': 'my_backup',
+                'container': 'my_container',
+                'cindernative_vol_id': 'vol_123'
+            }
+        }
+        self.scheduler.create_backup_record = (
+            mock.MagicMock(return_value='allocated_b123'))
+        with mock.patch('tempfile.NamedTemporaryFile') as mock_tmp, \
+                mock.patch('freezer.utils.utils.delete_file'), \
+                mock.patch('subprocess.Popen') as mock_popen:
+            mock_tmp.return_value.__enter__.return_value.name = (
+                '/tmp/fake_cfg')
+            mock_proc = mock.MagicMock()
+            mock_proc.communicate.return_value = (
+                '{"status": "available"}', '')
+            mock_proc.returncode = 0
+            mock_popen.return_value = mock_proc
+
+            self.job.execute_job_action(job_action)
+            self.scheduler.create_backup_record.assert_called_once()
+            self.assertEqual(
+                'allocated_b123',
+                job_action['freezer_action'].get('backup_id'))
+
+    def test_execute_job_action_pre_create_fails_continues(self):
+        job_action = {
+            'freezer_action': {
+                'action': 'backup',
+                'mode': 'cindernative',
+                'backup_name': 'my_backup',
+                'container': 'my_container',
+                'cindernative_vol_id': 'vol_123'
+            }
+        }
+        # Negative test: pre-creation failure logs warning and proceeds
+        self.scheduler.create_backup_record = (
+            mock.MagicMock(side_effect=Exception("API connection error")))
+        with mock.patch('tempfile.NamedTemporaryFile') as mock_tmp, \
+                mock.patch('freezer.utils.utils.delete_file'), \
+                mock.patch('subprocess.Popen') as mock_popen:
+            mock_tmp.return_value.__enter__.return_value.name = (
+                '/tmp/fake_cfg')
+            mock_proc = mock.MagicMock()
+            mock_proc.communicate.return_value = (
+                '{"status": "available"}', '')
+            mock_proc.returncode = 0
+            mock_popen.return_value = mock_proc
+
+            self.job.execute_job_action(job_action)
+            self.scheduler.create_backup_record.assert_called_once()
 
     def test_job_contains_exec(self):
         jobdoc = {'job_actions': [{'freezer_action': {'action': 'exec'}}]}
