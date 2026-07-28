@@ -1,0 +1,18 @@
+---
+features:
+  - |
+    freezer-scheduler can now run as a cluster. Multiple schedulers
+    configured with the same ``client_id`` and a common tooz
+    coordination backend (set via the new ``[coordination]
+    backend_url`` option) share the jobs bound to that ``client_id``:
+    ownership is distributed with a consistent hash ring and each run
+    is guarded by a per-job distributed lock, so jobs keep running when
+    a member dies and are never executed twice concurrently. If the
+    coordination backend is unreachable, members skip job execution
+    (fail safe) until it is restored; a firing that cannot take its
+    lock is retried with exponential backoff, so one-shot jobs are not
+    lost while coordination is briefly unavailable. Coordination is
+    opt-in: without ``backend_url`` the scheduler runs standalone as
+    before. The tooz
+    client library matching the chosen backend must be installed (e.g.
+    ``tooz[redis]``). Not supported in Windows service mode.

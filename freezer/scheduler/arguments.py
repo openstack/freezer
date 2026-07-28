@@ -147,6 +147,35 @@ def get_common_opts():
     return _common
 
 
+def get_coordination_opts():
+    """
+    Options for freezer-scheduler coordination (clustering).
+
+    Coordination lets several schedulers that share the same client_id run
+    as a cluster: jobs are distributed among the members with a consistent
+    hash ring and guarded by per-job distributed locks (via tooz). It is
+    opt-in and disabled unless ``backend_url`` is set.
+
+    :return: list of oslo_config.cfg.Opt
+    """
+    coordination = [
+        cfg.StrOpt('backend-url',
+                   default=None,
+                   dest='backend_url',
+                   help='URL of the tooz coordination backend used to form a '
+                        'scheduler cluster, e.g. "redis://host:6379", '
+                        '"etcd3+http://host:2379" or '
+                        '"zookeeper://host:2181". The matching client '
+                        'library must be installed (e.g. "tooz[redis]"). '
+                        'Membership heartbeats and the session timeout are '
+                        'handled by tooz and tunable via URL options (e.g. '
+                        '"?timeout=30"). When unset the scheduler runs '
+                        'standalone (no coordination) as before.'),
+    ]
+
+    return coordination
+
+
 def get_capabilities_opts():
     capabilities = [
         cfg.ListOpt('supported-actions',
@@ -308,6 +337,10 @@ SERVICE_AUTH_GROUP = cfg.OptGroup(
     name='service_auth', title='Service Authentication Options')
 
 
+COORDINATION_GROUP = cfg.OptGroup(
+    name='coordination', title='Scheduler Coordination Options')
+
+
 def register_scheduler_opts(conf):
     """
     Register all scheduler-related groups and options.
@@ -326,6 +359,11 @@ def register_scheduler_opts(conf):
     if 'service_auth' not in conf:
         conf.register_group(SERVICE_AUTH_GROUP)
         conf.register_cli_opts(build_os_options(), group=SERVICE_AUTH_GROUP)
+
+    if 'coordination' not in conf:
+        conf.register_group(COORDINATION_GROUP)
+        conf.register_cli_opts(get_coordination_opts(),
+                               group=COORDINATION_GROUP)
 
 
 def parse_args(choices):
@@ -368,6 +406,7 @@ def list_opts():
     _opt = {
         SCHEDULER_GROUP: get_common_opts(),
         CAPABILITIES_GROUP: get_capabilities_opts(),
-        SERVICE_AUTH_GROUP: build_os_options()
+        SERVICE_AUTH_GROUP: build_os_options(),
+        COORDINATION_GROUP: get_coordination_opts()
     }
     return _opt.items()

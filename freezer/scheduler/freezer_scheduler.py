@@ -15,10 +15,12 @@
 # limitations under the License.
 
 
-from distutils import spawn
+import contextlib
+import shutil
 import sys
 import threading
 import time
+import typing
 
 from apscheduler.schedulers import background
 from freezerclient import utils as client_utils
@@ -26,6 +28,7 @@ from oslo_config import cfg
 from oslo_log import log
 
 from freezer.scheduler import arguments
+from freezer.scheduler import coordination as scheduler_coordination
 from freezer.scheduler import scheduler_job
 from freezer.scheduler import utils
 from freezer.utils import utils as freezer_utils
@@ -41,13 +44,16 @@ LOG = log.getLogger(__name__)
 
 
 class FreezerScheduler(object):
-    def __init__(self, apiclient, interval, job_path, concurrent_jobs=1):
+    def __init__(self, apiclient, interval, job_path, concurrent_jobs=1,
+                 coordinator: typing.Optional[
+                     scheduler_coordination.SchedulerCoordinator] = None):
         # config_manager
         self.client = apiclient
-        self.freezerc_executable = spawn.find_executable('freezer-agent')
+        self.coordinator = coordinator
+        self.freezerc_executable = shutil.which('freezer-agent')
         if self.freezerc_executable is None:
             # Needed in the case of a non-activated virtualenv
-            self.freezerc_executable = spawn.find_executable(
+            self.freezerc_executable = shutil.which(
                 'freezer-agent', path=':'.join(sys.path))
         LOG.debug('Freezer-agent found at {0}'
                   .format(self.freezerc_executable))
@@ -74,6 +80,7 @@ class FreezerScheduler(object):
 
         self.add_job = self.scheduler.add_job
         self.remove_job = self.scheduler.remove_job
+        self.get_job = self.scheduler.get_job
         self.jobs = {}
 
     def filter_jobs(self, job_doc_list):
@@ -99,12 +106,33 @@ class FreezerScheduler(object):
                 LOG.debug(f'Job {job_doc["job_id"]} ignored: not supported')
         return jobs
 
+    def owns_job(self, job_id: str) -> bool:
+        """Whether this scheduler should run the given job.
+
+        Always True in standalone mode. In clustered mode, only the member
+        that owns the job on the coordination hash ring returns True.
+        """
+        if not self.coordinator:
+            return True
+        return self.coordinator.is_owner(job_id)
+
+    def job_lock(self, job_id: str) -> contextlib.AbstractContextManager[bool]:
+        """
+        Always True in standalone mode; in clustered mode it reflects
+        whether the per-job distributed lock was acquired.
+        """
+        if not self.coordinator:
+            return contextlib.nullcontext(True)
+        return self.coordinator.job_lock(job_id)
+
     def get_jobs(self):
         if self.client:
             job_doc_list = self.filter_jobs(
                 utils.get_active_jobs_from_api(self.client))
             try:
-                utils.save_jobs_to_disk(job_doc_list, self.job_path)
+                utils.save_jobs_to_disk(
+                    [job for job in job_doc_list
+                     if self.owns_job(job['job_id'])], self.job_path)
             except Exception as e:
                 LOG.error('Unable to save jobs to {0}. '
                           '{1}'.format(self.job_path, e))
@@ -142,6 +170,12 @@ class FreezerScheduler(object):
             client.backups.create(metadata_doc)
 
     def start(self):
+        if self.coordinator:
+            try:
+                self.coordinator.start()
+            except Exception as e:
+                LOG.warning('Coordination unavailable, jobs will be '
+                            'skipped until it is restored: %s', e)
         utils.do_register(self.client)
         self.poll()
         self.scheduler.start()
@@ -154,6 +188,9 @@ class FreezerScheduler(object):
             # Not strictly necessary if daemonic mode is enabled but
             # should be done if possible
             self.scheduler.shutdown(wait=False)
+        finally:
+            if self.coordinator:
+                self.coordinator.stop()
 
     def update_job(self, job_id, job_doc, user_credentials=None):
         client = self._get_client_for_user_credentials(user_credentials)
@@ -214,6 +251,9 @@ class FreezerScheduler(object):
     def poll(self):
         try:
             LOG.info("Polling for jobs from API")
+            if self.coordinator:
+                # One membership snapshot and one hash ring per tick.
+                self.coordinator.refresh()
             work_job_doc_list = self.get_jobs()
         except Exception as e:
             LOG.error("Unable to get jobs: {0}".format(e))
@@ -224,13 +264,31 @@ class FreezerScheduler(object):
         # create job if necessary, then let it process its events
         for job_doc in work_job_doc_list:
             job_id = job_doc['job_id']
+            local_job: scheduler_job.Job | None = self.jobs.get(job_id)
+
+            # In clustered mode only the owning member schedules and runs
+            # a job — but a member still executing it keeps handling its
+            # events (e.g. abort) until the run ends. Otherwise stop
+            # scheduling it locally (no API write: the new owner now
+            # manages its status).
+            if not self.owns_job(job_id) and not (
+                    local_job and local_job.is_running()):
+                if local_job:
+                    with self.lock:
+                        self.jobs.pop(job_id, None)
+                        local_job.unschedule()
+                continue
+
             work_job_id_list.append(job_id)
-            job = self.jobs.get(job_id, None) or self.create_job(job_doc)
+            job = local_job or self.create_job(job_doc)
 
             # check for abort status
             if job_doc['job_schedule']['event'] == 'abort':
-                pid = int(job_doc['job_schedule']['current_pid'])
-                utils.terminate_subprocess(pid, 'freezer-agent')
+                # In clustered mode current_pid may belong to another
+                # member's host; only the member running the job kills it.
+                if not self.coordinator or job.is_running():
+                    pid = int(job_doc['job_schedule']['current_pid'])
+                    utils.terminate_subprocess(pid, 'freezer-agent')
 
             job.process_event(job_doc)
 
@@ -302,12 +360,33 @@ def main():
             print("--no-api mode is not available on windows")
             return 69  # os.EX_UNAVAILABLE
 
+    # Clustered mode is opt-in and only meaningful when talking to the API.
+    # The coordinator is created here but connected later in start() so its
+    # heartbeat thread is spawned after daemonization.
+    coordinator = None
+    if CONF.coordination.backend_url:
+        if apiclient is None:
+            LOG.warning('Coordination is configured but the scheduler runs '
+                        'in --no-api mode; running standalone.')
+        elif winutils.is_windows() and not CONF.scheduler.no_daemon:
+            # The Windows service re-creates its own FreezerScheduler in
+            # win_service and cannot carry the coordinator across.
+            LOG.warning('Coordination is not supported in Windows service '
+                        'mode; running standalone.')
+        else:
+            coordinator = scheduler_coordination.SchedulerCoordinator(
+                client_id=apiclient.client_id,
+                backend_url=CONF.coordination.backend_url)
+            LOG.info('Scheduler coordination enabled for cluster %s',
+                     apiclient.client_id)
+
     freezer_utils.create_dir(CONF.scheduler.jobs_dir, do_log=False)
     freezer_scheduler = FreezerScheduler(
         apiclient=apiclient,
         interval=int(CONF.scheduler.interval),
         job_path=CONF.scheduler.jobs_dir,
-        concurrent_jobs=CONF.scheduler.concurrent_jobs
+        concurrent_jobs=CONF.scheduler.concurrent_jobs,
+        coordinator=coordinator
     )
 
     if CONF.scheduler.no_daemon:
