@@ -37,7 +37,8 @@ class SwiftStorage(physical.PhysicalStorage):
     def rmtree(self, path):
         split = path.split('/', 1)
         for file in self.swift().get_container(split[0],
-                                               prefix=split[1])[1]:
+                                               prefix=split[1],
+                                               full_listing=True)[1]:
             try:
                 self.swift().delete_object(split[0], file['name'])
             except Exception:
@@ -225,18 +226,24 @@ class SwiftStorage(physical.PhysicalStorage):
             # split[0] = freezer_backups which is container name
             # split[1] = tar/server1.cloud.com_testest/
             split = path.split('/', 1)
-            files = self.swift().get_container(
+            objects = self.swift().get_container(
                 container=split[0],
                 full_listing=True,
                 prefix="{0}/".format(split[1]),
                 delimiter='/')[1]
-            # @todo normalize intro plain for loop to be easily
-            # understandable (szaher)
-            return set(f['subdir'].rsplit('/', 2)[1] for f in
-                       files)
+            entries = set()
+            for obj in objects:
+                entry = None
+                if 'subdir' in obj:
+                    entry = obj['subdir'].rstrip('/').rsplit('/', 1)[-1]
+                elif 'name' in obj:
+                    entry = obj['name'].rsplit('/', 1)[-1]
+                if entry is not None:
+                    entries.add(entry)
+            return entries
         except Exception as e:
             LOG.info(e)
-            return []
+            return set()
 
     def create_dirs(self, folder_list):
         pass

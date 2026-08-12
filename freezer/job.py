@@ -690,16 +690,57 @@ class RestoreJob(Job):
 
 class AdminJob(Job):
 
+    def _get_remove_timestamp(self):
+        """Compute the removal cutoff timestamp or raise ValueError.
+
+        Runs during validation so what gets executed is exactly what was
+        checked.
+        """
+        if self.conf.remove_before_date is not None:
+            return utils.date_to_timestamp(self.conf.remove_before_date)
+        if self.conf.remove_from_date is not None:
+            return utils.date_to_timestamp(self.conf.remove_from_date)
+        try:
+            if isinstance(self.conf.remove_older_than, bool):
+                raise ValueError("--remove-older-than must be a number "
+                                 "of days")
+            days = float(self.conf.remove_older_than)
+        except (TypeError, ValueError):
+            raise ValueError("--remove-older-than must be a number of days")
+        if not (days >= 0):
+            raise ValueError("--remove-older-than must be a non-negative "
+                             "number of days")
+        try:
+            timestamp = datetime.datetime.now() - \
+                datetime.timedelta(days=days)
+            return int(time.mktime(timestamp.timetuple()))
+        except (OverflowError, ValueError):
+            raise ValueError("--remove-older-than is too large to compute "
+                             "a valid timestamp")
+
     def _validate(self):
         # no validation required in this job
         if self.conf.backup_media == 'cindernative':
             if not self.conf.fullbackup_rotation:
                 raise Exception("The parameter --fullbackup-rotation "
                                 "is required")
-        elif not (self.conf.remove_from_date or self.conf.remove_older_than):
-            raise ValueError("You need to provide to remove backup older "
-                             "than this time. You can use --remove-older-than "
-                             "or --remove-from-date")
+        else:
+            removal_options = {'--remove-before-date':
+                               self.conf.remove_before_date,
+                               '--remove-from-date':
+                               self.conf.remove_from_date,
+                               '--remove-older-than':
+                               self.conf.remove_older_than}
+            given = [name for name, value in removal_options.items()
+                     if value is not None]
+            if not given:
+                raise ValueError("Specify removal date via "
+                                 "--remove-before-date, --remove-from-date, "
+                                 "or --remove-older-than")
+            if len(given) > 1:
+                raise ValueError("Specify only one of %s"
+                                 % ", ".join(given))
+        self.remove_timestamp = self._get_remove_timestamp()
 
     def execute(self):
         # remove backups by freezer admin action
@@ -713,12 +754,7 @@ class AdminJob(Job):
                 self.conf.fullbackup_rotation,
                 freezer_only=freezer_only)
             return {'deleted_freezer_backup_ids': deleted_ids}
-        if self.conf.remove_from_date:
-            timestamp = utils.date_to_timestamp(self.conf.remove_from_date)
-        else:
-            timestamp = datetime.datetime.now() - \
-                datetime.timedelta(days=float(self.conf.remove_older_than))
-            timestamp = int(time.mktime(timestamp.timetuple()))
+        timestamp = self.remove_timestamp
 
         if self.conf.backup_media == 'cinder':
             if self.conf.cinder_vol_id:

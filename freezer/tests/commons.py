@@ -444,6 +444,7 @@ class BackupOpt1(object):
         self.always_level = '20'
         self.overwrite = False
         self.remove_from_date = '2014-12-03T23:23:23'
+        self.remove_before_date = None
         self.restart_always_level = 100000
         self.restore_abs_path = '/tmp'
         self.restore_from_date = '2014-12-03T23:23:23'

@@ -111,6 +111,14 @@ class TestUtils(commons.FreezerBaseTestCase):
         assert (1417649003 + time.timezone) == utils.date_to_timestamp(
             "2014-12-03T23:23:23")
 
+    def test_date_to_timestamp_invalid(self):
+        for value in ('invalid',
+                      '2014-99-99T99:99:99',
+                      '2014-12-3T23:23:23',
+                      '2014-12-03 23:23:23'):
+            self.assertRaises(ValueError,
+                              utils.date_to_timestamp, value)
+
     def prepare_env(self):
         self.useFixture(fixtures.EnvironmentVariable(
             "HTTP_PROXY", 'http://proxy.original.domain:8080'))
