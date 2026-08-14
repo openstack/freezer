@@ -162,12 +162,12 @@ class FreezerScheduler(object):
         client = self._get_client_for_user_credentials(user_credentials)
         if not client:
             return
-        if project_id and not (user_credentials and
-                               user_credentials.get('trust_id')):
-            client.backups.create(metadata_doc,
-                                  project_id=project_id)
-        else:
-            client.backups.create(metadata_doc)
+        # The backup metadata record is scoped by the auth token (the project
+        # is encoded in the request URL /v2/{project_id}/backups), so there is
+        # no need to pass project_id explicitly. The client never sent it, so
+        # passing it was a no-op that raised a TypeError against the stock
+        # client. Upload the metadata document as-is.
+        client.backups.create(metadata_doc)
 
     def start(self):
         if self.coordinator:

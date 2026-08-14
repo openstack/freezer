@@ -184,6 +184,27 @@ class TestFreezerScheduler(unittest.TestCase):
                 else:
                     mock_term.assert_not_called()
 
+    def test_upload_metadata_does_not_pass_project_id(self):
+        # The backup metadata record is scoped by the auth token (the project
+        # is encoded in the request URL), so upload_metadata must call the
+        # client without a project_id argument. Passing it was a no-op that
+        # raised a TypeError against the client.
+        mock_client = mock.MagicMock()
+        metadata_doc = {'backup': 'metadata'}
+        with mock.patch.object(self.scheduler,
+                               '_get_client_for_user_credentials',
+                               return_value=mock_client):
+            self.scheduler.upload_metadata(metadata_doc, project_id='proj1')
+        mock_client.backups.create.assert_called_once_with(metadata_doc)
+
+    def test_upload_metadata_noop_without_client(self):
+        with mock.patch.object(self.scheduler,
+                               '_get_client_for_user_credentials',
+                               return_value=None):
+            # Should return without raising when no client is available.
+            self.assertIsNone(
+                self.scheduler.upload_metadata({'backup': 'metadata'}))
+
     def test_update_job_metadata_filters_actions(self):
         job_doc = {
             'job_schedule': {'status': 'completed'},

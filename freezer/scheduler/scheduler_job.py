@@ -351,7 +351,6 @@ class Job(object):
                 metadata['job_id'] = self.id
                 self.scheduler.upload_metadata(
                     metadata,
-                    project_id=self.job_doc.get('project_id'),
                     user_credentials=self.job_doc.get('user_credentials', {}))
                 LOG.info("Job {0}, freezer action metadata uploaded"
                          .format(self.id))
