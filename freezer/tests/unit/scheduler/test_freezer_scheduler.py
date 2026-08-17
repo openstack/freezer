@@ -13,6 +13,7 @@
 import unittest
 from unittest import mock
 
+from freezer.scheduler import arguments
 from freezer.scheduler import freezer_scheduler
 from freezer.tests.unit.scheduler.commons import set_default_capabilities
 from freezer.tests.unit.scheduler.commons import set_test_capabilities
@@ -35,6 +36,7 @@ UNSUPPORTED_JOB = {
 
 class TestFreezerScheduler(unittest.TestCase):
     def setUp(self):
+        arguments.register_scheduler_opts(freezer_scheduler.CONF)
         self.scheduler = freezer_scheduler.FreezerScheduler(
             apiclient=mock.MagicMock(),
             interval=1,
@@ -285,3 +287,31 @@ class TestFreezerScheduler(unittest.TestCase):
         self.scheduler.upload_metadata(doc)
         mock_client.backups.update.assert_called_once_with('b123', doc)
         mock_client.backups.create.assert_called_once_with(doc)
+
+    @mock.patch('freezer.scheduler.freezer_scheduler.client_utils.'
+                'get_client_instance')
+    def test_get_client_for_user_credentials_trust_success(self,
+                                                           mock_get_client):
+        mock_client = mock.MagicMock()
+        mock_get_client.return_value = mock_client
+        res = self.scheduler._get_client_for_user_credentials(
+            {'trust_id': 'trust123'})
+        self.assertEqual(mock_client, res)
+
+    @mock.patch('freezer.scheduler.freezer_scheduler.client_utils.'
+                'get_client_instance')
+    def test_get_client_for_user_credentials_trust_failure(self,
+                                                           mock_get_client):
+        mock_get_client.side_effect = Exception("Keystone auth failure")
+        res = self.scheduler._get_client_for_user_credentials(
+            {'trust_id': 'trust123'})
+        self.assertIsNone(res)
+
+    def test_get_client_for_user_credentials_no_creds(self):
+        res = self.scheduler._get_client_for_user_credentials(None)
+        self.assertEqual(self.scheduler.client, res)
+
+    def test_get_client_for_user_credentials_no_client(self):
+        self.scheduler.client = None
+        res = self.scheduler._get_client_for_user_credentials(None)
+        self.assertIsNone(res)

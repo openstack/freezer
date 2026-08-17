@@ -77,6 +77,9 @@ class FreezerScheduler(object):
             self.scheduler.add_job(self.poll, 'interval',
                                    seconds=interval, id='api_poll',
                                    executor='default')
+            LOG.info("Freezer Scheduler initialized with an API client")
+        else:
+            LOG.info("Freezer Scheduler initialized in standalone mode")
 
         self.add_job = self.scheduler.add_job
         self.remove_job = self.scheduler.remove_job
@@ -283,24 +286,30 @@ class FreezerScheduler(object):
         }
         self.update_job(job_id, doc, user_credentials=user_credentials)
 
-    def _get_client_for_user_credentials(self, user_credentials):
+    def _get_client_for_user_credentials(self, user_credentials=None):
         if not user_credentials:
             return self.client
 
         os_trust_id = user_credentials.get('trust_id')
         if os_trust_id:
-            opts = client_utils.Namespace({})
-            opts.insecure = CONF.scheduler.insecure
-            update_auth_options(CONF, opts)
-            opts.os_trust_id = os_trust_id
+            try:
+                opts = client_utils.Namespace({})
+                opts.insecure = CONF.scheduler.insecure
+                update_auth_options(CONF, opts)
+                opts.os_trust_id = os_trust_id
 
-            client_opts = client_utils.Namespace({'opts': opts})
-            api_version = '1' if CONF.scheduler.enable_v1_api else '2'
-            trust_client = client_utils.get_client_instance(
-                opts=client_opts, api_version=api_version)
-            if CONF.scheduler.client_id:
-                trust_client.client_id = CONF.scheduler.client_id
-            return trust_client
+                client_opts = client_utils.Namespace({'opts': opts})
+                trust_client = client_utils.get_client_instance(
+                    opts=client_opts, api_version='2')
+                if CONF.scheduler.client_id:
+                    trust_client.client_id = CONF.scheduler.client_id
+                return trust_client
+            except Exception as e:
+                LOG.error(
+                    "Failed to initialize client for trust %s: %s",
+                    os_trust_id, e
+                )
+                return None
         return self.client
 
     def is_scheduled(self, job_id):
