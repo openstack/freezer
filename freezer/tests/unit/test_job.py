@@ -272,6 +272,24 @@ class TestAdminJob(TestJob):
     def setUp(self):
         super(TestAdminJob, self).setUp()
 
+    def test_validation_runs_before_client_creation(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.action = None
+        with mock.patch('freezer.common.client_manager.'
+                        'get_client_manager') as cm:
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+            cm.assert_not_called()
+
+    def test_valid_input_reaches_client_creation(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_from_date = '2014-12-03T23:23:23'
+        backup_opt.remove_older_than = None
+        with mock.patch('freezer.common.client_manager.'
+                        'get_client_manager') as cm:
+            jobs.AdminJob(backup_opt, backup_opt.storage)
+            cm.assert_called_once()
+
     def test_execute(self):
         backup_opt = commons.BackupOpt1()
         with mock.patch('openstack.connection.Connection'):

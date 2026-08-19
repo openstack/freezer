@@ -48,14 +48,14 @@ class Job(metaclass=abc.ABCMeta):
         self.conf = conf_dict
         self.storage = storage
         self.engine = conf_dict.engine
-        self.client = client_manager.get_client_manager(CONF)
-        self.nova = self.client.get_nova()
-        self.cinder = self.client.get_cinder()
-        self.glance = self.client.get_glance()
         self.backup_name = self.get_backup_name()
         self.container = self.get_container()
         self._general_validation()
         self._validate()
+        self.client = client_manager.get_client_manager(CONF)
+        self.nova = self.client.get_nova()
+        self.cinder = self.client.get_cinder()
+        self.glance = self.client.get_glance()
         if self.conf.nova_inst_name:
             self.nova_instance_ids = [server.id for server in
                                       self.nova.servers(details=False)
