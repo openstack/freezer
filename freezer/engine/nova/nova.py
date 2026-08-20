@@ -277,7 +277,7 @@ class NovaEngine(engine.BackupEngine):
         utils.wait_for(
             NovaEngine.image_active,
             1,
-            100,
+            CONF.timeout,
             message="Waiting for instance {0} snapshot to become "
                     "active".format(backup_resource),
             kwargs={"glance_client": self.glance, "image_id": image_id}

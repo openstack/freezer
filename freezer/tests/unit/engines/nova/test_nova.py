@@ -17,10 +17,12 @@ from unittest import mock
 
 import ddt
 
+from oslo_config import cfg
 from oslo_serialization import jsonutils as json
 
 from freezer.engine.nova import nova
 from freezer.tests import commons
+from freezer.utils import utils as freezer_utils
 
 
 class FakeServer(object):
@@ -129,6 +131,55 @@ class TestNovaEngineSwiftStorage(TestNovaEngine):
             "project_test-project-id")
         self.engine.restore.assert_has_calls(self.expected_restore_calls,
                                              any_order=True)
+
+    def test_backup_nova_snapshot_wait_uses_conf_timeout(self):
+        """The nova snapshot-active wait must use CONF.timeout rather than a
+        hardcoded value so large instances whose snapshots take more than the
+        previous hardcoded 100s do not spuriously fail.
+        """
+        CONF = cfg.CONF
+
+        fake_server = mock.MagicMock()
+        fake_server.task_state = None
+        fake_image = mock.MagicMock()
+
+        # Construct the engine OUTSIDE any try/except so a construction error
+        # surfaces as a real failure rather than being swallowed.
+        with mock.patch('openstack.connection.Connection'):
+            engine = nova.NovaEngine(self.mock_swift_storage)
+        engine.nova = mock.MagicMock()
+        engine.nova.get_server.return_value = fake_server
+        engine.nova.create_server_image.return_value = 'fake-image-id'
+        engine.glance = mock.MagicMock()
+        engine.glance.get_image.return_value = fake_image
+        engine.client = mock.MagicMock()
+        engine.temp_resource_prefix = 'tmp_'
+
+        with mock.patch.object(freezer_utils, 'wait_for') as mock_wait:
+            # backup_data is a generator; it must be iterated for its body to
+            # run. The image-streaming code after the snapshot wait raises on
+            # these mocks, but by then both wait_for calls are recorded.
+            try:
+                list(engine.backup_data('test-instance-id',
+                                        'test-hostname/test-instance-id'))
+            except Exception:
+                pass
+
+        # Isolate the image-active wait ("become active") from the earlier
+        # task-finish wait ("to start the snapshot process"), and confirm it
+        # was reached (guards against a trivially-passing test) and uses
+        # CONF.timeout rather than a hardcoded value.
+        snapshot_wait_calls = [
+            c for c in mock_wait.call_args_list if 'become' in str(c)
+        ]
+        self.assertTrue(
+            snapshot_wait_calls,
+            "snapshot-active wait_for was never reached; test setup is wrong")
+        # third positional arg is the timeout
+        self.assertEqual(
+            CONF.timeout, snapshot_wait_calls[0][0][2],
+            "snapshot-active wait must use CONF.timeout, "
+            "not a hardcoded value")
 
 
 @ddt.ddt
