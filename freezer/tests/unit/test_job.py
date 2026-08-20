@@ -128,6 +128,78 @@ class TestBackupJob(TestJob):
         self.assertNotIn('backup_id', metadata)
         self.assertNotIn('cinder_backup_id', metadata)
 
+    def test_execute_nova_metadata_includes_resource_ids(self):
+        """Backup metadata for nova mode must record nova_inst_id and
+        engine_name so the backup record is self-describing and can be
+        located for restore via the API without walking Swift paths.
+        """
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'nova'
+        backup_opt.sync = False
+        backup_opt.__version__ = '1.0.0'
+        backup_opt.backup_media = 'nova'
+        backup_opt.nova_inst_id = 'test-nova-inst-uuid'
+        backup_opt.engine_name = 'nova'
+        backup_opt.incremental = False
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'), \
+                mock.patch.object(jobs.BackupJob, 'backup', return_value=0):
+            job = jobs.BackupJob(backup_opt, backup_opt.storage)
+            metadata = job.execute()
+
+        self.assertEqual('test-nova-inst-uuid', metadata.get('nova_inst_id'))
+        self.assertEqual('nova', metadata.get('engine_name'))
+        self.assertEqual('nova', metadata.get('mode'))
+        # Only stable IDs are stored; the mutable instance name is not.
+        self.assertNotIn('nova_inst_name', metadata)
+
+    def test_execute_cinder_metadata_includes_vol_id(self):
+        """Backup metadata for cinder mode must record cinder_vol_id so
+        the backup record is self-describing and can be located for restore.
+        """
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'cinder'
+        backup_opt.sync = False
+        backup_opt.__version__ = '1.0.0'
+        backup_opt.backup_media = 'cinder'
+        backup_opt.cinder_vol_id = 'test-cinder-vol-uuid'
+        backup_opt.incremental = False
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'), \
+                mock.patch.object(jobs.BackupJob, 'backup', return_value=0):
+            job = jobs.BackupJob(backup_opt, backup_opt.storage)
+            metadata = job.execute()
+
+        self.assertEqual('test-cinder-vol-uuid', metadata.get('cinder_vol_id'))
+        self.assertEqual('cinder', metadata.get('mode'))
+
+    def test_execute_glance_metadata_includes_image_id(self):
+        """Backup metadata for glance mode must record glance_image_id so
+        the backup record is self-describing and can be located for restore.
+        """
+        backup_opt = commons.BackupOpt1()
+        backup_opt.mode = 'glance'
+        backup_opt.sync = False
+        backup_opt.__version__ = '1.0.0'
+        backup_opt.backup_media = 'glance'
+        backup_opt.glance_image_id = 'test-glance-image-uuid'
+        backup_opt.incremental = False
+        backup_opt.max_level = None
+        backup_opt.always_level = None
+
+        with mock.patch('openstack.connection.Connection'), \
+                mock.patch.object(jobs.BackupJob, 'backup', return_value=0):
+            job = jobs.BackupJob(backup_opt, backup_opt.storage)
+            metadata = job.execute()
+
+        self.assertEqual('test-glance-image-uuid',
+                         metadata.get('glance_image_id'))
+        self.assertEqual('glance', metadata.get('mode'))
+
     @mock.patch('freezer.openstack.backup.BackupOs')
     def test_execute_cindernative_without_az(self, mock_backup_os):
         backup_opt = commons.BackupOpt1()

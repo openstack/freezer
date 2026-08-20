@@ -287,6 +287,16 @@ class BackupJob(Job):
                   'cindernative_backup_az',
                   'cindernative_backup_container',
                   'cindernative_vol_id',
+                  # Source resource identifiers, so a backup record is
+                  # self-describing and can be located for restore via the
+                  # API. Only stable IDs are stored (not the mutable *_name
+                  # fields, which can change and are not used to locate the
+                  # backup).
+                  'nova_inst_id',
+                  'cinder_vol_id',
+                  'cinderbrick_vol_id',
+                  'glance_image_id',
+                  'engine_name',
                   ]
         for field_name in fields:
             metadata[field_name] = self.conf.__dict__.get(field_name, '') or ''
