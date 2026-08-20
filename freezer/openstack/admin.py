@@ -172,7 +172,8 @@ class AdminOs(object):
     def remove_cinderbackup_older_than(self, volume_id,
                                        remove_older_timestamp,
                                        freezer_only=True):
-        """
+        """Removes backups older than or equal to timestamp in a chain-safe manner.
+
         :param volume_id: id of Volume
         :param remove_older_timestamp: int
         :param freezer_only: bool whether to only remove backups created
@@ -184,18 +185,62 @@ class AdminOs(object):
             'volume_id': volume_id,
             'status': 'available',
             'sort_key': 'created_at',
-            'sort_dir': 'desc',
+            'sort_dir': 'asc',
             'details': True,
         }
         backups = cinder_client.backups(**search_opts)
         deleted_ids = []
+        chains = []
+        current_chain = None
         for backup in backups:
-            if freezer_only and not self.is_freezer_backup(backup):
+            if not getattr(backup, 'is_incremental', False):
+                current_chain = {'full': backup, 'increments': []}
+                chains.append(current_chain)
+            elif current_chain is not None:
+                current_chain['increments'].append(backup)
+
+        for chain in chains:
+            full_backup = chain['full']
+            increments = chain['increments']
+            if freezer_only and not self.is_freezer_backup(full_backup):
+                LOG.debug("Skipping non-freezer full backup %s",
+                          full_backup.id)
                 continue
-            created_at = getattr(backup, 'created_at', None)
-            backup_timestamp = timeutils.parse_isotime(created_at).timestamp()
-            if backup_timestamp <= remove_older_timestamp:
-                fid = self._delete_single_backup(backup.id)
+
+            latest_backup = full_backup
+            if increments:
+                latest_backup = increments[-1]
+
+            created_at = getattr(latest_backup, 'created_at', None)
+            if not created_at:
+                LOG.debug("Backup %s has no created_at timestamp; "
+                          "skipping chain", latest_backup.id)
+                continue
+
+            try:
+                latest_timestamp = timeutils.parse_isotime(
+                    created_at).timestamp()
+            except (ValueError, TypeError) as err:
+                LOG.warning("Failed to parse created_at '%s' for backup %s: "
+                            "%s; skipping chain", created_at,
+                            latest_backup.id, err)
+                continue
+
+            if latest_timestamp <= remove_older_timestamp:
+                for inc in reversed(increments):
+                    if freezer_only and not self.is_freezer_backup(inc):
+                        LOG.debug("Skipping non-freezer incremental backup %s",
+                                  inc.id)
+                        continue
+                    fid = self._delete_single_backup(inc.id)
+                    if fid:
+                        deleted_ids.append(fid)
+                fid = self._delete_single_backup(full_backup.id)
                 if fid:
                     deleted_ids.append(fid)
+            else:
+                LOG.info("Incremental backup chain for volume %s has active "
+                         "increments; preserving chain until all increments "
+                         "expire.", volume_id)
+
         return deleted_ids

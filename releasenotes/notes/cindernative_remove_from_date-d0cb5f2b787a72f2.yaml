@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Implemented support for ``--remove-from-date`` and
+    ``--remove-older-than`` flags for cindernative ``mode``.
+    When one of these flags is supplied, it has precedence over
+    ``--fullbackup-rotation``.
