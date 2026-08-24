@@ -49,8 +49,11 @@ class MongoMode(mode.Mode):
         # todo unhardcode this
         mongodb_port = '27017'
         local_hostname = conf.hostname
-        db_host_port = '{0}:{1}'.format(local_hostname, mongodb_port)
-        mongo_client = pymongo.MongoClient(db_host_port)
+        # Use a valid MongoDB connection URI. pymongo 4.x rejects a bare
+        # "host:port" string with "[Errno 22] Invalid argument"; the
+        # "mongodb://" scheme is required for it to be parsed correctly.
+        mongodb_uri = 'mongodb://{0}:{1}'.format(local_hostname, mongodb_port)
+        mongo_client = pymongo.MongoClient(mongodb_uri)
         master_dict = dict(mongo_client.admin.command("isMaster"))
         if master_dict['me'] != master_dict['primary']:
             raise Exception('localhost {0} is not Master/Primary,\
