@@ -84,7 +84,11 @@ def freezer_main(backup_args):
         if backup_args.__dict__['endpoint'] == '':
             raise Exception('No endpoint found for S3 compatible storage')
 
-    if backup_args.storages:
+    if (backup_args.backup_media == 'cindernative' or
+            backup_args.mode == 'cindernative'):
+        storage = None
+        backup_args.engine = None
+    elif backup_args.storages:
         # pylint: disable=abstract-class-instantiated
         storage = multiple.MultipleStorage(
             [storage_from_dict(x, max_segment_size)
@@ -92,18 +96,19 @@ def freezer_main(backup_args):
     else:
         storage = storage_from_dict(backup_args.__dict__, max_segment_size)
 
-    engine_loader = engine_manager.EngineManager()
-    backup_args.engine = engine_loader.load_engine(
-        compression=backup_args.compression,
-        symlinks=backup_args.dereference_symlink,
-        exclude=backup_args.exclude,
-        storage=storage,
-        max_segment_size=backup_args.max_segment_size,
-        rsync_block_size=backup_args.rsync_block_size,
-        encrypt_key=backup_args.encrypt_pass_file,
-        temp_resource_prefix=backup_args.temp_resource_prefix,
-        dry_run=backup_args.dry_run
-    )
+    if storage:
+        engine_loader = engine_manager.EngineManager()
+        backup_args.engine = engine_loader.load_engine(
+            compression=backup_args.compression,
+            symlinks=backup_args.dereference_symlink,
+            exclude=backup_args.exclude,
+            storage=storage,
+            max_segment_size=backup_args.max_segment_size,
+            rsync_block_size=backup_args.rsync_block_size,
+            encrypt_key=backup_args.encrypt_pass_file,
+            temp_resource_prefix=backup_args.temp_resource_prefix,
+            dry_run=backup_args.dry_run
+        )
 
     if hasattr(backup_args, 'trickle_command'):
         if "tricklecount" in os.environ:
