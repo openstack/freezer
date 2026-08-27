@@ -14,11 +14,13 @@
 
 
 import configparser
+import copy
 import datetime
 import os
 import subprocess
 import tempfile
 import time
+import typing
 
 from apscheduler.jobstores.base import JobLookupError
 from freezer.scheduler import arguments
@@ -36,7 +38,8 @@ class StopState(object):
 
     @staticmethod
     def stop(job, doc):
-        job.job_doc = doc
+        # doc is adopted by process_event; re-assigning it here would
+        # discard the preserved runtime state.
         job.event = Job.NO_EVENT
         job.job_doc_status = Job.STOP_STATUS
         job.scheduler.update_job_metadata(
@@ -50,7 +53,8 @@ class StopState(object):
 
     @staticmethod
     def start(job, doc):
-        job.job_doc = doc
+        # doc is adopted by process_event; re-assigning it here would
+        # discard the preserved runtime state.
         job.event = Job.NO_EVENT
         job.job_doc_status = Job.STOP_STATUS
         job.schedule()
@@ -146,6 +150,19 @@ class Job(object):
     # 60s, 120s, 240s, ... capped at LOCK_RETRY_MAX_SECONDS.
     LOCK_RETRY_BASE_SECONDS = 60
     LOCK_RETRY_MAX_SECONDS = 3600
+
+    # job_schedule keys the scheduler owns at runtime rather than the job
+    # definition, so they must survive a refresh from the API.
+    RUNTIME_SCHEDULE_KEYS: tuple[str, ...] = ('status', 'result',
+                                              'time_started', 'time_ended',
+                                              'current_pid')
+
+    # The trigger comparison additionally ignores 'event': it is a command
+    # from the API, not part of the schedule, so it must not read as a
+    # change. It is deliberately absent from RUNTIME_SCHEDULE_KEYS, since
+    # preserving it would stop commands from ever being delivered.
+    NON_TRIGGER_SCHEDULE_KEYS: frozenset[str] = frozenset(
+        RUNTIME_SCHEDULE_KEYS) | {'event'}
 
     @staticmethod
     def create(scheduler, executable, job_doc):
@@ -326,9 +343,60 @@ class Job(object):
                     'run_date': datetime.datetime.now() +
                     datetime.timedelta(0, 2, 0)}
 
+    @staticmethod
+    def _schedule_definition(
+            job_schedule: dict[str, typing.Any]) -> dict[str, typing.Any]:
+        """The part of job_schedule that determines the trigger."""
+        return {key: value for key, value in job_schedule.items()
+                if key not in Job.NON_TRIGGER_SCHEDULE_KEYS}
+
+    def refresh_job_doc(self, job_doc: dict[str, typing.Any]) -> bool:
+        """Adopt the definition carried by a freshly fetched job doc.
+
+        This is the only path by which a definition changed through the
+        API reaches a job that is already scheduled. ``job_doc`` is as
+        returned by the API or read from the jobs directory.
+
+        Returns True if the scheduling parameters changed, meaning an
+        already-armed job has to be re-armed with the new trigger.
+        """
+        if not job_doc or job_doc is self.job_doc:
+            return False
+
+        old_schedule = self.job_doc.get('job_schedule', {})
+        # Copy so later runtime mutations don't write through into the
+        # list the caller polled.
+        new_doc = copy.deepcopy(job_doc)
+        new_schedule = new_doc.setdefault('job_schedule', {})
+        for key in self.RUNTIME_SCHEDULE_KEYS:
+            if key in old_schedule:
+                new_schedule[key] = old_schedule[key]
+
+        schedule_changed = (self._schedule_definition(new_schedule) !=
+                            self._schedule_definition(old_schedule))
+        self.job_doc = new_doc
+        return schedule_changed
+
+    def reschedule(self) -> None:
+        LOG.info('Job {0} schedule changed, re-arming'.format(self.id))
+        self.unschedule()
+        self.schedule()
+
     def process_event(self, job_doc):
         with self.scheduler.lock:
+            # Unconditionally: a job with no pending event never enters the
+            # loop below and would otherwise never see the update.
+            schedule_changed = self.refresh_job_doc(job_doc)
+
             next_event = job_doc['job_schedule'].get('event', '')
+            # Re-arming a running job would churn its state mid-execution;
+            # a starting one is armed by StopState.start, and one being
+            # stopped or removed is on its way out.
+            if (schedule_changed and self.state is ScheduledState and
+                    next_event not in (Job.STOP_EVENT, Job.ABORT_EVENT,
+                                       Job.REMOVE_EVENT)):
+                self.reschedule()
+
             while next_event:
                 if next_event == Job.STOP_EVENT:
                     if isinstance(self.state(), StopState):

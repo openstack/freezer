@@ -1,0 +1,15 @@
+---
+fixes:
+  - |
+    ``freezer-scheduler`` now applies job definition changes made through
+    ``freezer-api`` without needing a restart. Previously a job that was
+    already scheduled kept executing the actions it was created with: the
+    updated definition was fetched on every poll but only adopted when the
+    job carried a pending ``start``, ``stop`` or ``abort`` event, so
+    editing a job (for example replacing its actions with
+    ``PATCH /v2/jobs/{job_id}``) had no effect until the job was stopped
+    and started again or the scheduler was restarted. Changes to a job's
+    schedule are now applied as well, re-arming the trigger, except while
+    the job is running or is being started, stopped or removed.
+    Standalone (``--no-api``) mode is unaffected, as it reads its jobs
+    directory once at startup.

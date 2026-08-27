@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import datetime
 import math
 import os
 import shutil
 import tempfile
+import typing
 import unittest
 
 from apscheduler.jobstores.base import JobLookupError
@@ -764,3 +766,171 @@ class TestJobLockRetryBackoff(unittest.TestCase):
 
         with mock.patch.object(self.job, '_execute'):
             self.job.execute()  # must not raise
+
+
+class TestJobUpdateActionsRegression(unittest.TestCase):
+    """Replacing a job's actions through the API must take effect.
+
+    ``FreezerScheduler.poll`` reuses the in-memory ``Job`` across polls and
+    hands the freshly fetched doc to ``job.process_event(job_doc)``. These
+    tests drive that call, then fire ``execute()`` the way APScheduler does
+    when the trigger comes due, and record which actions actually run.
+    """
+
+    OLD_ACTIONS = [{'freezer_action': {'action': 'backup',
+                                       'backup_name': 'OLD'}}]
+    NEW_ACTIONS = [{'freezer_action': {'action': 'backup',
+                                       'backup_name': 'NEW'}}]
+
+    def setUp(self):
+        arguments.register_scheduler_opts(CONF)
+        CONF.disable_exec = False
+        self.scheduler = mock.MagicMock()
+        # Always win the coordination lock, and stay armed once scheduled.
+        self.scheduler.job_lock.return_value.__enter__.return_value = True
+        self.scheduler.is_scheduled.return_value = True
+
+    def _job_doc(self, actions: list[dict[str, typing.Any]],
+                 event: str = 'start') -> dict[str, typing.Any]:
+        """Build a job doc equivalent to what the API returns for a job."""
+        return copy.deepcopy({
+            'job_id': 'job-1',
+            'job_schedule': {
+                'event': event,
+                'status': '',
+                # continuous keeps the job in ScheduledState after a run
+                'schedule_interval': 'continuous',
+            },
+            'job_actions': actions,
+        })
+
+    def _executed_backup_names(
+            self, job: scheduler_job.Job) -> list[str | None]:
+        """Fire the job like APScheduler would, recording executed actions.
+
+        ``execute_job_action`` is where an action becomes a freezer-agent
+        invocation, so its arguments are what the scheduler really runs.
+        """
+        executed: list[str | None] = []
+
+        def _record(job_action: dict[str, typing.Any]) -> str:
+            executed.append(job_action['freezer_action'].get('backup_name'))
+            return scheduler_job.Job.SUCCESS_RESULT
+
+        with mock.patch.object(job, 'execute_job_action',
+                               side_effect=_record):
+            job.execute()
+        return executed
+
+    def test_scheduled_job_runs_new_actions_after_patch_no_event(self):
+        """A normally-scheduled job carries no pending event, so the doc
+        delivered by the next poll must still replace its actions."""
+        job = scheduler_job.Job.create(
+            self.scheduler, None, self._job_doc(self.OLD_ACTIONS))
+
+        job.process_event(self._job_doc(self.OLD_ACTIONS))
+        self.assertEqual(['OLD'], self._executed_backup_names(job))
+
+        # PATCH replaces the actions; no pending event is the steady state.
+        job.process_event(self._job_doc(self.NEW_ACTIONS, event=''))
+
+        self.assertEqual(['NEW'], self._executed_backup_names(job))
+
+    def test_scheduled_job_runs_new_actions_after_patch_with_start_event(self):
+        """Same, but the refreshed doc still carries a 'start' event;
+        ScheduledState.start currently ignores the incoming doc entirely."""
+        job = scheduler_job.Job.create(
+            self.scheduler, None, self._job_doc(self.OLD_ACTIONS))
+
+        job.process_event(self._job_doc(self.OLD_ACTIONS))
+        self.assertEqual(['OLD'], self._executed_backup_names(job))
+
+        job.process_event(self._job_doc(self.NEW_ACTIONS, event='start'))
+
+        self.assertEqual(['NEW'], self._executed_backup_names(job))
+
+    def test_process_event_refreshes_job_doc_actions(self):
+        """Lower-level assertion: once a poll delivers an updated doc, the
+        in-memory job_doc must reflect the new actions."""
+        job = scheduler_job.Job.create(
+            self.scheduler, None, self._job_doc(self.OLD_ACTIONS))
+        job.process_event(self._job_doc(self.OLD_ACTIONS))
+
+        job.process_event(self._job_doc(self.NEW_ACTIONS, event=''))
+
+        self.assertEqual(self.NEW_ACTIONS, job.job_doc['job_actions'])
+
+    def _scheduled_job(self) -> scheduler_job.Job:
+        """A job that has been through a poll and is armed and idle."""
+        job = scheduler_job.Job.create(
+            self.scheduler, None, self._job_doc(self.OLD_ACTIONS))
+        job.process_event(self._job_doc(self.OLD_ACTIONS))
+        self.assertIs(scheduler_job.ScheduledState, job.state)
+        return job
+
+    def test_refresh_preserves_scheduler_runtime_bookkeeping(self):
+        """The API's copy of the runtime fields is older than ours, so a
+        refresh must not roll back status, timings or the running pid."""
+        job = self._scheduled_job()
+        job.update_job_schedule_doc(status='running', time_started=1234,
+                                    current_pid=4242)
+
+        job.process_event(self._job_doc(self.NEW_ACTIONS, event=''))
+
+        schedule = job.job_doc['job_schedule']
+        self.assertEqual('running', schedule['status'])
+        self.assertEqual(1234, schedule['time_started'])
+        self.assertEqual(4242, schedule['current_pid'])
+        self.assertEqual(self.NEW_ACTIONS, job.job_doc['job_actions'])
+
+    def test_refresh_does_not_write_back_into_the_polled_doc(self):
+        """Runtime mutations must not leak into the doc list the scheduler
+        polled, which is discarded and re-fetched every cycle."""
+        job = self._scheduled_job()
+        polled = self._job_doc(self.NEW_ACTIONS, event='')
+        job.process_event(polled)
+
+        job.update_job_schedule_doc(current_pid=99)
+
+        self.assertNotIn('current_pid', polled['job_schedule'])
+
+    def test_changed_schedule_re_arms_the_job(self):
+        """An armed, idle job whose trigger changed must be re-armed, or it
+        keeps firing on the old interval."""
+        job = self._scheduled_job()
+        self.scheduler.reset_mock()
+
+        updated = self._job_doc(self.NEW_ACTIONS, event='')
+        updated['job_schedule']['schedule_interval'] = '2 hours'
+        job.process_event(updated)
+
+        self.scheduler.remove_job.assert_called_once_with(job_id=job.id)
+        self.assertEqual({'hours': 2, 'trigger': 'interval'},
+                         job.get_schedule_args())
+        self.scheduler.add_job.assert_called_once()
+
+    def test_unchanged_schedule_does_not_re_arm(self):
+        """Replacing only the actions must not disturb the trigger."""
+        job = self._scheduled_job()
+        self.scheduler.reset_mock()
+
+        job.process_event(self._job_doc(self.NEW_ACTIONS, event=''))
+
+        self.scheduler.remove_job.assert_not_called()
+        self.scheduler.add_job.assert_not_called()
+
+    def test_running_job_is_not_re_armed_mid_execution(self):
+        """Re-arming a running job would reset its state machine while the
+        agent is still working; the new trigger can wait for the next
+        poll."""
+        job = self._scheduled_job()
+        job.state = scheduler_job.RunningState
+        self.scheduler.reset_mock()
+
+        updated = self._job_doc(self.NEW_ACTIONS, event='')
+        updated['job_schedule']['schedule_interval'] = '2 hours'
+        job.process_event(updated)
+
+        self.scheduler.remove_job.assert_not_called()
+        # The definition is still refreshed for the next run.
+        self.assertEqual(self.NEW_ACTIONS, job.job_doc['job_actions'])
