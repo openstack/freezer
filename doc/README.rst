@@ -530,6 +530,10 @@ Remove backups older then 1 day::
 
     $ freezer-agent --action admin --container freezer_dev-test --remove-older-than 1 --backup-name dev-test-01
 
+Remove backups before a specific datetime::
+
+    $ freezer-agent --action admin --container freezer_dev-test --remove-before-date 2016-07-11T00:00:00 --backup-name dev-test-01
+
 Cinder restore currently creates a volume with the contents of the saved one,
 but doesn't implement detachment of existing volume and attachment of the new
 one to the vm. You should implement these steps manually. To create a new volume
@@ -969,6 +973,7 @@ Available options::
                      [--os-identity-api-version OS_IDENTITY_API_VERSION]
                      [--overwrite] [--path-to-backup PATH_TO_BACKUP]
                      [--proxy PROXY] [--quiet]
+                     [--remove-before-date REMOVE_BEFORE_DATE]
                      [--remove-from-date REMOVE_FROM_DATE]
                      [--remove-older-than REMOVE_OLDER_THAN]
                      [--restart-always-level RESTART_ALWAYS_LEVEL]
@@ -1152,9 +1157,15 @@ optional arguments:
   --proxy PROXY         Enforce proxy that alters system HTTP_PROXY and
                         HTTPS_PROXY, use '' to eliminate all system proxies
   --quiet, -q           Suppress error messages
-  --remove-from-date REMOVE_FROM_DATE
+  --remove-before-date REMOVE_BEFORE_DATE
                         Checks the specified container and removes objects
                         older than the provided datetime in the form 'YYYY-MM-
+                        DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. Make sure the
+                        'T' is between date and time
+  --remove-from-date REMOVE_FROM_DATE
+                        Deprecated. Use --remove-before-date instead. Checks
+                        the specified container and removes objects older
+                        than the provided datetime in the form 'YYYY-MM-
                         DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. Make sure the
                         'T' is between date and time
   --remove-older-than REMOVE_OLDER_THAN, -R REMOVE_OLDER_THAN

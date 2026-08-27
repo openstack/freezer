@@ -22,6 +22,7 @@ from unittest.mock import patch
 
 from freezer import job as jobs
 from freezer.tests import commons
+from freezer.utils import utils
 
 
 class TestJob(commons.FreezerBaseTestCase):
@@ -346,7 +347,9 @@ class TestAdminJob(TestJob):
 
     def test_validation_runs_before_client_creation(self):
         backup_opt = commons.BackupOpt1()
-        backup_opt.action = None
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = 'not-a-number'
         with mock.patch('freezer.common.client_manager.'
                         'get_client_manager') as cm:
             self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
@@ -355,7 +358,8 @@ class TestAdminJob(TestJob):
 
     def test_valid_input_reaches_client_creation(self):
         backup_opt = commons.BackupOpt1()
-        backup_opt.remove_from_date = '2014-12-03T23:23:23'
+        backup_opt.remove_before_date = '2014-12-03T23:23:23'
+        backup_opt.remove_from_date = None
         backup_opt.remove_older_than = None
         with mock.patch('freezer.common.client_manager.'
                         'get_client_manager') as cm:
@@ -364,8 +368,163 @@ class TestAdminJob(TestJob):
 
     def test_execute(self):
         backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = '2014-12-03T23:23:23'
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
         with mock.patch('openstack.connection.Connection'):
             jobs.AdminJob(backup_opt, backup_opt.storage).execute()
+
+    def test_validate_no_removal_option(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_invalid_remove_before_date(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = 'not-a-date'
+        backup_opt.remove_from_date = None
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_invalid_remove_from_date(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = '2014-12-03'
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_conflicting_dates(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = '2014-12-03T23:23:23'
+        backup_opt.remove_from_date = '2014-12-03T23:23:23'
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_date_and_days_conflict(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = '2014-12-03T23:23:23'
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = '5'
+        with mock.patch('freezer.common.client_manager.'
+                        'get_client_manager') as cm:
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+            cm.assert_not_called()
+
+    def test_validate_from_date_and_days_conflict(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = '2014-12-03T23:23:23'
+        backup_opt.remove_older_than = '5'
+        with mock.patch('freezer.common.client_manager.'
+                        'get_client_manager') as cm:
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+            cm.assert_not_called()
+
+    def test_validate_bool_remove_older_than(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = True
+        with mock.patch('freezer.common.client_manager.'
+                        'get_client_manager') as cm:
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+            cm.assert_not_called()
+
+    def test_validate_invalid_remove_older_than(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = 'not-a-number'
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_empty_date_with_days_conflict(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = ''
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = '5'
+        with mock.patch('freezer.common.client_manager.'
+                        'get_client_manager') as cm:
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+            cm.assert_not_called()
+
+    def test_validate_zero_days_accepted(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = 0
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.AdminJob(backup_opt, backup_opt.storage)
+        self.assertIsNotNone(job.remove_timestamp)
+
+    def test_validate_remove_older_than_inf(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = 'inf'
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_remove_older_than_nan(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = 'nan'
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_remove_older_than_negative(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = '-5'
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_remove_older_than_overflow(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = '1e300'
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_remove_timestamp_stored(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = '2014-12-03T23:23:23'
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.AdminJob(backup_opt, backup_opt.storage)
+            self.assertEqual(job.remove_timestamp,
+                             utils.date_to_timestamp(
+                                 '2014-12-03T23:23:23'))
+
+    def test_validate_remove_before_date_impossible_calendar(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.remove_before_date = '2014-99-99T99:99:99'
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
 
 
 class TestExecJob(TestJob):

@@ -117,6 +117,7 @@ DEFAULT_PARAMS = {
     'proxy': None,
     'quiet': False,
     'remove_from_date': None,
+    'remove_before_date': None,
     'remove_older_than': None,
     'restore_abs_path': None,
     'restart_always_level': False,
@@ -302,11 +303,21 @@ _COMMON = [
                       "than the specified days. If i.e. 30 is specified, it "
                       "will remove the remote object older than 30 days. "
                       "Default False (Disabled)"),
+    cfg.StrOpt('remove-before-date',
+               dest='remove_before_date',
+               default=DEFAULT_PARAMS['remove_before_date'],
+               help="Checks the specified container and removes objects older "
+                    "than the provided datetime in the form "
+                    "'YYYY-MM-DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. "
+                    "Make sure the 'T' is between date and time "),
     cfg.StrOpt('remove-from-date',
                dest='remove_from_date',
                default=DEFAULT_PARAMS['remove_from_date'],
-               help="Checks the specified container and removes objects older "
-                    "than the provided datetime in the form "
+               deprecated_for_removal=True,
+               deprecated_reason="Use --remove-before-date instead.",
+               deprecated_since='2026.2',
+               help="Deprecated. Checks the specified container and removes "
+                    "objects older than the provided datetime in the form "
                     "'YYYY-MM-DDThh:mm:ss' i.e. '1974-03-25T23:23:23'. "
                     "Make sure the 'T' is between date and time "),
     cfg.StrOpt('hostname',

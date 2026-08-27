@@ -149,6 +149,16 @@ def run_job(conf, storage):
     start_time = utils.DateTime.now()
     LOG.info('Job execution Started at: {0}'.format(start_time))
     response = freezer_job.execute()
+
+    # Inject removal functionality for backup and restore jobs
+    # (mirrors the 2016 merged fix from commit 4ef18182e0c9,
+    #  adapted to use is not None checks to correctly handle
+    #  remove_older_than=0)
+    if (conf.action in ('backup', 'restore') and
+            (conf.remove_before_date is not None or
+             conf.remove_from_date is not None or
+             conf.remove_older_than is not None)):
+        job.AdminJob(conf, storage).execute()
     end_time = utils.DateTime.now()
     LOG.info('Job execution Finished, at: {0}'.format(end_time))
     LOG.info('Job time Elapsed: {0}'.format(end_time - start_time))

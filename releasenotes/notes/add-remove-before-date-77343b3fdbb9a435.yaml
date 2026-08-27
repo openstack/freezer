@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    Adds the ``--remove-before-date`` argument to the admin job. It removes
+    backups before the specified ISO datetime (``YYYY-MM-DDTHH:MM:SS``).
+upgrade:
+  - |
+    The ``--remove-from-date`` argument is deprecated in favor of
+    ``--remove-before-date``. The deprecated argument will be removed in a
+    future release.

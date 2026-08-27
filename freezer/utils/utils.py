@@ -203,9 +203,21 @@ def create_subprocess(cmd):
 
 
 def date_to_timestamp(date):
-    fmt = '%Y-%m-%dT%H:%M:%S'
-    opt_backup_date = datetime.datetime.strptime(date, fmt)
-    return int(time.mktime(opt_backup_date.timetuple()))
+    """Convert ISO date string to Unix timestamp.
+
+    Only accepts the canonical strict form YYYY-MM-DDTHH:MM:SS (zero-padded,
+    'T' separator); rejects anything else including unpadded fields and space
+    separators.
+    """
+    try:
+        fmt = '%Y-%m-%dT%H:%M:%S'
+        opt_backup_date = datetime.datetime.strptime(date, fmt)
+        if opt_backup_date.strftime(fmt) != date:
+            raise ValueError(date)
+        return int(time.mktime(opt_backup_date.timetuple()))
+    except (ValueError, TypeError, OverflowError, AttributeError):
+        raise ValueError('Invalid ISO date format. '
+                         'Use YYYY-MM-DDTHH:MM:SS format')
 
 
 class Bunch(object):
