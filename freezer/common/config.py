@@ -59,6 +59,7 @@ DEFAULT_PARAMS = {
     'action': 'backup',
     'always_level': False,
     'backup_name': "freezer_{mode}_{resource_id}",
+    'backup_id': None,
     'command': None,
     'compression': 'gzip',
     'consistency_check': False,
@@ -180,6 +181,11 @@ _COMMON = [
                     "used based on the mode. Supported variables: "
                     "{mode}, {backup_media}, {storage}, {container}, "
                     "{project_id}, {resource_id}."
+               ),
+    cfg.StrOpt('backup-id',
+               dest='backup_id',
+               default=DEFAULT_PARAMS['backup_id'],
+               help="Pre-allocated Freezer backup ID in freezer-api"
                ),
     cfg.StrOpt('mode',
                short='m',
