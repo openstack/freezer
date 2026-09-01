@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import unittest
 from unittest import mock
 
+from freezer.main import freezer_main
 from freezer.main import run_job
+from freezer.tests import commons
 
 
-class TestRunJob(unittest.TestCase):
+class TestRunJob(commons.FreezerBaseTestCase):
 
     def _make_conf(self, action='backup', action_extra=None):
         conf = mock.Mock()
@@ -166,3 +166,52 @@ class TestRunJob(unittest.TestCase):
             # AdminJob should only be called once (the regular dispatch),
             # not again via the hook
             mock_job.AdminJob.assert_called_once_with(conf, storage)
+
+
+class TestFreezerMain(commons.FreezerBaseTestCase):
+
+    def _make_backup_args(self, mode='cindernative',
+                          backup_media='cindernative'):
+        args = commons.BackupOpt1()
+        args.quiet = True
+        args.max_priority = False
+        args.mode = mode
+        args.backup_media = backup_media
+        args.storages = None
+        args.storage = 'swift'
+        args.max_segment_size = 33554432
+        args.rsync_block_size = 4096
+        return args
+
+    @mock.patch('freezer.main.client_manager')
+    @mock.patch('freezer.main.storage_from_dict')
+    @mock.patch('freezer.main.engine_manager')
+    @mock.patch('freezer.main.run_job')
+    def test_freezer_main_cindernative_skips_storage_init(
+            self, mock_run_job, mock_engine_mgr, mock_storage_from_dict,
+            mock_client_mgr):
+        args = self._make_backup_args(mode='cindernative',
+                                      backup_media='cindernative')
+        freezer_main(args)
+
+        mock_storage_from_dict.assert_not_called()
+        mock_engine_mgr.EngineManager.assert_not_called()
+        mock_run_job.assert_called_once_with(args, None)
+        self.assertIsNone(args.engine)
+
+    @mock.patch('freezer.main.client_manager')
+    @mock.patch('freezer.main.storage_from_dict')
+    @mock.patch('freezer.main.engine_manager')
+    @mock.patch('freezer.main.run_job')
+    def test_freezer_main_non_cindernative_initializes_storage(
+            self, mock_run_job, mock_engine_mgr, mock_storage_from_dict,
+            mock_client_mgr):
+        args = self._make_backup_args(mode='fs', backup_media='fs')
+        fake_storage = mock.Mock()
+        mock_storage_from_dict.return_value = fake_storage
+
+        freezer_main(args)
+
+        mock_storage_from_dict.assert_called_once()
+        mock_engine_mgr.EngineManager.assert_called_once()
+        mock_run_job.assert_called_once_with(args, fake_storage)
