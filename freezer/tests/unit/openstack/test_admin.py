@@ -141,11 +141,13 @@ class TestAdmin(commons.FreezerBaseTestCase):
     def test_remove_cinderbackup_older_than_freezer_only(self):
         user_backup = commons.FakeIdObject(100)
         user_backup.metadata = {}
+        user_backup.is_incremental = False
         user_backup.created_at = '2020-01-01T00:00:00.000000'
 
         freezer_backup = commons.FakeIdObject(101)
         freezer_backup.metadata = {'created_by': 'freezer',
                                    'freezer_backup_id': 'f_uuid_101'}
+        freezer_backup.is_incremental = False
         freezer_backup.created_at = '2020-01-01T00:00:00.000000'
 
         backups = [user_backup, freezer_backup]
@@ -160,3 +162,62 @@ class TestAdmin(commons.FreezerBaseTestCase):
 
         self.assertEqual(['f_uuid_101'], res)
         self.admin_os._delete_single_backup.assert_called_once_with(101)
+
+    def test_remove_cinderbackup_older_than_expired_chain(self):
+        full_b = commons.FakeIdObject(101)
+        full_b.metadata = {
+            'created_by': 'freezer',
+            'freezer_backup_id': 'f101'}
+        full_b.is_incremental = False
+        full_b.created_at = '2020-01-01T00:00:00.000000'
+
+        inc_b = commons.FakeIdObject(102)
+        inc_b.metadata = {'created_by': 'freezer', 'freezer_backup_id': 'f102'}
+        inc_b.is_incremental = True
+        inc_b.created_at = '2020-01-02T00:00:00.000000'
+
+        backups = [full_b, inc_b]
+        self.admin_os.cinder_client.backups = (
+            commons.mock.Mock(return_value=backups))
+        delete_calls = []
+
+        def mock_delete(bid):
+            delete_calls.append(bid)
+            return 'f%s' % bid
+
+        self.admin_os._delete_single_backup = commons.mock.Mock(
+            side_effect=mock_delete)
+
+        # Cutoff is 2020-01-05 (timestamp 1578182400.0) -> entire chain expired
+        res = self.admin_os.remove_cinderbackup_older_than(
+            'vol1', 1578182400.0, freezer_only=True)
+
+        self.assertEqual(['f102', 'f101'], res)
+        self.assertEqual([102, 101], delete_calls)
+
+    def test_remove_cinderbackup_older_than_active_chain_preserved(self):
+        full_b = commons.FakeIdObject(101)
+        full_b.metadata = {
+            'created_by': 'freezer',
+            'freezer_backup_id': 'f101'}
+        full_b.is_incremental = False
+        full_b.created_at = '2020-01-01T00:00:00.000000'
+
+        inc_b = commons.FakeIdObject(102)
+        inc_b.metadata = {'created_by': 'freezer', 'freezer_backup_id': 'f102'}
+        inc_b.is_incremental = True
+        inc_b.created_at = '2020-01-10T00:00:00.000000'
+
+        backups = [full_b, inc_b]
+        self.admin_os.cinder_client.backups = (
+            commons.mock.Mock(return_value=backups))
+        self.admin_os._delete_single_backup = commons.mock.Mock()
+
+        # Cutoff is 2020-01-05 (timestamp 1578182400.0) -> full is old,
+        # but inc is newer!
+        res = self.admin_os.remove_cinderbackup_older_than(
+            'vol1', 1578182400.0, freezer_only=True)
+
+        # Whole chain should be preserved, nothing deleted
+        self.assertEqual([], res)
+        self.admin_os._delete_single_backup.assert_not_called()

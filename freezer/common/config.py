@@ -72,6 +72,7 @@ DEFAULT_PARAMS = {
     'cindernative_vol_id': '',
     'cinderbrick_vol_id': '',
     'cinder_vol_name': '',
+    'fullbackup_rotation': 1,
     'config': None,
     'container': 'freezer_backups',
     'dereference_symlink': None,
@@ -656,7 +657,7 @@ _COMMON = [
                ),
     cfg.IntOpt('fullbackup-rotation',
                dest='fullbackup_rotation',
-               default=1,
+               default=DEFAULT_PARAMS['fullbackup_rotation'],
                min=1,
                help="Keep the last N fullbackups of cinder-volume, "
                     "the parameter should be greater than 0. "

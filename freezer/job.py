@@ -700,6 +700,10 @@ class RestoreJob(Job):
 
 class AdminJob(Job):
 
+    def __init__(self, conf_dict, storage):
+        self.remove_timestamp = None
+        super(AdminJob, self).__init__(conf_dict, storage)
+
     def _get_remove_timestamp(self):
         """Compute the removal cutoff timestamp or raise ValueError.
 
@@ -729,28 +733,44 @@ class AdminJob(Job):
                              "a valid timestamp")
 
     def _validate(self):
-        # no validation required in this job
+        removal_options = {'--remove-before-date':
+                           self.conf.remove_before_date,
+                           '--remove-from-date':
+                           self.conf.remove_from_date,
+                           '--remove-older-than':
+                           self.conf.remove_older_than}
+        given = [name for name, value in removal_options.items()
+                 if value is not None]
+        if len(given) > 1:
+            raise ValueError("Specify only one of %s"
+                             % ", ".join(given))
         if self.conf.backup_media == 'cindernative':
-            if not self.conf.fullbackup_rotation:
-                raise Exception("The parameter --fullbackup-rotation "
-                                "is required")
+            if not getattr(self.conf, 'cindernative_vol_id', None):
+                raise ValueError("The parameter --cindernative-vol-id "
+                                 "is required")
+            if given:
+                self.remove_timestamp = self._get_remove_timestamp()
+            else:
+                if isinstance(self.conf.fullbackup_rotation, bool):
+                    raise ValueError(
+                        "--fullbackup-rotation must be a positive integer"
+                    )
+                try:
+                    rotation = int(self.conf.fullbackup_rotation)
+                except (TypeError, ValueError):
+                    raise ValueError(
+                        "--fullbackup-rotation must be a positive integer"
+                    )
+                if rotation <= 0:
+                    raise ValueError(
+                        "--fullbackup-rotation must be a positive integer"
+                    )
         else:
-            removal_options = {'--remove-before-date':
-                               self.conf.remove_before_date,
-                               '--remove-from-date':
-                               self.conf.remove_from_date,
-                               '--remove-older-than':
-                               self.conf.remove_older_than}
-            given = [name for name, value in removal_options.items()
-                     if value is not None]
             if not given:
                 raise ValueError("Specify removal date via "
                                  "--remove-before-date, --remove-from-date, "
                                  "or --remove-older-than")
-            if len(given) > 1:
-                raise ValueError("Specify only one of %s"
-                                 % ", ".join(given))
-        self.remove_timestamp = self._get_remove_timestamp()
+            self.remove_timestamp = self._get_remove_timestamp()
 
     def execute(self):
         # remove backups by freezer admin action
@@ -759,10 +779,16 @@ class AdminJob(Job):
             admin_os = admin.AdminOs(self.conf.client_manager)
             freezer_only = getattr(self.conf, 'cindernative_freezer_only',
                                    True)
-            deleted_ids = admin_os.del_off_limit_fullbackup(
-                self.conf.cindernative_vol_id,
-                self.conf.fullbackup_rotation,
-                freezer_only=freezer_only)
+            if self.remove_timestamp is not None:
+                deleted_ids = admin_os.remove_cinderbackup_older_than(
+                    self.conf.cindernative_vol_id,
+                    self.remove_timestamp,
+                    freezer_only=freezer_only)
+            else:
+                deleted_ids = admin_os.del_off_limit_fullbackup(
+                    self.conf.cindernative_vol_id,
+                    self.conf.fullbackup_rotation,
+                    freezer_only=freezer_only)
             return {'deleted_freezer_backup_ids': deleted_ids}
         timestamp = self.remove_timestamp
 

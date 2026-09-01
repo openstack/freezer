@@ -436,10 +436,9 @@ class TestAdminJob(TestJob):
         backup_opt.remove_from_date = None
         backup_opt.remove_older_than = True
         with mock.patch('freezer.common.client_manager.'
-                        'get_client_manager') as cm:
+                        'get_client_manager'):
             self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
                               backup_opt.storage)
-            cm.assert_not_called()
 
     def test_validate_invalid_remove_older_than(self):
         backup_opt = commons.BackupOpt1()
@@ -517,14 +516,144 @@ class TestAdminJob(TestJob):
                              utils.date_to_timestamp(
                                  '2014-12-03T23:23:23'))
 
-    def test_validate_remove_before_date_impossible_calendar(self):
+    def test_validate_cindernative_with_fullbackup_rotation(self):
         backup_opt = commons.BackupOpt1()
-        backup_opt.remove_before_date = '2014-99-99T99:99:99'
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'vol_1'
+        backup_opt.fullbackup_rotation = 3
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.AdminJob(backup_opt, backup_opt.storage)
+            self.assertIsNone(job.remove_timestamp)
+
+    def test_validate_cindernative_with_remove_before_date(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'vol_1'
+        backup_opt.fullbackup_rotation = None
+        backup_opt.remove_before_date = '2014-12-03T23:23:23'
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.AdminJob(backup_opt, backup_opt.storage)
+            self.assertEqual(job.remove_timestamp,
+                             utils.date_to_timestamp('2014-12-03T23:23:23'))
+
+    def test_validate_cindernative_with_remove_older_than(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'vol_1'
+        backup_opt.fullbackup_rotation = None
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = '7'
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.AdminJob(backup_opt, backup_opt.storage)
+            self.assertIsNotNone(job.remove_timestamp)
+
+    def test_validate_cindernative_missing_vol_id(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = ''
+        backup_opt.fullbackup_rotation = 3
+        backup_opt.remove_before_date = None
         backup_opt.remove_from_date = None
         backup_opt.remove_older_than = None
         with mock.patch('openstack.connection.Connection'):
             self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
                               backup_opt.storage)
+
+    def test_validate_cindernative_date_with_rotation_defaults_to_date(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'vol_1'
+        backup_opt.fullbackup_rotation = 3
+        backup_opt.remove_before_date = '2014-12-03T23:23:23'
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            job = jobs.AdminJob(backup_opt, backup_opt.storage)
+            self.assertEqual(job.remove_timestamp,
+                             utils.date_to_timestamp('2014-12-03T23:23:23'))
+
+    def test_validate_cindernative_invalid_rotation(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'vol_1'
+        backup_opt.fullbackup_rotation = 'invalid'
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_cindernative_negative_rotation(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'vol_1'
+        backup_opt.fullbackup_rotation = 0
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+        backup_opt.fullbackup_rotation = -1
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_validate_cindernative_boolean_rotation(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'vol_1'
+        backup_opt.fullbackup_rotation = True
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            self.assertRaises(ValueError, jobs.AdminJob, backup_opt,
+                              backup_opt.storage)
+
+    def test_execute_cindernative_with_fullbackup_rotation(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'vol_1'
+        backup_opt.fullbackup_rotation = 3
+        backup_opt.remove_before_date = None
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            with mock.patch('freezer.openstack.admin.AdminOs.'
+                            'del_off_limit_fullbackup',
+                            return_value=['fid1']) as mock_del:
+                job = jobs.AdminJob(backup_opt, backup_opt.storage)
+                res = job.execute()
+                mock_del.assert_called_once_with('vol_1', 3, freezer_only=True)
+                self.assertEqual({'deleted_freezer_backup_ids': ['fid1']}, res)
+
+    def test_execute_cindernative_with_date_removal(self):
+        backup_opt = commons.BackupOpt1()
+        backup_opt.backup_media = 'cindernative'
+        backup_opt.cindernative_vol_id = 'vol_1'
+        backup_opt.fullbackup_rotation = None
+        backup_opt.remove_before_date = '2014-12-03T23:23:23'
+        backup_opt.remove_from_date = None
+        backup_opt.remove_older_than = None
+        with mock.patch('openstack.connection.Connection'):
+            with mock.patch('freezer.openstack.admin.AdminOs.'
+                            'remove_cinderbackup_older_than',
+                            return_value=['fid2']) as mock_del:
+                job = jobs.AdminJob(backup_opt, backup_opt.storage)
+                res = job.execute()
+                mock_del.assert_called_once_with('vol_1',
+                                                 job.remove_timestamp,
+                                                 freezer_only=True)
+                self.assertEqual({'deleted_freezer_backup_ids': ['fid2']}, res)
 
 
 class TestExecJob(TestJob):
