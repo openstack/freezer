@@ -32,6 +32,7 @@ from distutils import spawn as distspawn
 from freezer.exceptions import utils
 from functools import wraps
 from oslo_log import log
+from oslo_utils import timeutils
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
@@ -205,19 +206,14 @@ def create_subprocess(cmd):
 def date_to_timestamp(date):
     """Convert ISO date string to Unix timestamp.
 
-    Only accepts the canonical strict form YYYY-MM-DDTHH:MM:SS (zero-padded,
-    'T' separator); rejects anything else including unpadded fields and space
-    separators.
+    Accepts standard ISO 8601 date strings (e.g. YYYY-MM-DDTHH:MM:SS,
+    with optional timezone offset, UTC 'Z', or fractional seconds).
     """
     try:
-        fmt = '%Y-%m-%dT%H:%M:%S'
-        opt_backup_date = datetime.datetime.strptime(date, fmt)
-        if opt_backup_date.strftime(fmt) != date:
-            raise ValueError(date)
-        return int(time.mktime(opt_backup_date.timetuple()))
+        dt = timeutils.parse_isotime(date)
+        return int(dt.timestamp())
     except (ValueError, TypeError, OverflowError, AttributeError):
-        raise ValueError('Invalid ISO date format. '
-                         'Use YYYY-MM-DDTHH:MM:SS format')
+        raise ValueError('Invalid ISO date format')
 
 
 class Bunch(object):

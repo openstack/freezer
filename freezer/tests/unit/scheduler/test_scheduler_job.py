@@ -203,6 +203,45 @@ class TestSchedulerJob1(unittest.TestCase):
         result = job1.get_schedule_args()
         self.assertEqual(result.get('trigger'), 'date')
 
+    def test_get_schedule_args_timezone_aware(self):
+        jobdoc = {"job_schedule":
+                  {"schedule_start_date": "2099-01-10T10:10:10+00:00",
+                   "schedule_end_date": "2099-11-10T10:10:10+00:00",
+                   "schedule_interval": "5 days"}}
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        result = job.get_schedule_args()
+        self.assertEqual(result.get('days'), 5)
+        self.assertEqual(
+            result.get('start_date'),
+            datetime.datetime(2099, 1, 10, 10, 10, 10,
+                              tzinfo=datetime.timezone.utc))
+        self.assertEqual(
+            result.get('end_date'),
+            datetime.datetime(2099, 11, 10, 10, 10, 10,
+                              tzinfo=datetime.timezone.utc))
+
+    def test_get_schedule_args_start_date_after_end_date(self):
+        jobdoc = {"job_schedule":
+                  {"schedule_start_date": "2099-11-10T10:10:10+00:00",
+                   "schedule_end_date": "2099-01-10T10:10:10+00:00",
+                   "schedule_interval": "5 days"}}
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        result = job.get_schedule_args()
+        self.assertIsNone(result.get('end_date'))
+
+    def test_job_schedule_timezone_aware(self):
+        jobdoc = {"job_id": "test-tz",
+                  "job_schedule":
+                  {"schedule_start_date": "2026-09-04T00:00:00+00:00",
+                   "schedule_interval": "1 days"}}
+        job = scheduler_job.Job(self.scheduler, None, jobdoc)
+        job.schedule()
+        self.scheduler.add_job.assert_called_once()
+        _, kwargs = self.scheduler.add_job.call_args
+        self.assertEqual(kwargs.get('trigger'), 'interval')
+        self.assertEqual(kwargs.get('days'), 1)
+        self.assertIsNotNone(kwargs.get('start_date'))
+
     def test_job_process_event(self):
         jobdoc1 = {"job_id": "test", "job_schedule": {"event": "start",
                                                       "status": "start"}}

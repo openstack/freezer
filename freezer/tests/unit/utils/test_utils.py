@@ -107,15 +107,39 @@ class TestUtils(commons.FreezerBaseTestCase):
         assert options.password == env_dict['OS_PASSWORD']
 
     def test_date_to_timestamp(self):
-        # ensure that timestamp is check with appropriate timezone offset
-        assert (1417649003 + time.timezone) == utils.date_to_timestamp(
-            "2014-12-03T23:23:23")
+        # Naive ISO string is parsed as UTC per OpenStack convention
+        self.assertEqual(1417649003,
+                         utils.date_to_timestamp("2014-12-03T23:23:23"))
+        # UTC 'Z' indicator
+        self.assertEqual(1417649003,
+                         utils.date_to_timestamp("2014-12-03T23:23:23Z"))
+        # Explicit UTC offset (+00:00)
+        self.assertEqual(1417649003,
+                         utils.date_to_timestamp("2014-12-03T23:23:23+00:00"))
+        # Non-zero positive offset (+02:00 -> 2 hours earlier in UTC)
+        self.assertEqual(1417641803,
+                         utils.date_to_timestamp("2014-12-03T23:23:23+02:00"))
+        # Non-zero negative offset (-05:00 -> 5 hours later in UTC)
+        self.assertEqual(1417667003,
+                         utils.date_to_timestamp("2014-12-03T23:23:23-05:00"))
+        # Fractional seconds with timezone
+        self.assertEqual(
+            1417649003,
+            utils.date_to_timestamp("2014-12-03T23:23:23.123456+00:00"))
+        self.assertEqual(1417649003,
+                         utils.date_to_timestamp("2014-12-03T23:23:23.999Z"))
+        # Space separator
+        self.assertEqual(1417649003,
+                         utils.date_to_timestamp("2014-12-03 23:23:23"))
 
     def test_date_to_timestamp_invalid(self):
         for value in ('invalid',
                       '2014-99-99T99:99:99',
-                      '2014-12-3T23:23:23',
-                      '2014-12-03 23:23:23'):
+                      '2014-13-3T23:23:23',
+                      '',
+                      '   ',
+                      None,
+                      12345):
             self.assertRaises(ValueError,
                               utils.date_to_timestamp, value)
 

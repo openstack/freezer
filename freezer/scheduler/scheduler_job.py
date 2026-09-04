@@ -28,6 +28,7 @@ from freezer.utils import utils
 from oslo_config import cfg
 from oslo_log import log
 from oslo_serialization import jsonutils as json
+from oslo_utils import timeutils
 
 
 CONF = cfg.CONF
@@ -292,19 +293,15 @@ class Job(object):
 
     def get_schedule_args(self):
         def get_start_date(date):
-            # start_date format "%Y-%m-%dT%H:%M:%S"
-            now = datetime.datetime.now()
+            now = timeutils.utcnow(True)
             start_date = now + datetime.timedelta(0, 2, 0)
-            if (utils.date_to_timestamp(date) >
-                    utils.date_to_timestamp(now.isoformat().split('.')[0])):
-                start_date = datetime.datetime.strptime(
-                    date, "%Y-%m-%dT%H:%M:%S")
+            if utils.date_to_timestamp(date) > int(now.timestamp()):
+                start_date = timeutils.parse_isotime(date)
             return start_date
 
         def get_end_date(start, end):
-            # start end format "%Y-%m-%dT%H:%M:%S"
-            end_date = datetime.datetime.strptime(end, "%Y-%m-%dT%H:%M:%S")
-            if (utils.date_to_timestamp(start) > utils.date_to_timestamp(end)):
+            end_date = timeutils.parse_isotime(end)
+            if utils.date_to_timestamp(start) > utils.date_to_timestamp(end):
                 end_date = None
             return end_date
         kwargs_date = {}
