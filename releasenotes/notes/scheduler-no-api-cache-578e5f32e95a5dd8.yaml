@@ -1,0 +1,16 @@
+---
+upgrade:
+  - |
+    If the scheduler is in API mode, it will no longer save the jobs to the disk.
+    The jobs are fetched from the API directly. The saved jobs were not used anyway,
+    as long as the scheduler was in API mode.
+    The ``jobs_dir`` directory is no longer created in API mode and no longer needed
+    in conf in API mode.
+    Files named ``job_<job_id>.conf`` left in ``jobs_dir`` by earlier releases should be deleted,
+    especially when changing configuration from API to ``no-api``.
+
+fixes:
+  - |
+    The scheduler in API mode no longer saves the jobs to disk, so in case
+    the mode is switched to 'standalone' there is no risk of mixing the locally
+    defined jobs with the jobs fetched from the API, that might be stale.

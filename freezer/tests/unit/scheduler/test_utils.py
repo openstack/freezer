@@ -108,14 +108,6 @@ class TestUtils(unittest.TestCase):
         shutil.rmtree(temp)
         self.assertFalse(os.path.exists(file))
 
-    def test_save_jobs_to_disk(self):
-        job_doc_list = job_list
-        tmpdir = tempfile.mkdtemp()
-        utils.save_jobs_to_disk(job_doc_list, tmpdir)
-        file = '/'.join([tmpdir, "job_test.conf"])
-        self.assertTrue(os.path.exists(file))
-        shutil.rmtree(tmpdir)
-
     def test_get_active_jobs_from_api(self):
         register_scheduler_opts(utils.CONF)
         ret = utils.get_active_jobs_from_api(self.client)

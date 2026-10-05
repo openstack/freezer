@@ -132,13 +132,6 @@ class FreezerScheduler(object):
         if self.client:
             job_doc_list = self.filter_jobs(
                 utils.get_active_jobs_from_api(self.client))
-            try:
-                utils.save_jobs_to_disk(
-                    [job for job in job_doc_list
-                     if self.owns_job(job['job_id'])], self.job_path)
-            except Exception as e:
-                LOG.error('Unable to save jobs to {0}. '
-                          '{1}'.format(self.job_path, e))
             return job_doc_list
         else:
             return utils.get_jobs_from_disk(self.job_path)
@@ -432,6 +425,7 @@ def main():
         if winutils.is_windows():
             print("--no-api mode is not available on windows")
             return 69  # os.EX_UNAVAILABLE
+        freezer_utils.create_dir(CONF.scheduler.jobs_dir, do_log=False)
 
     # Clustered mode is opt-in and only meaningful when talking to the API.
     # The coordinator is created here but connected later in start() so its
@@ -452,8 +446,6 @@ def main():
                 backend_url=CONF.coordination.backend_url)
             LOG.info('Scheduler coordination enabled for cluster %s',
                      apiclient.client_id)
-
-    freezer_utils.create_dir(CONF.scheduler.jobs_dir, do_log=False)
     freezer_scheduler = FreezerScheduler(
         apiclient=apiclient,
         interval=int(CONF.scheduler.interval),

@@ -10,6 +10,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os
+import shutil
+import tempfile
 import unittest
 from unittest import mock
 
@@ -94,6 +97,15 @@ class TestFreezerScheduler(unittest.TestCase):
             self.assertEqual(len(filtered), 1)
             self.assertEqual(filtered[0]['job_id'], 'job1')
         CONF.scheduler.centralized_scheduler = False
+
+    def test_get_jobs_api_mode_does_not_write_to_disk(self):
+        job_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, job_dir)
+        self.scheduler.job_path = job_dir
+        with mock.patch('freezer.scheduler.utils.get_active_jobs_from_api',
+                        return_value=[SUPPORTED_JOB]):
+            self.assertEqual([SUPPORTED_JOB], self.scheduler.get_jobs())
+        self.assertEqual([], os.listdir(job_dir))
 
     def test_owns_job_standalone_is_always_true(self):
         # No coordinator configured -> behaves as today.
