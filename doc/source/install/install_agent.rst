@@ -47,7 +47,6 @@ Configure the scheduler
         [DEFAULT]
         ...
         client_id = hostname_of_machine
-        jobs_dir = /etc/freezer/scheduler/conf.d
         enable_v1_api = True
 
    ``Configuration2``: freezer-api is started by v2 interface:
@@ -62,7 +61,6 @@ Configure the scheduler
         [DEFAULT]
         ...
         client_id = hostname_of_machine
-        jobs_dir = /etc/freezer/scheduler/conf.d
         #enable_v1_api = False
 
 

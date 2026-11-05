@@ -78,13 +78,6 @@ def load_doc_from_json_file(fname, debug=False):
         return doc
 
 
-def save_doc_to_json_file(doc, fname, debug=False):
-    with open(fname, 'w') as fd:
-        json.dump(doc, fd, indent=4)
-    if debug:
-        print('Saved doc to file: {0}'.format(fname))
-
-
 def get_jobs_from_disk(path):
     job_doc_list = [
         load_doc_from_json_file(f) for f in find_config_files(path)]
@@ -93,13 +86,6 @@ def get_jobs_from_disk(path):
             job_doc['job_id'] = job_doc.get('job_id', uuidutils.generate_uuid(
                 dashed=False))
     return [x for x in job_doc_list if x]
-
-
-def save_jobs_to_disk(job_doc_list, path):
-    for doc in job_doc_list:
-        fname = os.path.normpath('{0}/job_{1}.conf'.
-                                 format(path, doc['job_id']))
-        save_doc_to_json_file(doc, fname)
 
 
 def get_active_jobs_from_api(client):
